@@ -1,4 +1,4 @@
-#include "Doom.h"
+#include "doom.h"
 #include <String.h>
 
 #define CURSORX 45		/* X coord for skulls */

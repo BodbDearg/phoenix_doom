@@ -1,4 +1,4 @@
-#include "Doom.h"
+#include "doom.h"
 
 #define	BONUSADD 16		/* Time adder for bonus color */
 #define	BASETHRESHOLD (7*TICKSPERSEC/4)	/* Number of tics to exclusivly follow a target */

@@ -1,7 +1,7 @@
-#include <Burger.h>
-#include "States.h"
-#include "Sounds.h"
-#include "DoomRez.h"
+#include <burger.h>
+#include "states.h"
+#include "sounds.h"
+#include "doomrez.h"
 
 /****************************
 

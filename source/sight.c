@@ -1,4 +1,4 @@
-#include "Doom.h"
+#include "doom.h"
 #include <IntMath.h>
 
 static Fixed sightzstart;			// eye z of looker

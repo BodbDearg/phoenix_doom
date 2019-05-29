@@ -1,4 +1,4 @@
-#include "Doom.h"
+#include "doom.h"
 
 mobj_t *linetarget;			/* Object that was targeted */
 mobj_t *tmthing;			/* mobj_t to be checked */

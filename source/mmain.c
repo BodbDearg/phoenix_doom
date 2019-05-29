@@ -1,4 +1,4 @@
-#include "Doom.h"
+#include "doom.h"
 
 #define CURSORX 50		/* X coord of skull cursor */
 #define AREAY 66

@@ -1,4 +1,4 @@
-#include "Doom.h"
+#include "doom.h"
 #include <Portfolio.h>
 #include <event.h>
 #include <Init3do.h>

@@ -1,4 +1,4 @@
-#include "Doom.h"
+#include "doom.h"
 #include <IntMath.h>
 
 #define S_CLIPPING_DIST (3600*0x10000)		/* Clip sounds beyond this distance */

@@ -1,4 +1,4 @@
-#include "Doom.h"
+#include "doom.h"
 #include <String.h>
 
 typedef struct thinker_s {

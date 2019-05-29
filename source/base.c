@@ -1,4 +1,4 @@
-#include "Doom.h"
+#include "doom.h"
 
 static mobj_t *CheckThingMo;		/* Used for PB_CheckThing */
 static Fixed testx, testy;

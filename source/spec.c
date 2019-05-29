@@ -1,4 +1,4 @@
-#include "Doom.h"
+#include "doom.h"
 #include <String.h>
 
 Word NumFlatAnims;		/* Number of flat anims */

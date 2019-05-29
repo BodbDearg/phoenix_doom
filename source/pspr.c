@@ -1,4 +1,4 @@
-#include "Doom.h"
+#include "doom.h"
 
 #define	LOWERSPEED 18		/* Speed to lower the player's weapon */
 #define	RAISESPEED 18		/* Speed to raise the player's weapon */

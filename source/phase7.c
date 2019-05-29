@@ -1,4 +1,4 @@
-#include "Doom.h"
+#include "doom.h"
 #include <IntMath.h>
 
 #define OPENMARK ((MAXSCREENHEIGHT-1)<<8)

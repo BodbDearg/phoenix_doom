@@ -1,4 +1,4 @@
-#include "Doom.h"
+#include "doom.h"
 
 Boolean trymove2;		/* Result from P_TryMove2 */
 Boolean floatok;		/* if true, move would be ok if within tmfloorz - tmceilingz */

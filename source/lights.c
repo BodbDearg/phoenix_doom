@@ -1,4 +1,4 @@
-#include "Doom.h"
+#include "doom.h"
 
 typedef struct {		/* Struct for light flashers */
 	sector_t *sector;	/* Sector to affect */
