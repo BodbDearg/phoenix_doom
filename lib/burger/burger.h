@@ -10,7 +10,10 @@
 #define __BURGER__
 
 #ifndef __TYPES_H
+/* DC: FIXME: What is this header - 3DO SDK?
+ 
 #include <Types.h>
+*/
 #endif
 
 #ifdef __cplusplus
