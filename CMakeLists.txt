@@ -1,11 +1,178 @@
 cmake_minimum_required (VERSION 3.14)
 
-set(PROJECT_NAME PhoenixDoom)
-project(${PROJECT_NAME})
+set(GAME_NAME PhoenixDoom)
+set(LIB_NAME BurgerLib)
 
+project(${GAME_NAME})
+
+set(LIB_SRC_DIR "${PROJECT_SOURCE_DIR}/lib")
 set(GAME_SRC_DIR "${PROJECT_SOURCE_DIR}/source")
 
-set(SOURCES
+set(LIB_SOURCES
+    ${LIB_SRC_DIR}/burger/abs.c
+    ${LIB_SRC_DIR}/burger/allocahandle.c
+    ${LIB_SRC_DIR}/burger/allocapointer.c
+    ${LIB_SRC_DIR}/burger/atexit.c
+    ${LIB_SRC_DIR}/burger/bombflag.c
+    ${LIB_SRC_DIR}/burger/burger.h
+    ${LIB_SRC_DIR}/burger/clearthescreen.c
+    ${LIB_SRC_DIR}/burger/compacthandles.c
+    ${LIB_SRC_DIR}/burger/currentpalette.c
+    ${LIB_SRC_DIR}/burger/deallocahandle.c
+    ${LIB_SRC_DIR}/burger/deallocapointer.c
+    ${LIB_SRC_DIR}/burger/detachresource.c
+    ${LIB_SRC_DIR}/burger/detachresource2.c
+    ${LIB_SRC_DIR}/burger/detectmouse.c
+    #${LIB_SRC_DIR}/burger/dlzss.s
+    #${LIB_SRC_DIR}/burger/drawachar.s
+    ${LIB_SRC_DIR}/burger/drawarect.c
+    ${LIB_SRC_DIR}/burger/drawastring.c
+    ${LIB_SRC_DIR}/burger/drawmshape.c
+    ${LIB_SRC_DIR}/burger/drawrezcentershape.c
+    ${LIB_SRC_DIR}/burger/drawrezshape.c
+    ${LIB_SRC_DIR}/burger/drawshape.c
+    ${LIB_SRC_DIR}/burger/dumphandles.c
+    ${LIB_SRC_DIR}/burger/erasembshape.c
+    ${LIB_SRC_DIR}/burger/errormsg.c
+    ${LIB_SRC_DIR}/burger/exit2.c
+    ${LIB_SRC_DIR}/burger/fadeto.c
+    ${LIB_SRC_DIR}/burger/fadetoblack.c
+    ${LIB_SRC_DIR}/burger/fadetoptr.c
+    ${LIB_SRC_DIR}/burger/fatal.c
+    ${LIB_SRC_DIR}/burger/findahandle.c
+    ${LIB_SRC_DIR}/burger/flushkeys.c
+    ${LIB_SRC_DIR}/burger/fontdata.c
+    #${LIB_SRC_DIR}/burger/fontlib/font3
+    #${LIB_SRC_DIR}/burger/fontlib/font5
+    #${LIB_SRC_DIR}/burger/fontlib/font7
+    #${LIB_SRC_DIR}/burger/fontlib/font9
+    #${LIB_SRC_DIR}/burger/fontlib/nice.fnt
+    #${LIB_SRC_DIR}/burger/fontlib/normal.pal
+    ${LIB_SRC_DIR}/burger/fontrestorestate.c
+    ${LIB_SRC_DIR}/burger/fontsavestate.c
+    ${LIB_SRC_DIR}/burger/fontsetcolor.c
+    ${LIB_SRC_DIR}/burger/fontusemask.c
+    ${LIB_SRC_DIR}/burger/fontusezero.c
+    ${LIB_SRC_DIR}/burger/getahandlesize.c
+    ${LIB_SRC_DIR}/burger/getakey.c
+    #${LIB_SRC_DIR}/burger/getapixel.s
+    ${LIB_SRC_DIR}/burger/getrandom.c
+    ${LIB_SRC_DIR}/burger/getshapeheight.c
+    ${LIB_SRC_DIR}/burger/getshapeindexptr.c
+    ${LIB_SRC_DIR}/burger/getshapewidth.c
+    ${LIB_SRC_DIR}/burger/gettotalfreemem.c
+    ${LIB_SRC_DIR}/burger/halt.s
+    ${LIB_SRC_DIR}/burger/initmemory.c
+    ${LIB_SRC_DIR}/burger/initresource.c
+    ${LIB_SRC_DIR}/burger/initytable.c
+    ${LIB_SRC_DIR}/burger/installafont.c
+    ${LIB_SRC_DIR}/burger/interceptkey.c
+    ${LIB_SRC_DIR}/burger/keyarray.c
+    ${LIB_SRC_DIR}/burger/keycodes.h
+    ${LIB_SRC_DIR}/burger/keymodifiers.c
+    ${LIB_SRC_DIR}/burger/killaresource.c
+    ${LIB_SRC_DIR}/burger/killaresource2.c
+    ${LIB_SRC_DIR}/burger/killedsong.c
+    ${LIB_SRC_DIR}/burger/lasttick.c
+    ${LIB_SRC_DIR}/burger/loadaresource.c
+    ${LIB_SRC_DIR}/burger/loadaresource2.c
+    ${LIB_SRC_DIR}/burger/loadaresourcehandle.c
+    ${LIB_SRC_DIR}/burger/loadaresourcehandle2.c
+    ${LIB_SRC_DIR}/burger/lockahandle.c
+    ${LIB_SRC_DIR}/burger/longtoasc.c
+    ${LIB_SRC_DIR}/burger/longwordtoasc.c
+    ${LIB_SRC_DIR}/burger/mousepresent.c
+    ${LIB_SRC_DIR}/burger/music.c
+    ${LIB_SRC_DIR}/burger/mygetch.c
+    ${LIB_SRC_DIR}/burger/mykbhit.c
+    ${LIB_SRC_DIR}/burger/nonfatal.c
+    ${LIB_SRC_DIR}/burger/purgehandles.c
+    ${LIB_SRC_DIR}/burger/readjoybuttons.c
+    ${LIB_SRC_DIR}/burger/readmouseabs.c
+    ${LIB_SRC_DIR}/burger/readmousebuttons.c
+    ${LIB_SRC_DIR}/burger/readtick.c
+    ${LIB_SRC_DIR}/burger/reallocahandle.c
+    ${LIB_SRC_DIR}/burger/releasearesource.c
+    ${LIB_SRC_DIR}/burger/releasearesource2.c
+    ${LIB_SRC_DIR}/burger/rezfilename.c
+    ${LIB_SRC_DIR}/burger/saveafile.c
+    ${LIB_SRC_DIR}/burger/screenheight.c
+    ${LIB_SRC_DIR}/burger/screenwidth.c
+    ${LIB_SRC_DIR}/burger/setapalette.c
+    ${LIB_SRC_DIR}/burger/setapaletteptr.c
+    ${LIB_SRC_DIR}/burger/setapaletteptr2.c
+    #${LIB_SRC_DIR}/burger/setapixel.s
+    ${LIB_SRC_DIR}/burger/seterrbombflag.c
+    ${LIB_SRC_DIR}/burger/setfontxy.c
+    ${LIB_SRC_DIR}/burger/sethandlepurgeflag.c
+    ${LIB_SRC_DIR}/burger/show3dologo.c
+    #${LIB_SRC_DIR}/burger/showmcga.s
+    #${LIB_SRC_DIR}/burger/showpic.s
+    #${LIB_SRC_DIR}/burger/showpicptr.s
+    #${LIB_SRC_DIR}/burger/swaplong.s
+    #${LIB_SRC_DIR}/burger/swapshort.s
+    #${LIB_SRC_DIR}/burger/swapushort.s
+    ${LIB_SRC_DIR}/burger/systemstate.c
+    ${LIB_SRC_DIR}/burger/test.c
+    #${LIB_SRC_DIR}/burger/testmbshape.s
+    #${LIB_SRC_DIR}/burger/testmshape.s
+    ${LIB_SRC_DIR}/burger/unlockahandle.c
+    ${LIB_SRC_DIR}/burger/videopointer.c
+    ${LIB_SRC_DIR}/burger/videowidth.c
+    ${LIB_SRC_DIR}/burger/waitakey.c
+    ${LIB_SRC_DIR}/burger/waitevent.c
+    #${LIB_SRC_DIR}/burger/waitjoypress.s
+    #${LIB_SRC_DIR}/burger/waitjoyrelease.s
+    ${LIB_SRC_DIR}/burger/waittick.c
+    ${LIB_SRC_DIR}/burger/waitticks.c
+    ${LIB_SRC_DIR}/burger/waitticksevent.c
+    ${LIB_SRC_DIR}/burger/widthastring.c
+    ${LIB_SRC_DIR}/burger/ytable.c
+    ${LIB_SRC_DIR}/intmath/im_dec2int.c
+    #${LIB_SRC_DIR}/intmath/im_div.s
+    #${LIB_SRC_DIR}/intmath/im_fixdiv.s
+    #${LIB_SRC_DIR}/intmath/im_fixmul.s
+    ${LIB_SRC_DIR}/intmath/im_hiword.c
+    ${LIB_SRC_DIR}/intmath/im_long2fix.c
+    ${LIB_SRC_DIR}/intmath/im_loword.c
+    ${LIB_SRC_DIR}/intmath/im_multiply.c
+    ${LIB_SRC_DIR}/intmath/im_sdivide.c
+    ${LIB_SRC_DIR}/intmath/im_udivide.c
+    ${LIB_SRC_DIR}/intmath/intmath.h
+    #${LIB_SRC_DIR}/mvelib/mvelib.h
+    #${LIB_SRC_DIR}/mvelib/nfadvance.s
+    #${LIB_SRC_DIR}/mvelib/nfhicolordecomp.c
+    #${LIB_SRC_DIR}/mvelib/nfhicolordecomp.s
+    #${LIB_SRC_DIR}/mvelib/nfhicolordecomp.s2
+    #${LIB_SRC_DIR}/mvelib/nfhicolordecomp.snew
+    #${LIB_SRC_DIR}/string/memchr.s
+    #${LIB_SRC_DIR}/string/memcmp.s
+    #${LIB_SRC_DIR}/string/memmove.s
+    #${LIB_SRC_DIR}/string/memset.s
+    #${LIB_SRC_DIR}/string/strcat.s
+    #${LIB_SRC_DIR}/string/strchr.s
+    #${LIB_SRC_DIR}/string/strcmp.s
+    #${LIB_SRC_DIR}/string/strcpy.s
+    #${LIB_SRC_DIR}/string/strcspn.s
+    #${LIB_SRC_DIR}/string/stricmp.s
+    #${LIB_SRC_DIR}/string/string.h
+    #${LIB_SRC_DIR}/string/strlen.s
+    #${LIB_SRC_DIR}/string/strlwr.s
+    #${LIB_SRC_DIR}/string/strncat.s
+    #${LIB_SRC_DIR}/string/strncmp.s
+    #${LIB_SRC_DIR}/string/strncpy.s
+    #${LIB_SRC_DIR}/string/strrev.s
+    #${LIB_SRC_DIR}/string/strset.s
+    #${LIB_SRC_DIR}/string/strtol.s
+    #${LIB_SRC_DIR}/string/strtoul.s
+    #${LIB_SRC_DIR}/string/strupr.s
+)
+
+set(GAME_INCLUDE_DIRS
+    ${LIB_SRC_DIR}/burger
+)
+
+set(GAME_SOURCES
     ${GAME_SRC_DIR}/ammain.c
     ${GAME_SRC_DIR}/base.c
     # ${GAME_SRC_DIR}/blitasm.s
@@ -14,7 +181,6 @@ set(SOURCES
     ${GAME_SRC_DIR}/data.c
     ${GAME_SRC_DIR}/dmain.c
     ${GAME_SRC_DIR}/doom.h
-    ${GAME_SRC_DIR}/doom.make
     ${GAME_SRC_DIR}/doomrez.h
     ${GAME_SRC_DIR}/doors.c
     ${GAME_SRC_DIR}/enemy.c
@@ -58,5 +224,8 @@ set(SOURCES
     ${GAME_SRC_DIR}/user.c
 )
 
+add_library(${LIB_NAME} ${LIB_SOURCES})
 
-add_executable(${PROJECT_NAME} ${SOURCES})
+add_executable(${GAME_NAME} ${GAME_SOURCES})
+include_directories(${GAME_INCLUDE_DIRS})
+target_link_libraries(${GAME_NAME} ${LIB_NAME})
