@@ -196,6 +196,8 @@ set(GAME_SOURCES
     ${GAME_SRC_DIR}/mac.c
     ${GAME_SRC_DIR}/map.c
     ${GAME_SRC_DIR}/maputl.c
+    ${GAME_SRC_DIR}/Math.c
+    ${GAME_SRC_DIR}/Math.h
     ${GAME_SRC_DIR}/mmain.c
     ${GAME_SRC_DIR}/mobj.c
     ${GAME_SRC_DIR}/move.c
