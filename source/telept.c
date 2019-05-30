@@ -33,11 +33,11 @@ static void P_Telefrag(mobj_t *thing,Fixed x,Fixed y)
 
 **********************************/
 
-Boolean EV_Teleport(line_t *line,mobj_t *thing)
+bool EV_Teleport(line_t *line,mobj_t *thing)
 {
 	Word i;		/* Temp */
 	Word tag;	/* ID tag */
-	Boolean	flag;	/* Result temp */
+	bool flag;	/* Result temp */
 	sector_t *sector;	/* Pointer to temp sector */
 	sector_t *sec;		/* Loop sector pointer */
 	mobj_t *m;		/* Running object pointer */
@@ -47,12 +47,12 @@ Boolean EV_Teleport(line_t *line,mobj_t *thing)
 	Fixed oldx,oldy,oldz;	/* X,Y and Z before teleportation */
 
 	if (thing->flags & MF_MISSILE) {
-		return FALSE;			/* Don't teleport missiles */
+		return false;			/* Don't teleport missiles */
 	}
 
 	MakeVector(line,&DivLine);
 	if (!PointOnVectorSide(thing->x,thing->y,&DivLine)) {	/* Which side... */
-		return FALSE;		/* so you can get out of teleporter */
+		return false;		/* so you can get out of teleporter */
 	}
 
 	tag = line->tag;		/* Cache the teleport item tag */
@@ -76,7 +76,7 @@ Boolean EV_Teleport(line_t *line,mobj_t *thing)
 				flag = P_TryMove(thing,m->x,m->y);	/* Put it there */
 				thing->flags &= ~MF_TELEPORT;	/* Clear the flag */
 				if (!flag) {
-					return FALSE;	/* (Can't teleport) move is blocked */
+					return false;	/* (Can't teleport) move is blocked */
 				}
 				thing->z = thing->floorz;		/* Set the proper z */
 
@@ -93,10 +93,10 @@ Boolean EV_Teleport(line_t *line,mobj_t *thing)
 				}
 				thing->angle = m->angle;		/* Set the angle */
 				thing->momx = thing->momy = thing->momz = 0;	/* No sliding */
-				return TRUE;	/* I did it */
+				return true;	/* I did it */
 			}
 		}
 		++sec;		/* Next sector */
 	} while (++i<numsectors);
-	return FALSE;	/* Didn't teleport */
+	return false;	/* Didn't teleport */
 }

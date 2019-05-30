@@ -96,7 +96,7 @@ static void T_StrobeFlash(strobe_t *flash)
 
 **********************************/
 
-void P_SpawnStrobeFlash(sector_t *sector,Word fastOrSlow,Boolean inSync)
+void P_SpawnStrobeFlash(sector_t *sector, Word fastOrSlow, bool inSync)
 {
 	strobe_t *flash;
 
@@ -134,7 +134,7 @@ void EV_StartLightStrobing(line_t *line)
 	while ((secnum = P_FindSectorFromLineTag(line,secnum)) != -1) {
 		sec = &sectors[secnum];
 		if (!sec->specialdata) {		/* Something here? */
-			P_SpawnStrobeFlash(sec,SLOWDARK,FALSE);	/* Start a flash */
+			P_SpawnStrobeFlash(sec,SLOWDARK, false);	/* Start a flash */
 		}
 	}
 }

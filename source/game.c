@@ -66,12 +66,12 @@ void G_PlayerReborn(void)
 
 	p = &players;	/* Get local pointer */
 	memset(p,0,sizeof(*p));	/* Zap the player */
-	p->usedown = p->attackdown = TRUE;	/* don't do anything immediately */
+	p->usedown = p->attackdown = true;	/* don't do anything immediately */
 	p->playerstate = PST_LIVE;	/* I live again! */
 	p->health = MAXHEALTH;		/* Restore health */
 	p->readyweapon = p->pendingweapon = wp_pistol;	/* Reset weapon */
-	p->weaponowned[wp_fist] = TRUE;		/* I have a fist */
-	p->weaponowned[wp_pistol] = TRUE;	/* And a pistol */
+	p->weaponowned[wp_fist] = true;		/* I have a fist */
+	p->weaponowned[wp_pistol] = true;	/* And a pistol */
 	p->ammo[am_clip] = 50;			/* Award 50 bullets */
 	i = 0;
 	do {
@@ -131,8 +131,8 @@ void G_InitNew(skill_t skill,Word map)
 	players.playerstate = PST_REBORN;
 	players.mo = 0;	/* For net consistancy checks */
 	
-	DemoRecording = FALSE;		/* No demo in progress */
-	DemoPlayback = FALSE;
+	DemoRecording = false;		/* No demo in progress */
+	DemoPlayback = false;
 
 	if (skill == sk_nightmare ) {		/* Hack for really BAD monsters */
 		states[S_SARG_ATK1].Time = 2*4;	/* Speed up the demons */
@@ -228,9 +228,9 @@ Word G_PlayDemoPtr(Word *demo)
 	map = demo[1];
 	DemoDataPtr = &demo[2];		/* Init the pointer */
 	G_InitNew((skill_t)skill,map);	/* Init a game */
-	DemoPlayback = TRUE;	/* I am playing back data */
+	DemoPlayback = true;	/* I am playing back data */
 	exit = MiniLoop(P_Start,P_Stop,P_Ticker,P_Drawer);	/* Execute game */
-	DemoPlayback = FALSE;	/* End demo */
+	DemoPlayback = false;	/* End demo */
 	return exit;
 }
 
@@ -251,9 +251,9 @@ void G_RecordDemo (void)
 	Dest[1] = StartMap;
     DemoDataPtr = Dest+2;
 	G_InitNew(StartSkill,StartMap);	/* Begin a game */
-	DemoRecording = TRUE;		/* Begin recording */
+	DemoRecording = true;		/* Begin recording */
 	MiniLoop(P_Start,P_Stop,P_Ticker,P_Drawer);	/* Play it */
-	DemoRecording = FALSE;		/* End recording */
+	DemoRecording = false;		/* End recording */
 	for (;;) {					/* Stay forever */
 		G_PlayDemoPtr(DemoBuffer);	/* Play the demo */
 	}

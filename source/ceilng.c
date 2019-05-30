@@ -18,7 +18,7 @@ typedef struct ceiling_t {
 	int direction;		/* 1 = up, 0 = waiting, -1 = down */
 	int olddirection;	/* Previous direction to restart with */
 	ceiling_e type;		/* Type of ceiling */
-	Boolean crush;		/* Can it crush? */
+	bool crush;		    /* Can it crush? */
 } ceiling_t;
 
 static ceiling_t *MainCeilingPtr; 	/* Pointer to the first ceiling in list */
@@ -81,7 +81,7 @@ static void T_MoveCeiling(ceiling_t *ceiling)
 
 	if (ceiling->direction==1) { 		/* Going up? */
 		res = T_MovePlane(ceiling->sector,ceiling->speed,	/* Move it */
-				ceiling->topheight,FALSE,TRUE,ceiling->direction);
+				ceiling->topheight,false,true,ceiling->direction);
 		if (Tick2) {		/* Sound? */
 			S_StartSound(&ceiling->sector->SoundX,sfx_stnmov);
 		}
@@ -97,7 +97,7 @@ static void T_MoveCeiling(ceiling_t *ceiling)
 		}
 	} else if (ceiling->direction==-1) { 		/* Going down? */
 		res = T_MovePlane(ceiling->sector,ceiling->speed,	/* Move it */
-			ceiling->bottomheight,ceiling->crush,TRUE,ceiling->direction);
+			ceiling->bottomheight,ceiling->crush,true,ceiling->direction);
 		if (Tick2) {		/* Time for sound? */
 			S_StartSound(&ceiling->sector->SoundX,sfx_stnmov);
 		}
@@ -151,15 +151,15 @@ static void ActivateInStasisCeiling(Word tag)
 
 **********************************/
 
-Boolean EV_DoCeiling (line_t *line, ceiling_e  type)
+bool EV_DoCeiling(line_t *line, ceiling_e  type)
 {
-	Boolean rtn;		/* Return value */
+	bool rtn;		/* Return value */
 	Word secnum;		/* Sector being scanned */
 	sector_t *sec;
 	ceiling_t *ceiling;
 
 	secnum = -1;
-	rtn = FALSE;
+	rtn = false;
 
 	/* Reactivate in-stasis ceilings...for certain types. */
 
@@ -177,23 +177,23 @@ Boolean EV_DoCeiling (line_t *line, ceiling_e  type)
 
 		/* New ceiling thinker */
 
-		rtn = TRUE;
+		rtn = true;
 		ceiling = (ceiling_t *)AddThinker(T_MoveCeiling,sizeof(ceiling_t));
 		sec->specialdata = ceiling;		/* Pass the pointer */
 		ceiling->sector = sec;		/* Save the sector ptr */
 		ceiling->tag = sec->tag;		/* Set the tag number */
-		ceiling->crush = FALSE;		/* Assume it can't crush */
+		ceiling->crush = false;		/* Assume it can't crush */
 		ceiling->type = type;			/* Set the ceiling type */
 		switch(type) {
 		case fastCrushAndRaise:
-			ceiling->crush = TRUE;
+			ceiling->crush = true;
 			ceiling->topheight = sec->ceilingheight;
 			ceiling->bottomheight = sec->floorheight;
 			ceiling->direction = -1;			/* Down */
 			ceiling->speed = CEILSPEED*2;		/* Go down fast! */
 			break;
 		case crushAndRaise:
-			ceiling->crush = TRUE;
+			ceiling->crush = true;
 			ceiling->topheight = sec->ceilingheight;	/* Floor and ceiling */
 		case lowerAndCrush:
 		case lowerToFloor:
@@ -220,13 +220,13 @@ Boolean EV_DoCeiling (line_t *line, ceiling_e  type)
 
 **********************************/
 
-Boolean EV_CeilingCrushStop(line_t	*line)
+bool EV_CeilingCrushStop(line_t	*line)
 {
 	Word tag;		/* ID Tag to scan for */
-	Boolean rtn;	/* Return value */
+	bool rtn;	/* Return value */
 	ceiling_t *CeilingPtr;		/* Temp pointer */
 
-	rtn = FALSE;
+	rtn = false;
 	tag = line->tag;			/* Get the tag to look for */
 	CeilingPtr = MainCeilingPtr;	/* Get the main list entry */
 	while (CeilingPtr) {		/* Scan all entries in the thinker list */
@@ -234,7 +234,7 @@ Boolean EV_CeilingCrushStop(line_t	*line)
 			CeilingPtr->olddirection = CeilingPtr->direction;	/* Save the platform's state */
 			ChangeThinkCode(CeilingPtr,0);	/* Shut down */
 			CeilingPtr->direction = 0;		/* In statis */
-			rtn = TRUE;
+			rtn = true;
 		}
 		CeilingPtr = CeilingPtr->next;	/* Get the next link */
     }

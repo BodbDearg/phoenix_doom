@@ -237,7 +237,7 @@ void IN_Start(void)
 	if (SecretsFoundInLevel) {
 		secretpercent = (players.secretcount * 100) / SecretsFoundInLevel;
 	}
-	S_StartSong(Song_intermission,TRUE);		/* Begin the music */
+	S_StartSong(Song_intermission, true);		/* Begin the music */
 }
 
 /**********************************
@@ -273,19 +273,19 @@ Word IN_Ticker(void)
 
 	INDelay+=ElapsedTime;
 	if (INDelay>=INTERTIME) {
-		Bang = FALSE;
+		Bang = false;
 		INDelay-=INTERTIME;
 		if (killvalue < killpercent) {		/* Is it too high? */
 			++killvalue;
-			Bang = TRUE;
+			Bang = true;
 		}
 		if (itemvalue < itempercent) {
 			++itemvalue;
-			Bang = TRUE;
+			Bang = true;
 		}
 		if (secretvalue < secretpercent) {
 			++secretvalue;
-			Bang = TRUE;
+			Bang = true;
 		}
 		if (Bang) {
 			++BangCount;

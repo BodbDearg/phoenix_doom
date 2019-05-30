@@ -274,14 +274,14 @@ typedef struct {		/* Describe an actor's basic variables */
 	Word painchance;		/* % chance of pain when hit */
 	Word mass;			/* Mass for impact recoil */
 	Word flags;			/* Generic state flags */
-	Boolean Speed;		/* Rate of speed for normal chase or walk */
-	Boolean reactiontime;	/* Time before first action */
-	Boolean damage;		/* Damage done for attack */
-	Boolean seesound;		/* Sound effect after first action */
-	Boolean attacksound;	/* Sound when attacking */
-	Boolean painsound;		/* Pain sound */
-	Boolean deathsound;	/* Sound for normal death */
-	Boolean activesound;	/* Sound to play at random times for mood */
+	bool Speed;		/* Rate of speed for normal chase or walk */
+	bool reactiontime;	/* Time before first action */
+	bool damage;		/* Damage done for attack */
+	bool seesound;		/* Sound effect after first action */
+	bool attacksound;	/* Sound when attacking */
+	bool painsound;		/* Pain sound */
+	bool deathsound;	/* Sound for normal death */
+	bool activesound;	/* Sound to play at random times for mood */
 } mobjinfo_t;
 
 /* a patch holds one or more columns */
@@ -421,12 +421,12 @@ typedef struct player_s {	/* Player's current game state */
 	weapontype_t readyweapon;	/* Weapon being used */
 	weapontype_t pendingweapon;	/* wp_nochange if not changing */
 	playerstate_t playerstate;	/* Alive/dead... */
-	Boolean	cards[NUMCARDS];	/* Keycards held */
-	Boolean	backpack;		/* Got the backpack? */
-	Boolean	attackdown;		/* Held the attack key if true */
-	Boolean usedown;		/* Held the use button down if true */
-	Boolean	weaponowned[NUMWEAPONS];	/* Do I own these weapons? */
-	Boolean refire;			/* refired shots are less accurate */
+	bool	cards[NUMCARDS];	/* Keycards held */
+	bool	backpack;		/* Got the backpack? */
+	bool	attackdown;		/* Held the attack key if true */
+	bool    usedown;		/* Held the use button down if true */
+	bool	weaponowned[NUMWEAPONS];	/* Do I own these weapons? */
+	bool    refire;			/* refired shots are less accurate */
 } player_t;
 
 typedef	struct sector_s {		/* Describe a playfield sector (Polygon) */
@@ -567,8 +567,8 @@ typedef struct {		/* Describe a wall segment to be drawn */
 
 typedef struct {		/* Describe data on the status bar */
 	spclface_e specialFace;	/* Which type of special face to make */
-	Boolean	gotgibbed;			/* Got gibbed */
-	Boolean tryopen[NUMCARDS];	/* Tried to open a card or skull door */
+	bool	gotgibbed;			/* Got gibbed */
+	bool tryopen[NUMCARDS];	/* Tried to open a card or skull door */
 } stbar_t;
 
 /* In Stdlib.c */
@@ -608,10 +608,10 @@ extern skill_t gameskill;		/* Current skill level */
 extern Word gamemap; 			/* Current game map # */
 extern Word nextmap;			/* The map to go to after the stats */
 extern Word ScreenSize;		/* Screen size to use */
-extern Boolean LowDetail;		/* Use low detail mode */
-extern Boolean DemoRecording;	/* True if demo is being recorded */
-extern Boolean DemoPlayback;	/* True if demo is being played */
-extern Boolean DoWipe;			/* True if I should do the DOOM wipe */
+extern bool LowDetail;		/* Use low detail mode */
+extern bool DemoRecording;	/* True if demo is being recorded */
+extern bool DemoPlayback;	/* True if demo is being played */
+extern bool DoWipe;			/* True if I should do the DOOM wipe */
 
 /* In Tables.c */
 
@@ -720,7 +720,7 @@ extern void R_RenderPlayerView(void);
 
 extern void S_Clear(void);
 extern void S_StartSound(Fixed *OriginXY,Word sound_id);
-extern void S_StartSong(Word music_id,Boolean looping);
+extern void S_StartSong(Word music_id,bool looping);
 extern void S_StopSong(void);
 
 /* In MObj.c */
@@ -746,10 +746,10 @@ extern void D_DoomMain(void);
 
 /* In Tick.c */
 
-extern Boolean Tick4;		/* True 4 times a second */
-extern Boolean Tick2;		/* True 2 times a second */
-extern Boolean Tick1;		/* True 1 time a second */
-extern Boolean gamepaused;	/* True if the game is currently paused */
+extern bool Tick4;		    /* True 4 times a second */
+extern bool Tick2;		    /* True 2 times a second */
+extern bool Tick1;		    /* True 1 time a second */
+extern bool gamepaused;	    /* True if the game is currently paused */
 extern mobj_t mobjhead;		/* Head and tail of mobj list */
 
 extern void InitThinkers(void);
@@ -767,15 +767,15 @@ extern void P_Stop(void);
 extern mobj_t *linetarget;	 	/* Object that was targeted */
 extern mobj_t *tmthing;			/* mobj_t to be checked */
 extern Fixed tmx,tmy;			/* Temp x,y for a position to be checked */
-extern Boolean checkposonly; 	/* If true, just check the position, no actions */
+extern bool checkposonly; 	    /* If true, just check the position, no actions */
 extern mobj_t *shooter;			/* Source of a direct line shot */
 extern angle_t attackangle;		/* Angle to target */
 extern Fixed attackrange;		/* Range to target */
 extern Fixed aimtopslope;		/* Range of slope to target weapon */
 extern Fixed aimbottomslope;
 
-extern Boolean P_CheckPosition(mobj_t *thing,Fixed x,Fixed y);
-extern Boolean P_TryMove(mobj_t *thing,Fixed x,Fixed y);
+extern bool P_CheckPosition(mobj_t *thing,Fixed x,Fixed y);
+extern bool P_TryMove(mobj_t *thing,Fixed x,Fixed y);
 extern void P_UseLines(player_t *player);
 extern void RadiusAttack(mobj_t *spot,mobj_t *source,Word damage);
 extern Fixed AimLineAttack(mobj_t *t1,angle_t angle,Fixed distance);
@@ -804,17 +804,17 @@ extern Word BlockThingsIterator(Word x,Word y,Word(*func)(mobj_t*));
 
 /* In Move.c */
 
-extern Boolean trymove2;		/* Result from P_TryMove2 */
-extern Boolean floatok;			/* if true, move would be ok if within tmfloorz - tmceilingz */
-extern Fixed tmfloorz;		/* Current floor z for P_TryMove2 */
+extern bool trymove2;		    /* Result from P_TryMove2 */
+extern bool floatok;			/* if true, move would be ok if within tmfloorz - tmceilingz */
+extern Fixed tmfloorz;		    /* Current floor z for P_TryMove2 */
 extern Fixed tmceilingz;		/* Current ceiling z for P_TryMove2 */
 extern mobj_t *movething;		/* Either a skull/missile target or a special pickup */
 extern line_t *blockline;		/* Might be a door that can be opened */
 
 extern void P_TryMove2(void);
 extern void PM_CheckPosition(void);
-extern Boolean PM_BoxCrossLine(line_t *ld);
-extern Boolean PIT_CheckLine(line_t *ld);
+extern bool PM_BoxCrossLine(line_t *ld);
+extern bool PIT_CheckLine(line_t *ld);
 extern Word PIT_CheckThing(mobj_t *thing);
 
 /* In Switch.c */
@@ -822,8 +822,8 @@ extern Word PIT_CheckThing(mobj_t *thing);
 extern Word NumSwitches;		/* Number of switches * 2 */
 extern Word SwitchList[];
 extern void P_InitSwitchList(void);
-extern void P_ChangeSwitchTexture(line_t *line,Boolean useAgain);
-extern Boolean P_UseSpecialLine(mobj_t *thing,line_t *line);
+extern void P_ChangeSwitchTexture(line_t *line, bool useAgain);
+extern bool P_UseSpecialLine(mobj_t *thing, line_t *line);
 
 /* In Game.c */
 
@@ -841,10 +841,10 @@ extern void G_RecordDemo(void);
 /* In Floor.c */
 
 extern result_e T_MovePlane(sector_t *sector,Fixed speed,
-			Fixed dest,Boolean crush,Boolean Ceiling,int direction);
-extern Boolean EV_DoFloor(line_t *line,floor_e floortype);
-extern Boolean EV_BuildStairs(line_t *line);
-extern Boolean EV_DoDonut(line_t *line);
+			Fixed dest,bool crush,bool Ceiling,int direction);
+extern bool EV_DoFloor(line_t *line,floor_e floortype);
+extern bool EV_BuildStairs(line_t *line);
+extern bool EV_DoDonut(line_t *line);
 
 /* In FMain.c */
 
@@ -861,7 +861,7 @@ extern anim_t FlatAnims[];		/* Array of flat animations */
 extern void P_InitPicAnims(void);
 extern side_t *getSide(sector_t *sec,Word line,Word side);
 extern sector_t *getSector(sector_t *sec,Word line,Word side);
-extern Boolean twoSided(sector_t *sec,Word line);
+extern bool twoSided(sector_t *sec,Word line);
 extern sector_t *getNextSector(line_t *line,sector_t *sec);
 extern Fixed P_FindLowestFloorSurrounding(sector_t *sec);
 extern Fixed P_FindHighestFloorSurrounding(sector_t *sec);
@@ -879,19 +879,19 @@ extern void PurgeLineSpecials(void);
 
 /* In Ceilng.c */
 
-extern Boolean EV_DoCeiling(line_t *line,ceiling_e type);
-extern Boolean EV_CeilingCrushStop(line_t *line);
+extern bool EV_DoCeiling(line_t *line,ceiling_e type);
+extern bool EV_CeilingCrushStop(line_t *line);
 extern void ResetCeilings(void);
 
 /* In Plats.c */
 
-extern Boolean EV_DoPlat(line_t *line,plattype_e type,Word amount);
+extern bool EV_DoPlat(line_t *line,plattype_e type,Word amount);
 extern void EV_StopPlat(line_t *line);
 extern void ResetPlats(void);
 
 /* In Doors.c */
 
-extern Boolean EV_DoDoor(line_t *line,vldoor_e type);
+extern bool EV_DoDoor(line_t *line,vldoor_e type);
 extern void EV_VerticalDoor(line_t *line,mobj_t *thing);
 extern void P_SpawnDoorCloseIn30(sector_t *sec);
 extern void P_SpawnDoorRaiseIn5Mins(sector_t *sec);
@@ -899,7 +899,7 @@ extern void P_SpawnDoorRaiseIn5Mins(sector_t *sec);
 /* In Lights.c */
 
 extern void P_SpawnLightFlash(sector_t *sector);
-extern void P_SpawnStrobeFlash(sector_t *sector,Word fastOrSlow,Boolean inSync);
+extern void P_SpawnStrobeFlash(sector_t *sector, Word fastOrSlow, bool inSync);
 extern void EV_StartLightStrobing(line_t *line);
 extern void EV_TurnTagLightsOff(line_t *line);
 extern void EV_LightTurnOn(line_t *line,Word bright);
@@ -928,7 +928,7 @@ extern void P_Init(void);
 
 /* In Telept.c */
 
-extern Boolean EV_Teleport(line_t *line,mobj_t *thing);
+extern bool EV_Teleport(line_t *line,mobj_t *thing);
 
 /* In RData.c */
 
@@ -959,11 +959,11 @@ extern Fixed shootslope;					// between aimtop and aimbottom
 extern Fixed shootx, shooty, shootz;		// location for puff/blood
 
 extern void P_Shoot2(void);
-extern Boolean PA_DoIntercept(void *value,Boolean isline,int frac);
-extern Boolean PA_ShootLine(line_t *li,Fixed interceptfrac);
-extern Boolean PA_ShootThing(mobj_t *th,Fixed interceptfrac);
+extern bool PA_DoIntercept(void *value, bool isline, int frac);
+extern bool PA_ShootLine(line_t *li,Fixed interceptfrac);
+extern bool PA_ShootThing(mobj_t *th,Fixed interceptfrac);
 extern Fixed PA_SightCrossLine(line_t *line);
-extern Boolean PA_CrossSubsector(subsector_t *sub);
+extern bool PA_CrossSubsector(subsector_t *sub);
 
 /* In Change.c */
 
@@ -982,7 +982,7 @@ extern void P_SlideMove(mobj_t *mo);
 extern Fixed P_CompletableFrac(Fixed dx,Fixed dy);
 extern int SL_PointOnSide(int x, int y);
 extern Fixed SL_CrossFrac(void);
-extern Boolean CheckLineEnds(void);
+extern bool CheckLineEnds(void);
 extern void ClipToLine(void);
 extern Word SL_CheckLine(line_t *ld);
 extern void SL_CheckSpecialLines(int x1, int y1, int x2, int y2);

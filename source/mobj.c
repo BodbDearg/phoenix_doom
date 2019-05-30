@@ -99,7 +99,7 @@ Word SetMObjState(mobj_t *mobj,state_t *StatePtr)
 {
 	if (!StatePtr) {		/* Shut down state? */
 		P_RemoveMobj(mobj);		/* Remove the object */
-		return FALSE;			/* Object is shut down */
+		return false;			/* Object is shut down */
 	}
 	mobj->state = StatePtr;			/* Save the state index */
 	mobj->tics = StatePtr->Time;		/* Reset the tic count */
@@ -107,7 +107,7 @@ Word SetMObjState(mobj_t *mobj,state_t *StatePtr)
 	if (StatePtr->action) {	/* Call action functions when the state is set */
 		StatePtr->action(mobj);		/* Call the procedure */
 	}
-	return TRUE;
+	return true;
 }
 
 /**********************************
@@ -239,7 +239,7 @@ void P_SpawnPlayer(mapthing_t *mthing)
 	mobj->MObjHealth = p->health;	/* Init the health */
 	p->mo = mobj;				/* Save the mobj into the player record */
 	p->playerstate = PST_LIVE;	/* I LIVE!!! */
-	p->refire = FALSE;			/* Not autofiring (Yet) */
+	p->refire = false;			/* Not autofiring (Yet) */
 	p->message = 0;				/* No message passed */
 	p->damagecount = 0;			/* No damage taken */
 	p->bonuscount = 0;			/* No bonus awarded */

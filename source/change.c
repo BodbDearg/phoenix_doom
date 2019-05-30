@@ -54,9 +54,9 @@ static Word ThingHeightClip(mobj_t *thing)
 	}
 
 	if ((thing->ceilingz - thing->floorz) < thing->height) {
-		return FALSE;		/* Can't fit!! */
+		return false;		/* Can't fit!! */
 	}
-	return TRUE;		/* I can fit! */
+	return true;		/* I can fit! */
 }
 
 /**********************************
@@ -68,7 +68,7 @@ static Word ThingHeightClip(mobj_t *thing)
 static Word PIT_ChangeSector(mobj_t *thing)
 {
 	if (ThingHeightClip(thing)) {		/* Too small? */
-		return TRUE;		/* Keep checking */
+		return true;		/* Keep checking */
 	}
 
 	/* crunch bodies to giblets */
@@ -76,21 +76,21 @@ static Word PIT_ChangeSector(mobj_t *thing)
 		SetMObjState(thing,&states[S_GIBS]);	/* Change to goo */
 		thing->height = 0;	/* No height */
 		thing->radius = 0;	/* No radius */
-		return TRUE;		/* keep checking */
+		return true;		/* keep checking */
 	}
 
 	/* crunch dropped items */
 
 	if (thing->flags & MF_DROPPED) {
 		P_RemoveMobj(thing);		/* Get rid of it */
-		return TRUE;		/* keep checking */
+		return true;		/* keep checking */
 	}
 
 	if (!(thing->flags & MF_SHOOTABLE)) {	/* Don't squash critters */
-		return TRUE;				/* assume it is bloody gibs or something */
+		return true;				/* assume it is bloody gibs or something */
 	}
 
-	nofit = TRUE;		/* Can't fit */
+	nofit = true;		/* Can't fit */
 	if (crushchange && Tick4) {		/* Crush it? */
 		mobj_t *mo;
 		DamageMObj(thing,0,0,10);		/* Take some damage */
@@ -99,7 +99,7 @@ static Word PIT_ChangeSector(mobj_t *thing)
 		mo->momx = (255-GetRandom(511))<<(FRACBITS-4);	/* Have it jump out */
 		mo->momy = (255-GetRandom(511))<<(FRACBITS-4);
 	}
-	return TRUE;		/* keep checking (crush other things) */
+	return true;		/* keep checking (crush other things) */
 }
 
 /**********************************
@@ -119,7 +119,7 @@ Word ChangeSector(sector_t *sector,Word crunch)
 
 	players.lastsoundsector = 0;
 
-	nofit = FALSE;			/* Assume that it's ok */
+	nofit = false;			/* Assume that it's ok */
 	crushchange = crunch;	/* Can I crush bodies */
 
 /* recheck heights for all things near the moving sector */

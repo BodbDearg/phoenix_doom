@@ -64,7 +64,7 @@ static Word P_ZMovement(mobj_t *mo)
 		mo->z = mo->floorz;
 		if (mo->flags & MF_MISSILE) {
 			ExplodeMissile(mo);
-			return TRUE;
+			return true;
  		}
 	} else if (! (mo->flags & MF_NOGRAVITY) ) {
 		if (!mo->momz) {		/* Not falling */
@@ -81,10 +81,10 @@ static Word P_ZMovement(mobj_t *mo)
 		mo->z = mo->ceilingz - mo->height;
 		if (mo->flags & MF_MISSILE) {
 			ExplodeMissile(mo);
-			return TRUE;
+			return true;
 		}
 	}
-	return FALSE;
+	return false;
 }
 
 
@@ -96,20 +96,20 @@ static Word P_ZMovement(mobj_t *mo)
 =================
 */
 
-static Boolean PB_BoxCrossLine(line_t *ld)
+static bool PB_BoxCrossLine(line_t *ld)
 {
 	Fixed x1, x2;
 	Fixed lx, ly;
 	Fixed ldx, ldy;
 	Fixed dx1,dy1;
 	Fixed dx2,dy2;
-	Boolean side1, side2;
+	bool side1, side2;
 
 	if (testbbox[BOXRIGHT] <= ld->bbox[BOXLEFT]
 	||	testbbox[BOXLEFT] >= ld->bbox[BOXRIGHT]
 	||	testbbox[BOXTOP] <= ld->bbox[BOXBOTTOM]
 	||	testbbox[BOXBOTTOM] >= ld->bbox[BOXTOP] )
-		return FALSE;
+		return false;
 
 	if (ld->slopetype == ST_POSITIVE) {
 		x1 = testbbox[BOXLEFT];
@@ -145,7 +145,7 @@ static Boolean PB_BoxCrossLine(line_t *ld)
 ==================
 */
 
-static Boolean PB_CheckLine (line_t *ld)
+static bool PB_CheckLine (line_t *ld)
 {
 	Fixed opentop, openbottom;
 	Fixed lowfloor;
@@ -157,11 +157,11 @@ static Boolean PB_CheckLine (line_t *ld)
 = If this should not be allowed, return FALSE.
 */
 	if (!ld->backsector)
-		return FALSE;		// one sided line
+		return false;		// one sided line
 
 	if ( !(testflags & MF_MISSILE)
 	&& (ld->flags & (ML_BLOCKING | ML_BLOCKMONSTERS) ) )
-			return FALSE;		// explicitly blocking
+			return false;		// explicitly blocking
 
 
 	front = ld->frontsector;
@@ -193,17 +193,17 @@ static Boolean PB_CheckLine (line_t *ld)
 	if (lowfloor < testdropoffz)
 		testdropoffz = lowfloor;
 
-	return TRUE;
+	return true;
 }
 
 static Word PB_CrossCheck(line_t *ld) 
 {
 	if (PB_BoxCrossLine(ld)) {
 		if (!PB_CheckLine(ld)) {
-			return FALSE;
+			return false;
 		}
 	}
-	return TRUE;
+	return true;
 }
 
 
@@ -224,7 +224,7 @@ static Word PB_CheckThing (mobj_t *thing)
 	mobj_t *mo;
 
 	if (!(thing->flags & MF_SOLID )) {
-		return TRUE;
+		return true;
 	}
 	mo = CheckThingMo;
 	blockdist = thing->radius + mo->radius;
@@ -233,22 +233,22 @@ static Word PB_CheckThing (mobj_t *thing)
 	if (delta < 0)
 		delta = -delta;
 	if (delta >= blockdist)
-		return TRUE;		// didn't hit it
+		return true;		// didn't hit it
 	delta = thing->y - testy;
 	if (delta < 0)
 		delta = -delta;
 	if (delta >= blockdist)
-		return TRUE;		// didn't hit it
+		return true;		// didn't hit it
 
 	if (thing == mo)
-		return TRUE;		// don't clip against self
+		return true;		// don't clip against self
 
 //
 // check for skulls slamming into things
 //
 	if (testflags & MF_SKULLFLY) {
 		hitthing = thing;
-		return FALSE;		// stop moving
+		return false;		// stop moving
 	}
 
 
@@ -258,14 +258,14 @@ static Word PB_CheckThing (mobj_t *thing)
 	if (testflags & MF_MISSILE) {
 	// see if it went over / under
 		if (mo->z > thing->z + thing->height)
-			return TRUE;		// overhead
+			return true;		// overhead
 		if (mo->z+mo->height < thing->z)
-			return TRUE;		// underneath
+			return true;		// underneath
 		if (mo->target->InfoPtr == thing->InfoPtr) {	// don't hit same species as originator
 			if (thing == mo->target)
-				return TRUE;	// don't explode on shooter
+				return true;	// don't explode on shooter
 			if (thing->InfoPtr != &mobjinfo[MT_PLAYER])
-				return FALSE;	// explode, but do no damage
+				return false;	// explode, but do no damage
 			// let players missile other players
 		}
 		if (! (thing->flags & MF_SHOOTABLE) )
@@ -273,7 +273,7 @@ static Word PB_CheckThing (mobj_t *thing)
 
 	// damage / explode
 		hitthing = thing;
-		return FALSE;			// don't traverse any more
+		return false;			// don't traverse any more
 	}
 
 	return !(thing->flags & MF_SOLID);
@@ -354,12 +354,12 @@ static Word PB_CheckPosition(mobj_t *mo)
 	for (bx=xl ; bx<=xh ; bx++)
 		for (by=yl ; by<=yh ; by++) {
 			if (!BlockThingsIterator(bx,by,PB_CheckThing))
-				return FALSE;
+				return false;
 			if (!BlockLinesIterator(bx,by,PB_CrossCheck))
-				return FALSE;
+				return false;
 		}
 
-	return TRUE;
+	return true;
 }
 
 
@@ -374,23 +374,23 @@ static Word PB_CheckPosition(mobj_t *mo)
 ===================
 */
 
-static Boolean PB_TryMove(int tryx,int tryy,mobj_t *mo)
+static bool PB_TryMove(int tryx,int tryy,mobj_t *mo)
 {
 	testx = tryx;
 	testy = tryy;
 
 	if (!PB_CheckPosition(mo))
-		return FALSE;		// solid wall or thing
+		return false;		// solid wall or thing
 
 	if (testceilingz - testfloorz < mo->height)
-		return FALSE;			// doesn't fit
+		return false;			// doesn't fit
 	if ( testceilingz - mo->z < mo->height)
-		return FALSE;			// mobj must lower itself to fit
+		return false;			// mobj must lower itself to fit
 	if ( testfloorz - mo->z > 24*FRACUNIT )
-		return FALSE;			// too big a step up
+		return false;			// too big a step up
 	if ( !(testflags&(MF_DROPOFF|MF_FLOAT))
 		&& testfloorz - testdropoffz > 24*FRACUNIT )
-		return FALSE;			// don't stand over a dropoff
+		return false;			// don't stand over a dropoff
 
 //
 // the move is ok, so link the thing into its new position
@@ -402,7 +402,7 @@ static Boolean PB_TryMove(int tryx,int tryy,mobj_t *mo)
 	mo->x = tryx;
 	mo->y = tryy;
 	SetThingPosition(mo);
-	return TRUE;
+	return true;
 }
 
 /*
@@ -442,21 +442,21 @@ static Word P_XYMovement (mobj_t *mo)
 		// blocked move
 			if (mo->flags & MF_SKULLFLY) {
 				L_SkullBash(mo,hitthing);
-				return TRUE;
+				return true;
 			}
 
 			if (mo->flags & MF_MISSILE) {	// explode a missile
 				if (ceilingline && ceilingline->backsector &&
 					ceilingline->backsector->CeilingPic==-1) {	// hack to prevent missiles exploding against the sky
 					P_RemoveMobj(mo);
-					return TRUE;
+					return true;
 				}
 				L_MissileHit(mo,hitthing);
-				return TRUE;
+				return true;
 			}
 
 			mo->momx = mo->momy = 0;
-			return FALSE;
+			return false;
 		}
 	}
 
@@ -464,14 +464,14 @@ static Word P_XYMovement (mobj_t *mo)
 // slow down
 //
 	if (mo->flags & (MF_MISSILE | MF_SKULLFLY ) )
-		return FALSE;		// no friction for missiles ever
+		return false;		// no friction for missiles ever
 
 	if (mo->z > mo->floorz)
-		return FALSE;		// no friction when airborne
+		return false;		// no friction when airborne
 
 	if (mo->flags & MF_CORPSE)
 		if (mo->floorz != mo->subsector->sector->floorheight)
-			return FALSE;			// don't stop halfway off a step
+			return false;			// don't stop halfway off a step
 
 	if (mo->momx > -STOPSPEED && mo->momx < STOPSPEED
 	&& mo->momy > -STOPSPEED && mo->momy < STOPSPEED) {
@@ -481,7 +481,7 @@ static Word P_XYMovement (mobj_t *mo)
 		mo->momx = (mo->momx>>8)*(FRICTION>>8);
 		mo->momy = (mo->momy>>8)*(FRICTION>>8);
 	}
-	return FALSE;
+	return false;
 }
 
 
@@ -509,7 +509,7 @@ static void P_MobjThinker(mobj_t *mobj)
 	}
 
 	Time = ElapsedTime;
-	SightFlag = TRUE;
+	SightFlag = true;
 	do {
 		if (mobj->tics == -1) {		/* Never time out? */
 			return;
@@ -519,7 +519,7 @@ static void P_MobjThinker(mobj_t *mobj)
 			return;
 		}
 		if (SightFlag && mobj->flags & MF_COUNTKILL) {	/* Can it be killed? */
-			SightFlag = FALSE;
+			SightFlag = false;
 			mobj->flags &= ~MF_SEETARGET;	/* Assume I don't see a target */
 			if (mobj->target) {	/* Do I have a target? */
 				if (CheckSight(mobj,mobj->target)) {

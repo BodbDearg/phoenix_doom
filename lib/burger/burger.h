@@ -9,6 +9,10 @@
 #ifndef __BURGER__
 #define __BURGER__
 
+#ifndef __cplusplus
+    #include <stdbool.h>
+#endif
+
 #ifndef __TYPES_H
 /* DC: FIXME: What is this header - 3DO SDK?
  
@@ -27,7 +31,6 @@ typedef unsigned short Short;
 typedef long Frac;
 typedef long Fixed;
 typedef double extended;
-/*typedef unsigned char Boolean; */
 
 typedef struct {
 	Word top,left,bottom,right;
@@ -177,8 +180,8 @@ extern Word ReadJoyButtons(Word Which);
 extern Word ReadMouseButtons(void);
 extern void ReadMouseAbs(Word *x,Word *y);
 extern void ReadMouseDelta(int *x,int *y);
-extern Boolean DetectMouse(void);
-extern Boolean MousePresent;
+extern bool DetectMouse(void);
+extern bool MousePresent;
 
 /* Memory Handlers */
 
@@ -232,7 +235,7 @@ extern long SwapLong(long Val);
 extern LongWord SwapULong(LongWord Val);
 extern void Fatal(char *FatalMsg);
 extern void NonFatal(char *ErrorMsg);
-extern void SetErrBombFlag(Boolean Flag);
+extern void SetErrBombFlag(bool Flag);
 extern char *ErrorMsg;
 extern void LongWordToAscii(LongWord Input,Byte *AsciiPtr);
 extern void longToAscii(long Input,Byte *AsciiPtr);

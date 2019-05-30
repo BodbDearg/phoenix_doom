@@ -1,8 +1,8 @@
 #include "doom.h"
 
-Boolean trymove2;		/* Result from P_TryMove2 */
-Boolean floatok;		/* if true, move would be ok if within tmfloorz - tmceilingz */
-Fixed tmfloorz;		/* Current floor z for P_TryMove2 */
+bool trymove2;		    /* Result from P_TryMove2 */
+bool floatok;		    /* if true, move would be ok if within tmfloorz - tmceilingz */
+Fixed tmfloorz;		    /* Current floor z for P_TryMove2 */
 Fixed tmceilingz;		/* Current ceiling z for P_TryMove2 */
 mobj_t *movething;		/* Either a skull/missile target or a special pickup */
 line_t *blockline;		/* Might be a door that can be opened */
@@ -27,8 +27,8 @@ static subsector_t *newsubsec;	/* Dest subsector */
 
 void P_TryMove2(void)
 {
-	trymove2 = FALSE;		// until proven otherwise
-	floatok = FALSE;
+	trymove2 = false;		// until proven otherwise
+	floatok = false;
 
 	oldx = tmthing->x;
 	oldy = tmthing->y;
@@ -36,7 +36,7 @@ void P_TryMove2(void)
 	PM_CheckPosition();
 
 	if (checkposonly) {
-		checkposonly = FALSE;
+		checkposonly = false;
 		return;
 	}
 
@@ -44,11 +44,11 @@ void P_TryMove2(void)
 		return;
 
 	if ( !(tmthing->flags & MF_NOCLIP) ) {
-		trymove2 = FALSE;
+		trymove2 = false;
 
 		if (tmceilingz - tmfloorz < tmthing->height)
 			return;			// doesn't fit
-		floatok = TRUE;
+		floatok = true;
 		if ( !(tmthing->flags&MF_TELEPORT)
 			&&tmceilingz - tmthing->z < tmthing->height)
 			return;			// mobj must lower itself to fit
@@ -72,7 +72,7 @@ void P_TryMove2(void)
 
 	SetThingPosition (tmthing);
 
-	trymove2 = TRUE;
+	trymove2 = true;
 
 	return;
 }
@@ -81,10 +81,10 @@ static Word PM_CrossCheck(line_t *ld)
 {
 	if (PM_BoxCrossLine (ld))	{
 		if (!PIT_CheckLine(ld)) {
-			return FALSE;
+			return false;
 		}
 	}
-	return TRUE;
+	return true;
 }
 /*
 ==================
@@ -135,7 +135,7 @@ void PM_CheckPosition (void)
 
 	if ( tmflags & MF_NOCLIP )
 	{
-		trymove2 = TRUE;
+		trymove2 = true;
 		return;
 	}
 
@@ -162,7 +162,7 @@ void PM_CheckPosition (void)
 	for (bx=xl ; bx<=xh ; bx++)
 		for (by=yl ; by<=yh ; by++)
 			if (!BlockThingsIterator(bx,by,PIT_CheckThing)) {
-				trymove2 = FALSE;
+				trymove2 = false;
 				return;
 			}
 
@@ -186,11 +186,11 @@ void PM_CheckPosition (void)
 	for (bx=xl ; bx<=xh ; bx++)
 		for (by=yl ; by<=yh ; by++)
 			if (!BlockLinesIterator(bx,by,PM_CrossCheck)) {
-				trymove2 = FALSE;
+				trymove2 = false;
 				return;
 			}
 
-	trymove2 = TRUE;
+	trymove2 = true;
 	return;
 }
 
@@ -205,20 +205,20 @@ void PM_CheckPosition (void)
 =================
 */
 
-Boolean PM_BoxCrossLine (line_t *ld)
+bool PM_BoxCrossLine (line_t *ld)
 {
 	Fixed		x1, y1, x2, y2;
 	Fixed		lx, ly;
 	Fixed		ldx, ldy;
 	Fixed		dx1,dy1;
 	Fixed		dx2,dy2;
-	Boolean		side1, side2;
+	bool		side1, side2;
 
 	if (tmbbox[BOXRIGHT] <= ld->bbox[BOXLEFT]
 	||	tmbbox[BOXLEFT] >= ld->bbox[BOXRIGHT]
 	||	tmbbox[BOXTOP] <= ld->bbox[BOXBOTTOM]
 	||	tmbbox[BOXBOTTOM] >= ld->bbox[BOXTOP] )
-		return FALSE;
+		return false;
 
 	y1 = tmbbox[BOXTOP];
 	y2 = tmbbox[BOXBOTTOM];
@@ -259,7 +259,7 @@ Boolean PM_BoxCrossLine (line_t *ld)
 ==================
 */
 
-Boolean PIT_CheckLine (line_t *ld)
+bool PIT_CheckLine (line_t *ld)
 {
 	Fixed		pm_opentop, pm_openbottom;
 	Fixed		pm_lowfloor;
@@ -273,14 +273,14 @@ Boolean PIT_CheckLine (line_t *ld)
 = If this should not be allowed, return false.
 */
 	if (!ld->backsector)
-		return FALSE;		// one sided line
+		return false;		// one sided line
 
 	if (!(tmthing->flags & MF_MISSILE) )
 	{
 		if ( ld->flags & ML_BLOCKING )
-			return FALSE;		// explicitly blocking everything
+			return false;		// explicitly blocking everything
 		if ( !tmthing->player && ld->flags & ML_BLOCKMONSTERS )
-			return FALSE;		// block monsters only
+			return false;		// block monsters only
 	}
 
 
@@ -291,7 +291,7 @@ Boolean PIT_CheckLine (line_t *ld)
 	|| back->ceilingheight == back->floorheight)
 	{
 		blockline = ld;
-		return FALSE;			// probably a closed door
+		return false;			// probably a closed door
 	}
 
 	if (front->ceilingheight < back->ceilingheight)
@@ -317,7 +317,7 @@ Boolean PIT_CheckLine (line_t *ld)
 	if (pm_lowfloor < tmdropoffz)
 		tmdropoffz = pm_lowfloor;
 
-	return TRUE;
+	return true;
 }
 
 /*
@@ -334,22 +334,22 @@ Word PIT_CheckThing (mobj_t *thing)
 	int			delta;
 
 	if (!(thing->flags & (MF_SOLID|MF_SPECIAL|MF_SHOOTABLE) ))
-		return TRUE;
+		return true;
 	blockdist = thing->radius + tmthing->radius;
 
 	delta = thing->x - tmx;
 	if (delta < 0)
 		delta = -delta;
 	if (delta >= blockdist)
-		return TRUE;		// didn't hit it
+		return true;		// didn't hit it
 	delta = thing->y - tmy;
 	if (delta < 0)
 		delta = -delta;
 	if (delta >= blockdist)
-		return TRUE;		// didn't hit it
+		return true;		// didn't hit it
 
 	if (thing == tmthing)
-		return TRUE;		// don't clip against self
+		return true;		// don't clip against self
 
 //
 // check for skulls slamming into things
@@ -357,7 +357,7 @@ Word PIT_CheckThing (mobj_t *thing)
 	if (tmthing->flags & MF_SKULLFLY)
 	{
 		movething = thing;
-		return FALSE;		// stop moving
+		return false;		// stop moving
 	}
 
 
@@ -368,15 +368,15 @@ Word PIT_CheckThing (mobj_t *thing)
 	{
 	// see if it went over / under
 		if (tmthing->z > thing->z + thing->height)
-			return TRUE;		// overhead
+			return true;		// overhead
 		if (tmthing->z+tmthing->height < thing->z)
-			return TRUE;		// underneath
+			return true;		// underneath
 		if (tmthing->target->InfoPtr == thing->InfoPtr)
 		{		// don't hit same species as originator
 			if (thing == tmthing->target)
-				return TRUE;
+				return true;
 			if (thing->InfoPtr != &mobjinfo[MT_PLAYER])
-				return FALSE;	// explode, but do no damage
+				return false;	// explode, but do no damage
 			// let players missile other players
 		}
 		if (! (thing->flags & MF_SHOOTABLE) )
@@ -384,7 +384,7 @@ Word PIT_CheckThing (mobj_t *thing)
 
 	// damage / explode
 		movething = thing;
-		return FALSE;			// don't traverse any more
+		return false;			// don't traverse any more
 	}
 
 //
@@ -393,10 +393,8 @@ Word PIT_CheckThing (mobj_t *thing)
 	if ( (thing->flags&MF_SPECIAL) && (tmflags&MF_PICKUP) )
 	{
 		movething = thing;
-		return TRUE;
+		return true;
 	}
 
 	return !(thing->flags & MF_SOLID);
 }
-
-

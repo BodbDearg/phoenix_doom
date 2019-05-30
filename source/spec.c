@@ -53,12 +53,12 @@ sector_t *getSector(sector_t *sec,Word line,Word side)
 
 **********************************/
 
-Boolean twoSided(sector_t *sec,Word line)
+bool twoSided(sector_t *sec,Word line)
 {
 	if ((sec->lines[line])->flags & ML_TWOSIDED) {
-		return TRUE;
+		return true;
 	}
-	return FALSE;
+	return false;
 }
 
 /**********************************
@@ -545,15 +545,15 @@ void P_ShootSpecialLine(mobj_t *thing,line_t *line)
 	switch(line->special) {
 	case 24:		/* RAISE FLOOR */
 		EV_DoFloor(line,raiseFloor);
-		P_ChangeSwitchTexture(line,FALSE);
+		P_ChangeSwitchTexture(line, false);
 		break;
 	case 46:		/* OPEN DOOR */
 		EV_DoDoor(line,open);
-		P_ChangeSwitchTexture(line,TRUE);
+		P_ChangeSwitchTexture(line, true);
 		break;
 	case 47:		/* RAISE FLOOR NEAR AND CHANGE */
 		EV_DoPlat(line,raiseToNearestAndChange,0);
-		P_ChangeSwitchTexture(line,FALSE);
+		P_ChangeSwitchTexture(line, false);
 	}
 }
 
@@ -666,10 +666,10 @@ void SpawnSpecials(void)
 			P_SpawnLightFlash(sector);
 			break;
 		case 2:		/* STROBE FAST */
-			P_SpawnStrobeFlash(sector,FASTDARK,FALSE);
+			P_SpawnStrobeFlash(sector,FASTDARK,false);
 			break;
 		case 3:		/* STROBE SLOW */
-			P_SpawnStrobeFlash(sector,SLOWDARK,FALSE);
+			P_SpawnStrobeFlash(sector,SLOWDARK,false);
 			break;
 		case 8:		/* GLOWING LIGHT */
 			P_SpawnGlowingLight(sector);
@@ -681,10 +681,10 @@ void SpawnSpecials(void)
 			P_SpawnDoorCloseIn30(sector);
 			break;
 		case 12:	/* SYNC STROBE SLOW */
-			P_SpawnStrobeFlash(sector,SLOWDARK,TRUE);
+			P_SpawnStrobeFlash(sector,SLOWDARK,true);
 			break;
 		case 13:	/* SYNC STROBE FAST */
-			P_SpawnStrobeFlash(sector,FASTDARK,TRUE);
+			P_SpawnStrobeFlash(sector,FASTDARK,true);
 			break;
 		case 14:	/* DOOR RAISE IN 5 MINUTES */
 			P_SpawnDoorRaiseIn5Mins(sector);

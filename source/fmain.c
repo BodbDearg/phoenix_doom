@@ -40,9 +40,9 @@ static final_e status;		/* State of the display? */
 #define TEXTTIME (TICKSPERSEC/10)		/* Tics to display letters */
 #define STARTX 8			/* Starting x and y */
 #define STARTY 8
-static Boolean CastAttacking;	/* Currently attacking? */
-static Boolean CastDeath;	/* Playing the death scene? */
-static Boolean CastonMelee;	/* Type of attack to play */
+static bool CastAttacking;	/* Currently attacking? */
+static bool CastDeath;	    /* Playing the death scene? */
+static bool CastonMelee;	/* Type of attack to play */
 static Word TextIndex;		/* Index to the opening text */
 static Word TextDelay;		/* Delay before next char */
 
@@ -98,7 +98,7 @@ static void F_PrintString(Word text_x,Word text_y,Byte *string)
 
 void F_Start(void)
 {
-	S_StartSong(Song_final,TRUE);		/* Play the end game music */
+	S_StartSong(Song_final,true);		/* Play the end game music */
 
 	status = fin_endtext;		/* END TEXT PRINTS FIRST */
 	TextIndex = 0;				/* At the beginning */
@@ -107,10 +107,10 @@ void F_Start(void)
 	CastInfo = CastOrder[CastNum];
 	CastState = CastInfo->seestate;
 	CastTics = CastState->Time;		/* Init the time */
-	CastDeath = FALSE;		/* Not dead */
+	CastDeath = false;		/* Not dead */
 	CastFrames = 0;			/* No frames shown */
-	CastonMelee = FALSE;
-	CastAttacking = FALSE;
+	CastonMelee = false;
+	CastAttacking = false;
 }
 
 /**********************************
@@ -148,11 +148,11 @@ Word F_Ticker(void)
 			if (Temp) {
 				S_StartSound(0,Temp);
 			}
-			CastDeath = TRUE;		/* Death state */
+			CastDeath = true;		/* Death state */
 			CastState = CastInfo->deathstate;
 			CastTics = CastState->Time;
 			CastFrames = 0;
-			CastAttacking = FALSE;
+			CastAttacking = false;
 		}
 	}
 
@@ -169,7 +169,7 @@ Word F_Ticker(void)
 		if (CastNum>=CASTCOUNT) {
 			CastNum = 0;
 		}
-		CastDeath = FALSE;
+		CastDeath = false;
 		CastInfo = CastOrder[CastNum];
 		Temp = CastInfo->seesound;
 		if (Temp) {
@@ -220,13 +220,13 @@ Word F_Ticker(void)
 	}
 
 	if (CastFrames == 12) {		/* go into attack frame */
-		CastAttacking = TRUE;
+		CastAttacking = true;
 		if (CastonMelee) {
 			CastState=CastInfo->meleestate;
 		} else {
 			CastState=CastInfo->missilestate;
 		}
-		CastonMelee ^= TRUE;		/* Toggle the melee state */
+		CastonMelee ^= true;		/* Toggle the melee state */
 		if (!CastState) {
 			if (CastonMelee) {
 				CastState=CastInfo->meleestate;
@@ -240,7 +240,7 @@ Word F_Ticker(void)
 		if (CastFrames == 24
 			|| CastState == CastInfo->seestate) {
 stopattack:
-			CastAttacking = FALSE;
+			CastAttacking = false;
 			CastFrames = 0;
 			CastState = CastInfo->seestate;
 		}

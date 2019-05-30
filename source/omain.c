@@ -272,7 +272,7 @@ void O_Drawer(void)
 		PrintBigFontCenter(160,SIZEY,(Byte *)"Screen Size");
 		DrawMShape(SLIDERX,SIZEY+20,GetShapeIndexPtr(Shapes,BAR));
 		if (ScreenSize<2) {
-			LowDetail = TRUE;
+			LowDetail = true;
 		}
 		if (LowDetail) {
 			offset = (5-ScreenSize) * 18;

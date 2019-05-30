@@ -60,7 +60,7 @@ enum {		/* Indexs for face array */
 typedef struct {
 	Word delay;		/* Time delay */
 	Word times;		/* Number of times to flash */
-	Boolean	doDraw;	/* True if I draw now */
+	bool doDraw;	/* True if I draw now */
 } sbflash_t;
 
 stbar_t stbar;		/* Current state of the status bar */
@@ -77,7 +77,7 @@ static Word newface;		/* Which normal face to show */
 static Word spclfaceSprite[NUMSPCLFACES] =	/* Special face to shape # */
 		{sbf_lookfwd,sbf_facelft,sbf_facergt,sbf_ouch,sbf_gotgat,sbf_mowdown};
 static sbflash_t flashCards[NUMCARDS];	/* Info for flashing cards & Skulls */
-static Boolean gibdraw;		/* Got gibbed? */
+static bool gibdraw;		/* Got gibbed? */
 static Word gibframe;		/* Which gib frame */
 static Word gibdelay;		/* Delay for gibbing */
 
@@ -95,10 +95,10 @@ static void CycleFlash(sbflash_t *FlashPtr)
 		} else {
 			if (!--FlashPtr->times) {		/* Can I still go? */
 				FlashPtr->delay = 0;
-				FlashPtr->doDraw = FALSE;		/* Force off */
+				FlashPtr->doDraw = false;		/* Force off */
 			} else {
 				FlashPtr->delay = FLASHDELAY;	/* Reset the time */
-				FlashPtr->doDraw ^= TRUE;		/* Toggle the draw flag */
+				FlashPtr->doDraw ^= true;		/* Toggle the draw flag */
 				if (FlashPtr->doDraw) {		/* If on, play sound */
 					S_StartSound(0,sfx_itemup);
 				}
@@ -121,7 +121,7 @@ void ST_Start(void)
 	StatusBarShape = LoadAResourceHandle(rSTBAR);	/* Load the status bar */
 	memset(&stbar,0,sizeof(stbar));		/* Reset the status bar */
 	facetics = 0;		/* Reset the face tic count */
-	gibdraw = FALSE;	/* Don't draw gibbed head sequence */
+	gibdraw = false;	/* Don't draw gibbed head sequence */
 	memset(&flashCards,0,sizeof(flashCards));
 }
 
@@ -169,10 +169,10 @@ void ST_Ticker(void)
 	/* Did we get gibbed? */
 
 	if (stbar.gotgibbed && !gibdraw) {	/* In progress? */
-		gibdraw = TRUE;		/* In progress... */
+		gibdraw = true;		/* In progress... */
 		gibframe = 0;
 		gibdelay = GIBTIME;
-		stbar.gotgibbed = FALSE;
+		stbar.gotgibbed = false;
 	}
 
 	/* Tried to open a CARD or SKULL door? */
@@ -181,10 +181,10 @@ void ST_Ticker(void)
 	FlashPtr = flashCards;
 	do {	/* Check for initalization */
 		if (stbar.tryopen[ind]) {		/* Did the user ask to flash the card? */
-			stbar.tryopen[ind] = FALSE;	/* Ack the flag */
+			stbar.tryopen[ind] = false;	/* Ack the flag */
 			FlashPtr->delay = FLASHDELAY;
 			FlashPtr->times = FLASHTIMES+1;
-			FlashPtr->doDraw = FALSE;
+			FlashPtr->doDraw = false;
 		}
 		CycleFlash(FlashPtr);		/* Handle the ticker */
 		++FlashPtr;
@@ -278,7 +278,7 @@ void ST_Drawer (void)
 			++gibframe;
 			gibdelay = GIBTIME;
 			if (gibframe >= 7) {		/* All frames shown? */
-				gibdraw = FALSE;		/* Shut it off */
+				gibdraw = false;		/* Shut it off */
 			}
 		}
 	} else if (!p->health) {

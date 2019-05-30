@@ -62,7 +62,7 @@ static void T_VerticalDoor(vldoor_t *door)
 		break;
 	case -1:	/* DOWN */
 		res = T_MovePlane(door->sector,door->speed,
-			door->sector->floorheight,FALSE,TRUE,door->direction);
+			door->sector->floorheight, false, true, door->direction);
 		if (res == pastdest) {		/* Finished closing? */
 			switch(door->type) {
 			case normaldoor:
@@ -81,7 +81,7 @@ static void T_VerticalDoor(vldoor_t *door)
 		break;
 	case 1:		/* UP */
 		res = T_MovePlane(door->sector,door->speed,
-			door->topheight,FALSE,TRUE,door->direction);
+			door->topheight, false, true, door->direction);
 		if (res == pastdest) {		/* Fully opened? */
 			switch(door->type) {
 			case normaldoor:
@@ -103,15 +103,15 @@ static void T_VerticalDoor(vldoor_t *door)
 
 **********************************/
 
-Boolean EV_DoDoor(line_t *line,vldoor_e type)
+bool EV_DoDoor(line_t *line,vldoor_e type)
 {
 	Word secnum;
-	Boolean rtn;
+	bool rtn;
 	sector_t *sec;
 	vldoor_t *door;
 
 	secnum = -1;
-	rtn = FALSE;
+	rtn = false;
 	while ((secnum = P_FindSectorFromLineTag(line,secnum)) != -1) {
 		sec = &sectors[secnum];
 		if (sec->specialdata) {		/* Already something here? */
@@ -120,7 +120,7 @@ Boolean EV_DoDoor(line_t *line,vldoor_e type)
 
 		/* new door thinker */
 
-		rtn = TRUE;
+		rtn = true;
 		door = (vldoor_t *)AddThinker(T_VerticalDoor,sizeof(vldoor_t));
 		sec->specialdata = door;
 		door->sector = sec;
@@ -199,7 +199,7 @@ void EV_VerticalDoor(line_t *line,mobj_t *thing)
 		}
 		if (i!=-1) {
 			S_StartSound(&thing->x,sfx_oof);	/* Play the sound */
-			stbar.tryopen[i] = TRUE;		/* Trigger on status bar */
+			stbar.tryopen[i] = true;		/* Trigger on status bar */
 			return;
 		}
 	}

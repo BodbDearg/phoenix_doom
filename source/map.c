@@ -3,7 +3,7 @@
 mobj_t *linetarget;			/* Object that was targeted */
 mobj_t *tmthing;			/* mobj_t to be checked */
 Fixed tmx,tmy;			/* Temp x,y for a position to be checked */
-Boolean checkposonly;		/* If true, just check the position, no actions */
+bool checkposonly;		/* If true, just check the position, no actions */
 mobj_t *shooter;			/* Source of a direct line shot */
 angle_t attackangle;		/* Angle to target */
 Fixed attackrange;		/* Range to target */
@@ -34,12 +34,12 @@ movething	thing collision
 
 **********************************/
 
-Boolean P_CheckPosition(mobj_t *thing, Fixed x, Fixed y)
+bool P_CheckPosition(mobj_t *thing, Fixed x, Fixed y)
 {
 	tmthing = thing;		/* Copy parms to globals */
 	tmx = x;
 	tmy = y;
-	checkposonly = TRUE;		/* Only check the position */
+	checkposonly = true;    /* Only check the position */
 	P_TryMove2();			/* See if I can move there... */
 	return trymove2;		/* Return the result */
 }
@@ -50,7 +50,7 @@ Boolean P_CheckPosition(mobj_t *thing, Fixed x, Fixed y)
 
 **********************************/
 
-Boolean P_TryMove(mobj_t *thing, Fixed x, Fixed y)
+bool P_TryMove(mobj_t *thing, Fixed x, Fixed y)
 {
 	Word damage;
 	mobj_t *latchedmovething;
@@ -102,7 +102,7 @@ static Word PIT_UseLines(line_t *li)
 	||	usebbox[BOXLEFT] >= li->bbox[BOXRIGHT]
 	||	usebbox[BOXTOP] <= li->bbox[BOXBOTTOM]
 	||	usebbox[BOXBOTTOM] >= li->bbox[BOXTOP] ) {
-		return TRUE;			/* Nope, they don't collide */
+		return true;			/* Nope, they don't collide */
 	}
 
 /* find distance along usetrace */
@@ -111,20 +111,20 @@ static Word PIT_UseLines(line_t *li)
 	frac = InterceptVector(&useline,&dl);		/* How much do they intercept */
 	if ((frac < 0) ||			/* Behind source? */
 		(frac > closedist)) {	/* Too far away? */
-		return TRUE;		/* No collision */
+		return true;		/* No collision */
 	}
 
 /* The line is actually hit, find the distance */
 
 	if (!li->special) {		/* Not a special line? */
 		if (LineOpening(li)) {	/* See if it passes through */
-			return TRUE;	/* keep going */
+			return true;	/* keep going */
 		}
 	}
 	closeline = li;		/* This is the line of travel */
 	closedist = frac;	/* This is the length of the line */
 
-	return TRUE;		/* Can't use for than one special line in a row */
+	return true;		/* Can't use for than one special line in a row */
 }
 
 /**********************************
@@ -211,7 +211,7 @@ static Word PIT_RadiusAttack(mobj_t *thing)
 	Fixed dx,dy,dist;
 
 	if (!(thing->flags & MF_SHOOTABLE) ) {		/* Can this item be hit? */
-		return TRUE;			/* Next thing... */
+		return true;			/* Next thing... */
 	}
 
 	dx = abs(thing->x - bombspot->x);		/* Absolute distance from BOOM */
@@ -224,7 +224,7 @@ static Word PIT_RadiusAttack(mobj_t *thing)
 	if (dist < bombdamage) {		/* Within blast range? */
 		DamageMObj(thing,bombspot,bombsource,bombdamage-dist);
 	}
-	return TRUE;		/* Continue */
+	return true;		/* Continue */
 }
 
 /**********************************

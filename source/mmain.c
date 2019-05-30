@@ -46,7 +46,7 @@ void M_Start(void)
 	playerskill = StartSkill;	/* Init the skill level */
 	playermap = StartMap;	/* Init the starting map */
 	SleepMark = ReadTick();
-	OptionActive = FALSE;	/* Option screen on */
+	OptionActive = false;	/* Option screen on */
 }
 
 /**********************************
@@ -89,7 +89,7 @@ Word M_Ticker(void)
 	if (OptionActive) {
 		O_Control(0);
 		if (NewJoyPadButtons&PadX) {
-			OptionActive = FALSE;
+			OptionActive = false;
 		}
 		return ga_nothing;
 	}
@@ -156,7 +156,7 @@ Word M_Ticker(void)
 				break;
 			case options:
 				if (buttons & (PadA|PadB|PadC|PadD|PadRight|PadLeft)) {
-					OptionActive = TRUE;
+					OptionActive = true;
 				}
 			}
 		}

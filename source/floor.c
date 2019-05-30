@@ -14,7 +14,7 @@ typedef struct {		/* Describe a moving floor */
 	Word texture;		/* Texture when at the bottom */
 	int direction;		/* Direction of travel */
 	floor_e type;		/* Type of floor */
-	Boolean crush;		/* Can it crush you? */
+	bool crush;		    /* Can it crush you? */
 } floormove_t;
 
 #define	FLOORSPEED (FRACUNIT*3)	/* Standard floor motion speed */
@@ -28,8 +28,8 @@ typedef struct {		/* Describe a moving floor */
 
 **********************************/
 
-result_e T_MovePlane(sector_t *sector,Fixed speed,
-			Fixed dest,Boolean crush,Boolean Ceiling,int direction)
+result_e T_MovePlane(sector_t *sector, Fixed speed,
+			Fixed dest, bool crush, bool Ceiling, int direction)
 {
 	Fixed lastpos;		/* Previous height */
 
@@ -119,7 +119,7 @@ static void T_MoveFloor(floormove_t *floor)
 	result_e res;
 
 	res = T_MovePlane(floor->sector,floor->speed,	/* Do the move */
-			floor->floordestheight,floor->crush,FALSE,floor->direction);
+			floor->floordestheight, floor->crush, false, floor->direction);
 	if (Tick4) {		/* Time for a sound? */
 		S_StartSound(&floor->sector->SoundX,sfx_stnmov);
 	}
@@ -146,15 +146,15 @@ static void T_MoveFloor(floormove_t *floor)
 
 **********************************/
 
-Boolean EV_DoFloor(line_t *line,floor_e floortype)
+bool EV_DoFloor(line_t *line,floor_e floortype)
 {
 	Word secnum;		/* Sector number */
-	Boolean rtn;		/* True if I created a floor */
+	bool rtn;		    /* True if I created a floor */
 	Word i;
 	sector_t *sec;		/* Pointer to sector */
 	floormove_t	*floor;	/* Pointer to floor record */
 
-	rtn = FALSE;		/* Assume no entry */
+	rtn = false;		/* Assume no entry */
 	secnum = -1;
 	while ((secnum = P_FindSectorFromLineTag(line,secnum)) !=-1) {
 		sec = &sectors[secnum];		/* Get pointer to sector */
@@ -166,11 +166,11 @@ Boolean EV_DoFloor(line_t *line,floor_e floortype)
 
 		/* New floor thinker */
 
-		rtn = TRUE;		/* I created a floor */
+		rtn = true;		/* I created a floor */
 		floor = (floormove_t *)AddThinker(T_MoveFloor,sizeof(floormove_t));
 		sec->specialdata = floor;		/* Mark the sector */
 		floor->type = floortype;		/* Save the type of floor */
-		floor->crush = FALSE;			/* Assume it can't crush */
+		floor->crush = false;			/* Assume it can't crush */
 		floor->sector = sec;			/* Set the current sector */
 		floor->speed = FLOORSPEED;		/* Assume normal speed */
 
@@ -189,7 +189,7 @@ Boolean EV_DoFloor(line_t *line,floor_e floortype)
 			floor->direction = -1;		/* Go down */
 			break;
 		case raiseFloorCrush:
-			floor->crush = TRUE;		/* Enable crushing */
+			floor->crush = true;		/* Enable crushing */
 		case raiseFloor:
 			floor->direction = 1;		/* Go up */
 			floor->floordestheight = P_FindLowestCeilingSurrounding(sec);
@@ -268,10 +268,10 @@ Boolean EV_DoFloor(line_t *line,floor_e floortype)
 
 **********************************/
 
-Boolean EV_BuildStairs(line_t *line)
+bool EV_BuildStairs(line_t *line)
 {
-	Boolean Stay;		/* Flag to break the stair building loop */
-	Boolean rtn;	/* Return value */
+	bool Stay;		/* Flag to break the stair building loop */
+	bool rtn;	    /* Return value */
 	Word secnum;	/* Sector number found */
 	floormove_t	*floor;	/* Pointer to new floor struct */
 	Fixed height;	/* Height of new floor */
@@ -280,7 +280,7 @@ Boolean EV_BuildStairs(line_t *line)
 	Word texture;	/* Texture to attach to the stairs */
 	Word i;			/* Temp */
 
-	rtn = FALSE;		/* Assume no thinkers made */
+	rtn = false;		/* Assume no thinkers made */
 	secnum = -1;
 	while ((secnum = P_FindSectorFromLineTag(line,secnum)) != -1) {
 		sec = &sectors[secnum];		/* Get the base sector pointer */
@@ -292,7 +292,7 @@ Boolean EV_BuildStairs(line_t *line)
 
 		/* New floor thinker */
 
-		rtn = TRUE;
+		rtn = true;
 		height = sec->floorheight + (8<<FRACBITS);	/* Go up 8 pixels */
 		floor = (floormove_t *)AddThinker(T_MoveFloor,sizeof(floormove_t));
 		sec->specialdata = floor;		/* Attach the record */
@@ -307,7 +307,7 @@ Boolean EV_BuildStairs(line_t *line)
 		/* 2. Other side is the next sector to raise */
 
 		do {
-			Stay = FALSE;			/* Assume I fall out */
+			Stay = false;			/* Assume I fall out */
 			for (i=0;i<sec->linecount;++i) {
 				if (!twoSided(sec,i)) {		/* Two sided line? */
 					continue;
@@ -332,7 +332,7 @@ Boolean EV_BuildStairs(line_t *line)
 				floor->sector = sec;	/* Set the sector I will affect */
 				floor->speed = FLOORSPEED/2;	/* Slow speed */
 				floor->floordestheight = height;
-				Stay = TRUE;			/* I linked to a sector */
+				Stay = true;			/* I linked to a sector */
 				break;			/* Restart the loop */
 			}
 		} while (Stay);
@@ -346,18 +346,18 @@ Boolean EV_BuildStairs(line_t *line)
 
 **********************************/
 
-Boolean EV_DoDonut(line_t *line)
+bool EV_DoDonut(line_t *line)
 {
 	sector_t *s1;
 	sector_t *s2;
 	sector_t *s3;
 	Word secnum;
-	Boolean rtn;
+	bool rtn;
 	Word i;
 	floormove_t *floor;
 
 	secnum = -1;
-	rtn = FALSE;
+	rtn = false;
 	while ((secnum = P_FindSectorFromLineTag(line,secnum)) != -1) {
 		s1 = &sectors[secnum];
 
@@ -365,7 +365,7 @@ Boolean EV_DoDonut(line_t *line)
 		if (s1->specialdata) {
 			continue;
 		}
-		rtn = TRUE;
+		rtn = true;
 		s2 = getNextSector(s1->lines[0],s1);
 		i = 0;
 		do {
@@ -380,7 +380,7 @@ Boolean EV_DoDonut(line_t *line)
 			floor = (floormove_t *)AddThinker(T_MoveFloor,sizeof(floormove_t));
 			s2->specialdata = floor;
 			floor->type = donutRaise;
-			floor->crush = FALSE;
+			floor->crush = false;
 			floor->direction = 1;	/* Going up */
 			floor->sector = s2;
 			floor->speed = FLOORSPEED / 2;
@@ -393,7 +393,7 @@ Boolean EV_DoDonut(line_t *line)
 			floor = (floormove_t *)AddThinker(T_MoveFloor,sizeof(floormove_t));
 			s1->specialdata = floor;
 			floor->type = lowerFloor;
-			floor->crush = FALSE;
+			floor->crush = false;
 			floor->direction = -1;	/* Going down */
 			floor->sector = s1;
 			floor->speed = FLOORSPEED / 2;

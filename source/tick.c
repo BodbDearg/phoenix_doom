@@ -7,16 +7,16 @@ typedef struct thinker_s {
 } thinker_t;
 
 mobj_t mobjhead;	/* Head and tail of mobj list */
-Boolean Tick4;		/* True 4 times a second */
-Boolean Tick2;		/* True 2 times a second */
-Boolean Tick1;		/* True 1 time a second */
-Boolean gamepaused;	/* True if the game is currently paused */
+bool Tick4;		    /* True 4 times a second */
+bool Tick2;		    /* True 2 times a second */
+bool Tick1;		    /* True 1 time a second */
+bool gamepaused;	/* True if the game is currently paused */
 
 static Word TimeMark1;	/* Timer for ticks */
 static Word TimeMark2;	/* Timer for ticks */
 static Word TimeMark4;	/* Timer for ticks */
 static thinker_t thinkercap;	/* Both the head and tail of the thinker list */
-static Boolean refreshdrawn;		/* Used to refresh "Paused" */
+static bool refreshdrawn;		/* Used to refresh "Paused" */
 
 /**********************************
 
@@ -183,9 +183,9 @@ Word P_Ticker(void)
 	/* running the next tick */
 
 	gameaction = ga_nothing;		/* Game in progress */
-	Tick1 = FALSE;			/* Reset the flags */
-	Tick2 = FALSE;
-	Tick4 = FALSE;
+	Tick1 = false;			/* Reset the flags */
+	Tick2 = false;
+	Tick4 = false;
 
 	TimeMark1+=ElapsedTime;	/* Timer for ticks */
 	TimeMark2+=ElapsedTime;
@@ -193,15 +193,15 @@ Word P_Ticker(void)
 
 	if (TimeMark1>=TICKSPERSEC) {	/* Now see if the time has passed... */
 		TimeMark1-=TICKSPERSEC;
-		Tick1 = TRUE;
+		Tick1 = true;
 	}
 	if (TimeMark2>=(TICKSPERSEC/2)) {
 		TimeMark2-=(TICKSPERSEC/2);
-		Tick2 = TRUE;
+		Tick2 = true;
 	}
 	if (TimeMark4>=(TICKSPERSEC/4)) {
 		TimeMark4-=(TICKSPERSEC/4);
-		Tick4 = TRUE;
+		Tick4 = true;
 	}
 
 	CheckCheats();		/* Handle pause and cheats */
@@ -247,17 +247,17 @@ void P_Drawer(void)
 		R_RenderPlayerView();	/* Render the 3D view */
 		ST_Drawer();			/* Draw the status bar */
 		O_Drawer();			/* Draw the console handler */
-		refreshdrawn = FALSE;
+		refreshdrawn = false;
 	} else if (players.AutomapFlags & AF_ACTIVE) {
 		AM_Drawer();		/* Draw the automap */
 		ST_Drawer();		/* Draw the status bar */
 		UpdateAndPageFlip();	/* Update and page flip */
-		refreshdrawn = TRUE;
+		refreshdrawn = true;
 	} else {
 		R_RenderPlayerView();	/* Render the 3D view */
 		ST_Drawer();			/* Draw the status bar */
 		UpdateAndPageFlip();
-		refreshdrawn = TRUE;
+		refreshdrawn = true;
 	}
 }
 
@@ -277,7 +277,7 @@ void P_Start(void)
 	ST_Start();			/* Init the status bar this level */
 	G_DoLoadLevel();	/* Load a level into memory */
 	Randomize();		/* Reset the random number generator */
-	S_StartSong(Song_e1m1-1+gamemap,TRUE);
+	S_StartSong(Song_e1m1-1+gamemap, true);
 }
 
 /**********************************

@@ -22,14 +22,14 @@ static Word GiveAmmo(player_t *player,ammotype_t ammo,Word numofclips)
 	Word maxammo;
 
 	if (ammo == am_noammo || ammo>=NUMAMMO) {		/* Is this not ammo? */
-		return FALSE;			/* Can't pick it up */
+		return false;			/* Can't pick it up */
 	}
 
 	oldammo = player->ammo[ammo];		/* Get the current ammo */
 	maxammo = player->maxammo[ammo];	/* Get the maximum */
 
 	if (oldammo >= maxammo) {	/* Full already? */
-		return FALSE;		/* Can't pick it up */
+		return false;		/* Can't pick it up */
 	}
 
 	if (numofclips) {			/* Valid ammo count? */
@@ -47,7 +47,7 @@ static Word GiveAmmo(player_t *player,ammotype_t ammo,Word numofclips)
 	player->ammo[ammo] = oldammo;		/* Save the new ammo count */
 
 	if (oldammo!=numofclips) {	/* Only possible if oldammo == 0 */
-		return TRUE;		/* Don't change up weapons, player was lower on */
+		return true;		/* Don't change up weapons, player was lower on */
 	}						/* purpose */
 
 	switch (ammo) {		/* Which type was picked up */
@@ -81,7 +81,7 @@ static Word GiveAmmo(player_t *player,ammotype_t ammo,Word numofclips)
 			}
 		}
 	}
-	return TRUE;			/* I picked it up! */
+	return true;			/* I picked it up! */
 }
 
 /**********************************
@@ -96,7 +96,7 @@ static Word GiveWeapon(player_t *player,weapontype_t weapon,Word dropped)
 {
 	Word PickedUp;
 
-	PickedUp = FALSE;		/* Init my vars */
+	PickedUp = false;		/* Init my vars */
 
 	/* Give one clip with a dropped weapon, two clips with a found weapon */
 
@@ -106,8 +106,8 @@ static Word GiveWeapon(player_t *player,weapontype_t weapon,Word dropped)
 	}
 
 	if (!player->weaponowned[weapon]) {		/* Already had such a weapon? */
-		PickedUp = TRUE;
-		player->weaponowned[weapon] = TRUE;		/* I have it now */
+		PickedUp = true;
+		player->weaponowned[weapon] = true;		/* I have it now */
 		player->pendingweapon = weapon;			/* Use this weapon */
 		stbar.specialFace = f_gotgat;		/* He he he! Evil grin! */	
 	}
@@ -124,7 +124,7 @@ static Word GiveWeapon(player_t *player,weapontype_t weapon,Word dropped)
 static Word GiveBody(player_t *player,Word num)
 {
 	if (player->health >= MAXHEALTH) {		/* Already maxxed out? */
-		return FALSE;		/* Don't get anymore */
+		return false;		/* Don't get anymore */
 	}
 	num += player->health;		/* Make new health */
 	if (num >= MAXHEALTH) {
@@ -132,7 +132,7 @@ static Word GiveBody(player_t *player,Word num)
 	}
 	player->health = num;		/* Save the new health */
 	player->mo->MObjHealth = num;	/* Save in MObj record as well */
-	return TRUE;				/* Pick it up */
+	return true;				/* Pick it up */
 }
 
 /**********************************
@@ -148,11 +148,11 @@ static Word GiveArmor(player_t *player,Word armortype)
 
 	hits = armortype*100;		/* 100 or 200% */
 	if (player->armorpoints >= hits) {	/* Already has this armor? */
-		return FALSE;		/* Don't pick up */
+		return false;		/* Don't pick up */
 	}
 	player->armortype = armortype;	/* Set the type */
 	player->armorpoints = hits;		/* Set the new value */
-	return TRUE;			/* Pick it up */
+	return true;			/* Pick it up */
 }
 
 /**********************************
@@ -165,7 +165,7 @@ static void GiveCard(player_t *player,card_t card)
 {
 	if (!player->cards[card]) {		/* I don't have it already? */
 		player->bonuscount = BONUSADD;	/* Add the bonus value for color */
-		player->cards[card] = TRUE;		/* I have it now! */
+		player->cards[card] = true;		/* I have it now! */
 	}
 }
 
@@ -190,15 +190,15 @@ static Word GivePower(player_t *player,powertype_t power)
 		break;
 	case pw_strength:			/* Berzerker pack */
 		GiveBody(player,100);				/* Full health */
-		player->powers[power] = TRUE;		/* I have the power */
+		player->powers[power] = true;		/* I have the power */
 		break;
 	default:
 		if (player->powers[power]) {			/* Already have the power up? */
-			return FALSE;		/* Already got it, don't get it again */
+			return false;		/* Already got it, don't get it again */
 		}
-		player->powers[power] = TRUE;		/* Award the power up */
+		player->powers[power] = true;		/* Award the power up */
 	}
-	return TRUE;			/* Pick it up */
+	return true;			/* Pick it up */
 }
 
 /**********************************
@@ -442,7 +442,7 @@ Healthy:
 			do {
 				player->maxammo[i] *= 2;	/* Double the max ammo */
 			} while (++i<NUMAMMO);
-			player->backpack = TRUE;		/* I have a backpack now */
+			player->backpack = true;		/* I have a backpack now */
 		}
 		i = 0;
 		do {
@@ -454,42 +454,42 @@ Healthy:
 /* weapons */
 
 	case rSPR_BFG9000:		/* BFG 9000 */
-		if (!GiveWeapon(player,wp_bfg,FALSE) ) {
+		if (!GiveWeapon(player,wp_bfg,false) ) {
 			return;
 		}
 		player->message = "You got the BFG9000!  Oh, yes.";
 		sound = sfx_wpnup;
 		break;
 	case rSPR_CHAINGUN:		/* Chain gun */
-		if (!GiveWeapon(player,wp_chaingun,FALSE) ) {
+		if (!GiveWeapon(player,wp_chaingun,false) ) {
 			return;
 		}
 		player->message = "You got the chaingun!";
 		sound = sfx_wpnup;
 		break;
 	case rSPR_CHAINSAW:		/* Chainsaw */
-		if (!GiveWeapon(player,wp_chainsaw,FALSE) ) {
+		if (!GiveWeapon(player,wp_chainsaw,false) ) {
 			return;
 		}
 		player->message = "A chainsaw!  Find some meat!";
 		sound = sfx_wpnup;
 		break;
 	case rSPR_ROCKETLAUNCHER:		/* Rocket launcher */
-		if (!GiveWeapon(player,wp_missile,FALSE) ) {
+		if (!GiveWeapon(player,wp_missile,false) ) {
 			return;
 		}
 		player->message = "You got the rocket launcher!";
 		sound = sfx_wpnup;
 		break;
 	case rSPR_PLASMARIFLE:		/* Plasma rifle */
-		if (!GiveWeapon(player,wp_plasma,FALSE)) {
+		if (!GiveWeapon(player,wp_plasma,false)) {
 			return;
 		}
 		player->message = "You got the plasma gun!";
 		sound = sfx_wpnup;
 		break;
 	case rSPR_SHOTGUN:		/* Shotgun */
-		if (!GiveWeapon(player,wp_shotgun,(special->flags&MF_DROPPED) ? TRUE : FALSE)) {
+		if (!GiveWeapon(player,wp_shotgun,(special->flags&MF_DROPPED) ? true : false)) {
 			return;
 		}
 		player->message = "You got the shotgun!";
@@ -540,7 +540,7 @@ static void KillMobj(mobj_t *target,Word Overkill)
 		target->player->playerstate = PST_DEAD;	/* You are dead! */
 		LowerPlayerWeapon(target->player);		/* Drop current weapon on screen */
 		if (target->player == &players) {
-			stbar.gotgibbed = TRUE;		/* Gooey! */
+			stbar.gotgibbed = true;		/* Gooey! */
 		}
 		if (Overkill>=50) {			/* Were you a real mess? */
 			S_StartSound(&target->x,sfx_slop);	/* Juicy, gorey death! */

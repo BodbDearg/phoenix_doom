@@ -28,7 +28,7 @@ typedef struct plat_t {		/* Structure for a moving platform */
 	plat_e status;		/* Current status (up,down,wait,dead) */
 	plat_e oldstatus;	/* Previous status */
 	plattype_e type;	/* Type of platform */
-	Boolean crush;		/* Can it crush things? */
+	bool crush;		    /* Can it crush things? */
 } plat_t;
 
 static plat_t *MainPlatPtr;		/* Pointer to the first plat in list */
@@ -93,7 +93,7 @@ static void T_PlatRaise(plat_t *plat)
 
 	switch(plat->status) {		/* State of the platform */
 	case up:		/* Going up? */
-		res = T_MovePlane(plat->sector,plat->speed,plat->high,plat->crush,FALSE,1);
+		res = T_MovePlane(plat->sector,plat->speed,plat->high,plat->crush,false,1);
 		if (plat->type == raiseAndChange ||
 			plat->type == raiseToNearestAndChange) {
 			if (Tick2) {		/* Make the rumbling sound */
@@ -117,7 +117,7 @@ static void T_PlatRaise(plat_t *plat)
 		}
 		break;
 	case down:		/* Going down? */
-		res = T_MovePlane(plat->sector,plat->speed,plat->low,FALSE,FALSE,-1);
+		res = T_MovePlane(plat->sector,plat->speed,plat->low, false, false, -1);
 		if (res == pastdest) {		/* Moved too far */
 			plat->count = plat->wait;	/* Set the delay count */
 			plat->status = waiting;		/* Delay mode */
@@ -168,14 +168,14 @@ static void ActivateInStasis(Word tag)
 
 **********************************/
 
-Boolean EV_DoPlat(line_t *line,plattype_e type,Word amount)
+bool EV_DoPlat(line_t *line,plattype_e type,Word amount)
 {
 	plat_t *plat;		/* Pointer to new platform */
 	Word secnum;		/* Which sector am I in? */
-	Boolean rtn;		/* True if I created a platform */
+	bool rtn;		    /* True if I created a platform */
 	sector_t *sec;		/* Pointer to current sector */
 
-	rtn = FALSE;		/* Assume false */
+	rtn = false;		/* Assume false */
 
 	/* Activate all <type> plats that are in_stasis */
 
@@ -192,12 +192,12 @@ Boolean EV_DoPlat(line_t *line,plattype_e type,Word amount)
 
 		/* Find lowest & highest floors around sector */
 
-		rtn = TRUE;		/* I created a sector */
+		rtn = true;		/* I created a sector */
 		plat = (plat_t *)AddThinker(T_PlatRaise,sizeof(plat_t));		/* Add to the thinker list */
 		plat->type = type;		/* Save the platform type */
 		plat->sector = sec;		/* Save the sector pointer */
 		plat->sector->specialdata = plat;	/* Point back to me... */
-		plat->crush = FALSE;	/* Can't crush anything */
+		plat->crush = false;	/* Can't crush anything */
 		plat->tag = line->tag;	/* Assume the line's ID */
 		switch(type) {			/* Init vars based on type */
 

@@ -196,7 +196,7 @@ static void BringUpWeapon(player_t *player)
 
 **********************************/
 
-static Boolean CheckAmmo(player_t *player)
+static bool CheckAmmo(player_t *player)
 {
 	ammotype_t ammo;	/* Ammo type */
 	weapontype_t Weapon;
@@ -208,7 +208,7 @@ static Boolean CheckAmmo(player_t *player)
 		Count = BFGCELLS;	/* Get the BFG energy requirements */
 	}
 	if (ammo == am_noammo || player->ammo[ammo] >= Count) {	/* Enough ammo? */
-		return TRUE;		/* I can shoot! */
+		return true;		/* I can shoot! */
 	}
 
 	/* Out of ammo, pick a weapon to change to */
@@ -233,7 +233,7 @@ static Boolean CheckAmmo(player_t *player)
 	player->pendingweapon = Weapon;		/* Save the new weapon */
 					/* Lower the existing weapon */
 	SetPlayerSprite(player,ps_weapon,WeaponDownStates[player->readyweapon]);
-	return FALSE;	/* Can't shoot! */
+	return false;	/* Can't shoot! */
 }
 
 /**********************************
@@ -317,10 +317,10 @@ void A_ReFire(player_t *player,pspdef_t *psp)
 
 	if ( (JoyPadButtons & PadAttack) &&	/* Still firing? */
 		player->pendingweapon == wp_nochange && player->health) {
-		player->refire=TRUE;		/* Count for grimacing player face */
+		player->refire = true;		/* Count for grimacing player face */
 		FireWeapon(player);	/* Shoot... */
 	} else {
-		player->refire = FALSE;		/* Reset firing */
+		player->refire = false;		/* Reset firing */
 		CheckAmmo(player);	/* Still have ammo? */
 	}
 }
@@ -500,7 +500,7 @@ void A_FirePlasma(player_t *player,pspdef_t *psp)
 
 **********************************/
 
-static void GunShot(mobj_t *mo,Boolean accurate)
+static void GunShot(mobj_t *mo, bool accurate)
 {
 	angle_t angle;		/* Angle of fire */
 	Word damage;		/* Damage done */

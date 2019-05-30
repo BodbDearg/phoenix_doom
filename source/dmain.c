@@ -99,7 +99,7 @@ Word MiniLoop(void(*start)(void),void(*stop)(void),
 
 /* Setup (cache graphics,etc) */
 
-	DoWipe = TRUE;
+	DoWipe = true;
 	start();			/* Prepare the background task (Load data etc.) */
 	exit = 0;			/* I am running */
 	gameaction = ga_nothing;	/* Game is not in progress */
@@ -190,15 +190,15 @@ static Word TIC_Abortable (void)
 
 **********************************/
 
-static Boolean OnlyOnce;
+static bool OnlyOnce;
 
 static void START_Title(void)
 {
 	if (!OnlyOnce) {
-		OnlyOnce = TRUE;
-		DoWipe = FALSE;		/* On power up, don't wipe the screen */
+		OnlyOnce = true;
+		DoWipe = false;		/* On power up, don't wipe the screen */
 	}
-	S_StartSong(Song_intro,TRUE);		/* Intro music, no looping */
+	S_StartSong(Song_intro,true);		/* Intro music, no looping */
 }
 
 /**********************************
@@ -276,13 +276,13 @@ static void DRAW_Credits(void)
 	case rIDCREDITS:
 		if (TotalGameTicks>=(10*TICKSPERSEC)) {
 			CreditRezNum = rCREDITS;
-			DoWipe = TRUE;
+			DoWipe = true;
 		}
 		break;
 	case rCREDITS:
 		if (TotalGameTicks>=(20*TICKSPERSEC)) {
 			CreditRezNum = rLOGCREDITS;
-			DoWipe = TRUE;
+			DoWipe = true;
 		}
 	}
 	DrawRezShape(0,0,CreditRezNum);	/* Draw the credits */
