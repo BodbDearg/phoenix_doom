@@ -51,35 +51,38 @@ static Word GiveAmmo(player_t *player,ammotype_t ammo,Word numofclips)
     }                       /* purpose */
 
     switch (ammo) {     /* Which type was picked up */
-    case am_clip:
-        if (player->readyweapon == wp_fist) {   /* I have fists up? */
-            if (player->weaponowned[wp_chaingun]) { /* Start the chaingun */
-                player->pendingweapon = wp_chaingun;
-            } else {
-                player->pendingweapon = wp_pistol;  /* Try the pistol */
+        case am_clip:
+            if (player->readyweapon == wp_fist) {   /* I have fists up? */
+                if (player->weaponowned[wp_chaingun]) { /* Start the chaingun */
+                    player->pendingweapon = wp_chaingun;
+                } else {
+                    player->pendingweapon = wp_pistol;  /* Try the pistol */
+                }
             }
-        }
-        break;
-    case am_shell:
-        if (player->readyweapon == wp_fist || player->readyweapon == wp_pistol) {
-            if (player->weaponowned[wp_shotgun]) {
-                player->pendingweapon = wp_shotgun;
+            break;
+        case am_shell:
+            if (player->readyweapon == wp_fist || player->readyweapon == wp_pistol) {
+                if (player->weaponowned[wp_shotgun]) {
+                    player->pendingweapon = wp_shotgun;
+                }
             }
-        }
-        break;
-    case am_cell:
-        if (player->readyweapon == wp_fist || player->readyweapon == wp_pistol) {
-            if (player->weaponowned[wp_plasma]) {
-                player->pendingweapon = wp_plasma;
+            break;
+        case am_cell:
+            if (player->readyweapon == wp_fist || player->readyweapon == wp_pistol) {
+                if (player->weaponowned[wp_plasma]) {
+                    player->pendingweapon = wp_plasma;
+                }
             }
-        }
-        break;
-    case am_misl:
-        if (player->readyweapon == wp_fist) {       /* Only using fists? */
-            if (player->weaponowned[wp_missile]) {
-                player->pendingweapon = wp_missile; /* Use rocket launcher */
+            break;
+        case am_misl:
+            if (player->readyweapon == wp_fist) {       /* Only using fists? */
+                if (player->weaponowned[wp_missile]) {
+                    player->pendingweapon = wp_missile; /* Use rocket launcher */
+                }
             }
-        }
+        case am_noammo:
+        case NUMAMMO:
+            break;
     }
     return true;            /* I picked it up! */
 }

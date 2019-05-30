@@ -78,45 +78,58 @@ static void RemoveActiveCeiling(ceiling_t *CeilingPtrKill)
 static void T_MoveCeiling(ceiling_t *ceiling)
 {
     result_e res;
-
-    if (ceiling->direction==1) {        /* Going up? */
+    
+    if (ceiling->direction == 1) {        /* Going up? */
         res = T_MovePlane(ceiling->sector,ceiling->speed,   /* Move it */
                 ceiling->topheight,false,true,ceiling->direction);
-        if (Tick2) {        /* Sound? */
+        
+        if (Tick2) {    /* Sound? */
             S_StartSound(&ceiling->sector->SoundX,sfx_stnmov);
         }
+        
         if (res == pastdest) {      /* Did it reach the top? */
             switch(ceiling->type) {
-            case raiseToHighest:
-                RemoveActiveCeiling(ceiling);       /* Remove the thinker */
-                break;
-            case fastCrushAndRaise:
-            case crushAndRaise:
-                ceiling->direction = -1;        /* Go down now */
+                case raiseToHighest:
+                    RemoveActiveCeiling(ceiling);   /* Remove the thinker */
+                    break;
+                case fastCrushAndRaise:
+                case crushAndRaise:
+                    ceiling->direction = -1;        /* Go down now */
+                case lowerToFloor:                  /* DC: nothing to be done for these cases */
+                case lowerAndCrush:
+                    break;
             }
         }
-    } else if (ceiling->direction==-1) {        /* Going down? */
+    } else if (ceiling->direction == -1) {        /* Going down? */
         res = T_MovePlane(ceiling->sector,ceiling->speed,   /* Move it */
             ceiling->bottomheight,ceiling->crush,true,ceiling->direction);
-        if (Tick2) {        /* Time for sound? */
+        
+        if (Tick2) {    /* Time for sound? */
             S_StartSound(&ceiling->sector->SoundX,sfx_stnmov);
         }
-        if (res == pastdest) {      /* Reached the bottom? */
-            switch(ceiling->type) {
-            case crushAndRaise:
-                ceiling->speed = CEILSPEED;     /* Reset the speed ALWAYS */
-            case fastCrushAndRaise:
-                ceiling->direction = 1;     /* Go up now */
-                break;
-            case lowerAndCrush:
-            case lowerToFloor:
-                RemoveActiveCeiling(ceiling);       /* Remove it */
+        
+        if (res == pastdest) {  /* Reached the bottom? */
+            switch (ceiling->type) {
+                case crushAndRaise:
+                    ceiling->speed = CEILSPEED;     /* Reset the speed ALWAYS */
+                case fastCrushAndRaise:
+                    ceiling->direction = 1;         /* Go up now */
+                    break;
+                case lowerAndCrush:
+                case lowerToFloor:
+                    RemoveActiveCeiling(ceiling);   /* Remove it */
+                case raiseToHighest:                /* DC: nothing to be done for these cases */
+                    break;
             }
-        } else if (res == crushed) {        /* Is it crushing something? */
-            switch(ceiling->type) {
-            case crushAndRaise:
-            case lowerAndCrush:
-                ceiling->speed = (CEILSPEED/8); /* Slow down for more fun! */
+        } else if (res == crushed) {    /* Is it crushing something? */
+            switch (ceiling->type) {
+                case crushAndRaise:
+                case lowerAndCrush:
+                    ceiling->speed = (CEILSPEED/8);     /* Slow down for more fun! */
+                case lowerToFloor:                      /* DC: nothing to be done for these cases */
+                case raiseToHighest:
+                case fastCrushAndRaise:
+                    break;
             }
         }
     }
@@ -162,11 +175,15 @@ bool EV_DoCeiling(line_t *line, ceiling_e  type)
     rtn = false;
 
     /* Reactivate in-stasis ceilings...for certain types. */
-
     switch(type) {
-    case fastCrushAndRaise:
-    case crushAndRaise:
-        ActivateInStasisCeiling(line->tag);
+        case fastCrushAndRaise:
+        case crushAndRaise:
+            ActivateInStasisCeiling(line->tag);
+        // DC: TODO: replace this with if() instead
+        case lowerToFloor:
+        case raiseToHighest:
+        case lowerAndCrush:
+            break;
     }
 
     while ((secnum = P_FindSectorFromLineTag(line,secnum)) != -1) {

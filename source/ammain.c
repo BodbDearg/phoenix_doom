@@ -312,6 +312,8 @@ void AM_Control(player_t *player)
     case ch_largescreen:
         LowDetail = true;
         WritePrefsFile();
+    case ch_maxcheats:
+        break;
     }
 
     if (FollowMode) {       /* Test here to make SURE I get called at least once */

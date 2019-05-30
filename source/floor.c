@@ -175,88 +175,90 @@ bool EV_DoFloor(line_t *line,floor_e floortype)
         floor->speed = FLOORSPEED;      /* Assume normal speed */
 
         switch(floortype) {             /* Handle all the special cases */
-        case lowerFloor:
-            floor->floordestheight = P_FindHighestFloorSurrounding(sec);
-            floor->direction = -1;      /* Go down */
-            break;
-        case lowerFloorToLowest:
-            floor->floordestheight = P_FindLowestFloorSurrounding(sec);
-            floor->direction = -1;      /* Go down */
-            break;
-        case turboLower:
-            floor->floordestheight = (8*FRACUNIT) + P_FindHighestFloorSurrounding(sec);
-            floor->speed = FLOORSPEED * 4;  /* Fast speed */
-            floor->direction = -1;      /* Go down */
-            break;
-        case raiseFloorCrush:
-            floor->crush = true;        /* Enable crushing */
-        case raiseFloor:
-            floor->direction = 1;       /* Go up */
-            floor->floordestheight = P_FindLowestCeilingSurrounding(sec);
-            if (floor->floordestheight > sec->ceilingheight) {  /* Too high? */
-                floor->floordestheight = sec->ceilingheight;    /* Set maximum */
-            }
-            break;
-        case raiseFloorToNearest:
-            floor->direction = 1;       /* Go up */
-            floor->floordestheight = P_FindNextHighestFloor(sec,sec->floorheight);
-            break;
-        case raiseFloor24AndChange: /* Raise 24 pixels and change texture */
-            sec->FloorPic = line->frontsector->FloorPic;
-            sec->special = line->frontsector->special;
-        case raiseFloor24:          /* Just raise 24 pixels */
-            floor->direction = 1;   /* Go up */
-            floor->floordestheight = floor->sector->floorheight + (24<<FRACBITS);
-            break;
-        case raiseToTexture:
-            {
-            Word minsize;
-            side_t *side;
-            Word Height;
+            case lowerFloor:
+                floor->floordestheight = P_FindHighestFloorSurrounding(sec);
+                floor->direction = -1;      /* Go down */
+                break;
+            case lowerFloorToLowest:
+                floor->floordestheight = P_FindLowestFloorSurrounding(sec);
+                floor->direction = -1;      /* Go down */
+                break;
+            case turboLower:
+                floor->floordestheight = (8*FRACUNIT) + P_FindHighestFloorSurrounding(sec);
+                floor->speed = FLOORSPEED * 4;  /* Fast speed */
+                floor->direction = -1;      /* Go down */
+                break;
+            case raiseFloorCrush:
+                floor->crush = true;        /* Enable crushing */
+            case raiseFloor:
+                floor->direction = 1;       /* Go up */
+                floor->floordestheight = P_FindLowestCeilingSurrounding(sec);
+                if (floor->floordestheight > sec->ceilingheight) {  /* Too high? */
+                    floor->floordestheight = sec->ceilingheight;    /* Set maximum */
+                }
+                break;
+            case raiseFloorToNearest:
+                floor->direction = 1;       /* Go up */
+                floor->floordestheight = P_FindNextHighestFloor(sec,sec->floorheight);
+                break;
+            case raiseFloor24AndChange: /* Raise 24 pixels and change texture */
+                sec->FloorPic = line->frontsector->FloorPic;
+                sec->special = line->frontsector->special;
+            case raiseFloor24:          /* Just raise 24 pixels */
+                floor->direction = 1;   /* Go up */
+                floor->floordestheight = floor->sector->floorheight + (24<<FRACBITS);
+                break;
+            case raiseToTexture:
+                {
+                Word minsize;
+                side_t *side;
+                Word Height;
 
-            floor->direction = 1;
-            i = 0;
-            minsize = 32767U;       /* Maximum height */
-            while (i<sec->linecount) {
-                if (twoSided(sec,i)) {      /* Only process two sided lines */
-                    side = getSide(sec,i,0);        /* Get the first side */
-                    if (!(side->bottomtexture&0x8000)) {    /* Valid texture? */
-                        Height = TextureInfo[side->bottomtexture].height;
-                        if (Height < minsize) {
-                            minsize = Height;
+                floor->direction = 1;
+                i = 0;
+                minsize = 32767U;       /* Maximum height */
+                while (i<sec->linecount) {
+                    if (twoSided(sec,i)) {      /* Only process two sided lines */
+                        side = getSide(sec,i,0);        /* Get the first side */
+                        if (!(side->bottomtexture&0x8000)) {    /* Valid texture? */
+                            Height = TextureInfo[side->bottomtexture].height;
+                            if (Height < minsize) {
+                                minsize = Height;
+                            }
+                        }
+                        side = getSide(sec,i,1);        /* Get the second side */
+                        if (!(side->bottomtexture&0x8000)) {    /* Valid texture? */
+                            Height = TextureInfo[side->bottomtexture].height;
+                            if (Height < minsize) {
+                                minsize = Height;
+                            }
                         }
                     }
-                    side = getSide(sec,i,1);        /* Get the second side */
-                    if (!(side->bottomtexture&0x8000)) {    /* Valid texture? */
-                        Height = TextureInfo[side->bottomtexture].height;
-                        if (Height < minsize) {
-                            minsize = Height;
+                    ++i;        /* Next count */
+                }
+                floor->floordestheight = floor->sector->floorheight + ((Fixed)minsize<<FRACBITS);   /* Set the height */
+                }
+                break;
+            case lowerAndChange:
+                floor->direction = -1;
+                floor->floordestheight = P_FindLowestFloorSurrounding(sec);
+                floor->texture = sec->FloorPic;
+                i = 0;
+                while (i<sec->linecount) {
+                    if (twoSided(sec,i)) {  /* Only process two sided lines */
+                        if (getSide(sec,i,0)->sector == sec) {
+                            sec = getSector(sec,i,1);   /* Get the opposite side */
+                        } else {
+                            sec = getSector(sec,i,0);
                         }
+                        floor->texture = sec->FloorPic; /* Get the texture */
+                        floor->newspecial = sec->special;
+                        break;
                     }
+                    ++i;
                 }
-                ++i;        /* Next count */
-            }
-            floor->floordestheight = floor->sector->floorheight + ((Fixed)minsize<<FRACBITS);   /* Set the height */
-            }
-            break;
-        case lowerAndChange:
-            floor->direction = -1;
-            floor->floordestheight = P_FindLowestFloorSurrounding(sec);
-            floor->texture = sec->FloorPic;
-            i = 0;
-            while (i<sec->linecount) {
-                if (twoSided(sec,i)) {  /* Only process two sided lines */
-                    if (getSide(sec,i,0)->sector == sec) {
-                        sec = getSector(sec,i,1);   /* Get the opposite side */
-                    } else {
-                        sec = getSector(sec,i,0);
-                    }
-                    floor->texture = sec->FloorPic; /* Get the texture */
-                    floor->newspecial = sec->special;
-                    break;
-                }
-                ++i;
-            }
+            case donutRaise:    /* DC: Unhandled case */
+                break;
         }
     }
     return rtn;

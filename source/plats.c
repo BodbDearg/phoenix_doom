@@ -92,51 +92,58 @@ static void T_PlatRaise(plat_t *plat)
     result_e res;       /* ok, crushed, pastdest */
 
     switch(plat->status) {      /* State of the platform */
-    case up:        /* Going up? */
-        res = T_MovePlane(plat->sector,plat->speed,plat->high,plat->crush,false,1);
-        if (plat->type == raiseAndChange ||
-            plat->type == raiseToNearestAndChange) {
-            if (Tick2) {        /* Make the rumbling sound */
-                S_StartSound(&plat->sector->SoundX,sfx_stnmov);
-            }
-        }
-
-        if (res == crushed && !plat->crush) {       /* Crushed something? */
-            plat->count = plat->wait;   /* Get the delay time */
-            plat->status = down;        /* Going the opposite direction */
-            S_StartSound(&plat->sector->SoundX,sfx_pstart);
-        } else if (res == pastdest) {   /* Moved too far? */
-            plat->count = plat->wait;   /* Reset the timer */
-            plat->status = waiting;     /* Make it wait */
-            S_StartSound(&plat->sector->SoundX,sfx_pstop);
-            switch(plat->type) {        /* What type of platform is it? */
-            case downWaitUpStay:        /* Shall it stay here forever? */
-            case raiseAndChange:        /* Change the texture and exit? */
-                RemoveActivePlat(plat); /* Remove it then */
-            }
-        }
-        break;
-    case down:      /* Going down? */
-        res = T_MovePlane(plat->sector,plat->speed,plat->low, false, false, -1);
-        if (res == pastdest) {      /* Moved too far */
-            plat->count = plat->wait;   /* Set the delay count */
-            plat->status = waiting;     /* Delay mode */
-            S_StartSound(&plat->sector->SoundX,sfx_pstop);
-        }
-        break;
-    case waiting:
-        if (plat->count) {      /* If waiting will expire... */
-            if (plat->count>ElapsedTime)    {       /* Time up? */
-                plat->count-=ElapsedTime;   /* Remove the time (But leave 1) */
-            } else {
-                if (plat->sector->floorheight == plat->low) {   /* At the bottom? */
-                    plat->status = up;      /* Move up */
-                } else {
-                    plat->status = down;    /* Move down */
+        case up:        /* Going up? */
+            res = T_MovePlane(plat->sector,plat->speed,plat->high,plat->crush,false,1);
+            if (plat->type == raiseAndChange ||
+                plat->type == raiseToNearestAndChange) {
+                if (Tick2) {        /* Make the rumbling sound */
+                    S_StartSound(&plat->sector->SoundX,sfx_stnmov);
                 }
-                S_StartSound(&plat->sector->SoundX,sfx_pstart);
             }
-        }
+
+            if (res == crushed && !plat->crush) {       /* Crushed something? */
+                plat->count = plat->wait;   /* Get the delay time */
+                plat->status = down;        /* Going the opposite direction */
+                S_StartSound(&plat->sector->SoundX,sfx_pstart);
+            } else if (res == pastdest) {   /* Moved too far? */
+                plat->count = plat->wait;   /* Reset the timer */
+                plat->status = waiting;     /* Make it wait */
+                S_StartSound(&plat->sector->SoundX,sfx_pstop);
+                
+                switch (plat->type) {           /* What type of platform is it? */
+                    case downWaitUpStay:        /* Shall it stay here forever? */
+                    case raiseAndChange:        /* Change the texture and exit? */
+                        RemoveActivePlat(plat); /* Remove it then */
+                        break;
+                    case perpetualRaise:            /* DC: Nothing to be done for these cases */
+                    case raiseToNearestAndChange:
+                        break;
+                }
+            }
+            break;
+        case down:      /* Going down? */
+            res = T_MovePlane(plat->sector,plat->speed,plat->low, false, false, -1);
+            if (res == pastdest) {      /* Moved too far */
+                plat->count = plat->wait;   /* Set the delay count */
+                plat->status = waiting;     /* Delay mode */
+                S_StartSound(&plat->sector->SoundX,sfx_pstop);
+            }
+            break;
+        case waiting:
+            if (plat->count) {      /* If waiting will expire... */
+                if (plat->count>ElapsedTime)    {       /* Time up? */
+                    plat->count-=ElapsedTime;   /* Remove the time (But leave 1) */
+                } else {
+                    if (plat->sector->floorheight == plat->low) {   /* At the bottom? */
+                        plat->status = up;      /* Move up */
+                    } else {
+                        plat->status = down;    /* Move down */
+                    }
+                    S_StartSound(&plat->sector->SoundX,sfx_pstart);
+                }
+            }
+        case in_stasis:     /* DC: Nothing to be done for this case */
+            break;
     }
 }
 
