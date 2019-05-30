@@ -1,5 +1,5 @@
 #include "doom.h"
-#include <IntMath.h>
+#include <intmath.h>
 
 LongWord LastTics;
 

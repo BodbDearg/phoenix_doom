@@ -5,7 +5,7 @@
 **********************************/
 
 #ifndef __BURGER__
-#include <BURGER.h>
+#include <burger.h>
 #endif
 
 #ifndef __INTMATH__

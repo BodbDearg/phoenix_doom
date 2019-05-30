@@ -1,5 +1,5 @@
 #include "doom.h"
-#include <String.h>
+#include <string.h>
 
 #define CURSORX 45      /* X coord for skulls */
 #define SLIDERX 106     /* X coord for slider bars */

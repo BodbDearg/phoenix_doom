@@ -1,5 +1,5 @@
 #include "doom.h"
-#include <IntMath.h>
+#include <intmath.h>
 
 static Fixed sightzstart;           // eye z of looker
 static Fixed topslope, bottomslope; // slopes to top and bottom of target

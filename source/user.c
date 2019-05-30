@@ -1,5 +1,5 @@
 #include "doom.h"
-#include <IntMath.h>
+#include <intmath.h>
 
 #define MAXBOB (16<<FRACBITS)   /* 16 pixels of bobbing up and down */
 #define SLOWTURNTICS 10         /* Time before fast turning */

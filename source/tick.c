@@ -1,5 +1,5 @@
 #include "doom.h"
-#include <String.h>
+#include <string.h>
 
 typedef struct thinker_s {
     struct thinker_s *next,*prev;

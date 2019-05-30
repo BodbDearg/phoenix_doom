@@ -1,5 +1,5 @@
 #include "doom.h"
-#include <String.h>
+#include <string.h>
 
 Word NumFlatAnims;      /* Number of flat anims */
 anim_t FlatAnims[] = {

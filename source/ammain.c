@@ -1,6 +1,6 @@
 #include "doom.h"
-#include <IntMath.h>
-#include <String.h>
+#include <intmath.h>
+#include <string.h>
 
 #define STEPVALUE (2<<FRACBITS) /* Speed to move around in the map (Fixed) For non-follow mode */
 #define MAXSCALES 0x10000   /* Maximum scale factor (Largest) */

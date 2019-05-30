@@ -1,5 +1,5 @@
 #include "doom.h"
-#include <IntMath.h>
+#include <intmath.h>
 
 #define MAXSEGS 32      /* Maximum number of segs to scan */
 

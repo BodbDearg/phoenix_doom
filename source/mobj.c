@@ -1,5 +1,5 @@
 #include "doom.h"
-#include <String.h>
+#include <string.h>
 
 typedef struct {        /* Respawn think logic */
     Fixed x,y;          /* X and Y to spawn at */

@@ -1,5 +1,5 @@
 #include "doom.h"
-#include <IntMath.h>
+#include <intmath.h>
 
 #define CLIPRADIUS  23
 #define SIDE_ON 0

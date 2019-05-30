@@ -1,6 +1,6 @@
 #include "doom.h"
-#include <String.h>
-#include <IntMath.h>
+#include <string.h>
+#include <intmath.h>
 
 #define STRETCH(WIDTH,HEIGHT) (Fixed)((160.0/(float)WIDTH)*((float)HEIGHT/180.0)*2.2*65536)     
 

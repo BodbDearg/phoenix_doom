@@ -1,6 +1,6 @@
 #include "doom.h"
-#include <IntMath.h>
-#include <String.h>
+#include <intmath.h>
+#include <string.h>
 
 /* lump order in a map wad */
 enum {
