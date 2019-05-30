@@ -60,7 +60,7 @@ extern void IMStartUp(void);
 extern void IMShutDown(void);
 extern Word IMVersion(void);
 extern void IMReset(void);
-extern Boolean IMIMStatus(void);
+extern bool IMIMStatus(void);
 extern int IMDec2Int(char *,Word, Boolean);
 extern long IMDec2Long(char *, Word, Boolean);
 extern Frac Fix2Frac(Fixed);

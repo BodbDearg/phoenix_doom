@@ -16,13 +16,13 @@ static Word CheckMeleeRange(mobj_t *actor)
     pl = actor->target;     /* Get the mobj_t of the target */
     if (!pl ||          /* No target? */
         !(actor->flags&MF_SEETARGET)) { /* Can't see target? */
-        return FALSE;           /* Not in range... */
+        return false;           /* Not in range... */
     }
     dist = GetApproxDistance(pl->x-actor->x,pl->y-actor->y);
     if (dist >= MELEERANGE) {       /* Out of range? */
-        return FALSE;           /* Can't attack yet */
+        return false;           /* Can't attack yet */
     }
-    return TRUE;            /* Attack NOW! */
+    return true;            /* Attack NOW! */
 }
 
 /**********************************
@@ -38,18 +38,18 @@ static Word CheckMissileRange(mobj_t *actor)
     mobj_t *pl;
 
     if ( !(actor->flags & MF_SEETARGET) ) { /* Are you seen? */
-        return FALSE;           /* Nope, don't fire! */
+        return false;           /* Nope, don't fire! */
     }
 
     /* The target just hit the enemy, so fight back! */
 
     if (actor->flags & MF_JUSTHIT) {        /* Took damage? */
         actor->flags &= ~MF_JUSTHIT;        /* Clear the flag */
-        return TRUE;                /* Fire back */
+        return true;                /* Fire back */
     }
 
     if (actor->reactiontime) {      /* Still waking up? */
-        return FALSE;       /* Don't attack yet */
+        return false;       /* Don't attack yet */
     }
 
     pl = actor->target;     /* Get local */
@@ -67,9 +67,9 @@ static Word CheckMissileRange(mobj_t *actor)
     }
 
     if ((int)GetRandom(255)<dist) { /* Random chance for attack */
-        return FALSE;       /* No attack */
+        return false;       /* No attack */
     }
-    return TRUE;            /* Attack! */
+    return true;            /* Attack! */
 }
 
 /**********************************
@@ -83,7 +83,7 @@ static Word CheckMissileRange(mobj_t *actor)
 static Fixed xspeed[8] = {FRACUNIT,47000,0,-47000,-FRACUNIT,-47000,0,47000};
 static Fixed yspeed[8] = {0,47000,FRACUNIT,47000,0,-47000,-FRACUNIT,-47000};
 
-static Boolean P_Move(mobj_t *actor)
+static bool P_Move(mobj_t *actor)
 {
     Word Direction;     /* Direction of travel */
     Word Speed;     /* Speed of travel */
@@ -92,7 +92,7 @@ static Boolean P_Move(mobj_t *actor)
 
     Direction = actor->movedir;
     if (Direction == DI_NODIR) {    /* No direction of travel? */
-        return FALSE;           /* Can't move */
+        return false;           /* Can't move */
     }
 
     Speed = actor->InfoPtr->Speed;      /* Get the speed into cache */
@@ -107,25 +107,25 @@ static Boolean P_Move(mobj_t *actor)
                 actor->z -= FLOATSPEED;     /* Jump down */
             }
             actor->flags |= MF_INFLOAT;     /* I am floating (Or falling) */
-            return TRUE;            /* I can move!! */
+            return true;            /* I can move!! */
         }
         blkline = blockline;        /* What line blocked me? */
         if (!blkline || !blkline->special) {    /* Am I blocked? */
-            return FALSE;       /* Can't move */
+            return false;       /* Can't move */
         }
         actor->movedir = DI_NODIR;  /* Force no direction */
             /* If the special isn't a door that can be opened, return false */
         if (P_UseSpecialLine(actor,blkline)) {  /* Try to open it... */
-            return TRUE;            /* Allow motion */
+            return true;            /* Allow motion */
         }
-        return FALSE;       /* Can't move */
+        return false;       /* Can't move */
     }
 
     actor->flags &= ~MF_INFLOAT;        /* I am not floating anymore */
     if ( !(actor->flags & MF_FLOAT) ) {     /* Can I float at all? */
         actor->z = actor->floorz;       /* Attach to the floor */
     }
-    return TRUE;        /* Yes, I can move there... */
+    return true;        /* Yes, I can move there... */
 }
 
 /**********************************
@@ -138,13 +138,13 @@ static Boolean P_Move(mobj_t *actor)
 
 **********************************/
 
-static Boolean P_TryWalk(mobj_t *actor)
+static bool P_TryWalk(mobj_t *actor)
 {
     if (!P_Move(actor)) {       /* Try to move in this direction */
-        return FALSE;           /* Return no */
+        return false;           /* Return no */
     }
     actor->movecount = GetRandom(15);   /* Get distance to travel */
-    return TRUE;        /* I'm moving */
+    return true;        /* I'm moving */
 }
 
 /**********************************
@@ -291,7 +291,7 @@ static void P_NewChaseDir(mobj_t *actor)
 
 **********************************/
 
-static Boolean P_LookForPlayers(mobj_t *actor,Boolean allaround)
+static bool P_LookForPlayers(mobj_t *actor, bool allaround)
 {
     angle_t an;
     Fixed dist;
@@ -302,7 +302,7 @@ static Boolean P_LookForPlayers(mobj_t *actor,Boolean allaround)
     if (!(actor->flags & MF_SEETARGET) ) {      /* Can I see the player? */
 newtarget:
         actor->target = players.mo;     /* Force player #0 tracking */
-        return FALSE;       /* No one is targeted */
+        return false;       /* No one is targeted */
     }
     mo = actor->target;     /* Get the target */
     if (!mo || !mo->MObjHealth) {   /* Is it alive? */
@@ -310,7 +310,7 @@ newtarget:
     }
 
     if (actor->subsector->sector->soundtarget == actor->target) {
-        allaround = TRUE;       /* Ambush guys will turn around on a shot */
+        allaround = true;       /* Ambush guys will turn around on a shot */
     }
 
     if (!allaround) {       /* Only 180 degrees? */
@@ -319,12 +319,12 @@ newtarget:
             dist = GetApproxDistance(mo->x-actor->x,mo->y-actor->y);
             /* if real close, react anyway */
             if (dist > MELEERANGE) {
-                return FALSE;       /* Behind back */
+                return false;       /* Behind back */
             }
         }
     }
     actor->threshold = (TICKSPERSEC*4/4);   /* Attack for 4 seconds */
-    return TRUE;        /* I have a target! */
+    return true;        /* I have a target! */
 }
 
 /**********************************
@@ -339,7 +339,7 @@ void A_Look(mobj_t *actor)
 
 /* If current target is visible, start attacking */
 
-    if (!P_LookForPlayers(actor,FALSE)) {
+    if (!P_LookForPlayers(actor, false)) {
         return;
     }
 
@@ -399,7 +399,7 @@ void A_Chase(mobj_t *actor)
 
     if (!actor->target || !(actor->target->flags&MF_SHOOTABLE)) {
         /* Look for a new target */
-        if (P_LookForPlayers(actor,TRUE)) {
+        if (P_LookForPlayers(actor, true)) {
             return;     /* got a new target */
         }
         SetMObjState(actor,info->spawnstate);   /* Reset the state */

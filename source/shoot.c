@@ -32,7 +32,7 @@ static int shootdivpositive;
 
 static Fixed old_frac;
 static void *old_value;
-static Boolean old_isline;
+static bool old_isline;
 static int ssx1,ssy1,ssx2,ssy2;
 
 /**********************************
@@ -41,7 +41,7 @@ static int ssx1,ssy1,ssx2,ssy2;
 
 **********************************/
 
-static Boolean PA_CrossBSPNode(node_t *bsp)
+static bool PA_CrossBSPNode(node_t *bsp)
 {
     Word side;
 
@@ -57,13 +57,13 @@ static Boolean PA_CrossBSPNode(node_t *bsp)
 // cross the starting side
 
     if (!PA_CrossBSPNode((node_t*)bsp->Children[side]) ) {
-        return FALSE;
+        return false;
     }
 
 // the partition plane is crossed here
 
     if (side == PointOnVectorSide(shootx2,shooty2,&bsp->Line)) {
-        return TRUE;            // the line doesn't touch the other side
+        return true;            // the line doesn't touch the other side
     }
 
 // cross the ending side
@@ -116,7 +116,7 @@ void P_Shoot2(void)
 
 // check the last intercept if needed
     if (!shootmobj)
-        PA_DoIntercept(0, FALSE, FRACUNIT);
+        PA_DoIntercept(0, false, FRACUNIT);
 
 //
 // post process
@@ -148,7 +148,7 @@ void P_Shoot2(void)
 ==================
 */
 
-Boolean PA_DoIntercept(void *value,Boolean isline,int frac)
+bool PA_DoIntercept(void *value, bool isline, int frac)
 {
     int     temp;
 
@@ -168,7 +168,7 @@ Boolean PA_DoIntercept(void *value,Boolean isline,int frac)
     }
 
     if (frac == 0 || frac >= FRACUNIT)
-        return TRUE;
+        return true;
 
     if (isline)
         return PA_ShootLine ((line_t *)value, frac);
@@ -185,7 +185,7 @@ Boolean PA_DoIntercept(void *value,Boolean isline,int frac)
 ==============================================================================
 */
 
-Boolean PA_ShootLine (line_t *li, Fixed interceptfrac)
+bool PA_ShootLine (line_t *li, Fixed interceptfrac)
 {
     Fixed       slope;
     Fixed       dist;
@@ -200,7 +200,7 @@ Boolean PA_ShootLine (line_t *li, Fixed interceptfrac)
             firstlinefrac = interceptfrac;
         }
         old_frac = 0;   // don't shoot anything past this
-        return FALSE;
+        return false;
     }
 
 //
@@ -245,10 +245,10 @@ Boolean PA_ShootLine (line_t *li, Fixed interceptfrac)
     }
 
     if (aimtopslope <= aimbottomslope)
-        return FALSE;       // stop
+        return false;       // stop
 
 
-    return TRUE;        // shot continues
+    return true;        // shot continues
 }
 
 /*
@@ -258,25 +258,25 @@ Boolean PA_ShootLine (line_t *li, Fixed interceptfrac)
 =
 ==============================================================================
 */
-Boolean PA_ShootThing (mobj_t *th, Fixed interceptfrac)
+bool PA_ShootThing (mobj_t *th, Fixed interceptfrac)
 {
     Fixed       frac;
     Fixed       dist;
     Fixed       thingaimtopslope, thingaimbottomslope;
 
     if (th == shooter)
-        return TRUE;        // can't shoot self
+        return true;        // can't shoot self
     if (!(th->flags&MF_SHOOTABLE))
-        return TRUE;        // corpse or something
+        return true;        // corpse or something
 
 // check angles to see if the thing can be aimed at
     dist = IMFixMul (attackrange, interceptfrac);
     thingaimtopslope = IMFixDiv(th->z+th->height - shootz , dist);
     if (thingaimtopslope < aimbottomslope)
-        return TRUE;        // shot over the thing
+        return true;        // shot over the thing
     thingaimbottomslope = IMFixDiv(th->z - shootz, dist);
     if (thingaimbottomslope > aimtopslope)
-        return TRUE;        // shot under the thing
+        return true;        // shot under the thing
 
 //
 // this thing can be hit!
@@ -297,8 +297,7 @@ Boolean PA_ShootThing (mobj_t *th, Fixed interceptfrac)
     shooty = shootdiv.y + IMFixMul(shootdiv.dy, frac);
     shootz = shootz + IMFixMul(shootslope,IMFixMul(frac,attackrange));
 
-    return FALSE;           // don't go any farther
-
+    return false;           // don't go any farther
 }
 
 
@@ -379,7 +378,7 @@ static struct {
  vertex_t tv1,tv2;
 } thingline;
 
-Boolean PA_CrossSubsector (subsector_t *sub)
+bool PA_CrossSubsector (subsector_t *sub)
 {
     seg_t       *seg;
     line_t      *line;
@@ -416,8 +415,8 @@ Boolean PA_CrossSubsector (subsector_t *sub)
         if (frac < 0 || frac > FRACUNIT) {
             continue;
         }
-        if (!PA_DoIntercept ( (void *)thing, FALSE, frac)) {
-            return FALSE;
+        if (!PA_DoIntercept ( (void *)thing, false, frac)) {
+            return false;
         }
     }
 
@@ -440,14 +439,11 @@ Boolean PA_CrossSubsector (subsector_t *sub)
         if (frac < 0 || frac > FRACUNIT)
             continue;
 
-        if (!PA_DoIntercept ( (void *)line, TRUE, frac))
+        if (!PA_DoIntercept ( (void *)line, true, frac))
 //      if (!PA_ShootLine (line, frac))
-            return FALSE;
+            return false;
     }
 
 
-    return TRUE;            // passed the subsector ok
+    return true;            // passed the subsector ok
 }
-
-
-

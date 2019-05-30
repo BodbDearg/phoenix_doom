@@ -4,7 +4,7 @@
 #define MAXBOB (16<<FRACBITS)   /* 16 pixels of bobbing up and down */
 #define SLOWTURNTICS 10         /* Time before fast turning */
 
-static Boolean onground;        /* True if the player is on the ground */
+static bool onground;        /* True if the player is on the ground */
 
 static LongWord forwardmove[2] = {0x38000>>2,0x60000>>2};
 static LongWord sidemove[2] = {0x38000>>2,0x58000>>2};
@@ -455,7 +455,7 @@ DownDamage:
 
 **********************************/
 
-static Boolean WeaponAllowed(player_t *player)
+static bool WeaponAllowed(player_t *player)
 {
     if (player->pendingweapon&0x8000) {     /* Handle wrap around for weapon */
         player->pendingweapon=(weapontype_t)(NUMWEAPONS-1); /* Highest weapon allowed */
@@ -464,9 +464,9 @@ static Boolean WeaponAllowed(player_t *player)
         player->pendingweapon = (weapontype_t)0;    /* Reset to the first */
     }
     if (player->weaponowned[player->pendingweapon]) {   /* Do I have this? */
-        return TRUE;        /* Yep! */
+        return true;        /* Yep! */
     }
-    return FALSE;       /* Nope, don't select this */
+    return false;       /* Nope, don't select this */
 }
 
 /**********************************
@@ -541,10 +541,10 @@ void P_PlayerThink(player_t *player)
 
         if (!player->usedown) {     /* Was use held down? */
             P_UseLines(player);     /* Nope, process the use button */
-            player->usedown = TRUE; /* Wait until released */
+            player->usedown = true; /* Wait until released */
         }
     } else {
-        player->usedown = FALSE;    /* Use is released */
+        player->usedown = false;    /* Use is released */
     }
 
 /* Process weapon attacks */
@@ -555,7 +555,7 @@ void P_PlayerThink(player_t *player)
             stbar.specialFace = f_mowdown;
         }
     } else {
-        player->attackdown = FALSE;     /* Reset the timer */
+        player->attackdown = false;     /* Reset the timer */
     }
 
     MovePSprites(player);       /* Process the weapon sprites and shoot */

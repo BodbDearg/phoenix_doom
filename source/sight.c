@@ -81,7 +81,7 @@ static Fixed PS_SightCrossLine (line_t *line)
 =================
 */
 
-static Boolean PS_CrossSubsector (subsector_t *sub)
+static bool PS_CrossSubsector (subsector_t *sub)
 {
     seg_t       *seg;
     line_t      *line;
@@ -114,7 +114,7 @@ static Boolean PS_CrossSubsector (subsector_t *sub)
     //
         back = line->backsector;
         if (!back)
-            return FALSE;   // one sided line
+            return false;   // one sided line
         front = line->frontsector;
 
         if (front->floorheight == back->floorheight
@@ -131,7 +131,7 @@ static Boolean PS_CrossSubsector (subsector_t *sub)
             openbottom = back->floorheight;
 
         if (openbottom >= opentop)  // quick test for totally closed doors
-            return FALSE;   // stop
+            return false;   // stop
 
         frac >>= 2;
 
@@ -150,12 +150,10 @@ static Boolean PS_CrossSubsector (subsector_t *sub)
         }
 
         if (topslope <= bottomslope)
-            return FALSE;   // stop
-
+            return false;   // stop
     }
 
-
-    return TRUE;            // passed the subsector ok
+    return true;            // passed the subsector ok
 }
 
 /*
@@ -167,9 +165,8 @@ static Boolean PS_CrossSubsector (subsector_t *sub)
 =================
 */
 
-static Boolean PS_CrossBSPNode(node_t *bsp)
+static bool PS_CrossBSPNode(node_t *bsp)
 {
-
     Word side;
 
     if ((Word)bsp & 1) {
@@ -184,12 +181,12 @@ static Boolean PS_CrossBSPNode(node_t *bsp)
 // cross the starting side
 
     if (!PS_CrossBSPNode((node_t *)bsp->Children[side]) )
-        return FALSE;
+        return false;
 
 // the partition plane is crossed here
 
     if (side == PointOnVectorSide(t2x,t2y,&bsp->Line))
-        return TRUE;            // the line doesn't touch the other side
+        return true;            // the line doesn't touch the other side
 
 // cross the ending side
     return PS_CrossBSPNode((node_t *)bsp->Children[side^1]);
@@ -216,7 +213,7 @@ Word CheckSight(mobj_t *t1,mobj_t *t2)
     bitnum = 1 << (pnum&7);
 
     if (RejectMatrix[bytenum]&bitnum) {
-        return FALSE;   // can't possibly be connected
+        return false;   // can't possibly be connected
     }
 
 // look from eyes of t1 to any part of t2

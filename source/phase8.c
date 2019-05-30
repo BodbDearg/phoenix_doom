@@ -173,9 +173,9 @@ static Word SegBehindPoint(viswall_t *ds,Fixed dx,Fixed dy)
     dx*=sdy;
     sdx*=dy;
     if (sdx<dx) {
-        return TRUE;
+        return true;
     } 
-    return FALSE;
+    return false;
 }
 
 /**********************************
@@ -206,7 +206,7 @@ void DrawVisSprite(vissprite_t *vis)
     }
     scalefrac = vis->yscale;    /* Get the Z scale */
     
-    Clipped = FALSE;        /* Assume I don't clip */
+    Clipped = false;        /* Assume I don't clip */
 
 /* scan drawsegs from end to start for obscuring segs */
 /* the first drawseg that has a greater scale is the clip seg */
@@ -230,7 +230,7 @@ void DrawVisSprite(vissprite_t *vis)
             }
         }
         if (!Clipped) {     /* Never initialized? */
-            Clipped = TRUE;
+            Clipped = true;
             x = x1;
             opening = ScreenHeight;
             do {
@@ -387,11 +387,11 @@ void DrawWeapons(void)
     pspdef_t *psp;
     
     psp = players.psprites; /* Get the first sprite in the array */ 
-    Shadow = FALSE;         /* Assume no shadow draw mode */
+    Shadow = false;         /* Assume no shadow draw mode */
     if (players.mo->flags & MF_SHADOW) {    /* Could be active? */
         i = players.powers[pw_invisibility];    /* Get flash time */
         if (i>=(5*TICKSPERSEC) || i&0x10) { /* On a long time or if flashing... */
-            Shadow = TRUE;      /* Draw as a shadow right now */
+            Shadow = true;      /* Draw as a shadow right now */
         }
     }
     i = 0;      /* Init counter */

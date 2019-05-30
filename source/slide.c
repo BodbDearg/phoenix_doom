@@ -227,7 +227,7 @@ Fixed SL_CrossFrac (void)
 }
 
 
-Boolean CheckLineEnds (void)
+bool CheckLineEnds (void)
 {
     int     snx, sny;       // sight normals
     int     dist1, dist2;
@@ -249,9 +249,9 @@ Boolean CheckLineEnds (void)
     dist2 += IMFixMul(dy,sny);
 
     if ( (dist1<0) == (dist2<0) )
-        return TRUE;
+        return true;
 
-    return FALSE;
+    return false;
 }
 
 
@@ -346,7 +346,7 @@ Word SL_CheckLine(line_t *ld)
     ||  endbox[BOXLEFT] > ld->bbox[BOXRIGHT]
     ||  endbox[BOXTOP] < ld->bbox[BOXBOTTOM]
     ||  endbox[BOXBOTTOM] > ld->bbox[BOXTOP] )
-        return TRUE;
+        return true;
 
 // see if it can possibly block movement
 
@@ -370,7 +370,7 @@ Word SL_CheckLine(line_t *ld)
         opentop = back->ceilingheight;
 
     if (opentop - openbottom >= 56*FRACUNIT)
-        return TRUE;        // the line doesn't block movement
+        return true;        // the line doesn't block movement
 
 // the line definately blocks movement
 
@@ -387,11 +387,11 @@ findfrac:
 
     side1 = SL_PointOnSide (slidex, slidey);
     if (side1 == SIDE_ON)
-        return TRUE;
+        return true;
     if (side1 == SIDE_BACK)
     {
         if (!ld->backsector)
-            return TRUE;            // don't clip to backs of one sided lines
+            return true;            // don't clip to backs of one sided lines
         temp = p1x;
         p1x = p2x;
         p2x = temp;
@@ -403,7 +403,7 @@ findfrac:
     }
     ClipToLine ();
 
-    return TRUE;
+    return true;
 }
 
 

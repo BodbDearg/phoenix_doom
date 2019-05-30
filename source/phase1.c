@@ -488,7 +488,7 @@ static Word CheckBBox(Fixed *bspcoord)
         }
     }
     if (BoxPtr[0]==-1) {        /* Center node? */
-        return TRUE;    /* I am in the center of the box, process it!! */
+        return true;    /* I am in the center of the box, process it!! */
     }
     
     
@@ -505,7 +505,7 @@ static Word CheckBBox(Fixed *bspcoord)
 
     span = angle1 - angle2; /* What is the span of the angle? */
     if (span >= ANG180) {   /* Whoa... I must be sitting on the line or it's in my face! */
-        return TRUE;    /* Process this one... */
+        return true;    /* Process this one... */
     }
     
     /* angle1 must be treated as signed, so to see if it is either >-clipangle and < clipangle */
@@ -515,7 +515,7 @@ static Word CheckBBox(Fixed *bspcoord)
     if (tspan > doubleclipangle) {  /* Possibly off the left edge */
         tspan -= doubleclipangle;
         if (tspan >= span) {        /* Off the left side? */
-            return FALSE;   /* Don't bother, it's off the left side */
+            return false;   /* Don't bother, it's off the left side */
         }
         angle1 = clipangle; /* Clip the left edge */
     }
@@ -524,7 +524,7 @@ static Word CheckBBox(Fixed *bspcoord)
     if (tspan > doubleclipangle) {  /* Possible off the right edge */
         tspan -= doubleclipangle;
         if (tspan >= span) {    /* The entire span is off the right edge? */
-            return FALSE;           /* Too far right! */
+            return false;           /* Too far right! */
         }
         angle2 = -(int)clipangle;   /* Clip the right edge angle */
     }
@@ -538,7 +538,7 @@ static Word CheckBBox(Fixed *bspcoord)
     angle1 = viewangletox[angle1];      /* Get the screen coords */
     angle2 = viewangletox[angle2];
     if (angle1 == angle2) {             /* Is the run too small? */
-        return FALSE;               /* Don't bother rendering it then */
+        return false;               /* Don't bother rendering it then */
     }
     --angle2;
     {   /* Use start */
@@ -551,9 +551,9 @@ static Word CheckBBox(Fixed *bspcoord)
         } while (SolidPtr->RightX< (int)angle2);
     }
     if ((int)angle1 >= SolidPtr->LeftX && (int)angle2 <= SolidPtr->RightX) {
-        return FALSE;   /* This block is behind a solid wall! */
+        return false;   /* This block is behind a solid wall! */
     }
-    return TRUE;        /* Process me! */
+    return true;        /* Process me! */
     }   /* End use of start */
 }
 

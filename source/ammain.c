@@ -14,10 +14,10 @@ static Fixed OldPlayerY;    /* Y coord of the player previously */
 static Fixed OldScale;      /* Previous scale value */
 
 static Fixed MapScale;          /* Scaling constant for the automap */
-static Word TrueOldButtons; /* Previous buttons for joypad downs */
-static Boolean FollowMode;  /* Follow mode active if true */
-static Boolean ShowAllThings;   /* If true, show all objects */
-static Boolean ShowAllLines;    /* If true, show all lines */
+static Word TrueOldButtons;     /* Previous buttons for joypad downs */
+static bool FollowMode;         /* Follow mode active if true */
+static bool ShowAllThings;      /* If true, show all objects */
+static bool ShowAllLines;       /* If true, show all lines */
 
 #define NOSELENGTH 0x200000     /* Player's triangle */
 #define MOBJLENGTH 0x100000     /* Object's triangle */
@@ -86,9 +86,9 @@ static int IMFixMulGetInt(Fixed a,Fixed b)
 void AM_Start(void)
 {
     MapScale = (FRACUNIT/16);   /* Default map scale factor (0.00625) */
-    ShowAllThings = FALSE;      /* Turn off the cheat */
-    ShowAllLines = FALSE;       /* Turn off the cheat */
-    FollowMode = TRUE;          /* Follow the player */
+    ShowAllThings = false;      /* Turn off the cheat */
+    ShowAllLines = false;       /* Turn off the cheat */
+    FollowMode = true;          /* Follow the player */
     players.AutomapFlags &= ~AF_ACTIVE; /* Automap off */
     TrueOldButtons = JoyPadButtons; /* Get the current state */
     memset((char *)CurrentCheat,0,sizeof(CurrentCheat));
@@ -271,10 +271,10 @@ void AM_Control(player_t *player)
 
     switch (AM_CheckCheat(NewButtons)) {        /* Check cheat events */
     case ch_allmap:
-        ShowAllLines ^= TRUE;   /* Toggle lines */
+        ShowAllLines ^= true;   /* Toggle lines */
         break;
     case ch_things:
-        ShowAllThings ^= TRUE;  /* Toggle things */
+        ShowAllThings ^= true;  /* Toggle things */
         break;
     case ch_godmode:
         player->health = 100;
@@ -286,10 +286,10 @@ void AM_Control(player_t *player)
         Word i;
         Word j;
         i = 0;
-        j = TRUE;
+        j = true;
         do {
             if (i==3) {     /* 0-2 are keys, 3-5 are skulls */
-                j=FALSE;
+                j=false;
             }
             player->cards[i] = j;       /* Award all keycards */
         } while (++i<NUMCARDS);
@@ -297,7 +297,7 @@ void AM_Control(player_t *player)
         player->armortype = 2;          /* Mega armor */
         i = 0;
         do {
-            player->weaponowned[i] = TRUE;  /* Give all weapons */
+            player->weaponowned[i] = true;  /* Give all weapons */
         } while (++i<NUMWEAPONS);
         i = 0;
         do {
@@ -310,7 +310,7 @@ void AM_Control(player_t *player)
         WritePrefsFile();
         break;
     case ch_largescreen:
-        LowDetail = TRUE;
+        LowDetail = true;
         WritePrefsFile();
     }
 
@@ -325,7 +325,7 @@ void AM_Control(player_t *player)
     OldScale = MapScale;                /* And scale value */
 
     if (NewButtons&PadX) {      /* Enable/disable follow mode */
-        FollowMode^=TRUE;       /* Toggle the mode */
+        FollowMode^=true;       /* Toggle the mode */
     }
 
     /* If follow mode if off, then I intercept the joypad motion to */

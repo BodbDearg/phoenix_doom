@@ -81,7 +81,7 @@ static Byte SongLookup[] = {
     1
 };
     
-void S_StartSong(Word music_id,Boolean looping)
+void S_StartSong(Word music_id, bool looping)
 {
     PlaySong(SongLookup[music_id]);
 }

@@ -139,7 +139,7 @@ Word PointOnVectorSide(Fixed x,Fixed y,vector_t *line)
     Word Result;
     Fixed dx,dy;
     
-    Result = TRUE;          /* Assume I am on the back side */
+    Result = true;          /* Assume I am on the back side */
 
     /* Special case #1, vertical lines */
 
@@ -152,7 +152,7 @@ Word PointOnVectorSide(Fixed x,Fixed y,vector_t *line)
             dy = -dy;
         }
         if (dy>=0) {
-            Result = FALSE; /* On the front side! */
+            Result = false; /* On the front side! */
         }
         return Result;
     }
@@ -165,7 +165,7 @@ Word PointOnVectorSide(Fixed x,Fixed y,vector_t *line)
             dx = -dx;
         } 
         if (dx<=0) {
-            Result = FALSE; /* On the front side! */
+            Result = false; /* On the front side! */
         }
         return Result;      /* Return the answer */
     }
@@ -174,7 +174,7 @@ Word PointOnVectorSide(Fixed x,Fixed y,vector_t *line)
     
     if ( (dy^dx^x^y) & 0x80000000UL ) {     /* Negative compound sign? */
         if (!((dy^x) & 0x80000000UL)) {     /* Positive cross product? */
-            Result = FALSE; /* Front side is positive */
+            Result = false; /* Front side is positive */
         }
         return Result;
     }
@@ -187,7 +187,7 @@ Word PointOnVectorSide(Fixed x,Fixed y,vector_t *line)
     y = (dx>>FRACBITS) * y;
 
     if (y < x) {            /* Which side? */
-        Result = FALSE;     /* Front side */
+        Result = false;     /* Front side */
     }
     return Result;          /* Return the side */
 }
@@ -413,13 +413,13 @@ Word BlockLinesIterator(Word x,Word y,Word(*func)(line_t*))
             if (ld->validcount != validcount) {     /* Line not checked? */
                 ld->validcount = validcount;    /* Mark it */
                 if (!func(ld)) {        /* Call the line proc */
-                    return FALSE;       /* I have a match? */
+                    return false;       /* I have a match? */
                 }
             }
             ++list;     /* Next entry */
         }
     }
-    return TRUE;        /* Everything was checked */
+    return true;        /* Everything was checked */
 }
 
 
@@ -439,10 +439,10 @@ Word BlockThingsIterator(Word x,Word y,Word(*func)(mobj_t*))
         mobj = BlockLinkPtr[y];     /* Get the first object on the block */
         while (mobj) {      /* Valid object? */
             if (!func(mobj)) {  /* Call function */
-                return FALSE;   /* I found it! */
+                return false;   /* I found it! */
             }
             mobj = mobj->bnext; /* Next object in list */
         }
     }
-    return TRUE;        /* Not found */
+    return true;        /* Not found */
 }

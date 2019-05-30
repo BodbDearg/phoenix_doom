@@ -548,7 +548,7 @@ static void PreloadWalls(void)
 {
     Word i;             /* Index */
     texture_t *TexPtr;
-    Boolean TextureLoadFlags[100];      /* Which textures should I load? */
+    bool TextureLoadFlags[100];      /* Which textures should I load? */
 
     memset(TextureLoadFlags,0,sizeof(TextureLoadFlags));        /* Set to zilch */
 
@@ -561,15 +561,15 @@ static void PreloadWalls(void)
         do {
             Tex = sd->toptexture;       /* Is there a top texture? */
             if (Tex<NumTextures) {
-                TextureLoadFlags[Tex] = TRUE;   /* Load it in */
+                TextureLoadFlags[Tex] = true;   /* Load it in */
             }
             Tex = sd->midtexture;
             if (Tex<NumTextures) {
-                TextureLoadFlags[Tex] = TRUE;
+                TextureLoadFlags[Tex] = true;
             }
             Tex = sd->bottomtexture;
             if (Tex<NumTextures) {
-                TextureLoadFlags[Tex] = TRUE;
+                TextureLoadFlags[Tex] = true;
             }
             ++sd;       /* Next side def */
         } while (--i);  /* All done? */
@@ -582,7 +582,7 @@ static void PreloadWalls(void)
         do {
             --i;
             if (TextureLoadFlags[SwitchList[i]]) {      /* Found a switch? */
-                TextureLoadFlags[SwitchList[i^1]] = TRUE;   /* Get the alternate */
+                TextureLoadFlags[SwitchList[i^1]] = true;   /* Get the alternate */
             }
         } while (i);    /* Any more? */
     }
@@ -608,10 +608,10 @@ static void PreloadWalls(void)
 
         sd = sectors;       /* Init the pointer */
         do {
-            TextureLoadFlags[sd->FloorPic] = TRUE;  /* Load it in */
+            TextureLoadFlags[sd->FloorPic] = true;  /* Load it in */
             Tex = sd->CeilingPic;
             if (Tex<NumFlats) {     /* Make sure it's ok */
-                TextureLoadFlags[Tex] = TRUE;
+                TextureLoadFlags[Tex] = true;
             }
             ++sd;       /* Next side def */
         } while (--i);  /* All done? */
@@ -625,7 +625,7 @@ static void PreloadWalls(void)
             if (TextureLoadFlags[sd->LastPicNum]) {
                 j = sd->BasePic;
                 do {
-                    TextureLoadFlags[j] = TRUE;
+                    TextureLoadFlags[j] = true;
                 } while (++j<=sd->LastPicNum);
             }
             ++sd;
@@ -693,7 +693,7 @@ void SetupLevel(Word map)
 
 /* if deathmatch, randomly spawn the active players */
 
-    gamepaused = FALSE;     /* Game in progress */
+    gamepaused = false;     /* Game in progress */
 }
 
 /**********************************
