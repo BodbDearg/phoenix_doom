@@ -14,7 +14,7 @@ void ReleaseAResource2(Word RezNum,Word Type)
     if (Entry) {
         if (Entry->MemPtr) {     /* Is there a handle? */
             UnlockAHandle(Entry->MemPtr);        /* Unlock it */
-            SetHandlePurgeFlag(Entry->MemPtr,TRUE);  /* Mark as purgable */
+            SetHandlePurgeFlag(Entry->MemPtr,true);  /* Mark as purgable */
         }
     }
 }

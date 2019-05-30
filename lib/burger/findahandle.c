@@ -1,4 +1,4 @@
-#include "Burger.h"
+#include "burger.h"
 
 extern MyHandle UsedHands;  /* Pointer to used handle list */
 

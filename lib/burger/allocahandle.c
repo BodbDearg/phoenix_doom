@@ -60,7 +60,7 @@ void **AllocAHandle2(LongWord MemSize,Word Flag)
         do {
             switch (Stage) {    /* Do the scan from the last allocated handle */
             case 0:
-                NewPrevHand = TRUE;
+                NewPrevHand = true;
                 LastScan = PrevAllocFixedHand;       /* Allocate from last allocated handle */
                 EndScan = &UsedHands;           /* Continue to the end */
                 break;
@@ -72,7 +72,7 @@ void **AllocAHandle2(LongWord MemSize,Word Flag)
                 CompactHandles();       /* Pack memory together */
                 LastScan = UsedHands.PrevHandle;   /* Scan the entire list */
                 EndScan = &UsedHands;        /* End of list */
-                NewPrevHand = TRUE;     /* Mark for the first one found */
+                NewPrevHand = true;     /* Mark for the first one found */
             }
 
             Scan = LastScan->PrevHandle;    /* Get next index */
@@ -100,7 +100,7 @@ void **AllocAHandle2(LongWord MemSize,Word Flag)
                             return (void **)NewHandlePtr;         /* Good allocation! */
                         }
                         if (NewPrevHand) {
-                            NewPrevHand = FALSE;
+                            NewPrevHand = false;
                             PrevAllocFixedHand = LastScan;  /* Mark first empty area */
                         }
                     }
@@ -118,7 +118,7 @@ void **AllocAHandle2(LongWord MemSize,Word Flag)
         do {
             switch (Stage) {    /* Do the scan from the last allocated handle */
             case 0:
-                NewPrevHand = TRUE;
+                NewPrevHand = true;
                 LastScan = PrevAllocHand;       /* Allocate from last allocated handle */
                 EndScan = &UsedHands;           /* Continue to the end */
                 break;
@@ -130,7 +130,7 @@ void **AllocAHandle2(LongWord MemSize,Word Flag)
                 CompactHandles();       /* Pack memory together */
                 LastScan = UsedHands.NextHandle;   /* Scan the entire list */
                 EndScan = &UsedHands;        /* End of list */
-                NewPrevHand = TRUE;
+                NewPrevHand = true;
             }
 
             Scan = LastScan->NextHandle;    /* Get next index */
@@ -158,7 +158,7 @@ void **AllocAHandle2(LongWord MemSize,Word Flag)
                             return (void **)NewHandlePtr;         /* Good allocation! */
                         }
                         if (NewPrevHand) {
-                            NewPrevHand = FALSE;
+                            NewPrevHand = false;
                             PrevAllocHand = LastScan;
                         }
                     }

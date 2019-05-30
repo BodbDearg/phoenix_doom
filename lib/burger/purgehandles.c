@@ -1,4 +1,4 @@
-#include "Burger.h"
+#include "burger.h"
 #include <string.h>
 
 /********************************
@@ -26,9 +26,9 @@ void PurgeHandles(Word PurgeLevel)
     if (Scan==&UsedHands) {
         return;
     }
-    CalledCallBack = TRUE;      /* Assume bogus */
+    CalledCallBack = true;      /* Assume bogus */
     if (MemPurgeCallBack) {
-        CalledCallBack = FALSE; /* Allow call */
+        CalledCallBack = false; /* Allow call */
     }
     do {            /* Valid handle? */
         if (!(Scan->Flags & HANDLELOCK)) {      /* Skip all locked handles */
@@ -38,7 +38,7 @@ void PurgeHandles(Word PurgeLevel)
                 MyHandle *Next;
 
                 if (!CalledCallBack) {
-                    CalledCallBack = TRUE;
+                    CalledCallBack = true;
                     MemPurgeCallBack(MMStagePurge);
                 }
                 Next = Scan->NextHandle;    /* Forward link */

@@ -1,4 +1,4 @@
-#include "Burger.h"
+#include "burger.h"
 
 /****************************************
 
@@ -28,7 +28,7 @@ void LongWordToAscii(LongWord Val,Byte *AsciiPtr)
     Word Printing;      /* Flag for printing */
 
     Index = 10;      /* 10 digits to process */
-    Printing = FALSE;   /* Not printing yet */
+    Printing = false;   /* Not printing yet */
     do {
         --Index;        /* Dec index */
         BigNum = TensTable[Index];  /* Get div value in local */
@@ -38,7 +38,7 @@ void LongWordToAscii(LongWord Val,Byte *AsciiPtr)
             ++Letter;            /* Inc ASCII value */
         }
         if (Printing || Letter!='0' || !Index) {    /* Already printing? */
-            Printing = TRUE;        /* Force future printing */
+            Printing = true;        /* Force future printing */
             AsciiPtr[0] = Letter;       /* Also must print on last char */
             ++AsciiPtr;
         }

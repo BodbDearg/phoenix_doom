@@ -1,5 +1,5 @@
-#include "Burger.h"
-#include <String.h>
+#include "burger.h"
+#include <string.h>
 
 /**********************************
 

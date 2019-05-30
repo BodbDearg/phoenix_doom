@@ -1,6 +1,6 @@
-#include <Burger.h>        
+#include <burger.h>
 
-extern Byte BombFlag;
+extern bool BombFlag;
 
 /********************************
 
@@ -8,8 +8,7 @@ extern Byte BombFlag;
 
 ********************************/
 
-void SetErrBombFlag(Boolean Flag)
+void SetErrBombFlag(bool Flag)
 {
     BombFlag = Flag;
 }
-    

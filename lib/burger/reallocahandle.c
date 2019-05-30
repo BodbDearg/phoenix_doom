@@ -1,4 +1,4 @@
-#include "Burger.h"
+#include "burger.h"
 
 /********************************
 
@@ -21,4 +21,3 @@ void **ReallocAHandle(void **MemHandle)
     DeallocAHandle(MemHandle);      /* Dispose of the old handle */
     return AllocAHandle(Size);   /* Create a new one with the old size */
 }
-

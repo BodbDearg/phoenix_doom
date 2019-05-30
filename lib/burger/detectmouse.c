@@ -1,4 +1,4 @@
-#include "Burger.h"
+#include "burger.h"
 
 /**********************************
 
@@ -6,8 +6,8 @@
 
 **********************************/
 
-Boolean DetectMouse(void)
+bool DetectMouse(void)
 {
-    MousePresent = TRUE;            /* Just assume it's ok */
-    return TRUE;
+    MousePresent = true;            /* Just assume it's ok */
+    return true;
 }

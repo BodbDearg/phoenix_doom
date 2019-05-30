@@ -1,6 +1,10 @@
 #include "burger.h"
 #include <stdio.h>
-#include <filestreamfunctions.h>
+
+// DC: 3DO specific headers - remove
+#if 0
+    #include <filestreamfunctions.h>
+#endif
 
 /********************************
 
@@ -9,45 +13,49 @@
 
 ********************************/
 
-extern Word RezIndexFound;  /* Which file had the entry? */
-extern Stream *Rezfp[8];        /* Array of open files */
+extern Word RezIndexFound;              /* Which file had the entry? */
+extern struct Stream *Rezfp[8];         /* Array of open files */
 
 void **LoadAResourceHandle2(Word RezNum,Word Type)
 {
-    MyRezEntry2 *Entry;
-    void **BufferPtr;
-    LongWord Offset;
-    Word Flags;
-    Stream *fp;
+    // DC: FIXME: reimplement/replace
+    #if 0
+        MyRezEntry2 *Entry;
+        void **BufferPtr;
+        LongWord Offset;
+        Word Flags;
+        Stream *fp;
 
-    Entry = ScanRezMap(RezNum,Type);
-    if (Entry) { /* Find the entry */
-        BufferPtr = Entry->MemPtr;
-        if (BufferPtr) {     /* Valid handle? */
-            if (*BufferPtr) {       /* Handle not purged? */
-                SetHandlePurgeFlag(BufferPtr,FALSE);    /* Not purgable */
-                return BufferPtr;   /* Return */
+        Entry = ScanRezMap(RezNum,Type);
+        if (Entry) { /* Find the entry */
+            BufferPtr = Entry->MemPtr;
+            if (BufferPtr) {     /* Valid handle? */
+                if (*BufferPtr) {       /* Handle not purged? */
+                    SetHandlePurgeFlag(BufferPtr,FALSE);    /* Not purgable */
+                    return BufferPtr;   /* Return */
+                }
+                DeallocAHandle(BufferPtr);   /* Release the memory */
+                Entry->MemPtr = 0;              /* Mark as gone! */
             }
-            DeallocAHandle(BufferPtr);   /* Release the memory */
-            Entry->MemPtr = 0;              /* Mark as gone! */
+            Offset = Entry->Offset;
+            Flags = 0xFFF0UL<<16;
+            if (Offset&0x80000000) {
+                Flags |= HANDLEFIXED;
+            }
+            BufferPtr = AllocAHandle2(Entry->Length,Flags); /* Get the memory */
+            if (BufferPtr) {        /* Memory ok? */
+                fp = Rezfp[RezIndexFound];
+                Entry->MemPtr = BufferPtr;       /* Save the handle */
+                LockMusic();
+                SeekDiskStream(fp,Offset&0x3FFFFFFF,SEEK_SET); /* Seek into the file */
+                ReadDiskStream(fp,(char *)LockAHandle(BufferPtr),Entry->Length);  /* Read it in */
+                UnlockMusic();
+                UnlockAHandle(BufferPtr);
+                return BufferPtr;           /* Return the buffer pointer */
+            }
         }
-        Offset = Entry->Offset;
-        Flags = 0xFFF0UL<<16;
-        if (Offset&0x80000000) {
-            Flags |= HANDLEFIXED;
-        }
-        BufferPtr = AllocAHandle2(Entry->Length,Flags); /* Get the memory */
-        if (BufferPtr) {        /* Memory ok? */
-            fp = Rezfp[RezIndexFound];
-            Entry->MemPtr = BufferPtr;       /* Save the handle */
-            LockMusic();
-            SeekDiskStream(fp,Offset&0x3FFFFFFF,SEEK_SET); /* Seek into the file */
-            ReadDiskStream(fp,(char *)LockAHandle(BufferPtr),Entry->Length);  /* Read it in */
-            UnlockMusic();
-            UnlockAHandle(BufferPtr);
-            return BufferPtr;           /* Return the buffer pointer */
-        }
-    }
-    return 0;           /* No data */
+        return 0;           /* No data */
+    #else
+        return 0;
+    #endif
 }
-

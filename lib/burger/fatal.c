@@ -10,10 +10,8 @@
        
 void Fatal(char *FatalMsg)
 {
-    if (FatalMsg) {         /* Message to print? */
-        printf(FatalMsg);   /* Print it */
+    if (FatalMsg) {                 /* Message to print? */
+        printf("%s", FatalMsg);     /* Print it */
     }
-    exit(10);               /* Exit to OS */
+    exit(10);                       /* Exit to OS */
 }
-
-    

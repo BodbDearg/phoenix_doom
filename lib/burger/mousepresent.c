@@ -1,3 +1,3 @@
-#include "Burger.h"
+#include "burger.h"
 
-Boolean MousePresent;   /* True if a mouse is found */
+bool MousePresent;   /* True if a mouse is found */

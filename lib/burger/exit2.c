@@ -1,4 +1,4 @@
-#include "Burger.h"
+#include "burger.h"
 #undef exit             /* Override the exit routine */
 #include <stdlib.h>
 

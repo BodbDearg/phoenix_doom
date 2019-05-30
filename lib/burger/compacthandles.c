@@ -1,4 +1,4 @@
-#include "Burger.h"
+#include "burger.h"
 #include <string.h>
 
 /********************************
@@ -23,9 +23,9 @@ void CompactHandles(void)
     if (Scan==&UsedHands) {
         return;
     }
-    CalledCallBack = TRUE;      /* Assume bogus */
+    CalledCallBack = true;      /* Assume bogus */
     if (MemPurgeCallBack) {     /* Valid pointer? */
-        CalledCallBack = FALSE;
+        CalledCallBack = false;
     }
     do {    /* Skip all locked or fixed handles */
         if (!(Scan->Flags & (HANDLELOCK|HANDLEFIXED))) {
@@ -38,7 +38,7 @@ void CompactHandles(void)
             Size = (Byte *)Scan->MemPtr - StartMem; /* Any space here? */
             if (Size) {     /* If there is free space, then pack them */
                 if (!CalledCallBack) {      /* Hadn't called it yet? */
-                    CalledCallBack = TRUE;
+                    CalledCallBack = true;
                     MemPurgeCallBack(MMStageCompact);   /* Tell the app */
                 }
                 memmove(StartMem,Scan->MemPtr,Scan->Length);    /* Move */

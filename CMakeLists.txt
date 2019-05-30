@@ -114,7 +114,7 @@ set(LIB_SOURCES
     #${LIB_SRC_DIR}/burger/swapshort.s
     #${LIB_SRC_DIR}/burger/swapushort.s
     ${LIB_SRC_DIR}/burger/systemstate.c
-    ${LIB_SRC_DIR}/burger/test.c
+    #${LIB_SRC_DIR}/burger/test.c
     #${LIB_SRC_DIR}/burger/testmbshape.s
     #${LIB_SRC_DIR}/burger/testmshape.s
     ${LIB_SRC_DIR}/burger/unlockahandle.c

@@ -6,8 +6,8 @@
 #include <Event.h>
 
 #define SCREENS 2
-uint32 MainTask;        /* My own task item */
-ulong ScreenPageCount;  /* Number of screens */
+uint32 MainTask;            /* My own task item */
+ulong ScreenPageCount;      /* Number of screens */
 Item ScreenItems[SCREENS];  /* Referances to the game screens */
 Item VideoItems[SCREENS];
 long ScreenByteCount;       /* How many bytes for each screen */

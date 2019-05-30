@@ -1,3 +1,3 @@
-#include "Burger.h"
+#include "burger.h"
 
 Word VideoWidth=640;

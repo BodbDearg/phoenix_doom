@@ -1,4 +1,4 @@
-#include "Burger.h"
+#include "burger.h"
 
 /********************************
 
@@ -10,4 +10,3 @@ void ClearTheScreen(Word Color)
 {
     DrawARect(0,0,ScreenWidth,ScreenHeight,Color);
 }
-

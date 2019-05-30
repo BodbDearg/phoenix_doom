@@ -1,4 +1,4 @@
-#include "IntMath.h"
+#include "intmath.h"
 
 /**********************************
 

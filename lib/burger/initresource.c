@@ -2,16 +2,20 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <FileStreamFunctions.h>
+
+// DC: 3DO specific headers - remove
+#if 0
+    #include <FileStreamFunctions.h>
+#endif
 
 #define MAXREZFILES 8
 
-Stream *Rezfp[MAXREZFILES];             /* Open file referance for resource files */
-Word RezIndexFound;         /* Which file was found in ScanRez */
-static void **RezHandles[MAXREZFILES];       /* Handles to resource maps */
-static Word RezCounts[MAXREZFILES];          /* Number of active resources */
-static Boolean OnceHit=FALSE; /* True if already init'd once */
-static Word OpenFileCount;      /* Number of open files */
+struct Stream *Rezfp[MAXREZFILES];          /* Open file referance for resource files */
+Word RezIndexFound;                         /* Which file was found in ScanRez */
+static void **RezHandles[MAXREZFILES];      /* Handles to resource maps */
+static Word RezCounts[MAXREZFILES];         /* Number of active resources */
+static bool OnceHit = false;                /* True if already init'd once */
+static Word OpenFileCount;                  /* Number of open files */
 
 /********************************
 
@@ -42,40 +46,43 @@ static void DeInitResource(void)
 
 void CloseAResourceFile(Word RezRef)
 {
-    if (RezRef<OpenFileCount) {     /* Failsafe */
-        Word GroupCount;        /* Number of resource groups */
-        CloseDiskStream(Rezfp[RezRef]);      /* Close the open resource file */
-        GroupCount = RezCounts[RezRef];     /* Any valid entries? */
-        if (GroupCount) {
-            MyRezEntry *MainPtr;    /* Group array pointer */
-            MainPtr = (MyRezEntry*)LockAHandle(RezHandles[RezRef]); /* Lock it down */
-            do {
-                Word EntryCount;        /* Number of entries per group */
-                MyRezEntry2 *EntryPtr;  /* Entry pointer */
-                EntryPtr = &MainPtr->Array[0];
-                EntryCount = MainPtr->Count;
+    // DC: FIXME: reimplement/replace
+    #if 0
+        if (RezRef<OpenFileCount) {     /* Failsafe */
+            Word GroupCount;        /* Number of resource groups */
+            CloseDiskStream(Rezfp[RezRef]);      /* Close the open resource file */
+            GroupCount = RezCounts[RezRef];     /* Any valid entries? */
+            if (GroupCount) {
+                MyRezEntry *MainPtr;    /* Group array pointer */
+                MainPtr = (MyRezEntry*)LockAHandle(RezHandles[RezRef]); /* Lock it down */
                 do {
-                    if (EntryPtr->MemPtr) {     /* Dispose of all handles */
-                        DeallocAHandle(EntryPtr->MemPtr);
-                    }
-                    ++EntryPtr;     /* Next entry */
-                } while (--EntryCount);
-                MainPtr = (MyRezEntry *)EntryPtr;
-            } while (--GroupCount);
+                    Word EntryCount;        /* Number of entries per group */
+                    MyRezEntry2 *EntryPtr;  /* Entry pointer */
+                    EntryPtr = &MainPtr->Array[0];
+                    EntryCount = MainPtr->Count;
+                    do {
+                        if (EntryPtr->MemPtr) {     /* Dispose of all handles */
+                            DeallocAHandle(EntryPtr->MemPtr);
+                        }
+                        ++EntryPtr;     /* Next entry */
+                    } while (--EntryCount);
+                    MainPtr = (MyRezEntry *)EntryPtr;
+                } while (--GroupCount);
+            }
+            DeallocAHandle(RezHandles[RezRef]);  /* Free the resource map */
+            --OpenFileCount;                /* Remove from the list */
+            if (RezRef<OpenFileCount) {     /* Not the last one? */
+                do {
+                    Word Next;      /* Move all other entries down one */
+                    Next = RezRef+1;
+                    Rezfp[RezRef] = Rezfp[Next];
+                    RezHandles[RezRef] = RezHandles[Next];
+                    RezCounts[RezRef] = RezCounts[Next];
+                    RezRef = Next;
+                } while (RezRef<OpenFileCount);
+            }
         }
-        DeallocAHandle(RezHandles[RezRef]);  /* Free the resource map */
-        --OpenFileCount;                /* Remove from the list */
-        if (RezRef<OpenFileCount) {     /* Not the last one? */
-            do {
-                Word Next;      /* Move all other entries down one */
-                Next = RezRef+1;
-                Rezfp[RezRef] = Rezfp[Next];
-                RezHandles[RezRef] = RezHandles[Next];
-                RezCounts[RezRef] = RezCounts[Next];
-                RezRef = Next;
-            } while (RezRef<OpenFileCount);
-        }
-    }
+    #endif
 }
 
 /********************************
@@ -86,37 +93,41 @@ void CloseAResourceFile(Word RezRef)
 
 Word OpenAResourceFile(Byte *FileName)
 {
-    MyRezHeader MyHeader;      /* Struct for resource file header */
-    void **RezHandle;
-    Word Index;
-    Stream *fp;
+    // DC: FIXME: reimplement/replace
+    #if 0
+        MyRezHeader MyHeader;      /* Struct for resource file header */
+        void **RezHandle;
+        Word Index;
+        Stream *fp;
 
-    Index = OpenFileCount;
-    if (Index<MAXREZFILES) {        /* Open index? */
-        fp = OpenDiskStream((char *)FileName,0);        /* Open the resource file */
-        if (!fp) {                           /* Did the file open? */
-            NonFatal("Can't open the resource file");   /* Nope, leave */
-            return -1;
+        Index = OpenFileCount;
+        if (Index<MAXREZFILES) {        /* Open index? */
+            fp = OpenDiskStream((char *)FileName,0);        /* Open the resource file */
+            if (!fp) {                           /* Did the file open? */
+                NonFatal("Can't open the resource file");   /* Nope, leave */
+                return -1;
+            }
+            ReadDiskStream(fp,(char *)&MyHeader,sizeof(MyHeader));  /* Read in the header */
+            if (memcmp((char *)&MyHeader.Name,"BRGR",4)) {  /* Valid header? */
+                NonFatal("Invalid Resource file!");
+                return -1;
+            }
+            RezHandle = AllocAHandle2(MyHeader.MemSize,0xFFF1UL<<16);      /* Get the memory */
+            if (!RezHandle) {
+                CloseDiskStream(fp);        /* Release the file */
+                return -1;  /* Return the error code from memory manager */
+            }
+            ReadDiskStream(fp,(char *)LockAHandle(RezHandle),MyHeader.MemSize);
+            UnlockAHandle(RezHandle);
+            Rezfp[Index] = fp;      /* Save the file referance */
+            RezCounts[Index] = MyHeader.Count;  /* Get the resource count */
+            RezHandles[Index] = RezHandle;      /* Get the memory */
+            OpenFileCount = Index+1;            /* I now have an open file! */
+            return Index;
         }
-        ReadDiskStream(fp,(char *)&MyHeader,sizeof(MyHeader));  /* Read in the header */
-        if (memcmp((char *)&MyHeader.Name,"BRGR",4)) {  /* Valid header? */
-            NonFatal("Invalid Resource file!");
-            return -1;
-        }
-        RezHandle = AllocAHandle2(MyHeader.MemSize,0xFFF1UL<<16);      /* Get the memory */
-        if (!RezHandle) {
-            CloseDiskStream(fp);        /* Release the file */
-            return -1;  /* Return the error code from memory manager */
-        }
-        ReadDiskStream(fp,(char *)LockAHandle(RezHandle),MyHeader.MemSize);
-        UnlockAHandle(RezHandle);
-        Rezfp[Index] = fp;      /* Save the file referance */
-        RezCounts[Index] = MyHeader.Count;  /* Get the resource count */
-        RezHandles[Index] = RezHandle;      /* Get the memory */
-        OpenFileCount = Index+1;            /* I now have an open file! */
-        return Index;
-    }
-    NonFatal("Resource map full!");     /* Too many files! */
+        NonFatal("Resource map full!");     /* Too many files! */
+    #endif
+    
     return -1;  
 }
 
@@ -130,9 +141,10 @@ Word OpenAResourceFile(Byte *FileName)
 void InitResource(void)
 {
     if (!OnceHit) {             /* Release resources on shutdown */
-        OnceHit = TRUE;
+        OnceHit = true;
         atexit(DeInitResource);                 /* Allow closing on exit */
     }
+    
     OpenAResourceFile((Byte *)RezFileName);     /* Open the default resource file */
 }
 
@@ -181,4 +193,3 @@ MyRezEntry2 *ScanRezMap(Word RezNum,Word Type)
     NonFatal("Resource not in map");
     return 0;           /* No good! */
 }
-

@@ -1,4 +1,4 @@
-#include "IntMath.h"
+#include "intmath.h"
 
 /**********************************
 
@@ -6,7 +6,7 @@
 
 **********************************/
 
-int IMDec2Int(char *InputStr,Word Length,Boolean Signed)
+int IMDec2Int(char *InputStr,Word Length,bool Signed)
 {
     Word Result;
 
@@ -22,7 +22,7 @@ int IMDec2Int(char *InputStr,Word Length,Boolean Signed)
         ++InputStr;
     }
     if (Signed) {
-        Signed = FALSE;
+        Signed = false;
         if (InputStr[0]=='+') {
             ++InputStr;
             --Length;
@@ -35,7 +35,7 @@ int IMDec2Int(char *InputStr,Word Length,Boolean Signed)
             if (!Length) {
                 goto Done;
             }
-            Signed = TRUE;
+            Signed = true;
         }
     }
     while (Length) {
