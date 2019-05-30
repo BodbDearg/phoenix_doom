@@ -9,15 +9,10 @@
 #ifndef __BURGER__
 #define __BURGER__
 
+#include <stdint.h>
+
 #ifndef __cplusplus
     #include <stdbool.h>
-#endif
-
-#ifndef __TYPES_H
-/* DC: FIXME: What is this header - 3DO SDK?
- 
-#include <Types.h>
-*/
 #endif
 
 #ifdef __cplusplus
@@ -35,6 +30,9 @@ typedef double extended;
 typedef struct {
     Word top,left,bottom,right;
 } Rect;
+
+// DC: this is in the 3DO SDK - define for now to fix compile errors
+typedef int32_t Item;
 
 #define __3DO__
 #define __BIGENDIAN__
