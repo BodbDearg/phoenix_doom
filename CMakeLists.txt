@@ -171,6 +171,7 @@ set(LIB_SOURCES
 
 set(GAME_INCLUDE_DIRS
     ${LIB_SRC_DIR}/burger
+    ${LIB_SRC_DIR}/intmath
 )
 
 set(GAME_SOURCES
