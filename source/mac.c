@@ -34,7 +34,7 @@ void StopSound(Word SoundNum) {}
 void Halt(void) {}
 void DrawSpriteCenter(Word RezNum) {}
 
-void main(void)
-{
+int main(int argc, char* argv[]) {
     D_DoomMain();
+    return 0;
 }
