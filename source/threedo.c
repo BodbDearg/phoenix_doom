@@ -62,15 +62,26 @@ static Word LightTable[] = {
 };
 static void FlushCCBs(void);
 static void LowMemCode(Word Type);
+
+// DC: TODO: unused currently
+#if 0
 static void WipeDoom(LongWord *OldScreen,LongWord *NewScreen);
+#endif
+
 extern void DrawASpan(Word Count,LongWord xfrac,LongWord yfrac,Fixed ds_xstep,Fixed ds_ystep,
     Byte *Dest);
 
 #define CCBTotal 0x200
 
 static MyCCB CCBArray[CCBTotal];            /* Array of CCB structs */
+
+
+// DC: TODO: unused currently
+#if 0
 static MyCCB *CurrentCCB = &CCBArray[0];    /* Pointer to empty CCB */
 static LongWord LastTicCount;               /* Time mark for page flipping */
+#endif
+
 LongWord LastTics;                          /* Time elapsed since last page flip */
 Word WorkPage;                              /* Which frame is not being displayed */
 static Byte *CelLine190;
@@ -80,6 +91,8 @@ Byte *SpanPtr = SpanArray;      /* Pointer to empty buffer */
 
 #define SKYSCALE(x) (Fixed)(1048576.0*(x/160.0))
 
+// DC: TODO: unused currently
+#if 0
 static Fixed SkyScales[6] = {
     SKYSCALE(160.0),
     SKYSCALE(144.0),
@@ -88,16 +101,32 @@ static Fixed SkyScales[6] = {
     SKYSCALE(96.0),
     SKYSCALE(80.0)
 };
+#endif
 
 #define SCREENS 3                   /* Need to page flip */
 uint32_t MainTask;                  /* My own task item */
+
+// DC: TODO: unused currently
+#if 0
 static uint32_t ScreenPageCount;    /* Number of screens */
+#endif
+
 static Item ScreenItems[SCREENS];   /* Referances to the game screens */
 static Item VideoItems[SCREENS];
+
+// DC: TODO: unused currently
+#if 0
 static long ScreenByteCount;        /* How many bytes for each screen */
 static Item ScreenGroupItem = 0;    /* Main screen referance */
+#endif
+
 static Byte *ScreenMaps[SCREENS];   /* Pointer to the bitmap screens */
+
+// DC: TODO: unused currently
+#if 0
 static Item VRAMIOReq;              /* I/O Request for screen copy */
+#endif
+
 Item AllSamples[NUMSFX];            /* Items to sound samples */
 Word AllRates[NUMSFX];
 
@@ -143,7 +172,10 @@ static void SetMyScreen(Word Page)
 
 **********************************/
 
+// DC: TODO: unused currently
+#if 0
 static Word HeightArray[1] = { 200 };   /* I want 200 lines for display memory */
+#endif
 
 // DC: 3DO specific - disable
 #if 0
@@ -241,7 +273,10 @@ static Word HeightArray[1] = { 200 };   /* I want 200 lines for display memory *
     };
 #endif
 
+// DC: TODO: unused currently
+#if 0
 static char FileName[32];
+#endif
 
 void InitTools(void)
 {
@@ -1041,6 +1076,8 @@ void DrawFloorColumn(Word ds_y,Word ds_x1,Word Count,LongWord xfrac,
 #define WIPEWIDTH 320       /* Width of the 3DO screen to wipe */
 #define WIPEHEIGHT 200
 
+// DC: TODO: unused currently
+#if 0
 void WipeDoom(LongWord *OldScreen,LongWord *NewScreen)
 {
     LongWord Mark;  /* Last time mark */
@@ -1138,6 +1175,7 @@ void WipeDoom(LongWord *OldScreen,LongWord *NewScreen)
         } while (++x<(WIPEWIDTH/2));
     } while (!Quit);        /* Wipe finished? */
 }
+#endif
 
 /**********************************
 
