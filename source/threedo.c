@@ -674,12 +674,12 @@ void DrawPlaque(Word RezNum)
 
 **********************************/
 
-int main(void)
+int main(int argc, char* argv[])
 {
-    InitTools();        /* Init the 3DO tool system */
+    InitTools();            /* Init the 3DO tool system */
     UpdateAndPageFlip();    /* Init the video display's vars */
     ReadPrefsFile();        /* Load defaults */
-    D_DoomMain();       /* Start doom */
+    D_DoomMain();           /* Start doom */
     return 0;
 }
 

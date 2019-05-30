@@ -5,6 +5,10 @@ project(PhoenixDoom)
 set(GAME_NAME PhoenixDoom)
 set(LIB_NAME BurgerLib)
 set(CMAKE_C_STANDARD 11)
+set(CMAKE_BUILD_TYPE Debug)
+
+# TODO: This is Clang/GCC specific - wrap
+set(CMAKE_C_FLAGS -g)
 
 set(LIB_SRC_DIR "${PROJECT_SOURCE_DIR}/lib")
 set(GAME_SRC_DIR "${PROJECT_SOURCE_DIR}/source")
