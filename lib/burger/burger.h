@@ -30,8 +30,8 @@ typedef unsigned int Word;
 typedef unsigned char Byte;
 typedef unsigned long LongWord;
 typedef unsigned short Short;
-typedef long Frac;
-typedef long Fixed;
+typedef int32_t Frac;               /* DC: was 'long' in original 3DO source */
+typedef int32_t Fixed;              /* DC: was 'long' in original 3DO source */
 typedef double extended;
 
 typedef struct {
