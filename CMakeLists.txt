@@ -1,9 +1,10 @@
 cmake_minimum_required (VERSION 3.14)
 
+project(PhoenixDoom)
+
 set(GAME_NAME PhoenixDoom)
 set(LIB_NAME BurgerLib)
-
-project(${GAME_NAME})
+set(CMAKE_C_STANDARD 11)
 
 set(LIB_SRC_DIR "${PROJECT_SOURCE_DIR}/lib")
 set(GAME_SRC_DIR "${PROJECT_SOURCE_DIR}/source")
