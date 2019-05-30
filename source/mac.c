@@ -3,6 +3,9 @@
 
 LongWord LastTics;
 
+// DC: These were causing duplicate symbol errors.
+// They look like stubs to be implemented for another platform (mac) which were never implemented?
+#if 0
 void WritePrefsFile(void) {}
 void ClearPrefsFile(void) {}
 void ReadPrefsFile(void) {}
@@ -33,6 +36,7 @@ void PlaySound(Word SoundNum) {}
 void StopSound(Word SoundNum) {}
 void Halt(void) {}
 void DrawSpriteCenter(Word RezNum) {}
+#endif
 
 int main(int argc, char* argv[]) {
     D_DoomMain();
