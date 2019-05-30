@@ -60,6 +60,7 @@ static Word LightTable[] = {
     0x10D0,0x10D0,0x1B00,0x1B00,0x18D0,0x18D0,0x1F00,0x1F00,
     0x1F00,0x1F00,0x1F00,0x1F00,0x1F00,0x1F00,0x1F00,0x1F00,
 };
+
 static void FlushCCBs(void);
 static void LowMemCode(Word Type);
 
@@ -75,7 +76,6 @@ extern void DrawASpan(Word Count,LongWord xfrac,LongWord yfrac,Fixed ds_xstep,Fi
 
 static MyCCB CCBArray[CCBTotal];            /* Array of CCB structs */
 
-
 // DC: TODO: unused currently
 #if 0
 static MyCCB *CurrentCCB = &CCBArray[0];    /* Pointer to empty CCB */
@@ -84,7 +84,11 @@ static LongWord LastTicCount;               /* Time mark for page flipping */
 
 LongWord LastTics;                          /* Time elapsed since last page flip */
 Word WorkPage;                              /* Which frame is not being displayed */
+
+// DC: TODO: unused currently
+#if 0
 static Byte *CelLine190;
+#endif
 
 Byte SpanArray[MAXSCREENWIDTH*MAXSCREENHEIGHT]; /* Buffer for floor textures */
 Byte *SpanPtr = SpanArray;      /* Pointer to empty buffer */
@@ -109,21 +113,11 @@ uint32_t MainTask;                  /* My own task item */
 // DC: TODO: unused currently
 #if 0
 static uint32_t ScreenPageCount;    /* Number of screens */
-#endif
-
 static Item ScreenItems[SCREENS];   /* Referances to the game screens */
 static Item VideoItems[SCREENS];
-
-// DC: TODO: unused currently
-#if 0
 static long ScreenByteCount;        /* How many bytes for each screen */
 static Item ScreenGroupItem = 0;    /* Main screen referance */
-#endif
-
 static Byte *ScreenMaps[SCREENS];   /* Pointer to the bitmap screens */
-
-// DC: TODO: unused currently
-#if 0
 static Item VRAMIOReq;              /* I/O Request for screen copy */
 #endif
 
@@ -157,10 +151,13 @@ static void RunAProgram(char *ProgramName)
 
 static void SetMyScreen(Word Page)
 {
-    VideoItem = VideoItems[Page];           /* Get the bitmap item # */
-    VideoScreen = ScreenItems[Page];
-    VideoPointer = (Byte *) &ScreenMaps[Page][0];
-    CelLine190 = (Byte *) &VideoPointer[190*640];
+    // DC: FIXME: implement/replace
+    #if 0
+        VideoItem = VideoItems[Page];           /* Get the bitmap item # */
+        VideoScreen = ScreenItems[Page];
+        VideoPointer = (Byte *) &ScreenMaps[Page][0];
+        CelLine190 = (Byte *) &VideoPointer[190*640];
+    #endif
 }
 
 /**********************************
