@@ -15,6 +15,13 @@
     #include <stdbool.h>
 #endif
 
+/* DC: header from the 3DO SDK - leaving here for reference for now.
+ 
+#ifndef __TYPES_H
+    #include <Types.h>
+#endif
+*/
+
 #ifdef __cplusplus
 extern "C" {
 #endif

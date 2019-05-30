@@ -1,14 +1,18 @@
 #include "doom.h"
+#include <stdio.h>
+#include <intmath.h>
+#include <time.h>
+
+/* DC: headers from the 3DO SDK - leaving here for reference for now.
+
 #include <Portfolio.h>
 #include <event.h>
 #include <Init3do.h>
 #include <FileFunctions.h>
-#include <stdio.h>
-#include <IntMath.h>
 #include <BlockFile.h>
-#include <Time.h>
 #include <audio.h>
 #include <celutils.h>
+*/
 
 /**********************************
 
