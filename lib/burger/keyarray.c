@@ -2,8 +2,8 @@
 
 /**********************************
 
-	Interrupt driven keyboard scanning array
+    Interrupt driven keyboard scanning array
 
 **********************************/
 
-volatile Byte KeyArray[128];		/* Shift/CapsLock and other flags */
+volatile Byte KeyArray[128];        /* Shift/CapsLock and other flags */

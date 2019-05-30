@@ -1,8 +1,8 @@
 /********************************
 
-	Burger Bill's universal library
-	3DO version
-	Also available for Mac, Apple IIgs, IBM PC
+    Burger Bill's universal library
+    3DO version
+    Also available for Mac, Apple IIgs, IBM PC
 
 ********************************/
 
@@ -33,7 +33,7 @@ typedef long Fixed;
 typedef double extended;
 
 typedef struct {
-	Word top,left,bottom,right;
+    Word top,left,bottom,right;
 } Rect;
 
 #define __3DO__
@@ -100,11 +100,11 @@ extern void DrawRezCenterShape(Word RezNum);
 /* In Font */
 
 typedef struct {
-	Word FontX;
-	Word FontY;
-	Word FontLoaded;
-	Word FontInvisible;
-	Word FontOrMask[16];
+    Word FontX;
+    Word FontY;
+    Word FontLoaded;
+    Word FontInvisible;
+    Word FontOrMask[16];
 } FontState_t;
 
 extern Word FontX;
@@ -131,7 +131,7 @@ extern void FontSetColor(Word ColorNum,Word Color);
 
 /* In Palette */
 
-#define FadeToBlack() FadeToBlackX()		/* The 3DO library has a call like this */
+#define FadeToBlack() FadeToBlackX()        /* The 3DO library has a call like this */
 extern Byte CurrentPalette[32*4];
 extern void SetAPalette(Word ResID);
 extern void SetAPalettePtr(void *PalettePtr);
@@ -139,32 +139,32 @@ extern void SetAPalettePtr2(Word Start,Word Count,void *PalettePtr);
 extern void FadeTo(Word ResID);
 extern void FadeToPtr(void *PalettePtr);
 extern void FadeToBlackX(void);
-#define SetBorderColor(Color)		/* No borders on 3DO */
+#define SetBorderColor(Color)       /* No borders on 3DO */
 #define GetBorderColor() 0
 
 /* Input handlers */
 
-#define PadDown			0x80000000
-#define PadUp			0x40000000
-#define PadRight		0x20000000
-#define PadLeft			0x10000000
-#define PadA			0x08000000
-#define PadB			0x04000000
-#define PadC			0x02000000
-#define PadD			0x00000000
-#define PadStart		0x01000000
-#define PadX			0x00800000
-#define PadRightShift	0x00400000
-#define PadLeftShift	0x00200000
-#define PadXLeft		0x00100000
-#define PadXRight		0x00080000
+#define PadDown         0x80000000
+#define PadUp           0x40000000
+#define PadRight        0x20000000
+#define PadLeft         0x10000000
+#define PadA            0x08000000
+#define PadB            0x04000000
+#define PadC            0x02000000
+#define PadD            0x00000000
+#define PadStart        0x01000000
+#define PadX            0x00800000
+#define PadRightShift   0x00400000
+#define PadLeftShift    0x00200000
+#define PadXLeft        0x00100000
+#define PadXRight       0x00080000
 
-#define RatLeft			0x80000000
-#define RatMiddle		0x40000000
-#define RatRight		0x20000000
+#define RatLeft         0x80000000
+#define RatMiddle       0x40000000
+#define RatRight        0x20000000
 
-extern Word LastJoyButtons[4];		/* Save the previous joypad bits */
-extern Word LastMouseButton;		/* Save the previous mouse hit */
+extern Word LastJoyButtons[4];      /* Save the previous joypad bits */
+extern Word LastMouseButton;        /* Save the previous mouse hit */
 
 extern void (*MyKbhitCallBack)(void);
 extern Word (*MyGetchCallBack)(Word);
@@ -188,10 +188,10 @@ extern bool MousePresent;
 #define MMStageCompact 0
 #define MMStagePurge 1
 
-extern LongWord MaxMemSize;			/* Maximum memory the program will take */
-extern LongWord MinReservedSize;	/* Minimum memory for OS */
-extern Word MinHandles;		/* Number of handles to create */
-extern void (*MemPurgeCallBack)(Word Stage);	/* Callback before memory purging */
+extern LongWord MaxMemSize;         /* Maximum memory the program will take */
+extern LongWord MinReservedSize;    /* Minimum memory for OS */
+extern Word MinHandles;     /* Number of handles to create */
+extern void (*MemPurgeCallBack)(Word Stage);    /* Callback before memory purging */
 extern void InitMemory(void);
 extern void **AllocAHandle(LongWord MemSize);
 extern void **AllocAHandle2(LongWord MemSize,Word Flag);
@@ -253,14 +253,14 @@ extern LongWord ReadTick(void);
 
 /* Sound effects */
 
-#define VOICECOUNT 4		/* Number of voices for sound effects */
-extern Word SampleSound[VOICECOUNT];	/* Sound number being playing in this channel */
-extern Word SamplePriority[VOICECOUNT];	/* Priority chain */
-extern Item AllSamples[];		/* Array of sound effect items to play */
+#define VOICECOUNT 4        /* Number of voices for sound effects */
+extern Word SampleSound[VOICECOUNT];    /* Sound number being playing in this channel */
+extern Word SamplePriority[VOICECOUNT]; /* Priority chain */
+extern Item AllSamples[];       /* Array of sound effect items to play */
 extern Word AllRates[];
 
-extern Word MusicVolume;			/* Volume for music */
-extern Word SfxVolume;		/* Volume for SFX */
+extern Word MusicVolume;            /* Volume for music */
+extern Word SfxVolume;      /* Volume for SFX */
 extern Word LeftVolume;
 extern Word RightVolume;
 
@@ -274,7 +274,7 @@ extern void PauseMusic(void);
 extern void ResumeMusic(void);
 extern void StopSound(Word SoundNum);
 extern void PlaySound(Word SoundNum);
-extern void PlaySong(Word SongNum);		/* Play a song */
+extern void PlaySong(Word SongNum);     /* Play a song */
 extern void SetSfxVolume(Word NewVolume);
 extern void SetMusicVolume(Word NewVolume);
 extern Word KilledSong;
@@ -291,40 +291,40 @@ extern void FreeSomeMem(void *MemPtr);
 /* 3DO Specific Convience routines */
 
 typedef struct {
-	LongWord Offset;	/* Offset into the file */
-	LongWord Length;	/* Length of the data */
-	void **MemPtr;		/* Entry in memory */
+    LongWord Offset;    /* Offset into the file */
+    LongWord Length;    /* Length of the data */
+    void **MemPtr;      /* Entry in memory */
 } MyRezEntry2;
 
 typedef struct {
-	LongWord Type;		/* Data type */
-	LongWord RezNum;	/* Resource number */
-	LongWord Count;		/* Number of entries */
-	MyRezEntry2 Array[1];	/* First entry */
-} MyRezEntry;			/* Entry in memory */
+    LongWord Type;      /* Data type */
+    LongWord RezNum;    /* Resource number */
+    LongWord Count;     /* Number of entries */
+    MyRezEntry2 Array[1];   /* First entry */
+} MyRezEntry;           /* Entry in memory */
 
 typedef struct {
-	Byte Name[4];		/* BRGR Signature */
-	LongWord Count;		/* Number of resource entries */
-	LongWord MemSize;	/* Bytes the header will occupy */
+    Byte Name[4];       /* BRGR Signature */
+    LongWord Count;     /* Number of resource entries */
+    LongWord MemSize;   /* Bytes the header will occupy */
 } MyRezHeader;
 
-#define HANDLELOCK 0x80		/* Lock flags */
-#define HANDLEFIXED 0x40	/* Fixed memory flag */
-#define HANDLEPURGEBITS 0x01	/* Allow purge flag */
+#define HANDLELOCK 0x80     /* Lock flags */
+#define HANDLEFIXED 0x40    /* Fixed memory flag */
+#define HANDLEPURGEBITS 0x01    /* Allow purge flag */
 
 typedef struct MyHandle {
-	void *MemPtr;			/* Pointer to true memory */
-	LongWord Length;		/* Length of memory */
-	LongWord Flags;			/* Memory flags */
-	struct MyHandle *NextHandle;	/* Next handle in the chain */
-	struct MyHandle *PrevHandle;
+    void *MemPtr;           /* Pointer to true memory */
+    LongWord Length;        /* Length of memory */
+    LongWord Flags;         /* Memory flags */
+    struct MyHandle *NextHandle;    /* Next handle in the chain */
+    struct MyHandle *PrevHandle;
 } MyHandle;
 
-extern char RezFileName[];	/* Default resource filename "REZFILE" */
+extern char RezFileName[];  /* Default resource filename "REZFILE" */
 extern MyRezEntry2 *ScanRezMap(Word RezNum,Word Type);
-extern Item VideoItem;			/* 3DO Specific! */
-extern Item VideoScreen;		/* 3DO Specific! */
+extern Item VideoItem;          /* 3DO Specific! */
+extern Item VideoScreen;        /* 3DO Specific! */
 
 /**********************************
 
@@ -332,11 +332,11 @@ extern Item VideoScreen;		/* 3DO Specific! */
 
 **********************************/
 
-extern int abs(int Val);		/* 3DO doesn't have these ANSI library routines */
+extern int abs(int Val);        /* 3DO doesn't have these ANSI library routines */
 extern int atexit(void (*func)(void));
 extern void exit2(int errcode);
 extern void Show3DOLogo(void);
-#define exit(x) exit2(x)		/* Make SURE that Burger.h is first!! */
+#define exit(x) exit2(x)        /* Make SURE that Burger.h is first!! */
 
 #ifdef __cplusplus
 };

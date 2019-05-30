@@ -3,19 +3,19 @@
 
 /**********************************
 
-	Read the bits from the joystick
+    Read the bits from the joystick
 
 **********************************/
 
-Word LastJoyButtons[4];		/* Save the previous joypad bits */
+Word LastJoyButtons[4];     /* Save the previous joypad bits */
 
 Word ReadJoyButtons(Word PadNum)
 {
-	ControlPadEventData ControlRec;
+    ControlPadEventData ControlRec;
 
-	GetControlPad(PadNum+1,FALSE,&ControlRec);		/* Read joypad */
-	if (PadNum<4) {
-		LastJoyButtons[PadNum] = (Word)ControlRec.cped_ButtonBits;
-	}
-	return (Word)ControlRec.cped_ButtonBits;		/* Return the data */
+    GetControlPad(PadNum+1,FALSE,&ControlRec);      /* Read joypad */
+    if (PadNum<4) {
+        LastJoyButtons[PadNum] = (Word)ControlRec.cped_ButtonBits;
+    }
+    return (Word)ControlRec.cped_ButtonBits;        /* Return the data */
 }

@@ -13,7 +13,7 @@ extern "C" {
 #define SC_BACKSPACE    0x0E
 #define SC_TAB          0x0F
 #define SC_ALT          0x38
-#define SC_OPENAPPLE	0x38
+#define SC_OPENAPPLE    0x38
 #define SC_CONTROL      0x1D
 #define SC_CAPSLOCK     0x3A
 #define SC_LSHIFT       0x2A
@@ -67,16 +67,16 @@ extern "C" {
 #define SC_X            0x2D
 #define SC_Y            0x15
 #define SC_Z            0x2C
-#define SC_1			0x02
-#define SC_2			0x03
-#define SC_3			0x04
-#define SC_4			0x05
-#define SC_5			0x06
-#define SC_6			0x07
-#define SC_7			0x08
-#define SC_8			0x09
-#define SC_9			0x0A
-#define SC_0			0x0B
+#define SC_1            0x02
+#define SC_2            0x03
+#define SC_3            0x04
+#define SC_4            0x05
+#define SC_5            0x06
+#define SC_6            0x07
+#define SC_7            0x08
+#define SC_8            0x09
+#define SC_9            0x0A
+#define SC_0            0x0B
 
 #ifdef __cplusplus
 };

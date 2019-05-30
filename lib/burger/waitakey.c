@@ -2,8 +2,8 @@
 
 /********************************
 
-	Wait for a keypress, but call MyKbhit to allow
-	screen savers to kick in.
+    Wait for a keypress, but call MyKbhit to allow
+    screen savers to kick in.
 
 ********************************/
 

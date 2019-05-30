@@ -11,7 +11,7 @@ Word LeftVolume;
 Word RightVolume;
 void DrawPlaque(Word RezNum){}
 void DrawFloorColumn(Word y,Word x,Word Count,LongWord ds_xfrac,
-	LongWord ds_yfrac,Fixed ds_xstep,Fixed sd_ystep) {}
+    LongWord ds_yfrac,Fixed ds_xstep,Fixed sd_ystep) {}
 void PlaySong(Word y) {}
 void DrawSkyLine(void) {}
 void DrawWallColumn(Word y,Word colnum,Byte *Source,Word Run) {}
@@ -36,5 +36,5 @@ void DrawSpriteCenter(Word RezNum) {}
 
 void main(void)
 {
-	D_DoomMain();
+    D_DoomMain();
 }

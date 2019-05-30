@@ -8,6 +8,6 @@
 
 void SetHandlePurgeFlag(void **TheHandle,Word Flag)
 {
-	((MyHandle*)TheHandle)->Flags =
-		(((MyHandle*)TheHandle)->Flags & ~HANDLEPURGEBITS) | Flag;
+    ((MyHandle*)TheHandle)->Flags =
+        (((MyHandle*)TheHandle)->Flags & ~HANDLEPURGEBITS) | Flag;
 }

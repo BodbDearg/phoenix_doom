@@ -1,17 +1,17 @@
 #include "doom.h"
 
-bool trymove2;		    /* Result from P_TryMove2 */
-bool floatok;		    /* if true, move would be ok if within tmfloorz - tmceilingz */
-Fixed tmfloorz;		    /* Current floor z for P_TryMove2 */
-Fixed tmceilingz;		/* Current ceiling z for P_TryMove2 */
-mobj_t *movething;		/* Either a skull/missile target or a special pickup */
-line_t *blockline;		/* Might be a door that can be opened */
+bool trymove2;          /* Result from P_TryMove2 */
+bool floatok;           /* if true, move would be ok if within tmfloorz - tmceilingz */
+Fixed tmfloorz;         /* Current floor z for P_TryMove2 */
+Fixed tmceilingz;       /* Current ceiling z for P_TryMove2 */
+mobj_t *movething;      /* Either a skull/missile target or a special pickup */
+line_t *blockline;      /* Might be a door that can be opened */
 
-static Fixed		oldx, oldy;
-static Fixed		tmbbox[4];
-static Word	tmflags;
-static Fixed tmdropoffz;	/* Lowest point contacted */
-static subsector_t *newsubsec;	/* Dest subsector */
+static Fixed        oldx, oldy;
+static Fixed        tmbbox[4];
+static Word tmflags;
+static Fixed tmdropoffz;    /* Lowest point contacted */
+static subsector_t *newsubsec;  /* Dest subsector */
 
 
 /*
@@ -27,64 +27,64 @@ static subsector_t *newsubsec;	/* Dest subsector */
 
 void P_TryMove2(void)
 {
-	trymove2 = false;		// until proven otherwise
-	floatok = false;
+    trymove2 = false;       // until proven otherwise
+    floatok = false;
 
-	oldx = tmthing->x;
-	oldy = tmthing->y;
+    oldx = tmthing->x;
+    oldy = tmthing->y;
 
-	PM_CheckPosition();
+    PM_CheckPosition();
 
-	if (checkposonly) {
-		checkposonly = false;
-		return;
-	}
+    if (checkposonly) {
+        checkposonly = false;
+        return;
+    }
 
-	if (!trymove2)
-		return;
+    if (!trymove2)
+        return;
 
-	if ( !(tmthing->flags & MF_NOCLIP) ) {
-		trymove2 = false;
+    if ( !(tmthing->flags & MF_NOCLIP) ) {
+        trymove2 = false;
 
-		if (tmceilingz - tmfloorz < tmthing->height)
-			return;			// doesn't fit
-		floatok = true;
-		if ( !(tmthing->flags&MF_TELEPORT)
-			&&tmceilingz - tmthing->z < tmthing->height)
-			return;			// mobj must lower itself to fit
-		if ( !(tmthing->flags&MF_TELEPORT)
-			&& tmfloorz - tmthing->z > 24*FRACUNIT )
-			return;			// too big a step up
-		if ( !(tmthing->flags&(MF_DROPOFF|MF_FLOAT))
-			&& tmfloorz - tmdropoffz > 24*FRACUNIT )
-			return;			// don't stand over a dropoff
-	}
+        if (tmceilingz - tmfloorz < tmthing->height)
+            return;         // doesn't fit
+        floatok = true;
+        if ( !(tmthing->flags&MF_TELEPORT)
+            &&tmceilingz - tmthing->z < tmthing->height)
+            return;         // mobj must lower itself to fit
+        if ( !(tmthing->flags&MF_TELEPORT)
+            && tmfloorz - tmthing->z > 24*FRACUNIT )
+            return;         // too big a step up
+        if ( !(tmthing->flags&(MF_DROPOFF|MF_FLOAT))
+            && tmfloorz - tmdropoffz > 24*FRACUNIT )
+            return;         // don't stand over a dropoff
+    }
 
 //
 // the move is ok, so link the thing into its new position
 //
-	UnsetThingPosition(tmthing);
+    UnsetThingPosition(tmthing);
 
-	tmthing->floorz = tmfloorz;
-	tmthing->ceilingz = tmceilingz;
-	tmthing->x = tmx;
-	tmthing->y = tmy;
+    tmthing->floorz = tmfloorz;
+    tmthing->ceilingz = tmceilingz;
+    tmthing->x = tmx;
+    tmthing->y = tmy;
 
-	SetThingPosition (tmthing);
+    SetThingPosition (tmthing);
 
-	trymove2 = true;
+    trymove2 = true;
 
-	return;
+    return;
 }
 
 static Word PM_CrossCheck(line_t *ld) 
 {
-	if (PM_BoxCrossLine (ld))	{
-		if (!PIT_CheckLine(ld)) {
-			return false;
-		}
-	}
-	return true;
+    if (PM_BoxCrossLine (ld))   {
+        if (!PIT_CheckLine(ld)) {
+            return false;
+        }
+    }
+    return true;
 }
 /*
 ==================
@@ -94,15 +94,15 @@ static Word PM_CrossCheck(line_t *ld)
 = This is purely informative, nothing is modified (except things picked up)
 
 in:
-tmthing		a mobj_t (can be valid or invalid)
-tmx,tmy		a position to be checked (doesn't need relate to the mobj_t->x,y)
+tmthing     a mobj_t (can be valid or invalid)
+tmx,tmy     a position to be checked (doesn't need relate to the mobj_t->x,y)
 
 out:
 
 newsubsec
 floorz
 ceilingz
-tmdropoffz		the lowest point contacted (monsters won't move to a dropoff)
+tmdropoffz      the lowest point contacted (monsters won't move to a dropoff)
 movething
 
 ==================
@@ -110,34 +110,34 @@ movething
 
 void PM_CheckPosition (void)
 {
-	int			xl,xh,yl,yh,bx,by;
+    int         xl,xh,yl,yh,bx,by;
 
-	tmflags = tmthing->flags;
+    tmflags = tmthing->flags;
 
-	tmbbox[BOXTOP] = tmy + tmthing->radius;
-	tmbbox[BOXBOTTOM] = tmy - tmthing->radius;
-	tmbbox[BOXRIGHT] = tmx + tmthing->radius;
-	tmbbox[BOXLEFT] = tmx - tmthing->radius;
+    tmbbox[BOXTOP] = tmy + tmthing->radius;
+    tmbbox[BOXBOTTOM] = tmy - tmthing->radius;
+    tmbbox[BOXRIGHT] = tmx + tmthing->radius;
+    tmbbox[BOXLEFT] = tmx - tmthing->radius;
 
-	newsubsec = PointInSubsector(tmx,tmy);
+    newsubsec = PointInSubsector(tmx,tmy);
 
 //
 // the base floor / ceiling is from the subsector that contains the
 // point.  Any contacted lines the step closer together will adjust them
 //
-	tmfloorz = tmdropoffz = newsubsec->sector->floorheight;
-	tmceilingz = newsubsec->sector->ceilingheight;
+    tmfloorz = tmdropoffz = newsubsec->sector->floorheight;
+    tmceilingz = newsubsec->sector->ceilingheight;
 
-	++validcount;
+    ++validcount;
 
-	movething = 0;
-	blockline = 0;
+    movething = 0;
+    blockline = 0;
 
-	if ( tmflags & MF_NOCLIP )
-	{
-		trymove2 = true;
-		return;
-	}
+    if ( tmflags & MF_NOCLIP )
+    {
+        trymove2 = true;
+        return;
+    }
 
 //
 // check things first, possibly picking things up
@@ -145,53 +145,53 @@ void PM_CheckPosition (void)
 // into mapblocks based on their origin point, and can overlap into adjacent
 // blocks by up to MAXRADIUS units
 //
-	xl = (tmbbox[BOXLEFT] - BlockMapOrgX - MAXRADIUS)>>MAPBLOCKSHIFT;
-	xh = (tmbbox[BOXRIGHT] - BlockMapOrgX + MAXRADIUS)>>MAPBLOCKSHIFT;
-	yl = (tmbbox[BOXBOTTOM] - BlockMapOrgY - MAXRADIUS)>>MAPBLOCKSHIFT;
-	yh = (tmbbox[BOXTOP] - BlockMapOrgY + MAXRADIUS)>>MAPBLOCKSHIFT;
+    xl = (tmbbox[BOXLEFT] - BlockMapOrgX - MAXRADIUS)>>MAPBLOCKSHIFT;
+    xh = (tmbbox[BOXRIGHT] - BlockMapOrgX + MAXRADIUS)>>MAPBLOCKSHIFT;
+    yl = (tmbbox[BOXBOTTOM] - BlockMapOrgY - MAXRADIUS)>>MAPBLOCKSHIFT;
+    yh = (tmbbox[BOXTOP] - BlockMapOrgY + MAXRADIUS)>>MAPBLOCKSHIFT;
 
-	if (xl<0)
-		xl = 0;
-	if (yl<0)
-		yl = 0;
-	if (xh>=BlockMapWidth)
-		xh = BlockMapWidth-1;
-	if (yh>=BlockMapHeight)
-		yh = BlockMapHeight-1;
+    if (xl<0)
+        xl = 0;
+    if (yl<0)
+        yl = 0;
+    if (xh>=BlockMapWidth)
+        xh = BlockMapWidth-1;
+    if (yh>=BlockMapHeight)
+        yh = BlockMapHeight-1;
 
-	for (bx=xl ; bx<=xh ; bx++)
-		for (by=yl ; by<=yh ; by++)
-			if (!BlockThingsIterator(bx,by,PIT_CheckThing)) {
-				trymove2 = false;
-				return;
-			}
+    for (bx=xl ; bx<=xh ; bx++)
+        for (by=yl ; by<=yh ; by++)
+            if (!BlockThingsIterator(bx,by,PIT_CheckThing)) {
+                trymove2 = false;
+                return;
+            }
 
 //
 // check lines
 //
-	xl = (tmbbox[BOXLEFT] - BlockMapOrgX)>>MAPBLOCKSHIFT;
-	xh = (tmbbox[BOXRIGHT] - BlockMapOrgX)>>MAPBLOCKSHIFT;
-	yl = (tmbbox[BOXBOTTOM] - BlockMapOrgY)>>MAPBLOCKSHIFT;
-	yh = (tmbbox[BOXTOP] - BlockMapOrgY)>>MAPBLOCKSHIFT;
+    xl = (tmbbox[BOXLEFT] - BlockMapOrgX)>>MAPBLOCKSHIFT;
+    xh = (tmbbox[BOXRIGHT] - BlockMapOrgX)>>MAPBLOCKSHIFT;
+    yl = (tmbbox[BOXBOTTOM] - BlockMapOrgY)>>MAPBLOCKSHIFT;
+    yh = (tmbbox[BOXTOP] - BlockMapOrgY)>>MAPBLOCKSHIFT;
 
-	if (xl<0)
-		xl = 0;
-	if (yl<0)
-		yl = 0;
-	if (xh>=BlockMapWidth)
-		xh = BlockMapWidth-1;
-	if (yh>=BlockMapHeight)
-		yh = BlockMapHeight-1;
+    if (xl<0)
+        xl = 0;
+    if (yl<0)
+        yl = 0;
+    if (xh>=BlockMapWidth)
+        xh = BlockMapWidth-1;
+    if (yh>=BlockMapHeight)
+        yh = BlockMapHeight-1;
 
-	for (bx=xl ; bx<=xh ; bx++)
-		for (by=yl ; by<=yh ; by++)
-			if (!BlockLinesIterator(bx,by,PM_CrossCheck)) {
-				trymove2 = false;
-				return;
-			}
+    for (bx=xl ; bx<=xh ; bx++)
+        for (by=yl ; by<=yh ; by++)
+            if (!BlockLinesIterator(bx,by,PM_CrossCheck)) {
+                trymove2 = false;
+                return;
+            }
 
-	trymove2 = true;
-	return;
+    trymove2 = true;
+    return;
 }
 
 //=============================================================================
@@ -207,44 +207,44 @@ void PM_CheckPosition (void)
 
 bool PM_BoxCrossLine (line_t *ld)
 {
-	Fixed		x1, y1, x2, y2;
-	Fixed		lx, ly;
-	Fixed		ldx, ldy;
-	Fixed		dx1,dy1;
-	Fixed		dx2,dy2;
-	bool		side1, side2;
+    Fixed       x1, y1, x2, y2;
+    Fixed       lx, ly;
+    Fixed       ldx, ldy;
+    Fixed       dx1,dy1;
+    Fixed       dx2,dy2;
+    bool        side1, side2;
 
-	if (tmbbox[BOXRIGHT] <= ld->bbox[BOXLEFT]
-	||	tmbbox[BOXLEFT] >= ld->bbox[BOXRIGHT]
-	||	tmbbox[BOXTOP] <= ld->bbox[BOXBOTTOM]
-	||	tmbbox[BOXBOTTOM] >= ld->bbox[BOXTOP] )
-		return false;
+    if (tmbbox[BOXRIGHT] <= ld->bbox[BOXLEFT]
+    ||  tmbbox[BOXLEFT] >= ld->bbox[BOXRIGHT]
+    ||  tmbbox[BOXTOP] <= ld->bbox[BOXBOTTOM]
+    ||  tmbbox[BOXBOTTOM] >= ld->bbox[BOXTOP] )
+        return false;
 
-	y1 = tmbbox[BOXTOP];
-	y2 = tmbbox[BOXBOTTOM];
+    y1 = tmbbox[BOXTOP];
+    y2 = tmbbox[BOXBOTTOM];
 
-	if (ld->slopetype == ST_POSITIVE) {
-		x1 = tmbbox[BOXLEFT];
-		x2 = tmbbox[BOXRIGHT];
-	} else {
-		x1 = tmbbox[BOXRIGHT];
-		x2 = tmbbox[BOXLEFT];
-	}
+    if (ld->slopetype == ST_POSITIVE) {
+        x1 = tmbbox[BOXLEFT];
+        x2 = tmbbox[BOXRIGHT];
+    } else {
+        x1 = tmbbox[BOXRIGHT];
+        x2 = tmbbox[BOXLEFT];
+    }
 
-	lx = ld->v1.x;
-	ly = ld->v1.y;
-	ldx = (ld->v2.x-lx)>>16;
-	ldy = (ld->v2.y-ly)>>16;
+    lx = ld->v1.x;
+    ly = ld->v1.y;
+    ldx = (ld->v2.x-lx)>>16;
+    ldy = (ld->v2.y-ly)>>16;
 
-	dx1 = (x1 - lx)>>16;
-	dy1 = (y1 - ly)>>16;
-	dx2 = (x2 - lx)>>16;
-	dy2 = (y2 - ly)>>16;
+    dx1 = (x1 - lx)>>16;
+    dy1 = (y1 - ly)>>16;
+    dx2 = (x2 - lx)>>16;
+    dy2 = (y2 - ly)>>16;
 
-	side1 = ldy*dx1 < dy1*ldx;
-	side2 = ldy*dx2 < dy2*ldx;
+    side1 = ldy*dx1 < dy1*ldx;
+    side2 = ldy*dx2 < dy2*ldx;
 
-	return side1 != side2;
+    return side1 != side2;
 }
 
 //=============================================================================
@@ -261,9 +261,9 @@ bool PM_BoxCrossLine (line_t *ld)
 
 bool PIT_CheckLine (line_t *ld)
 {
-	Fixed		pm_opentop, pm_openbottom;
-	Fixed		pm_lowfloor;
-	sector_t	*front, *back;
+    Fixed       pm_opentop, pm_openbottom;
+    Fixed       pm_lowfloor;
+    sector_t    *front, *back;
 
 // a line has been hit
 
@@ -272,52 +272,52 @@ bool PIT_CheckLine (line_t *ld)
 = The moving thing's destination position will cross the given line.
 = If this should not be allowed, return false.
 */
-	if (!ld->backsector)
-		return false;		// one sided line
+    if (!ld->backsector)
+        return false;       // one sided line
 
-	if (!(tmthing->flags & MF_MISSILE) )
-	{
-		if ( ld->flags & ML_BLOCKING )
-			return false;		// explicitly blocking everything
-		if ( !tmthing->player && ld->flags & ML_BLOCKMONSTERS )
-			return false;		// block monsters only
-	}
+    if (!(tmthing->flags & MF_MISSILE) )
+    {
+        if ( ld->flags & ML_BLOCKING )
+            return false;       // explicitly blocking everything
+        if ( !tmthing->player && ld->flags & ML_BLOCKMONSTERS )
+            return false;       // block monsters only
+    }
 
 
-	front = ld->frontsector;
-	back = ld->backsector;
+    front = ld->frontsector;
+    back = ld->backsector;
 
-	if (front->ceilingheight == front->floorheight
-	|| back->ceilingheight == back->floorheight)
-	{
-		blockline = ld;
-		return false;			// probably a closed door
-	}
+    if (front->ceilingheight == front->floorheight
+    || back->ceilingheight == back->floorheight)
+    {
+        blockline = ld;
+        return false;           // probably a closed door
+    }
 
-	if (front->ceilingheight < back->ceilingheight)
-		pm_opentop = front->ceilingheight;
-	else
-		pm_opentop = back->ceilingheight;
-	if (front->floorheight > back->floorheight)
-	{
-		pm_openbottom = front->floorheight;
-		pm_lowfloor = back->floorheight;
-	}
-	else
-	{
-		pm_openbottom = back->floorheight;
-		pm_lowfloor = front->floorheight;
-	}
+    if (front->ceilingheight < back->ceilingheight)
+        pm_opentop = front->ceilingheight;
+    else
+        pm_opentop = back->ceilingheight;
+    if (front->floorheight > back->floorheight)
+    {
+        pm_openbottom = front->floorheight;
+        pm_lowfloor = back->floorheight;
+    }
+    else
+    {
+        pm_openbottom = back->floorheight;
+        pm_lowfloor = front->floorheight;
+    }
 
 // adjust floor / ceiling heights
-	if (pm_opentop < tmceilingz)
-		tmceilingz = pm_opentop;
-	if (pm_openbottom > tmfloorz)
-		tmfloorz = pm_openbottom;
-	if (pm_lowfloor < tmdropoffz)
-		tmdropoffz = pm_lowfloor;
+    if (pm_opentop < tmceilingz)
+        tmceilingz = pm_opentop;
+    if (pm_openbottom > tmfloorz)
+        tmfloorz = pm_openbottom;
+    if (pm_lowfloor < tmdropoffz)
+        tmdropoffz = pm_lowfloor;
 
-	return true;
+    return true;
 }
 
 /*
@@ -330,71 +330,71 @@ bool PIT_CheckLine (line_t *ld)
 
 Word PIT_CheckThing (mobj_t *thing)
 {
-	Fixed		blockdist;
-	int			delta;
+    Fixed       blockdist;
+    int         delta;
 
-	if (!(thing->flags & (MF_SOLID|MF_SPECIAL|MF_SHOOTABLE) ))
-		return true;
-	blockdist = thing->radius + tmthing->radius;
+    if (!(thing->flags & (MF_SOLID|MF_SPECIAL|MF_SHOOTABLE) ))
+        return true;
+    blockdist = thing->radius + tmthing->radius;
 
-	delta = thing->x - tmx;
-	if (delta < 0)
-		delta = -delta;
-	if (delta >= blockdist)
-		return true;		// didn't hit it
-	delta = thing->y - tmy;
-	if (delta < 0)
-		delta = -delta;
-	if (delta >= blockdist)
-		return true;		// didn't hit it
+    delta = thing->x - tmx;
+    if (delta < 0)
+        delta = -delta;
+    if (delta >= blockdist)
+        return true;        // didn't hit it
+    delta = thing->y - tmy;
+    if (delta < 0)
+        delta = -delta;
+    if (delta >= blockdist)
+        return true;        // didn't hit it
 
-	if (thing == tmthing)
-		return true;		// don't clip against self
+    if (thing == tmthing)
+        return true;        // don't clip against self
 
 //
 // check for skulls slamming into things
 //
-	if (tmthing->flags & MF_SKULLFLY)
-	{
-		movething = thing;
-		return false;		// stop moving
-	}
+    if (tmthing->flags & MF_SKULLFLY)
+    {
+        movething = thing;
+        return false;       // stop moving
+    }
 
 
 //
 // missiles can hit other things
 //
-	if (tmthing->flags & MF_MISSILE)
-	{
-	// see if it went over / under
-		if (tmthing->z > thing->z + thing->height)
-			return true;		// overhead
-		if (tmthing->z+tmthing->height < thing->z)
-			return true;		// underneath
-		if (tmthing->target->InfoPtr == thing->InfoPtr)
-		{		// don't hit same species as originator
-			if (thing == tmthing->target)
-				return true;
-			if (thing->InfoPtr != &mobjinfo[MT_PLAYER])
-				return false;	// explode, but do no damage
-			// let players missile other players
-		}
-		if (! (thing->flags & MF_SHOOTABLE) )
-			return !(thing->flags & MF_SOLID);		// didn't do any damage
+    if (tmthing->flags & MF_MISSILE)
+    {
+    // see if it went over / under
+        if (tmthing->z > thing->z + thing->height)
+            return true;        // overhead
+        if (tmthing->z+tmthing->height < thing->z)
+            return true;        // underneath
+        if (tmthing->target->InfoPtr == thing->InfoPtr)
+        {       // don't hit same species as originator
+            if (thing == tmthing->target)
+                return true;
+            if (thing->InfoPtr != &mobjinfo[MT_PLAYER])
+                return false;   // explode, but do no damage
+            // let players missile other players
+        }
+        if (! (thing->flags & MF_SHOOTABLE) )
+            return !(thing->flags & MF_SOLID);      // didn't do any damage
 
-	// damage / explode
-		movething = thing;
-		return false;			// don't traverse any more
-	}
+    // damage / explode
+        movething = thing;
+        return false;           // don't traverse any more
+    }
 
 //
 // check for special pickup
 //
-	if ( (thing->flags&MF_SPECIAL) && (tmflags&MF_PICKUP) )
-	{
-		movething = thing;
-		return true;
-	}
+    if ( (thing->flags&MF_SPECIAL) && (tmflags&MF_PICKUP) )
+    {
+        movething = thing;
+        return true;
+    }
 
-	return !(thing->flags & MF_SOLID);
+    return !(thing->flags & MF_SOLID);
 }

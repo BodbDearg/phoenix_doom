@@ -2,10 +2,10 @@
 
 /**********************************
 
-	Enable IRQ scanning of the 3DO keyboard
+    Enable IRQ scanning of the 3DO keyboard
 
 **********************************/
 
-void InterceptKey(void)			/* What 3do keyboard!?? */
+void InterceptKey(void)         /* What 3do keyboard!?? */
 {
 }

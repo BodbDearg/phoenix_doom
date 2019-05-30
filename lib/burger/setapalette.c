@@ -2,12 +2,12 @@
 
 /********************************
 
-	Sets an ENTIRE palette loaded from the resource fork
+    Sets an ENTIRE palette loaded from the resource fork
 
 ********************************/
 
 void SetAPalette(Word PaletteNum)
 {
-	SetAPalettePtr(LoadAResource(PaletteNum));      /* Load and show */
-	ReleaseAResource(PaletteNum);           /* Release it */
+    SetAPalettePtr(LoadAResource(PaletteNum));      /* Load and show */
+    ReleaseAResource(PaletteNum);           /* Release it */
 }

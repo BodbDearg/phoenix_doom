@@ -1,11 +1,11 @@
 /****************************
 
-	Indexs to all the sprites in DOOM!
+    Indexs to all the sprites in DOOM!
 
 ****************************/
 
-typedef enum {		/* Sprite animation states */
-S_NULL,				/* None */
+typedef enum {      /* Sprite animation states */
+S_NULL,             /* None */
 S_LIGHTDONE,
 S_PUNCH,
 S_PUNCHDOWN,
@@ -436,10 +436,10 @@ S_RTORCHSHRT,
 S_RTORCHSHRT2,
 S_RTORCHSHRT3,
 S_RTORCHSHRT4,
-NUMSTATES			/* Number of animation states */
+NUMSTATES           /* Number of animation states */
 } statenum_t;
 
-typedef enum {		/* Generic object class for actors */
+typedef enum {      /* Generic object class for actors */
 MT_PLAYER,
 MT_POSSESSED,
 MT_SHOTGUY,

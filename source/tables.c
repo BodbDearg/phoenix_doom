@@ -2067,17 +2067,17 @@ angle_t xtoviewangle[MAXSCREENWIDTH+1];
 Word yslope[MAXSCREENHEIGHT];
 Word distscale[MAXSCREENWIDTH];
 Word IDivTable[8192];
-Word CenterX;			/* Center X coord in fixed point */
-Word CenterY;			/* Center Y coord in fixed point */
-Word ScreenWidth;	/* Width of the view screen */
-Word ScreenHeight;	/* Height of the view screen */
-Fixed Stretch;		/* Stretch factor */
-Fixed StretchWidth;	/* Stretch factor * ScreenWidth */
-Word ScreenXOffset;	/* True X coord for projected screen */
-Word ScreenYOffset;	/* True Y coord for projected screen */
-LongWord GunXScale;	/* Scale factor for player's weapon for X */
-LongWord GunYScale;	/* Scale factor for player's weapon for Y */
-Fixed lightmins[256];	/* Minimum light factors */
-Fixed lightsubs[256];	/* Light subtraction */
-Fixed lightcoefs[256];	/* Light coeffecient */
-Fixed planelightcoef[256];	/* Plane light coeffecient */
+Word CenterX;           /* Center X coord in fixed point */
+Word CenterY;           /* Center Y coord in fixed point */
+Word ScreenWidth;   /* Width of the view screen */
+Word ScreenHeight;  /* Height of the view screen */
+Fixed Stretch;      /* Stretch factor */
+Fixed StretchWidth; /* Stretch factor * ScreenWidth */
+Word ScreenXOffset; /* True X coord for projected screen */
+Word ScreenYOffset; /* True Y coord for projected screen */
+LongWord GunXScale; /* Scale factor for player's weapon for X */
+LongWord GunYScale; /* Scale factor for player's weapon for Y */
+Fixed lightmins[256];   /* Minimum light factors */
+Fixed lightsubs[256];   /* Light subtraction */
+Fixed lightcoefs[256];  /* Light coeffecient */
+Fixed planelightcoef[256];  /* Plane light coeffecient */

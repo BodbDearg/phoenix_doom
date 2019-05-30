@@ -2,9 +2,9 @@
 
 /**********************************
 
-	Used by music manager.
-	Song number currently in pause mode.
+    Used by music manager.
+    Song number currently in pause mode.
 
 **********************************/
 
-Word KilledSong;		/* Last song played */
+Word KilledSong;        /* Last song played */

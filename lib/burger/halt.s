@@ -4,10 +4,10 @@
 ;void Halt(void);
 ;
 
-	AREA	|C$$code|,CODE,READONLY
+    AREA    |C$$code|,CODE,READONLY
 
-	EXPORT Halt
-Halt	SWI	&101	;Invoke the 3DO Debugger
-	MOV	PC,LR	;Return to caller
-			;(Allow the debugger to skip)
-	END
+    EXPORT Halt
+Halt    SWI &101    ;Invoke the 3DO Debugger
+    MOV PC,LR   ;Return to caller
+            ;(Allow the debugger to skip)
+    END

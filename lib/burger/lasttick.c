@@ -6,4 +6,4 @@
 
 **********************************/
 
-LongWord LastTick;		/* Time last waited at */
+LongWord LastTick;      /* Time last waited at */

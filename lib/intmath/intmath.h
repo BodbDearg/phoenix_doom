@@ -1,6 +1,6 @@
 /**********************************
 
-	Calls to the integer math toolbox
+    Calls to the integer math toolbox
 
 **********************************/
 
@@ -17,42 +17,42 @@ extern "C" {
 
 /* Error Codes */
 
-#define IMBadInptParam 0x0B01	/* Bad input parameter */
-#define IMIllegalChar 0x0B02	/* Illegal character in string */
-#define IMOverflow 0x0B03		/* Integer or long integer overflow */
-#define IMStrOverflow 0x0B04	/* String overflow */
+#define IMBadInptParam 0x0B01   /* Bad input parameter */
+#define IMIllegalChar 0x0B02    /* Illegal character in string */
+#define IMOverflow 0x0B03       /* Integer or long integer overflow */
+#define IMStrOverflow 0x0B04    /* String overflow */
 
 /* Limit Values */
 
-#define minLongint 0x80000000	/* Minimum negative signed long integer */
-#define minFrac 0x80000000		/* Pinned value for negative Frac overflow */
-#define minFixed 0x80000000		/* Pinned value for negative Fixed overflow */
-#define minInt 0x8000			/* Minimum negative signed integer */
-#define maxInt 0x7FFF			/* Maximum positive signed integer */
-#define maxUInt 0xFFFFU			/* Maximum positive unsigned integer */
-#define maxLongint 0x7FFFFFFFL	/* Maximum positive signed Longint */
-#define maxFrac 0x7FFFFFFFL		/* Pinned value for positive Frac overflow */
-#define maxFixed 0x7FFFFFFFL	/* Pinned value for positive Fixed overflow */
-#define maxULong 0xFFFFFFFFUL	/* Maximum unsigned Long */
+#define minLongint 0x80000000   /* Minimum negative signed long integer */
+#define minFrac 0x80000000      /* Pinned value for negative Frac overflow */
+#define minFixed 0x80000000     /* Pinned value for negative Fixed overflow */
+#define minInt 0x8000           /* Minimum negative signed integer */
+#define maxInt 0x7FFF           /* Maximum positive signed integer */
+#define maxUInt 0xFFFFU         /* Maximum positive unsigned integer */
+#define maxLongint 0x7FFFFFFFL  /* Maximum positive signed Longint */
+#define maxFrac 0x7FFFFFFFL     /* Pinned value for positive Frac overflow */
+#define maxFixed 0x7FFFFFFFL    /* Pinned value for positive Fixed overflow */
+#define maxULong 0xFFFFFFFFUL   /* Maximum unsigned Long */
 
 typedef struct {
-	int quotient;		/* Quotient from IMSDivide */
-	int remainder;		/* Remainder from IMSDivide */
+    int quotient;       /* Quotient from IMSDivide */
+    int remainder;      /* Remainder from IMSDivide */
 } IntDivRec;
 
 typedef struct {
-	long quotient;	/* Quotient from IMLongDiv */
-	long remainder;	/* Remainder from IMLongDiv */
+    long quotient;  /* Quotient from IMLongDiv */
+    long remainder; /* Remainder from IMLongDiv */
 } LongDivRec;
 
 typedef struct {
-	long lsResult;	/* Low 2 words of product */
-	long msResult;	/* High 2 words of product */
+    long lsResult;  /* Low 2 words of product */
+    long msResult;  /* High 2 words of product */
 } LongMulRec;
 
 typedef struct {
-	Word quotient;		/* Quotient from IMUDivide */
-	Word remainder;		/* Remainder from IMUDivide */
+    Word quotient;      /* Quotient from IMUDivide */
+    Word remainder;     /* Remainder from IMUDivide */
 } WordDivRec;
 
 extern void IMBootInit(void);

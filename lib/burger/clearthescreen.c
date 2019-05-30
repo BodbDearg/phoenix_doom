@@ -2,12 +2,12 @@
 
 /********************************
 
-	Clear the screen
-	
+    Clear the screen
+    
 ********************************/
 
 void ClearTheScreen(Word Color)
 {
-	DrawARect(0,0,ScreenWidth,ScreenHeight,Color);
+    DrawARect(0,0,ScreenWidth,ScreenHeight,Color);
 }
 

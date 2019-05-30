@@ -3,15 +3,15 @@
 
 /**********************************
 
-	Read the bits from the mouse
+    Read the bits from the mouse
 
 **********************************/
 
 void ReadMouseAbs(Word *x,Word *y)
 {
-	MouseEventData ControlRec;
+    MouseEventData ControlRec;
 
-	GetMouse(1,FALSE,&ControlRec);		/* Read mouse */
-	*x = (Word)ControlRec.med_HorizPosition;
-	*y = (Word)ControlRec.med_VertPosition;
+    GetMouse(1,FALSE,&ControlRec);      /* Read mouse */
+    *x = (Word)ControlRec.med_HorizPosition;
+    *y = (Word)ControlRec.med_VertPosition;
 }

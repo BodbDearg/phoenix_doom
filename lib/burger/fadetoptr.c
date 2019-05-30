@@ -19,20 +19,20 @@ void FadeToPtr(void *PalettePtr)
     if (!memcmp((char *)PalettePtr,(char *)CurrentPalette,32*4)) {   /* Same palette? */
         return;
     }
-    memcpy(WorkPalette,CurrentPalette,32*4);		/* Save the current palette */
+    memcpy(WorkPalette,CurrentPalette,32*4);        /* Save the current palette */
     i = 0;
     do {
         DestPalette[i]=((Byte *)PalettePtr)[i]-WorkPalette[i]; /* Get differances */
     } while (++i<32*4);
     Count = 1;
     do {
-        i = 1;			/* Skip #0 */
+        i = 1;          /* Skip #0 */
         do {
-        	if (i&3) {		/* Only affect the RGB values, not the counter */
-            	CurrentPalette[i] = ((DestPalette[i]*(int)Count)>>4)+WorkPalette[i];
+            if (i&3) {      /* Only affect the RGB values, not the counter */
+                CurrentPalette[i] = ((DestPalette[i]*(int)Count)>>4)+WorkPalette[i];
             }
         } while (++i<32*4);
-        WaitTicks(FadeTimer);		/* 1/15th of a second */
+        WaitTicks(FadeTimer);       /* 1/15th of a second */
         SetAPalettePtr(CurrentPalette);
     } while (++Count<17);
 }

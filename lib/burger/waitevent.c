@@ -2,15 +2,15 @@
 
 /**********************************
 
-	Wait for a system event to occur...
+    Wait for a system event to occur...
 
 **********************************/
 
 Word WaitEvent(void)
 {
-	Word EventNum;
-	do {
-		EventNum = WaitTicksEvent(6000);
-	} while (!EventNum);
-	return EventNum;
+    Word EventNum;
+    do {
+        EventNum = WaitTicksEvent(6000);
+    } while (!EventNum);
+    return EventNum;
 }
