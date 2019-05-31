@@ -1,5 +1,7 @@
 #include "doom.h"
+
 #include <string.h>
+#include "Mem.h"
 
 Word NumFlatAnims;      /* Number of flat anims */
 anim_t FlatAnims[] = {
@@ -709,14 +711,15 @@ void SpawnSpecials(void)
     if (numlinespecials) {      /* Any found? */
         line_t *line;
         line_t **linelist;
-
+        
         /* Get memory for the list */
-        linelist = (line_t **)AllocAPointer(sizeof(line_t*)*numlinespecials);
+        linelist = (line_t**) MemAlloc(sizeof(line_t*) * numlinespecials);
         linespeciallist = linelist;     /* Save the pointer */
         i = numlines;
-        line = lines;       /* Reset the count */
+        line = lines;                   /* Reset the count */
+        
         do {
-            if (line->special==48) {        /* EFFECT FIRSTCOL SCROLL+ */
+            if (line->special==48) {    /* EFFECT FIRSTCOL SCROLL+ */
                 linelist[0] = line;     /* Store the pointer */
                 ++linelist;
             }
@@ -733,9 +736,8 @@ void SpawnSpecials(void)
 
 void PurgeLineSpecials(void)
 {
-    if (linespeciallist) {      /* Is there a valid pointer? */
-        DeallocAPointer(linespeciallist);   /* Release it */
-        linespeciallist = 0;
-        numlinespecials = 0;    /* No lines */
+    if (linespeciallist) {                      /* Is there a valid pointer? */
+        MEM_FREE_AND_NULL(linespeciallist);     /* Release it */
+        numlinespecials = 0;                    /* No lines */
     }
 }

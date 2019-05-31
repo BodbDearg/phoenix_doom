@@ -1,5 +1,7 @@
 #include "doom.h"
+
 #include <intmath.h>
+#include "Mem.h"
 #include <string.h>
 
 /* lump order in a map wad */
@@ -14,6 +16,7 @@ static Word LoadedLevel;    /* Resource number of the loaded level */
 static Word numsides;   /* Number of sides loaded */
 static side_t *sides;       /* Pointer to array of loaded sides */
 static line_t **LineArrayBuffer;    /* Pointer to array of line_t pointers used by sectors */
+
 static Word PreLoadTable[] = {
     rSPR_ZOMBIE,            /* Zombiemen */
     rSPR_SHOTGUY,           /* Shotgun guys */
@@ -77,13 +80,14 @@ static void LoadSectors(Word lump)
     sector_t *ss;
 
     Map = (mapsector_t *)LoadAResource(lump);       /* Load the data in */
-    numsectors = ((Word *)Map)[0];          /* Get the number of entries */
-    Map = (mapsector_t *)&((Word*)Map)[1];  /* Index past the entry count */
-    i = numsectors*sizeof(sector_t);    /* Get the data size */
-    ss = (sector_t *)AllocAPointer(i);      /* Get some memory */
-    memset(ss,0,i);     /* Clear out the memory (Extra fields present) */
-    sectors = ss;       /* Save the sector data */
-    i = numsectors;     /* Init the loop count */
+    numsectors = ((Word *)Map)[0];                  /* Get the number of entries */
+    Map = (mapsector_t *)&((Word*)Map)[1];          /* Index past the entry count */
+    i = numsectors*sizeof(sector_t);                /* Get the data size */
+    ss = (sector_t*)MemAlloc(i);                    /* Get some memory */
+    memset(ss,0,i);                                 /* Clear out the memory (Extra fields present) */
+    sectors = ss;                                   /* Save the sector data */
+    i = numsectors;                                 /* Init the loop count */
+    
     do {
         ss->floorheight = Map->floorheight;     /* Copy the floor height */
         ss->ceilingheight = Map->ceilingheight; /* Copy the ceiling height */
@@ -92,9 +96,10 @@ static void LoadSectors(Word lump)
         ss->lightlevel = Map->lightlevel;       /* Copy the ambient light */
         ss->special = Map->special;             /* Copy the event number type */
         ss->tag = Map->tag;                     /* Copy the event tag ID */
-        ++ss;           /* Next indexs */
+        ++ss;                                   /* Next indexs */
         ++Map;
-    } while (--i);      /* All done? */
+    } while (--i);  /* All done? */
+    
     KillAResource(lump);    /* Dispose of the original */
 }
 
@@ -123,7 +128,7 @@ static void LoadSideDefs(Word lump)
     MapSide = (mapsidedef_t *)&((Word *)MapSide)[1];    /* Index to the array */
 
     i = numsides*sizeof(side_t);        /* How much data do I need? */
-    sd = (side_t *)AllocAPointer(i);    /* Allocate it */
+    sd = (side_t *)MemAlloc(i);    /* Allocate it */
     sides=sd;               /* Save the data */
     i = numsides;           /* Number of sides to process */
     do {
@@ -166,9 +171,9 @@ static void LoadLineDefs(Word lump)
     mld = (maplinedef_t *)LoadAResource(lump);  /* Load in the data */
     numlines = ((Word*)mld)[0];         /* Get the number of lines in the struct array */   
     i = numlines*sizeof(line_t);        /* Get the size of the dest buffer */
-    ld = (line_t *)AllocAPointer(i);    /* Get the memory for the lines array */
-    lines = ld;                 /* Save the lines */
-    memset(ld,0,i);             /* Blank out the buffer */
+    ld = (line_t *)MemAlloc(i);         /* Get the memory for the lines array */
+    lines = ld;                         /* Save the lines */
+    memset(ld,0,i);                     /* Blank out the buffer */
     mld = (maplinedef_t *)&((Word *)mld)[1];    /* Index to the first record of the struct array */
     i = numlines;           
     do {
@@ -245,7 +250,7 @@ static void LoadBlockMap(Word lump)
     LongWord *StartIndex;
 
     BlockHandle = LoadAResourceHandle(lump);    /* Load the data */
-    MyLumpPtr = (Byte *)LockAHandle(BlockHandle);
+    MyLumpPtr = (Byte*) BlockHandle;
     BlockMapOrgX = ((Word *)MyLumpPtr)[0];      /* Get the orgx and y */
     BlockMapOrgY = ((Word *)MyLumpPtr)[1];
     BlockMapWidth = ((Word *)MyLumpPtr)[2];     /* Get the map size */
@@ -263,9 +268,11 @@ static void LoadBlockMap(Word lump)
         ++StartIndex;       /* Next offset entry */
     } while (--Count);      /* All done? */ 
 
-/* Convert the lists appended to the array into pointers to lines */
-
+    /* Convert the lists appended to the array into pointers to lines */
+    
+    // FIXME: DC!
     Count = GetAHandleSize(BlockHandle)/4;      /* How much memory is needed? (Longs) */
+    
     Count -= (Entries+4);       /* Remove the header count */
     do {
         if (StartIndex[0]!=-1) {    /* End of a list? */
@@ -276,11 +283,10 @@ static void LoadBlockMap(Word lump)
         ++StartIndex;   /* Next entry */
     } while (--Count);
     
-/* Clear out mobj chains */
-
-    Count = sizeof(*BlockLinkPtr)*Entries;  /* Get memory */
-    BlockLinkPtr = (mobj_t **)AllocAPointer(Count); /* Allocate memory */
-    memset(BlockLinkPtr,0,Count);           /* Clear it out */
+    /* Clear out mobj chains */
+    Count = sizeof(*BlockLinkPtr)*Entries;      /* Get memory */
+    BlockLinkPtr = (mobj_t**) MemAlloc(Count);  /* Allocate memory */
+    memset(BlockLinkPtr,0,Count);               /* Clear it out */
 }
 
 /**********************************
@@ -305,12 +311,12 @@ static void LoadSegs(Word lump)
     seg_t *li;
     Word numsegs;
 
-    ml = (mapseg_t *)LoadAResource(lump);       /* Load in the map data */
-    numsegs = ((Word*)ml)[0];       /* Get the count */
-    i = numsegs*sizeof(seg_t);      /* Get the memory size */
-    li = (seg_t *)AllocAPointer(i); /* Allocate it */
-    segs = li;              /* Save pointer to global */                
-    memset(li,0,i);         /* Clear it out */
+    ml = (mapseg_t *)LoadAResource(lump);   /* Load in the map data */
+    numsegs = ((Word*)ml)[0];               /* Get the count */
+    i = numsegs*sizeof(seg_t);              /* Get the memory size */
+    li = (seg_t*)MemAlloc(i);               /* Allocate it */
+    segs = li;                              /* Save pointer to global */
+    memset(li,0,i);                         /* Clear it out */
 
     ml = (mapseg_t *)&((Word *)ml)[1];  /* Init pointer to first record */
     i = 0;
@@ -358,22 +364,24 @@ static void LoadSubsectors(Word lump)
     mapsubsector_t *ms;
     subsector_t *ss;
 
-    ms = (mapsubsector_t *)LoadAResource(lump); /* Get the map data */
-    numsubsectors = ((Word*)ms)[0];     /* Get the subsector count */
-    i = numsubsectors*sizeof(subsector_t);  /* Calc needed buffer */
-    ss = (subsector_t *)AllocAPointer(i);   /* Get the memory */
-    subsectors=ss;      /* Save in global */
-    ms = (mapsubsector_t *)&((Word *)ms)[1];    /* Index to first entry */
+    ms = (mapsubsector_t *)LoadAResource(lump);     /* Get the map data */
+    numsubsectors = ((Word*)ms)[0];                 /* Get the subsector count */
+    i = numsubsectors*sizeof(subsector_t);          /* Calc needed buffer */
+    ss = (subsector_t *)MemAlloc(i);                /* Get the memory */
+    subsectors=ss;                                  /* Save in global */
+    ms = (mapsubsector_t *)&((Word *)ms)[1];        /* Index to first entry */
     i = numsubsectors;
+    
     do {
         seg_t *seg;
-        ss->numsublines = ms->numlines; /* Number of lines in the sub sectors */
-        seg = &segs[ms->firstline];     /* Get the first line segment pointer */
-        ss->firstline = seg;            /* Save it */
+        ss->numsublines = ms->numlines;     /* Number of lines in the sub sectors */
+        seg = &segs[ms->firstline];         /* Get the first line segment pointer */
+        ss->firstline = seg;                /* Save it */
         ss->sector = seg->sidedef->sector;  /* Get the parent sector */
-        ++ss;       /* Index to the next entry */
+        ++ss;                               /* Index to the next entry */
         ++ms;
     } while (--i);
+    
     KillAResource(lump);
 }
 
@@ -458,10 +466,11 @@ static void GroupLines(void)
 
 /* Build line tables for each sector */
 
-    linebuffer = (line_t **)AllocAPointer(total*sizeof(line_t*));
+    linebuffer = (line_t**)MemAlloc(total * sizeof(line_t*));
     LineArrayBuffer = linebuffer;   /* Save in global for later disposal */
-    sector = sectors;       /* Init the sector pointer */
-    i = numsectors;     /* Get the sector count */
+    sector = sectors;               /* Init the sector pointer */
+    i = numsectors;                 /* Get the sector count */
+    
     do {
         bbox[BOXTOP] = bbox[BOXRIGHT] = MININT; /* Invalidate the rect */
         bbox[BOXBOTTOM] = bbox[BOXLEFT] = MAXINT;
@@ -660,8 +669,13 @@ void SetupLevel(Word map)
 
     Randomize();            /* Reset the random number generator */
     LoadingPlaque();        /* Display "Loading" */
-    PurgeHandles(0);        /* Purge memory */
-    CompactHandles();       /* Pack remaining memory */
+
+    // DC: TODO: Remove
+    #if 0
+        PurgeHandles(0);    /* Purge memory */
+        CompactHandles();   /* Pack remaining memory */
+    #endif
+    
     TotalKillsInLevel = ItemsFoundInLevel = SecretsFoundInLevel = 0;
     p = &players;
     p->killcount = 0;       /* Nothing killed */
@@ -706,20 +720,21 @@ void ReleaseMapMemory(void)
 {
     Word i;
     
-    DeallocAPointer(sectors);       /* Dispose of the sectors */
-    DeallocAPointer(sides);         /* Dispose of the side defs */
-    DeallocAPointer(lines);         /* Dispose of the lines */
+    MEM_FREE_AND_NULL(sectors);             /* Dispose of the sectors */
+    MEM_FREE_AND_NULL(sides);               /* Dispose of the side defs */
+    MEM_FREE_AND_NULL(lines);               /* Dispose of the lines */
     KillAResource(LoadedLevel+ML_BLOCKMAP); /* Make sure it's discarded since I modified it */
-    DeallocAPointer(BlockLinkPtr);  /* Discard the block map mobj linked list */
-    DeallocAPointer(segs);      /* Release the line segment memory */
-    DeallocAPointer(subsectors);    /* Release the sub sectors */
+    MEM_FREE_AND_NULL(BlockLinkPtr);        /* Discard the block map mobj linked list */
+    MEM_FREE_AND_NULL(segs);                /* Release the line segment memory */
+    MEM_FREE_AND_NULL(subsectors);          /* Release the sub sectors */
     KillAResource(LoadedLevel+ML_NODES);    /* Release the BSP tree */
     KillAResource(LoadedLevel+ML_REJECT);   /* Release the quick reject matrix */   
-    DeallocAPointer(LineArrayBuffer);
+    MEM_FREE_AND_NULL(LineArrayBuffer);
+    
     sectors = 0;        /* Zap the pointers */
     sides = 0;          /* May cause a memory fault, but this will aid in debugging! */
     lines = 0;
-    BlockMapLines = 0;      /* Force zero for resource */
+    BlockMapLines = 0;  /* Force zero for resource */
     BlockLinkPtr = 0;
     segs = 0;
     subsectors = 0;

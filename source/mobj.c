@@ -1,5 +1,7 @@
 #include "doom.h"
+
 #include <string.h>
+#include "Mem.h"
 
 typedef struct {        /* Respawn think logic */
     Fixed x,y;          /* X and Y to spawn at */
@@ -60,33 +62,29 @@ static void T_Respawn(spawnthing_t *mthing)
 
 void P_RemoveMobj(mobj_t *mobj)
 {
-
-/* Add to the respawnque for altdeath mode */
-
-#if 0
-    spawnthing_t *MapItem;
-    if ((mobj->flags & MF_SPECIAL) &&       /* Special item */
-        !(mobj->flags & MF_DROPPED) &&      /* Wasn't dropped there */
-        (mobj->InfoPtr != &mobjinfo[MT_INVULNERABILITY]) &&         /* Not invulnerability */
-        (mobj->InfoPtr != &mobjinfo[MT_INVISIBILITY]))  {           /* Not invisibility */
-        MapItem = (spawnthing_t *)AddThinker(T_Respawn,sizeof(spawnthing_t));
-        MapItem->x = mobj->x;       /* Restore the X,Y */
-        MapItem->y = mobj->y;
-        MapItem->InfoPtr = mobj->InfoPtr;   /* Object to spawn */
-        MapItem->angle = mobj->angle;   /* Facing */
-        MapItem->time = (30*TICKSPERSEC);   /* Time before respawn */
-    }
-#endif
-
-/* Unlink from sector and block lists */
-
+    /* Add to the respawnque for altdeath mode */
+    #if 0
+        spawnthing_t *MapItem;
+        if ((mobj->flags & MF_SPECIAL) &&       /* Special item */
+            !(mobj->flags & MF_DROPPED) &&      /* Wasn't dropped there */
+            (mobj->InfoPtr != &mobjinfo[MT_INVULNERABILITY]) &&         /* Not invulnerability */
+            (mobj->InfoPtr != &mobjinfo[MT_INVISIBILITY]))  {           /* Not invisibility */
+            MapItem = (spawnthing_t *)AddThinker(T_Respawn,sizeof(spawnthing_t));
+            MapItem->x = mobj->x;       /* Restore the X,Y */
+            MapItem->y = mobj->y;
+            MapItem->InfoPtr = mobj->InfoPtr;   /* Object to spawn */
+            MapItem->angle = mobj->angle;   /* Facing */
+            MapItem->time = (30*TICKSPERSEC);   /* Time before respawn */
+        }
+    #endif
+    
+    /* Unlink from sector and block lists */
     UnsetThingPosition(mobj);
-
-/* Unlink from mobj list */
-
+    
+    /* Unlink from mobj list */
     mobj->next->prev = mobj->prev;
     mobj->prev->next = mobj->next;
-    DeallocAPointer(mobj);          /* Release the memory */
+    MemFree(mobj);                      // Release the memory
 }
 
 /**********************************
@@ -97,16 +95,18 @@ void P_RemoveMobj(mobj_t *mobj)
 
 Word SetMObjState(mobj_t *mobj,state_t *StatePtr)
 {
-    if (!StatePtr) {        /* Shut down state? */
-        P_RemoveMobj(mobj);     /* Remove the object */
-        return false;           /* Object is shut down */
+    if (!StatePtr) {                /* Shut down state? */
+        P_RemoveMobj(mobj);         /* Remove the object */
+        return false;               /* Object is shut down */
     }
+    
     mobj->state = StatePtr;         /* Save the state index */
-    mobj->tics = StatePtr->Time;        /* Reset the tic count */
+    mobj->tics = StatePtr->Time;    /* Reset the tic count */
 
-    if (StatePtr->action) { /* Call action functions when the state is set */
+    if (StatePtr->action) {         /* Call action functions when the state is set */
         StatePtr->action(mobj);     /* Call the procedure */
     }
+    
     return true;
 }
 
@@ -159,27 +159,27 @@ mobj_t *SpawnMObj(Fixed x,Fixed y,Fixed z,mobjinfo_t *InfoPtr)
     state_t *st;
     sector_t *sector;
 
-    mobj = (mobj_t *)AllocAPointer(sizeof(mobj_t));
-    memset(mobj,0,sizeof(mobj_t));      /* Init the memory */
+    mobj = (mobj_t*) MemAlloc(sizeof(mobj_t));
+    memset(mobj,0,sizeof(mobj_t));              /* Init the memory */
 
-    mobj->InfoPtr = InfoPtr;    /* Save the type pointer */
-    mobj->x = x;            /* Set the x (In Fixed pixels) */
+    mobj->InfoPtr = InfoPtr;                    /* Save the type pointer */
+    mobj->x = x;                                /* Set the x (In Fixed pixels) */
     mobj->y = y;
-    mobj->radius = InfoPtr->Radius; /* Radius of object */
-    mobj->height = InfoPtr->Height; /* Height of object */
-    mobj->flags = InfoPtr->flags;       /* Misc flags */
+    mobj->radius = InfoPtr->Radius;             /* Radius of object */
+    mobj->height = InfoPtr->Height;             /* Height of object */
+    mobj->flags = InfoPtr->flags;               /* Misc flags */
     mobj->MObjHealth = InfoPtr->spawnhealth;    /* Health at start */
     mobj->reactiontime = InfoPtr->reactiontime; /* Initial reaction time */
 
 /* do not set the state with SetMObjState, because action routines can't */
 /* be called yet */
 
-    st = InfoPtr->spawnstate;       /* Get the initial state */
+    st = InfoPtr->spawnstate;   /* Get the initial state */
     if (!st) {                  /* If null, then it's dormant */
         st = &states[S_NULL];   /* Since I am creating this, I MUST have a valid state */
     }
-    mobj->state = st;               /* Save the state pointer */
-    mobj->tics = st->Time;          /* Init the tics */
+    mobj->state = st;           /* Save the state pointer */
+    mobj->tics = st->Time;      /* Init the tics */
 
 /* Set subsector and/or block links */
 
@@ -202,7 +202,7 @@ mobj_t *SpawnMObj(Fixed x,Fixed y,Fixed z,mobjinfo_t *InfoPtr)
     mobj->next = &mobjhead;         /* Set my next link */
     mobj->prev = mobjhead.prev;     /* Set my previous link */
     mobjhead.prev = mobj;           /* Link myself in */
-    return mobj;        /* Return the new object pointer */
+    return mobj;                    /* Return the new object pointer */
 }
 
 /**********************************

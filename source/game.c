@@ -1,5 +1,7 @@
 #include "doom.h"
+
 #include <string.h>
+#include "Mem.h"
 
 /**********************************
 
@@ -245,7 +247,7 @@ void G_RecordDemo (void)
 {
     Word *Dest;
 
-    Dest = (Word *)AllocAPointer(0x8000);       /* Get memory for demo */
+    Dest = (Word *)MemAlloc(0x8000);       /* Get memory for demo */
     DemoBuffer = Dest;          /* Save the pointer */
     Dest[0] = StartSkill;       /* Save the skill and level */
     Dest[1] = StartMap;

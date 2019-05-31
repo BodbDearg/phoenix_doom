@@ -78,7 +78,6 @@ typedef int32_t Item;
 #define SetFileType(x,y)
 
 /* In Graphics */
-
 extern Word YTable[240];
 extern Byte *VideoPointer;
 extern Word VideoWidth;
@@ -103,7 +102,6 @@ extern void DrawRezShape(Word x,Word y,Word RezNum);
 extern void DrawRezCenterShape(Word RezNum);
 
 /* In Font */
-
 typedef struct {
     Word FontX;
     Word FontY;
@@ -135,7 +133,6 @@ extern void FontUseMask(void);
 extern void FontSetColor(Word ColorNum,Word Color);
 
 /* In Palette */
-
 #define FadeToBlack() FadeToBlackX()        /* The 3DO library has a call like this */
 extern Byte CurrentPalette[32*4];
 extern void SetAPalette(Word ResID);
@@ -148,7 +145,6 @@ extern void FadeToBlackX(void);
 #define GetBorderColor() 0
 
 /* Input handlers */
-
 #define PadDown         0x80000000
 #define PadUp           0x40000000
 #define PadRight        0x20000000
@@ -188,34 +184,7 @@ extern void ReadMouseDelta(int *x,int *y);
 extern bool DetectMouse(void);
 extern bool MousePresent;
 
-/* Memory Handlers */
-
-#define MMStageCompact 0
-#define MMStagePurge 1
-
-extern LongWord MaxMemSize;         /* Maximum memory the program will take */
-extern LongWord MinReservedSize;    /* Minimum memory for OS */
-extern Word MinHandles;     /* Number of handles to create */
-extern void (*MemPurgeCallBack)(Word Stage);    /* Callback before memory purging */
-extern void InitMemory(void);
-extern void **AllocAHandle(LongWord MemSize);
-extern void **AllocAHandle2(LongWord MemSize,Word Flag);
-extern void DeallocAHandle(void **MemHandle);
-extern void *AllocAPointer(LongWord MemSize);
-extern void DeallocAPointer(void *MemPtr);
-extern void **ReallocAHandle(void **MemHandle);
-extern void **FindAHandle(void *MemPtr);
-extern void *LockAHandle(void **MemHandle);
-extern void UnlockAHandle(void **MemHandle);
-extern void CompactHandles(void);
-extern void PurgeHandles(Word Priority);
-extern LongWord GetAHandleSize(void **MemHandle);
-extern LongWord GetTotalFreeMem(void);
-extern void SetHandlePurgeFlag(void **MemHandle,Word Flag);
-extern void DumpHandles(void);
-
 /* Resource Handlers */
-
 extern void InitResource(void);
 extern Word OpenAResourceFile(Byte *FileName);
 extern void CloseAResourceFile(Word RefNum);
@@ -231,7 +200,6 @@ extern void DetachAResource(Word ResID);
 extern void DetachAResource2(Word ResID,Word Type);
 
 /* Misc routines */
-
 extern void Randomize(void);
 extern Word GetRandom(Word MaxVal);
 extern Short SwapUShort(Short Val);
@@ -248,7 +216,6 @@ extern Word SaveAFile(Byte *FileName,void *data,LongWord Length);
 extern void *LoadAFile(Byte *FileName);
 
 /* Time and Events */
-
 extern LongWord LastTick;
 extern void WaitTick(void);
 extern void WaitTicks(Word TickCount);
@@ -257,15 +224,13 @@ extern Word WaitEvent(void);
 extern LongWord ReadTick(void);
 
 /* Sound effects */
-
-#define VOICECOUNT 4        /* Number of voices for sound effects */
-extern Word SampleSound[VOICECOUNT];    /* Sound number being playing in this channel */
-extern Word SamplePriority[VOICECOUNT]; /* Priority chain */
-extern Item AllSamples[];       /* Array of sound effect items to play */
+#define VOICECOUNT 4                        /* Number of voices for sound effects */
+extern Word SampleSound[VOICECOUNT];        /* Sound number being playing in this channel */
+extern Word SamplePriority[VOICECOUNT];     /* Priority chain */
+extern Item AllSamples[];                   /* Array of sound effect items to play */
 extern Word AllRates[];
-
-extern Word MusicVolume;            /* Volume for music */
-extern Word SfxVolume;      /* Volume for SFX */
+extern Word MusicVolume;                    /* Volume for music */
+extern Word SfxVolume;                      /* Volume for SFX */
 extern Word LeftVolume;
 extern Word RightVolume;
 
@@ -294,7 +259,6 @@ extern void *AllocSomeMem(LongWord Size);
 extern void FreeSomeMem(void *MemPtr);
 
 /* 3DO Specific Convience routines */
-
 typedef struct {
     LongWord Offset;    /* Offset into the file */
     LongWord Length;    /* Length of the data */
@@ -302,11 +266,11 @@ typedef struct {
 } MyRezEntry2;
 
 typedef struct {
-    LongWord Type;      /* Data type */
-    LongWord RezNum;    /* Resource number */
-    LongWord Count;     /* Number of entries */
+    LongWord Type;          /* Data type */
+    LongWord RezNum;        /* Resource number */
+    LongWord Count;         /* Number of entries */
     MyRezEntry2 Array[1];   /* First entry */
-} MyRezEntry;           /* Entry in memory */
+} MyRezEntry;               /* Entry in memory */
 
 typedef struct {
     Byte Name[4];       /* BRGR Signature */
@@ -314,14 +278,14 @@ typedef struct {
     LongWord MemSize;   /* Bytes the header will occupy */
 } MyRezHeader;
 
-#define HANDLELOCK 0x80     /* Lock flags */
-#define HANDLEFIXED 0x40    /* Fixed memory flag */
+#define HANDLELOCK 0x80         /* Lock flags */
+#define HANDLEFIXED 0x40        /* Fixed memory flag */
 #define HANDLEPURGEBITS 0x01    /* Allow purge flag */
 
 typedef struct MyHandle {
-    void *MemPtr;           /* Pointer to true memory */
-    LongWord Length;        /* Length of memory */
-    LongWord Flags;         /* Memory flags */
+    void *MemPtr;                   /* Pointer to true memory */
+    LongWord Length;                /* Length of memory */
+    LongWord Flags;                 /* Memory flags */
     struct MyHandle *NextHandle;    /* Next handle in the chain */
     struct MyHandle *PrevHandle;
 } MyHandle;

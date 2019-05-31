@@ -14,18 +14,17 @@ set(CMAKE_C_FLAGS -g)
 set(LIB_SRC_DIR "${PROJECT_SOURCE_DIR}/lib")
 set(GAME_SRC_DIR "${PROJECT_SOURCE_DIR}/source")
 
+set(LIB_INCLUDE_DIRS
+    ${GAME_SRC_DIR}
+)
+
 set(LIB_SOURCES
     ${LIB_SRC_DIR}/burger/abs.c
-    ${LIB_SRC_DIR}/burger/allocahandle.c
-    ${LIB_SRC_DIR}/burger/allocapointer.c
     ${LIB_SRC_DIR}/burger/atexit.c
     ${LIB_SRC_DIR}/burger/bombflag.c
     ${LIB_SRC_DIR}/burger/burger.h
     ${LIB_SRC_DIR}/burger/clearthescreen.c
-    ${LIB_SRC_DIR}/burger/compacthandles.c
     ${LIB_SRC_DIR}/burger/currentpalette.c
-    ${LIB_SRC_DIR}/burger/deallocahandle.c
-    ${LIB_SRC_DIR}/burger/deallocapointer.c
     ${LIB_SRC_DIR}/burger/detachresource.c
     ${LIB_SRC_DIR}/burger/detachresource2.c
     ${LIB_SRC_DIR}/burger/detectmouse.c
@@ -37,7 +36,6 @@ set(LIB_SOURCES
     ${LIB_SRC_DIR}/burger/drawrezcentershape.c
     ${LIB_SRC_DIR}/burger/drawrezshape.c
     ${LIB_SRC_DIR}/burger/drawshape.c
-    ${LIB_SRC_DIR}/burger/dumphandles.c
     ${LIB_SRC_DIR}/burger/erasembshape.c
     ${LIB_SRC_DIR}/burger/errormsg.c
     ${LIB_SRC_DIR}/burger/exit2.c
@@ -45,7 +43,6 @@ set(LIB_SOURCES
     ${LIB_SRC_DIR}/burger/fadetoblack.c
     ${LIB_SRC_DIR}/burger/fadetoptr.c
     ${LIB_SRC_DIR}/burger/fatal.c
-    ${LIB_SRC_DIR}/burger/findahandle.c
     ${LIB_SRC_DIR}/burger/flushkeys.c
     ${LIB_SRC_DIR}/burger/fontdata.c
     #${LIB_SRC_DIR}/burger/fontlib/font3
@@ -59,16 +56,13 @@ set(LIB_SOURCES
     ${LIB_SRC_DIR}/burger/fontsetcolor.c
     ${LIB_SRC_DIR}/burger/fontusemask.c
     ${LIB_SRC_DIR}/burger/fontusezero.c
-    ${LIB_SRC_DIR}/burger/getahandlesize.c
     ${LIB_SRC_DIR}/burger/getakey.c
     #${LIB_SRC_DIR}/burger/getapixel.s
     ${LIB_SRC_DIR}/burger/getrandom.c
     ${LIB_SRC_DIR}/burger/getshapeheight.c
     ${LIB_SRC_DIR}/burger/getshapeindexptr.c
     ${LIB_SRC_DIR}/burger/getshapewidth.c
-    ${LIB_SRC_DIR}/burger/gettotalfreemem.c
     ${LIB_SRC_DIR}/burger/halt.s
-    ${LIB_SRC_DIR}/burger/initmemory.c
     ${LIB_SRC_DIR}/burger/initresource.c
     ${LIB_SRC_DIR}/burger/initytable.c
     ${LIB_SRC_DIR}/burger/installafont.c
@@ -84,7 +78,6 @@ set(LIB_SOURCES
     ${LIB_SRC_DIR}/burger/loadaresource2.c
     ${LIB_SRC_DIR}/burger/loadaresourcehandle.c
     ${LIB_SRC_DIR}/burger/loadaresourcehandle2.c
-    ${LIB_SRC_DIR}/burger/lockahandle.c
     ${LIB_SRC_DIR}/burger/longtoasc.c
     ${LIB_SRC_DIR}/burger/longwordtoasc.c
     ${LIB_SRC_DIR}/burger/mousepresent.c
@@ -92,12 +85,10 @@ set(LIB_SOURCES
     ${LIB_SRC_DIR}/burger/mygetch.c
     ${LIB_SRC_DIR}/burger/mykbhit.c
     ${LIB_SRC_DIR}/burger/nonfatal.c
-    ${LIB_SRC_DIR}/burger/purgehandles.c
     ${LIB_SRC_DIR}/burger/readjoybuttons.c
     ${LIB_SRC_DIR}/burger/readmouseabs.c
     ${LIB_SRC_DIR}/burger/readmousebuttons.c
     ${LIB_SRC_DIR}/burger/readtick.c
-    ${LIB_SRC_DIR}/burger/reallocahandle.c
     ${LIB_SRC_DIR}/burger/releasearesource.c
     ${LIB_SRC_DIR}/burger/releasearesource2.c
     ${LIB_SRC_DIR}/burger/rezfilename.c
@@ -110,7 +101,6 @@ set(LIB_SOURCES
     #${LIB_SRC_DIR}/burger/setapixel.s
     ${LIB_SRC_DIR}/burger/seterrbombflag.c
     ${LIB_SRC_DIR}/burger/setfontxy.c
-    ${LIB_SRC_DIR}/burger/sethandlepurgeflag.c
     ${LIB_SRC_DIR}/burger/show3dologo.c
     #${LIB_SRC_DIR}/burger/showmcga.s
     #${LIB_SRC_DIR}/burger/showpic.s
@@ -122,7 +112,6 @@ set(LIB_SOURCES
     #${LIB_SRC_DIR}/burger/test.c
     #${LIB_SRC_DIR}/burger/testmbshape.s
     #${LIB_SRC_DIR}/burger/testmshape.s
-    ${LIB_SRC_DIR}/burger/unlockahandle.c
     ${LIB_SRC_DIR}/burger/videopointer.c
     ${LIB_SRC_DIR}/burger/videowidth.c
     ${LIB_SRC_DIR}/burger/waitakey.c
@@ -180,9 +169,9 @@ set(GAME_INCLUDE_DIRS
 )
 
 set(GAME_SOURCES
+    # ${GAME_SRC_DIR}/blitasm.s
     ${GAME_SRC_DIR}/ammain.c
     ${GAME_SRC_DIR}/base.c
-    # ${GAME_SRC_DIR}/blitasm.s
     ${GAME_SRC_DIR}/ceilng.c
     ${GAME_SRC_DIR}/change.c
     ${GAME_SRC_DIR}/data.c
@@ -204,6 +193,7 @@ set(GAME_SOURCES
     ${GAME_SRC_DIR}/maputl.c
     ${GAME_SRC_DIR}/Math.c
     ${GAME_SRC_DIR}/Math.h
+    ${GAME_SRC_DIR}/Mem.h    
     ${GAME_SRC_DIR}/mmain.c
     ${GAME_SRC_DIR}/mobj.c
     ${GAME_SRC_DIR}/move.c
@@ -235,6 +225,7 @@ set(GAME_SOURCES
 )
 
 add_library(${LIB_NAME} ${LIB_SOURCES})
+include_directories(${LIB_INCLUDE_DIRS})
 
 add_executable(${GAME_NAME} ${GAME_SOURCES})
 include_directories(${GAME_INCLUDE_DIRS})

@@ -62,7 +62,6 @@ static Word LightTable[] = {
 };
 
 static void FlushCCBs(void);
-static void LowMemCode(Word Type);
 
 // DC: TODO: unused currently
 #if 0
@@ -386,17 +385,13 @@ void InitTools(void)
         #endif
     } while (++i<(NUMSFX-1));
 
-    MinHandles = 1200;      /* I will need lot's of memory handles */
-    InitMemory();           /* Init the memory manager */
-    InitResource();         /* Init the resource manager */
-    InterceptKey();         /* Init events */
+    InitResource();     // Init the resource manager
+    InterceptKey();     // Init events
     
     // DC: 3DO specific code - disabling
     #if 0
         SetErrBombFlag(TRUE);   /* Any OS errors will kill me */
     #endif
-    
-    MemPurgeCallBack = LowMemCode;
     
     {
         MyCCB *CCBPtr;
@@ -1437,18 +1432,6 @@ void DrawSpriteCenter(Word SpriteNum)
         DrawMShape(x*2,y*2,&patch->Data);       /* Scale the x and y and draw */
         ReleaseAResource(SpriteNum>>FF_SPRITESHIFT);    /* Let go of the resource */
     #endif
-}
-
-/**********************************
-
-    Called when memory is REALLY low!
-    This is an OOMQueue callback
-
-**********************************/
-
-static void LowMemCode(Word Stage)
-{
-    FlushCCBs();        /* Purge all CCB's */
 }
 
 /**********************************

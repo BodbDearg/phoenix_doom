@@ -1,19 +1,14 @@
 #include <burger.h>
+#include "Mem.h"
 
-/********************************
-
-    Destroy the data associated with a resource
-
-********************************/
-
+//---------------------------------------------------------------------------------------------------------------------
+// Destroy the data associated with a resource
+//---------------------------------------------------------------------------------------------------------------------
 void KillAResource2(Word RezNum,Word Type)
 {
-    MyRezEntry2 *Entry;
-    Entry = ScanRezMap(RezNum,Type);    /* Scan for the resource */
-    if (Entry) {
-        if (Entry->MemPtr) {     /* Is there a handle? */
-            DeallocAHandle(Entry->MemPtr);
-            Entry->MemPtr = 0;       /* Mark as GONE */
-        }
+    MyRezEntry2* pEntry = ScanRezMap(RezNum,Type);    // Scan for the resource
+    
+    if (pEntry) {
+        MEM_FREE_AND_NULL(pEntry->MemPtr);
     }
 }

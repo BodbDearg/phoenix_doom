@@ -1,5 +1,7 @@
 #include "doom.h"
+
 #include <string.h>
+#include "Mem.h"
 
 typedef struct thinker_s {
     struct thinker_s *next,*prev;
@@ -29,12 +31,12 @@ static void RemoveMeThink(thinker_t *Current)
 {
     thinker_t *Next;
     thinker_t *Prev;
-    --Current;          /* Index to the REAL pointer */
+    --Current;                  // Index to the REAL pointer
     Next = Current->next;
     Prev = Current->prev;
-    Next->prev = Prev;  /* Unlink it */
+    Next->prev = Prev;          // Unlink it
     Prev->next = Next;
-    DeallocAPointer(Current);       /* Release the memory */
+    MemFree(Current);           // Release the memory
 }
 
 /**********************************
@@ -48,31 +50,33 @@ static void RemoveMeThink(thinker_t *Current)
     memory.
 
 **********************************/
-
 void InitThinkers(void)
 {
-    ResetPlats();               /* Reset the platforms */
-    ResetCeilings();            /* Reset the ceilings */
-    if (mobjhead.next) {        /* Initialized before? */
+    ResetPlats();               // Reset the platforms
+    ResetCeilings();            // Reset the ceilings
+    
+    if (mobjhead.next) {    // Initialized before?
         mobj_t *m,*NextM;
         m=mobjhead.next;
-        while (m!=&mobjhead) {  /* Any player object */
-            NextM = m->next;        /* Get the next record */
-            DeallocAPointer(m); /* Delete the object from the list */
+        while (m!=&mobjhead) {      // Any player object
+            NextM = m->next;        // Get the next record
+            MemFree(m);             // Delete the object from the list
             m=NextM;
         }
     }
+    
     if (thinkercap.next) {
         thinker_t *t,*NextT;
         t = thinkercap.next;
-        while (t!=&thinkercap) {    /* Is there a think struct here? */
+        while (t!=&thinkercap) {    // Is there a think struct here?
             NextT = t->next;
-            DeallocAPointer(t);     /* Delete it from memory */
+            MemFree(t);             // Delete it from memory
             t = NextT;
         }
     }
-    thinkercap.prev = thinkercap.next  = &thinkercap;   /* Loop around */
-    mobjhead.next = mobjhead.prev = &mobjhead;      /* Loop around */
+    
+    thinkercap.prev = thinkercap.next  = &thinkercap;   // Loop around
+    mobjhead.next = mobjhead.prev = &mobjhead;          // Loop around
 }
 
 /**********************************
@@ -82,22 +86,21 @@ void InitThinkers(void)
     finishes.
 
 **********************************/
-
 void *AddThinker(void (*FuncProc)(),Word MemSize)
 {
     thinker_t *Prev;
     thinker_t *thinker;
     
-    MemSize += sizeof(thinker_t);       /* Add size for the thinker prestructure */
-    thinker = (thinker_t *)AllocAPointer(MemSize);  /* Get memory */
-    memset(thinker,0,MemSize);      /* Blank it out */
-    Prev = thinkercap.prev;     /* Get the last thinker in the list */
-    thinker->next = &thinkercap;    /* Mark as last entry in list */
-    thinker->prev = Prev;   /* Set prev link to final entry */
+    MemSize += sizeof(thinker_t);               // Add size for the thinker prestructure
+    thinker = (thinker_t*) MemAlloc(MemSize);   // Get memory
+    memset(thinker,0,MemSize);                  // Blank it out
+    Prev = thinkercap.prev;                     // Get the last thinker in the list
+    thinker->next = &thinkercap;                // Mark as last entry in list
+    thinker->prev = Prev;                       // Set prev link to final entry
     thinker->function = FuncProc;
-    Prev->next = thinker;   /* Next link to the new link */
-    thinkercap.prev = thinker;  /* Mark the reverse link */
-    return thinker+1;       /* Index AFTER the thinker structure */
+    Prev->next = thinker;                       // Next link to the new link
+    thinkercap.prev = thinker;                  // Mark the reverse link
+    return thinker+1;                           // Index AFTER the thinker structure
 }
 
 /**********************************
@@ -106,11 +109,10 @@ void *AddThinker(void (*FuncProc)(),Word MemSize)
     thinking turn comes up
 
 **********************************/
-
 void RemoveThinker(void *thinker)
 {
-    thinker = ((thinker_t *)thinker)-1;     /* Index to the true structure */
-    ((thinker_t*)thinker)->function = RemoveMeThink;    /* Delete the structure on the next pass */
+    thinker = ((thinker_t *)thinker)-1;                 // Index to the true structure
+    ((thinker_t*)thinker)->function = RemoveMeThink;    // Delete the structure on the next pass
 }
 
 /**********************************

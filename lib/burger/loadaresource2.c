@@ -6,13 +6,8 @@
 
 ********************************/
 
+// DC: TODO: Remove
 void *LoadAResource2(Word RezNum,Word Type)
 {
-    void **BufferPtr;
-
-    BufferPtr = LoadAResourceHandle2(RezNum,Type);  /* Get the handle */
-    if (BufferPtr) {
-        return LockAHandle(BufferPtr);   /* Lock and return */
-    }
-    return 0;
+    return LoadAResourceHandle2(RezNum,Type);
 }
