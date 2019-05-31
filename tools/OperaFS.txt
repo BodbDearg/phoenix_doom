@@ -1,0 +1,14 @@
+OperaFS is a tool that can extract the contents of a 3DO disk image (.img) for Doom. It allows extracting all of the files & folders on the disc into a regular folder, where they an be easily accessed.
+
+Where OperaFS.exe (OperaFS[De]Compiler) came from:
+    http://altmer.arts-union.ru/3DO/3do_utils.htm
+
+Unfortunately there does not seem to be any source available for the tool, but the Russian page does link to some source code (for Linux I think) that enables support for the OperaFS filesystem:
+    http://altmer.arts-union.ru/3DO/downloads/others/operafs-1.0b2.tar.gz
+
+I've included this source along with the tool the 'OperaFS' folder.
+
+The version of 'OperaFS.exe' that I am using here appears to have come from here:
+https://forum.uqm.stack.nl/index.php?topic=3535.0
+
+Was translated from Russian into English by someone.
