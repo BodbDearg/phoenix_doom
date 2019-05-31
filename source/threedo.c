@@ -668,19 +668,14 @@ void DrawPlaque(Word RezNum)
     SetMyScreen(WorkPage);      /* Reset to normal */
 }
 
-/**********************************
-
-    Main code entry
-
-**********************************/
-
-int main(int argc, char* argv[])
-{
-    InitTools();            /* Init the 3DO tool system */
-    UpdateAndPageFlip();    /* Init the video display's vars */
-    ReadPrefsFile();        /* Load defaults */
-    D_DoomMain();           /* Start doom */
-    return 0;
+//---------------------------------------------------------------------------------------------------------------------
+// Main entry point for 3DO
+//---------------------------------------------------------------------------------------------------------------------
+void ThreeDOMain() {
+    InitTools();            // Init the 3DO tool system
+    UpdateAndPageFlip();    // Init the video display's vars
+    ReadPrefsFile();        // Load defaults
+    D_DoomMain();           // Start doom
 }
 
 /**********************************

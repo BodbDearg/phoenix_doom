@@ -5,6 +5,7 @@ project(PhoenixDoom)
 set(GAME_NAME PhoenixDoom)
 set(LIB_NAME BurgerLib)
 set(CMAKE_C_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_BUILD_TYPE Debug)
 
 # TODO: This is Clang/GCC specific - wrap
@@ -198,6 +199,7 @@ set(GAME_SOURCES
     ${GAME_SRC_DIR}/inter.c
     ${GAME_SRC_DIR}/lights.c
     ${GAME_SRC_DIR}/mac.c
+    ${GAME_SRC_DIR}/Main.cpp
     ${GAME_SRC_DIR}/map.c
     ${GAME_SRC_DIR}/maputl.c
     ${GAME_SRC_DIR}/Math.c
