@@ -105,7 +105,11 @@ void ResourceMgr::init(const char* const fileName) noexcept {
             uint32_t resourceNum = pGroupHeader->resourcesStartNum;
             const uint32_t endResourceNum = resourceNum + pGroupHeader->numResources;
             
-            while (resourceNum < endResourceNum && pCurBytes + sizeof(ResourceHeader) <= pEndBytes) {
+            while (resourceNum < endResourceNum) {
+                if (pCurBytes + sizeof(ResourceHeader) > pEndBytes) {
+                    FATAL_ERROR("Resource file '%s' is invalid! Unexpected head of resource header data!\n", fileName);
+                }
+                
                 ResourceHeader* const pResourceHeader = (ResourceHeader*) pCurBytes;
                 pResourceHeader->swapEndian();
                 pCurBytes += sizeof(ResourceHeader);
@@ -159,6 +163,10 @@ const Resource* ResourceMgr::loadResource(const uint32_t number) noexcept {
     if (pResource) {
         if (!pResource->pData) {
             pResource->pData = MemAlloc(pResource->size);
+            
+            if (std::fseek(mpResourceFile, pResource->offset, SEEK_SET) != 0) {
+                FATAL_ERROR("Failed to read resource number %u!", unsigned(number));
+            }
             
             if (std::fread(pResource->pData, pResource->size, 1, mpResourceFile) != 1) {
                 FATAL_ERROR("Failed to read resource number %u!", unsigned(number));
