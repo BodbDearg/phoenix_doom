@@ -8,27 +8,27 @@
 #include <vector>
 
 struct TextureInfoHeader {
-    uint32_t    numWallTextures;
-    uint32_t    firstWallTexture;       // Resource number
-    uint32_t    numFlatTextures;
-    uint32_t    firstFlatTexture;       // Resource number
+    uint16_t    numWallTextures;
+    uint16_t    firstWallTexture;       // Resource number
+    uint16_t    numFlatTextures;
+    uint16_t    firstFlatTexture;       // Resource number
     
     void swapEndian() noexcept {
-        byteSwapU32(numWallTextures);
-        byteSwapU32(firstWallTexture);
-        byteSwapU32(numFlatTextures);
-        byteSwapU32(firstFlatTexture);
+        byteSwapU16(numWallTextures);
+        byteSwapU16(firstWallTexture);
+        byteSwapU16(numFlatTextures);
+        byteSwapU16(firstFlatTexture);
     }
 };
 
 struct TextureInfoEntry {
-    uint32_t    width;
-    uint32_t    height;
+    uint16_t    width;
+    uint16_t    height;
     uint32_t    _unused;
     
     void swapEndian() noexcept {
-        byteSwapU32(width);
-        byteSwapU32(height);
+        byteSwapU16(width);
+        byteSwapU16(height);
     }
 };
 
@@ -64,7 +64,7 @@ void texturesInit() {
     // If we byte swapped the originals then we might double swap back to big endian accidently...
     const std::byte* pData = (const std::byte*) loadDoomResource(rTEXTURE1);
     
-    TextureInfoHeader header = (TextureInfoHeader&) *pData;
+    TextureInfoHeader header = (const TextureInfoHeader&) *pData;
     header.swapEndian();
     pData += sizeof(TextureInfoHeader);
     
@@ -79,7 +79,7 @@ void texturesInit() {
         const uint32_t numWallTex = (uint32_t) gWallTextures.size();
         
         for (uint32_t wallTexNum = 0; wallTexNum < numWallTex; ++wallTexNum) {
-            TextureInfoEntry info = (TextureInfoEntry&) *pData;
+            TextureInfoEntry info = (const TextureInfoEntry&) *pData;
             info.swapEndian();
             pData += sizeof(TextureInfoEntry);
             
