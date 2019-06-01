@@ -1,4 +1,5 @@
 #include "doom.h"
+#include "DoomResources.h"
 #include <intmath.h>
 
 #define MAXSEGS 32      /* Maximum number of segs to scan */
@@ -125,7 +126,7 @@ static void PrepMObj(mobj_t *thing)
 
     StatePtr = thing->state;
     lump = StatePtr->SpriteFrame>>FF_SPRITESHIFT;       /* Get the resource # */
-    PatchHandle = LoadAResourceHandle(lump);    /* Get the sprite group */
+    PatchHandle = loadDoomResourceData(lump);    /* Get the sprite group */
     patch = (patch_t *)*PatchHandle;        /* Deref the handle */
     Offset = ((LongWord *)patch)[StatePtr->SpriteFrame & FF_FRAMEMASK];
     if (Offset&PT_NOROTATE) {       /* Do I rotate? */
@@ -148,7 +149,7 @@ static void PrepMObj(mobj_t *thing)
     Trx -= patch->leftoffset<<FRACBITS;     /* Adjust the x to the sprite's x */
     x1 = (IMFixMul(Trx,Trz)>>FRACBITS)+CenterX;     /* Scale to screen coords */
     if (x1 > (int)ScreenWidth) {
-        ReleaseAResource(lump);
+        releaseDoomResource(lump);
         return;     /* Off the right side, don't draw */
     }
 
@@ -156,7 +157,7 @@ static void PrepMObj(mobj_t *thing)
     
     x2 = IMFixMul(GetShapeHeight(&patch->Data),Trz)+x1;
     if (x2 <= 0) {
-        ReleaseAResource(lump);
+        releaseDoomResource(lump);
         return;     /* Off the left side */
     }
 
@@ -191,7 +192,7 @@ static void PrepMObj(mobj_t *thing)
     if (vis->y2>=0 || vis->y1<(int)ScreenHeight) {  /* Clipped vertically? */
         vissprite_p = vis+1;        /* Use the record */
     }
-    ReleaseAResource(lump);
+    releaseDoomResource(lump);
 }
 
 /**********************************

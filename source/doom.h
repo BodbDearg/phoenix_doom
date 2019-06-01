@@ -514,7 +514,7 @@ typedef struct {
 typedef struct {        /* Describe all wall textures */
     Word width;         /* Width of the texture in pixels */
     Word height;        /* Height of the texture in pixels */
-    void **data;        /* Handle to cached data to draw from */
+    void** data;        /* Handle to cached data to draw from */
 } texture_t;
 
 #define AC_ADDFLOOR 1
@@ -593,7 +593,7 @@ extern Word PrevJoyPadButtons;  /* Previous joypad */
 extern Word NewJoyPadButtons;   /* New joypad button downs */
 extern skill_t StartSkill;  /* Default skill level */
 extern Word StartMap;       /* Default map start */
-extern void *BigNumFont;    /* Cached pointer to the big number font (rBIGNUMB) */
+extern const void* BigNumFont;    /* Cached pointer to the big number font (rBIGNUMB) */
 extern Word TotalKillsInLevel;      /* Number of monsters killed */
 extern Word ItemsFoundInLevel;      /* Number of items found */
 extern Word SecretsFoundInLevel;        /* Number of secrets discovered */
@@ -936,11 +936,11 @@ extern Word NumTextures;        /* Number of textures in the game */
 extern Word FirstTexture;       /* First texture resource */
 extern Word NumFlats;           /* Number of flats in the game */
 extern Word FirstFlat;          /* Resource number to first flat texture */
-extern texture_t *TextureInfo;  /* Array describing textures */
+extern texture_t* TextureInfo;  /* Array describing textures */
 extern void ***FlatInfo;        /* Array describing flats */
 extern texture_t **TextureTranslation; /* Indexs to textures for global animation */
 extern void ***FlatTranslation; /* Indexs to textures for global animation */
-extern texture_t *SkyTexture;   /* Pointer to the sky texture */
+extern texture_t* SkyTexture;   /* Pointer to the sky texture */
 
 extern void R_InitData(void);
 extern void InitMathTables(void);
@@ -1069,7 +1069,6 @@ extern void ClearPrefsFile(void);
 extern void ReadPrefsFile(void);
 extern void UpdateAndPageFlip(void);
 extern void DrawPlaque(Word RezNum);
-extern void **LoadAResourceHandle(Word RezNum);
 extern void DrawSkyLine(void);
 extern void DrawWallColumn(Word y,Word colnum,Byte *Source,Word Run);
 extern void DrawFloorColumn(Word ds_y,Word ds_x1,Word Count,LongWord xfrac,

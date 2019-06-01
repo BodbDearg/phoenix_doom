@@ -11,7 +11,7 @@
 
 **********************************/
 
-Word GetShapeWidth(void *ShapePtr)
+Word GetShapeWidth(const void* ShapePtr)
 {
     // DC: FIXME: replace or reimplement
     #if 0

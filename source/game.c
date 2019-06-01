@@ -1,7 +1,7 @@
 #include "doom.h"
-
-#include <string.h>
+#include "DoomResources.h"
 #include "Mem.h"
+#include <string.h>
 
 /**********************************
 
@@ -27,7 +27,7 @@ void G_DoLoadLevel(void)
         Sky = rSKY3;
     }
     SkyTexture = &TextureInfo[Sky-FirstTexture];    /* Set pointer to sky texture record */
-    SkyTexture->data = LoadAResourceHandle(Sky);        /* Preload the sky texture */
+    SkyTexture->data = loadDoomResourceData(Sky);   /* Preload the sky texture */
     SetupLevel(gamemap);    /* Load the level into memory */
     gameaction = ga_nothing;        /* Game in progress */
 }

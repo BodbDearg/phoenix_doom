@@ -86,63 +86,20 @@ extern Word ScreenHeight;
 extern void InitYTable(void);
 extern Word GetAPixel(Word x,Word y);
 extern void SetAPixel(Word x,Word y,Word Color);
-extern void DrawShape(Word x,Word y,void *ShapePtr);
-extern void DrawMShape(Word x,Word y,void *ShapePtr);
-extern void EraseShape(Word x,Word y,void *ShapePtr);
+extern void DrawShape(Word x,Word y, const void* ShapePtr);
+extern void DrawMShape(Word x, Word y, const void* ShapePtr);
+extern void EraseShape(Word x, Word y, void* ShapePtr);
 extern void EraseMBShape(Word x, Word y,void *ShapePtr,void *BackPtr);
 extern void DrawARect(Word x,Word y,Word Width,Word Height,Word Color);
-extern Word GetShapeWidth(void *ShapePtr);
+extern Word GetShapeWidth(const void* ShapePtr);
 extern Word GetShapeHeight(void *ShapePtr);
-extern void *GetShapeIndexPtr(void *ShapeArrayPtr,Word Index);
+extern const void* GetShapeIndexPtr(const void* ShapeArrayPtr, Word Index);
 extern void DrawXMShape(Word x,Word y,void *ShapePtr);
 extern Word TestMShape(Word x,Word y,void *ShapePtr);
 extern Word TestMBShape(Word x,Word y,void *ShapePtr,void *BackPtr);
 extern void ClearTheScreen(Word Color);
 extern void DrawRezShape(Word x,Word y,Word RezNum);
 extern void DrawRezCenterShape(Word RezNum);
-
-/* In Font */
-typedef struct {
-    Word FontX;
-    Word FontY;
-    Word FontLoaded;
-    Word FontInvisible;
-    Word FontOrMask[16];
-} FontState_t;
-
-extern Word FontX;
-extern Word FontY;
-extern void *FontPointer;
-extern Byte *FontWidths;
-extern Word FontHeight;
-extern Word FontFirst;
-extern Word FontLast;
-extern Word FontLoaded;
-extern Word FontInvisible;
-extern Word FontOrMask[16];
-extern void FontSaveState(FontState_t *StatePtr);
-extern void FontRestoreState(FontState_t *StatePtr);
-extern void DrawAString(void *TextPtr);
-extern Word WidthAString(void *TextPtr);
-#define SetFontXY(x,y) FontSetXY(x,y)
-extern void FontSetXY(Word x,Word y);
-extern void DrawAChar(Word Char);
-extern void InstallAFont(Word FontNum);
-extern void FontUseZero(void);
-extern void FontUseMask(void);
-extern void FontSetColor(Word ColorNum,Word Color);
-
-/* In Palette */
-#define FadeToBlack() FadeToBlackX()        /* The 3DO library has a call like this */
-extern Byte CurrentPalette[32*4];
-extern void SetAPalette(Word ResID);
-extern void SetAPalettePtr(void *PalettePtr);
-extern void SetAPalettePtr2(Word Start,Word Count,void *PalettePtr);
-extern void FadeTo(Word ResID);
-extern void FadeToPtr(void *PalettePtr);
-extern void FadeToBlackX(void);
-#define SetBorderColor(Color)       /* No borders on 3DO */
-#define GetBorderColor() 0
 
 /* Input handlers */
 #define PadDown         0x80000000
@@ -183,21 +140,6 @@ extern void ReadMouseAbs(Word *x,Word *y);
 extern void ReadMouseDelta(int *x,int *y);
 extern bool DetectMouse(void);
 extern bool MousePresent;
-
-/* Resource Handlers */
-extern void InitResource(void);
-extern Word OpenAResourceFile(Byte *FileName);
-extern void CloseAResourceFile(Word RefNum);
-extern void *LoadAResource(Word ResID);
-extern void *LoadAResource2(Word ResID,Word Type);
-extern void **LoadAResourceHandle(Word ResID);
-extern void **LoadAResourceHandle2(Word ResID,Word Type);
-extern void ReleaseAResource(Word ResID);
-extern void ReleaseAResource2(Word ResID,Word Type);
-extern void KillAResource(Word ResID);
-extern void KillAResource2(Word ResID,Word Type);
-extern void DetachAResource(Word ResID);
-extern void DetachAResource2(Word ResID,Word Type);
 
 /* Misc routines */
 extern void Randomize(void);

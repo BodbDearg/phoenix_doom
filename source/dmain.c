@@ -1,4 +1,5 @@
 #include "doom.h"
+#include "DoomResources.h"
 
 /**********************************
 
@@ -360,7 +361,7 @@ static void RunDemo(Word demoname)
 
 void D_DoomMain(void)
 {
-    BigNumFont = LoadAResource(rBIGNUMB);   /* Cache the large numeric font (Needed always) */
+    BigNumFont = loadDoomResourceData(rBIGNUMB);   /* Cache the large numeric font (Needed always) */
     R_Init();           /* Init refresh system */
     P_Init();           /* Init main code */
     O_Init();           /* Init controls */

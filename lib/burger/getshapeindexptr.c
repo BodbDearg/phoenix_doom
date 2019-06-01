@@ -6,7 +6,7 @@
 
 **********************************/
 
-void *GetShapeIndexPtr(void *ShapeArrayPtr,Word Index)
+const void* GetShapeIndexPtr(const void* ShapeArrayPtr, Word Index)
 {
     return &((Byte *)ShapeArrayPtr)[((LongWord *)ShapeArrayPtr)[Index]];
 }

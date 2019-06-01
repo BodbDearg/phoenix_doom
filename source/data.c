@@ -32,7 +32,7 @@ Word PrevJoyPadButtons; /* Previous joypad */
 Word NewJoyPadButtons;  /* New joypad button downs */
 skill_t StartSkill;     /* Default skill level */
 Word StartMap;          /* Default map start */
-void *BigNumFont;       /* Cached pointer to the big number font */
+const void* BigNumFont;       /* Cached pointer to the big number font */
 Word TotalKillsInLevel;     /* Number of monsters killed */
 Word ItemsFoundInLevel;     /* Number of items found */
 Word SecretsFoundInLevel;       /* Number of secrets discovered */

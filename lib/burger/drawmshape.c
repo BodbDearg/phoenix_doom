@@ -11,7 +11,7 @@
 
 **********************************/
 
-void DrawMShape(Word x,Word y,void *ShapePtr)
+void DrawMShape(Word x, Word y, const void* ShapePtr)
 {
     // DC: FIXME: reimplement/replace
     #if 0

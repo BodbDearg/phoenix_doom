@@ -1,4 +1,5 @@
 #include "doom.h"
+#include "DoomResources.h"
 #include <string.h>
 
 /**********************************
@@ -116,9 +117,9 @@ static void CycleFlash(sbflash_t *FlashPtr)
 
 void ST_Start(void)
 {
-    SBObj = LoadAResourceHandle(rSBARSHP);  /* Status bar shapes */
-    Faces = LoadAResourceHandle(rFACES);    /* Load all the face frames */
-    StatusBarShape = LoadAResourceHandle(rSTBAR);   /* Load the status bar */
+    SBObj = loadDoomResourceData(rSBARSHP);  /* Status bar shapes */
+    Faces = loadDoomResourceData(rFACES);    /* Load all the face frames */
+    StatusBarShape = loadDoomResourceData(rSTBAR);   /* Load the status bar */
     memset(&stbar,0,sizeof(stbar));     /* Reset the status bar */
     facetics = 0;       /* Reset the face tic count */
     gibdraw = false;    /* Don't draw gibbed head sequence */
@@ -133,9 +134,9 @@ void ST_Start(void)
 
 void ST_Stop(void)
 {
-    ReleaseAResource(rSBARSHP);     /* Status bar shapes */
-    ReleaseAResource(rFACES);       /* All the face frames */
-    ReleaseAResource(rSTBAR);       /* Lower bar */
+    releaseDoomResource(rSBARSHP);     /* Status bar shapes */
+    releaseDoomResource(rFACES);       /* All the face frames */
+    releaseDoomResource(rSTBAR);       /* Lower bar */
 }
 
 /**********************************

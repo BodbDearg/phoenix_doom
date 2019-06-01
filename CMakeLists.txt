@@ -10,6 +10,7 @@ set(CMAKE_BUILD_TYPE Debug)
 
 # TODO: This is Clang/GCC specific - wrap
 set(CMAKE_C_FLAGS -g)
+set(CMAKE_CXX_FLAGS -g)
 
 set(LIB_SRC_DIR "${PROJECT_SOURCE_DIR}/lib")
 set(GAME_SRC_DIR "${PROJECT_SOURCE_DIR}/source")
@@ -24,38 +25,23 @@ set(LIB_SOURCES
     ${LIB_SRC_DIR}/burger/bombflag.c
     ${LIB_SRC_DIR}/burger/burger.h
     ${LIB_SRC_DIR}/burger/clearthescreen.c
-    ${LIB_SRC_DIR}/burger/currentpalette.c
-    ${LIB_SRC_DIR}/burger/detachresource.c
-    ${LIB_SRC_DIR}/burger/detachresource2.c
     ${LIB_SRC_DIR}/burger/detectmouse.c
     #${LIB_SRC_DIR}/burger/dlzss.s
-    #${LIB_SRC_DIR}/burger/drawachar.s
     ${LIB_SRC_DIR}/burger/drawarect.c
-    ${LIB_SRC_DIR}/burger/drawastring.c
     ${LIB_SRC_DIR}/burger/drawmshape.c
-    ${LIB_SRC_DIR}/burger/drawrezcentershape.c
     ${LIB_SRC_DIR}/burger/drawrezshape.c
     ${LIB_SRC_DIR}/burger/drawshape.c
     ${LIB_SRC_DIR}/burger/erasembshape.c
     ${LIB_SRC_DIR}/burger/errormsg.c
     ${LIB_SRC_DIR}/burger/exit2.c
-    ${LIB_SRC_DIR}/burger/fadeto.c
-    ${LIB_SRC_DIR}/burger/fadetoblack.c
-    ${LIB_SRC_DIR}/burger/fadetoptr.c
     ${LIB_SRC_DIR}/burger/fatal.c
     ${LIB_SRC_DIR}/burger/flushkeys.c
-    ${LIB_SRC_DIR}/burger/fontdata.c
     #${LIB_SRC_DIR}/burger/fontlib/font3
     #${LIB_SRC_DIR}/burger/fontlib/font5
     #${LIB_SRC_DIR}/burger/fontlib/font7
     #${LIB_SRC_DIR}/burger/fontlib/font9
     #${LIB_SRC_DIR}/burger/fontlib/nice.fnt
     #${LIB_SRC_DIR}/burger/fontlib/normal.pal
-    ${LIB_SRC_DIR}/burger/fontrestorestate.c
-    ${LIB_SRC_DIR}/burger/fontsavestate.c
-    ${LIB_SRC_DIR}/burger/fontsetcolor.c
-    ${LIB_SRC_DIR}/burger/fontusemask.c
-    ${LIB_SRC_DIR}/burger/fontusezero.c
     ${LIB_SRC_DIR}/burger/getakey.c
     #${LIB_SRC_DIR}/burger/getapixel.s
     ${LIB_SRC_DIR}/burger/getrandom.c
@@ -63,21 +49,13 @@ set(LIB_SOURCES
     ${LIB_SRC_DIR}/burger/getshapeindexptr.c
     ${LIB_SRC_DIR}/burger/getshapewidth.c
     ${LIB_SRC_DIR}/burger/halt.s
-    ${LIB_SRC_DIR}/burger/initresource.c
     ${LIB_SRC_DIR}/burger/initytable.c
-    ${LIB_SRC_DIR}/burger/installafont.c
     ${LIB_SRC_DIR}/burger/interceptkey.c
     ${LIB_SRC_DIR}/burger/keyarray.c
     ${LIB_SRC_DIR}/burger/keycodes.h
     ${LIB_SRC_DIR}/burger/keymodifiers.c
-    ${LIB_SRC_DIR}/burger/killaresource.c
-    ${LIB_SRC_DIR}/burger/killaresource2.c
     ${LIB_SRC_DIR}/burger/killedsong.c
     ${LIB_SRC_DIR}/burger/lasttick.c
-    ${LIB_SRC_DIR}/burger/loadaresource.c
-    ${LIB_SRC_DIR}/burger/loadaresource2.c
-    ${LIB_SRC_DIR}/burger/loadaresourcehandle.c
-    ${LIB_SRC_DIR}/burger/loadaresourcehandle2.c
     ${LIB_SRC_DIR}/burger/longtoasc.c
     ${LIB_SRC_DIR}/burger/longwordtoasc.c
     ${LIB_SRC_DIR}/burger/mousepresent.c
@@ -89,18 +67,11 @@ set(LIB_SOURCES
     ${LIB_SRC_DIR}/burger/readmouseabs.c
     ${LIB_SRC_DIR}/burger/readmousebuttons.c
     ${LIB_SRC_DIR}/burger/readtick.c
-    ${LIB_SRC_DIR}/burger/releasearesource.c
-    ${LIB_SRC_DIR}/burger/releasearesource2.c
-    ${LIB_SRC_DIR}/burger/rezfilename.c
     ${LIB_SRC_DIR}/burger/saveafile.c
     ${LIB_SRC_DIR}/burger/screenheight.c
     ${LIB_SRC_DIR}/burger/screenwidth.c
-    ${LIB_SRC_DIR}/burger/setapalette.c
-    ${LIB_SRC_DIR}/burger/setapaletteptr.c
-    ${LIB_SRC_DIR}/burger/setapaletteptr2.c
     #${LIB_SRC_DIR}/burger/setapixel.s
     ${LIB_SRC_DIR}/burger/seterrbombflag.c
-    ${LIB_SRC_DIR}/burger/setfontxy.c
     ${LIB_SRC_DIR}/burger/show3dologo.c
     #${LIB_SRC_DIR}/burger/showmcga.s
     #${LIB_SRC_DIR}/burger/showpic.s
@@ -121,7 +92,6 @@ set(LIB_SOURCES
     ${LIB_SRC_DIR}/burger/waittick.c
     ${LIB_SRC_DIR}/burger/waitticks.c
     ${LIB_SRC_DIR}/burger/waitticksevent.c
-    ${LIB_SRC_DIR}/burger/widthastring.c
     ${LIB_SRC_DIR}/burger/ytable.c
     ${LIB_SRC_DIR}/intmath/im_dec2int.c
     #${LIB_SRC_DIR}/intmath/im_div.s
@@ -177,6 +147,8 @@ set(GAME_SOURCES
     ${GAME_SRC_DIR}/data.c
     ${GAME_SRC_DIR}/dmain.c
     ${GAME_SRC_DIR}/doom.h
+    ${GAME_SRC_DIR}/DoomResources.cpp
+    ${GAME_SRC_DIR}/DoomResources.h
     ${GAME_SRC_DIR}/doomrez.h
     ${GAME_SRC_DIR}/doors.c
     ${GAME_SRC_DIR}/enemy.c
@@ -188,6 +160,7 @@ set(GAME_SOURCES
     ${GAME_SRC_DIR}/inter.c
     ${GAME_SRC_DIR}/lights.c
     ${GAME_SRC_DIR}/mac.c
+    ${GAME_SRC_DIR}/Macros.h
     ${GAME_SRC_DIR}/Main.cpp
     ${GAME_SRC_DIR}/map.c
     ${GAME_SRC_DIR}/maputl.c
@@ -206,6 +179,9 @@ set(GAME_SOURCES
     ${GAME_SRC_DIR}/plats.c
     ${GAME_SRC_DIR}/pspr.c
     ${GAME_SRC_DIR}/rdata.c
+    ${GAME_SRC_DIR}/Resource.h
+    ${GAME_SRC_DIR}/ResourceMgr.cpp
+    ${GAME_SRC_DIR}/ResourceMgr.h
     ${GAME_SRC_DIR}/rmain.c
     ${GAME_SRC_DIR}/setup.c
     ${GAME_SRC_DIR}/shoot.c

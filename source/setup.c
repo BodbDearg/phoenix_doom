@@ -1,4 +1,5 @@
 #include "doom.h"
+#include "DoomResources.h"
 
 #include <intmath.h>
 #include "Mem.h"
@@ -79,7 +80,7 @@ static void LoadSectors(Word lump)
     mapsector_t *Map;
     sector_t *ss;
 
-    Map = (mapsector_t *)LoadAResource(lump);       /* Load the data in */
+    Map = (mapsector_t *)loadDoomResourceData(lump);       /* Load the data in */
     numsectors = ((Word *)Map)[0];                  /* Get the number of entries */
     Map = (mapsector_t *)&((Word*)Map)[1];          /* Index past the entry count */
     i = numsectors*sizeof(sector_t);                /* Get the data size */
@@ -100,7 +101,7 @@ static void LoadSectors(Word lump)
         ++Map;
     } while (--i);  /* All done? */
     
-    KillAResource(lump);    /* Dispose of the original */
+    freeDoomResource(lump);    /* Dispose of the original */
 }
 
 /**********************************
@@ -123,7 +124,7 @@ static void LoadSideDefs(Word lump)
     mapsidedef_t *MapSide;
     side_t *sd;
 
-    MapSide = (mapsidedef_t *)LoadAResource(lump);  /* Load in the data */
+    MapSide = (mapsidedef_t *)loadDoomResourceData(lump);  /* Load in the data */
     numsides = ((Word *)MapSide)[0];            /* Get the side count */        
     MapSide = (mapsidedef_t *)&((Word *)MapSide)[1];    /* Index to the array */
 
@@ -141,7 +142,7 @@ static void LoadSideDefs(Word lump)
         ++MapSide;      /* Next indexs */
         ++sd;
     } while (--i);      /* Count down */
-    KillAResource(lump);    /* Release the memory */
+    freeDoomResource(lump);    /* Release the memory */
 }
 
 /**********************************
@@ -168,7 +169,7 @@ static void LoadLineDefs(Word lump)
     maplinedef_t *mld;
     line_t *ld;
 
-    mld = (maplinedef_t *)LoadAResource(lump);  /* Load in the data */
+    mld = (maplinedef_t *)loadDoomResourceData(lump);  /* Load in the data */
     numlines = ((Word*)mld)[0];         /* Get the number of lines in the struct array */   
     i = numlines*sizeof(line_t);        /* Get the size of the dest buffer */
     ld = (line_t *)MemAlloc(i);         /* Get the memory for the lines array */
@@ -228,7 +229,7 @@ static void LoadLineDefs(Word lump)
         ++ld;           /* Next indexes */
         ++mld;
     } while (--i);
-    KillAResource(lump);    /* Release the resource */
+    freeDoomResource(lump);    /* Release the resource */
 }
 
 /**********************************
@@ -249,7 +250,9 @@ static void LoadBlockMap(Word lump)
     void **BlockHandle;
     LongWord *StartIndex;
 
-    BlockHandle = LoadAResourceHandle(lump);    /* Load the data */
+    const Resource* pBlockResource = loadDoomResource(lump);
+    BlockHandle = pBlockResource->pData;    /* Load the data */
+    
     MyLumpPtr = (Byte*) BlockHandle;
     BlockMapOrgX = ((Word *)MyLumpPtr)[0];      /* Get the orgx and y */
     BlockMapOrgY = ((Word *)MyLumpPtr)[1];
@@ -269,9 +272,7 @@ static void LoadBlockMap(Word lump)
     } while (--Count);      /* All done? */ 
 
     /* Convert the lists appended to the array into pointers to lines */
-    
-    // FIXME: DC!
-    Count = GetAHandleSize(BlockHandle)/4;      /* How much memory is needed? (Longs) */
+    Count = pBlockResource->size / 4;      /* How much memory is needed? (Longs) */
     
     Count -= (Entries+4);       /* Remove the header count */
     do {
@@ -311,7 +312,7 @@ static void LoadSegs(Word lump)
     seg_t *li;
     Word numsegs;
 
-    ml = (mapseg_t *)LoadAResource(lump);   /* Load in the map data */
+    ml = (mapseg_t *)loadDoomResourceData(lump);   /* Load in the map data */
     numsegs = ((Word*)ml)[0];               /* Get the count */
     i = numsegs*sizeof(seg_t);              /* Get the memory size */
     li = (seg_t*)MemAlloc(i);               /* Allocate it */
@@ -342,7 +343,7 @@ static void LoadSegs(Word lump)
         ++li;       /* Next entry */
         ++ml;       /* Next resource entry */
     } while (++i<numsegs);
-    KillAResource(lump);    /* Release the resource */
+    freeDoomResource(lump);    /* Release the resource */
 }
 
 /**********************************
@@ -364,7 +365,7 @@ static void LoadSubsectors(Word lump)
     mapsubsector_t *ms;
     subsector_t *ss;
 
-    ms = (mapsubsector_t *)LoadAResource(lump);     /* Get the map data */
+    ms = (mapsubsector_t *)loadDoomResourceData(lump);     /* Get the map data */
     numsubsectors = ((Word*)ms)[0];                 /* Get the subsector count */
     i = numsubsectors*sizeof(subsector_t);          /* Calc needed buffer */
     ss = (subsector_t *)MemAlloc(i);                /* Get the memory */
@@ -382,7 +383,7 @@ static void LoadSubsectors(Word lump)
         ++ms;
     } while (--i);
     
-    KillAResource(lump);
+    freeDoomResource(lump);
 }
 
 /**********************************
@@ -409,7 +410,7 @@ static void LoadNodes(Word lump)
     node_t *no; 
     node_t *nodes;
 
-    mn = (mapnode_t *)LoadAResource(lump);  /* Get the data */
+    mn = (mapnode_t *)loadDoomResourceData(lump);  /* Get the data */
     numnodes = ((Word*)mn)[0];          /* How many nodes to process */
     mn = (mapnode_t *)&((Word *)mn)[1];
     no = (node_t *)mn;
@@ -526,14 +527,14 @@ static void LoadThings(Word lump)
     Word i;
     mapthing_t *mt;
     
-    mt = (mapthing_t *)LoadAResource(lump); /* Load the thing list */
+    mt = (mapthing_t *)loadDoomResourceData(lump); /* Load the thing list */
     i = ((Word*)mt)[0];         /* Get the count */
     mt = (mapthing_t *)&((Word *)mt)[1];    /* Point to the first entry */
     do {
         SpawnMapThing(mt);  /* Spawn the thing */
         ++mt;       /* Next item */
     } while (--i);  /* More? */
-    KillAResource(lump);    /* Release the list */
+    freeDoomResource(lump);    /* Release the list */
 }
 
 /**********************************
@@ -602,7 +603,7 @@ static void PreloadWalls(void)
     TexPtr = TextureInfo;       /* Init texture table */
     do {
         if (TextureLoadFlags[i]) {  /* Load it in? */
-            TexPtr->data = LoadAResourceHandle(i+FirstTexture); /* Get it */
+            TexPtr->data = loadDoomResourceData(i+FirstTexture); /* Get it */
         }
         ++TexPtr;
     } while (++i<NumTextures);
@@ -644,14 +645,14 @@ static void PreloadWalls(void)
     i = 0;          /* Init index */
     do {
         if (TextureLoadFlags[i]) {  /* Load it in? */
-            FlatInfo[i] = LoadAResourceHandle(i+FirstFlat); /* Get it */
+            FlatInfo[i] = loadDoomResourceData(i+FirstFlat); /* Get it */
         }
     } while (++i<NumFlats);
     memcpy(FlatTranslation,FlatInfo,sizeof(Byte *)*NumFlats);
     i = 0;
     do {
-        LoadAResourceHandle(PreLoadTable[i]);
-        ReleaseAResource(PreLoadTable[i]);
+        loadDoomResourceData(PreLoadTable[i]);
+        releaseDoomResource(PreLoadTable[i]);
         ++i;
     } while (PreLoadTable[i]!=-1);
 }
@@ -689,7 +690,7 @@ void SetupLevel(Word map)
 
 /* Note: most of this ordering is important */
 
-    vertexes = (vertex_t *)LoadAResource(lumpnum+ML_VERTEXES);  /* Load the map vertexes */
+    vertexes = (vertex_t *)loadDoomResourceData(lumpnum+ML_VERTEXES);  /* Load the map vertexes */
     LoadSectors(lumpnum+ML_SECTORS);    /* Needs nothing */
     LoadSideDefs(lumpnum+ML_SIDEDEFS);  /* Needs sectors */
     LoadLineDefs(lumpnum+ML_LINEDEFS);  /* Needs vertexes,sectors and sides */
@@ -697,8 +698,8 @@ void SetupLevel(Word map)
     LoadSegs(lumpnum+ML_SEGS);      /* Needs vertexes,lines,sides */
     LoadSubsectors(lumpnum+ML_SSECTORS);    /* Needs sectors and segs and sides */
     LoadNodes(lumpnum+ML_NODES);        /* Needs subsectors */
-    KillAResource(lumpnum+ML_VERTEXES);     /* Release the map vertexes */
-    RejectMatrix = (Byte *)LoadAResource(lumpnum+ML_REJECT);    /* Get the reject matrix */
+    freeDoomResource(lumpnum+ML_VERTEXES);     /* Release the map vertexes */
+    RejectMatrix = (Byte *)loadDoomResourceData(lumpnum+ML_REJECT);    /* Get the reject matrix */
     GroupLines();           /* Final last minute data arranging */
     deathmatch_p = deathmatchstarts;
     LoadThings(lumpnum+ML_THINGS);  /* Spawn all the items */
@@ -720,15 +721,15 @@ void ReleaseMapMemory(void)
 {
     Word i;
     
-    MEM_FREE_AND_NULL(sectors);             /* Dispose of the sectors */
-    MEM_FREE_AND_NULL(sides);               /* Dispose of the side defs */
-    MEM_FREE_AND_NULL(lines);               /* Dispose of the lines */
-    KillAResource(LoadedLevel+ML_BLOCKMAP); /* Make sure it's discarded since I modified it */
-    MEM_FREE_AND_NULL(BlockLinkPtr);        /* Discard the block map mobj linked list */
-    MEM_FREE_AND_NULL(segs);                /* Release the line segment memory */
-    MEM_FREE_AND_NULL(subsectors);          /* Release the sub sectors */
-    KillAResource(LoadedLevel+ML_NODES);    /* Release the BSP tree */
-    KillAResource(LoadedLevel+ML_REJECT);   /* Release the quick reject matrix */   
+    MEM_FREE_AND_NULL(sectors);                 /* Dispose of the sectors */
+    MEM_FREE_AND_NULL(sides);                   /* Dispose of the side defs */
+    MEM_FREE_AND_NULL(lines);                   /* Dispose of the lines */
+    freeDoomResource(LoadedLevel+ML_BLOCKMAP);  /* Make sure it's discarded since I modified it */
+    MEM_FREE_AND_NULL(BlockLinkPtr);            /* Discard the block map mobj linked list */
+    MEM_FREE_AND_NULL(segs);                    /* Release the line segment memory */
+    MEM_FREE_AND_NULL(subsectors);              /* Release the sub sectors */
+    freeDoomResource(LoadedLevel+ML_NODES);     /* Release the BSP tree */
+    freeDoomResource(LoadedLevel+ML_REJECT);    /* Release the quick reject matrix */
     MEM_FREE_AND_NULL(LineArrayBuffer);
     
     sectors = 0;        /* Zap the pointers */
@@ -741,16 +742,20 @@ void ReleaseMapMemory(void)
     FirstBSPNode = 0;
     RejectMatrix = 0;
     
-    i = 0;                  /* Start at the first wall texture */
+    i = 0;  /* Start at the first wall texture */
+    
     do {
-        ReleaseAResource(i+FirstTexture);   /* Release all wall textures */
-    } while (++i<NumTextures);          /* All released? */
-    i = 0;                  /* Start at the first flat texture */
+        releaseDoomResource(i+FirstTexture);    /* Release all wall textures */
+    } while (++i<NumTextures);                  /* All released? */
+    
+    i = 0;  /* Start at the first flat texture */
+    
     do {
-        ReleaseAResource(i+FirstFlat);
+        releaseDoomResource(i+FirstFlat);
     } while (++i<NumFlats);
-    memset(FlatInfo,0,NumFlats*sizeof(void *)); /* Kill the cached flat table */
-    InitThinkers();         /* Dispose of all remaining memory */
+    
+    memset(FlatInfo,0,NumFlats*sizeof(void *));     /* Kill the cached flat table */
+    InitThinkers();                                 /* Dispose of all remaining memory */
 }
 
 /**********************************

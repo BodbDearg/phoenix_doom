@@ -1,5 +1,5 @@
 #include "doom.h"
-
+#include "DoomResources.h"
 #include "Mem.h"
 #include <intmath.h>
 #include <string.h>
@@ -32,7 +32,7 @@ texture_t *TextureInfo; /* Array describing textures */
 void ***FlatInfo;       /* Array describing flats */
 texture_t **TextureTranslation; /* Indexs to textures for global animation */
 void ***FlatTranslation;        /* Indexs to textures for global animation */
-texture_t *SkyTexture;      /* Pointer to the sky texture */
+texture_t* SkyTexture;      /* Pointer to the sky texture */
 
 /**********************************
 
@@ -53,7 +53,7 @@ void R_InitData(void)
         texture_t *TexturePtr;
 
         // Load the map texture definitions from Textures1
-        maptex = (Filemaptexture_t *)LoadAResource(rTEXTURE1);  // Load it in
+        maptex = (Filemaptexture_t*) loadDoomResourceData(rTEXTURE1);  // Load it in
         NumTextures = maptex->Count;                            // How many are there?
         FirstTexture = maptex->First;                           // First resource number for loading
         NumFlats = maptex->FlatCount;

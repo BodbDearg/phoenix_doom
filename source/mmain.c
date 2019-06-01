@@ -1,4 +1,5 @@
 #include "doom.h"
+#include "DoomResources.h"
 
 #define CURSORX 50      /* X coord of skull cursor */
 #define AREAY 66
@@ -172,7 +173,7 @@ Word M_Ticker(void)
 
 void M_Drawer(void)
 {
-    void *Shapes;       /* Pointer to shape array */
+    const void* Shapes;       /* Pointer to shape array */
     
 /* Draw background */
 
@@ -182,12 +183,12 @@ void M_Drawer(void)
         O_Drawer();
     } else {
     
-        Shapes = LoadAResource(rMAINMENU);  /* Load shape group */
+        Shapes = loadDoomResourceData(rMAINMENU);  /* Load shape group */
 
 /* Draw new skull */
 
-        DrawMShape(CURSORX,CursorYs[cursorpos],GetShapeIndexPtr(LoadAResource(rSKULLS),cursorframe));
-        ReleaseAResource(rSKULLS);
+        DrawMShape(CURSORX,CursorYs[cursorpos],GetShapeIndexPtr(loadDoomResourceData(rSKULLS),cursorframe));
+        releaseDoomResource(rSKULLS);
 
 /* Draw start level information */
 
@@ -202,7 +203,7 @@ void M_Drawer(void)
 /* Draw the options screen */
 
         PrintBigFont(CURSORX+24,OPTIONSY,(Byte *)"Options Menu");
-        ReleaseAResource(rMAINMENU);
+        releaseDoomResource(rMAINMENU);
         UpdateAndPageFlip();            /* Update and exit */
     }
 }

@@ -1,4 +1,5 @@
 #include "doom.h"
+#include "DoomResources.h"
 #include <string.h>
 
 #define KVALX   232
@@ -70,8 +71,8 @@ static Word BangCount;          /* Delay for gunshot sound */
 void PrintBigFont(Word x,Word y,Byte *string)
 {
     Word y2,c;
-    void *ucharx;
-    void *Current;
+    const void *ucharx;
+    const void *Current;
 
     c = string[0];      /* Get the first char */
    if (!c) {            /* No string to print? */
@@ -107,15 +108,16 @@ void PrintBigFont(Word x,Word y,Byte *string)
             }
         }
         if (!Current) {     /* Do I need the ASCII set? */
-            ucharx = LoadAResource(rCHARSET);   /* Make sure I have the text font */
+            ucharx = loadDoomResourceData(rCHARSET);   /* Make sure I have the text font */
             Current = ucharx;
         }
         Current = GetShapeIndexPtr(Current,c);  /* Get the shape pointer */
-        DrawMShape(x,y2,Current);       /* Draw the char */
+        DrawMShape(x, y2, Current);       /* Draw the char */
         x+=GetShapeWidth(Current)+1;    /* Get the width to tab */
     } while ((c = string[0])!=0);       /* Next index */
+    
     if (ucharx) {                       /* Did I load the ASCII font? */
-        ReleaseAResource(rCHARSET);     /* Release the ASCII font */
+        releaseDoomResource(rCHARSET);  /* Release the ASCII font */
     }
 }
 
@@ -129,8 +131,8 @@ void PrintBigFont(Word x,Word y,Byte *string)
 Word GetBigStringWidth(Byte *string)
 {
     Word c,Width;
-    void *ucharx;
-    void *Current;
+    const void* ucharx;
+    const void* Current;
 
     c = string[0];      /* Get a char */
     if (!c) {           /* No string to print? */
@@ -163,14 +165,14 @@ Word GetBigStringWidth(Byte *string)
             }
         }
         if (!Current) {     /* Do I need ucharx? */
-            ucharx = LoadAResource(rCHARSET);   /* Load it in */
+            ucharx = loadDoomResourceData(rCHARSET);   /* Load it in */
             Current = ucharx;       /* Set the pointer */
         }
         Current = GetShapeIndexPtr(Current,c);  /* Get the shape pointer */
         Width+=GetShapeWidth(Current)+1;        /* Get the width to tab */
     } while ((c = string[0])!=0);       /* Next index */
     if (ucharx) {       /* Did I load in the ASCII font? */
-        ReleaseAResource(rCHARSET);         /* Release the text font */
+        releaseDoomResource(rCHARSET);         /* Release the text font */
     }
     return Width;
 }
@@ -305,17 +307,18 @@ Word IN_Ticker(void)
 
 void IN_Drawer(void)
 {
-    void *IntermisShapes;       /* Cached pointer */
+    const void* IntermisShapes;         /* Cached pointer */
+    DrawRezShape(0,0,rBACKGRNDBROWN);   /* Load and draw the skulls */
     
-    DrawRezShape(0,0,rBACKGRNDBROWN);       /* Load and draw the skulls */
+    IntermisShapes = loadDoomResourceData(rINTERMIS);   /* Load the intermission shapes */
+    PrintBigFontCenter(160,10,mapnames[gamemap-1]);     /* Print the current map name */
+    PrintBigFontCenter(160,34,Finished);                /* Print "Finished" */
     
-    IntermisShapes = LoadAResource(rINTERMIS);      /* Load the intermission shapes */
-    PrintBigFontCenter(160,10,mapnames[gamemap-1]); /* Print the current map name */
-    PrintBigFontCenter(160,34,Finished);            /* Print "Finished" */
     if (nextmap != 23) {
         PrintBigFontCenter(160,162,Entering);
         PrintBigFontCenter(160,182,mapnames[nextmap-1]);
     }
+    
     DrawMShape(71,KVALY,GetShapeIndexPtr(IntermisShapes,KillShape));    /* Draw the shapes */
     DrawMShape(65,IVALY,GetShapeIndexPtr(IntermisShapes,ItemsShape));
     DrawMShape(27,SVALY,GetShapeIndexPtr(IntermisShapes,SecretsShape));
@@ -323,6 +326,6 @@ void IN_Drawer(void)
     PrintNumber(KVALX,KVALY,killvalue,PNPercent|PNRight);   /* Print the numbers */
     PrintNumber(IVALX,IVALY,itemvalue,PNPercent|PNRight);
     PrintNumber(SVALX,SVALY,secretvalue,PNPercent|PNRight);
-    ReleaseAResource(rINTERMIS);
-    UpdateAndPageFlip();        /* Show the screen */
+    releaseDoomResource(rINTERMIS);
+    UpdateAndPageFlip();                /* Show the screen */
 }
