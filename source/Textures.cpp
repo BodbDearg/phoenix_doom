@@ -62,7 +62,7 @@ void texturesInit() {
     // Read the header for all the texture info.
     // Note that we do NOT byte swap the original resources the may be cached and reused multiple times.
     // If we byte swapped the originals then we might double swap back to big endian accidently...
-    const std::byte* pData = (const std::byte*) loadDoomResource(rTEXTURE1);
+    const std::byte* pData = (const std::byte*) loadDoomResourceData(rTEXTURE1);
     
     TextureInfoHeader header = (const TextureInfoHeader&) *pData;
     header.swapEndian();
