@@ -1,7 +1,7 @@
 #pragma once
 
-#include <cstdio>
 #include <cstdint>
+#include <cstdio>
 #include <vector>
 
 struct Resource;
@@ -21,25 +21,7 @@ public:
     const Resource* loadResource(const uint32_t number) noexcept;
     const Resource* freeResource(const uint32_t number) noexcept;
     
-private:
-    struct ResourceFileHeader {
-        std::byte   magic[4];               // Should read 'BRGR'
-        uint32_t    numResourceGroups;
-        uint32_t    resourceGroupHeadersSize;
-    };
-    
-    struct ResourceGroupHeader {
-        uint32_t    resourceType;
-        uint32_t    resourcesStartNum;
-        uint32_t    numResources;
-    };
-    
-    struct ResourceHeader {
-        uint32_t    offset;
-        uint32_t    size;
-        uint32_t    unused;
-    };
-    
+private:    
     static bool compareResourcesByNumber(const Resource& r1, const Resource& r2) noexcept;
     
     static void freeResource(Resource& resource) noexcept;

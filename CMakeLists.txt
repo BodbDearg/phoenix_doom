@@ -151,6 +151,7 @@ set(GAME_SOURCES
     ${GAME_SRC_DIR}/DoomResources.h
     ${GAME_SRC_DIR}/doomrez.h
     ${GAME_SRC_DIR}/doors.c
+    ${GAME_SRC_DIR}/Endian.h
     ${GAME_SRC_DIR}/enemy.c
     ${GAME_SRC_DIR}/floor.c
     ${GAME_SRC_DIR}/fmain.c
@@ -195,6 +196,8 @@ set(GAME_SOURCES
     ${GAME_SRC_DIR}/switch.c
     ${GAME_SRC_DIR}/tables.c
     ${GAME_SRC_DIR}/telept.c
+    ${GAME_SRC_DIR}/Textures.cpp
+    ${GAME_SRC_DIR}/Textures.h
     ${GAME_SRC_DIR}/threedo.c
     ${GAME_SRC_DIR}/tick.c
     ${GAME_SRC_DIR}/user.c

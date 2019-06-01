@@ -1,18 +1,44 @@
 #include "ResourceMgr.h"
 
+#include "Endian.h"
 #include "Macros.h"
 #include "Mem.h"
 #include "Resource.h"
 #include <memory>
 
-static void swapEndian(uint32_t& num) noexcept {
-    num = (
-        ((num & 0x000000FFU) << 24) |
-        ((num & 0x0000FF00U) << 8) |
-        ((num & 0x00FF0000U) >> 8) |
-        ((num & 0xFF000000U) >> 24)
-    );
-}
+struct ResourceFileHeader {
+    std::byte   magic[4];               // Should read 'BRGR'
+    uint32_t    numResourceGroups;
+    uint32_t    resourceGroupHeadersSize;
+    
+    void swapEndian() noexcept {
+        byteSwapU32(numResourceGroups);
+        byteSwapU32(resourceGroupHeadersSize);
+    }
+};
+
+struct ResourceGroupHeader {
+    uint32_t    resourceType;
+    uint32_t    resourcesStartNum;
+    uint32_t    numResources;
+    
+    void swapEndian() noexcept {
+        byteSwapU32(resourceType);
+        byteSwapU32(resourcesStartNum);
+        byteSwapU32(numResources);
+    }
+};
+
+struct ResourceHeader {
+    uint32_t    offset;
+    uint32_t    size;
+    uint32_t    _unused;
+    
+    void swapEndian() noexcept {
+        byteSwapU32(offset);
+        byteSwapU32(size);
+    }
+};
 
 ResourceMgr::ResourceMgr() noexcept
     : mpResourceFile(nullptr)
@@ -43,8 +69,7 @@ void ResourceMgr::init(const char* const fileName) noexcept {
         FATAL_ERROR("ERROR: Failed to read game resource file '%s' header!\n", fileName);
     }
     
-    swapEndian(fileHeader.numResourceGroups);
-    swapEndian(fileHeader.resourceGroupHeadersSize);
+    fileHeader.swapEndian();
     
     const bool bHeaderOk = (
         (fileHeader.magic[0] == std::byte('B')) &&
@@ -74,10 +99,7 @@ void ResourceMgr::init(const char* const fileName) noexcept {
         
         while (pCurBytes + sizeof(ResourceGroupHeader) <= pEndBytes) {
             ResourceGroupHeader* const pGroupHeader = (ResourceGroupHeader*) pCurBytes;
-            swapEndian(pGroupHeader->resourceType);
-            swapEndian(pGroupHeader->resourcesStartNum);
-            swapEndian(pGroupHeader->numResources);
-            
+            pGroupHeader->swapEndian();
             pCurBytes += sizeof(ResourceGroupHeader);
             
             uint32_t resourceNum = pGroupHeader->resourcesStartNum;
@@ -85,14 +107,12 @@ void ResourceMgr::init(const char* const fileName) noexcept {
             
             while (resourceNum < endResourceNum && pCurBytes + sizeof(ResourceHeader) <= pEndBytes) {
                 ResourceHeader* const pResourceHeader = (ResourceHeader*) pCurBytes;
-                swapEndian(pResourceHeader->offset);
-                swapEndian(pResourceHeader->size);
+                pResourceHeader->swapEndian();
+                pCurBytes += sizeof(ResourceHeader);
                 
                 // Burgerlib used '0x80000000' to encode a 'fixed handle' (never unloaded) flag in the offset.
                 // It seemed to reserve other bits by masking by 0x3FFFFFFF - do the same here...
                 pResourceHeader->offset &= 0x3FFFFFFF;
-                
-                pCurBytes += sizeof(ResourceHeader);
                 
                 Resource& resource = mResources.emplace_back();
                 resource.number = resourceNum;

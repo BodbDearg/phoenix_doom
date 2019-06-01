@@ -6,14 +6,6 @@
 
 #define STRETCH(WIDTH,HEIGHT) (Fixed)((160.0/(float)WIDTH)*((float)HEIGHT/180.0)*2.2*65536)     
 
-typedef struct {        /* Actual structure of TEXTURE1 */
-    Word Count;         /* Count of entries */
-    Word First;         /* Starting resource # */
-    Word FlatCount;     /* Count of flats */
-    Word FirstFlat;     /* Starting resource # for flats */
-    texture_t Array[1]; /* Array of entries[Count] */
-} Filemaptexture_t;
-
 static Word ScreenWidths[6] = {280,256,224,192,160,128};
 static Word ScreenHeights[6] = {160,144,128,112,96,80};
 static Fixed Stretchs[6] = {

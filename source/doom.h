@@ -517,6 +517,14 @@ typedef struct {        /* Describe all wall textures */
     void** data;        /* Handle to cached data to draw from */
 } texture_t;
 
+typedef struct {        /* Actual structure of TEXTURE1 */
+    Word Count;         /* Count of entries */
+    Word First;         /* Starting resource # */
+    Word FlatCount;     /* Count of flats */
+    Word FirstFlat;     /* Starting resource # for flats */
+    texture_t Array[1]; /* Array of entries[Count] */
+} Filemaptexture_t;
+
 #define AC_ADDFLOOR 1
 #define AC_ADDCEILING 2
 #define AC_TOPTEXTURE 4
