@@ -8,27 +8,27 @@
 #include <vector>
 
 struct TextureInfoHeader {
-    uint16_t    numWallTextures;
-    uint16_t    firstWallTexture;       // Resource number
-    uint16_t    numFlatTextures;
-    uint16_t    firstFlatTexture;       // Resource number
+    uint32_t    numWallTextures;
+    uint32_t    firstWallTexture;       // Resource number
+    uint32_t    numFlatTextures;
+    uint32_t    firstFlatTexture;       // Resource number
     
     void swapEndian() noexcept {
-        byteSwapU16(numWallTextures);
-        byteSwapU16(firstWallTexture);
-        byteSwapU16(numFlatTextures);
-        byteSwapU16(firstFlatTexture);
+        byteSwapU32(numWallTextures);
+        byteSwapU32(firstWallTexture);
+        byteSwapU32(numFlatTextures);
+        byteSwapU32(firstFlatTexture);
     }
 };
 
 struct TextureInfoEntry {
-    uint16_t    width;
-    uint16_t    height;
+    uint32_t    width;
+    uint32_t    height;
     uint32_t    _unused;
     
     void swapEndian() noexcept {
-        byteSwapU16(width);
-        byteSwapU16(height);
+        byteSwapU32(width);
+        byteSwapU32(height);
     }
 };
 

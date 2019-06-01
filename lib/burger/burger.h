@@ -26,7 +26,7 @@
 extern "C" {
 #endif
 
-typedef uint16_t    Word;       // DC: was 'unsigned int' in original 3DO source
+typedef uint32_t    Word;       // DC: was 'unsigned int' in original 3DO source
 typedef uint8_t     Byte;       // DC: was 'unsigned char' in original 3DO source
 typedef uint32_t    LongWord;   // DC: was 'unsigned long' in original 3DO source
 typedef uint16_t    Short;      // DC: was 'unsigned short' in original 3DO source
