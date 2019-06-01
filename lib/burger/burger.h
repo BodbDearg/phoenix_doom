@@ -200,40 +200,6 @@ extern Word SystemState;
 extern void *AllocSomeMem(LongWord Size);
 extern void FreeSomeMem(void *MemPtr);
 
-/* 3DO Specific Convience routines */
-typedef struct {
-    LongWord Offset;    /* Offset into the file */
-    LongWord Length;    /* Length of the data */
-    void **MemPtr;      /* Entry in memory */
-} MyRezEntry2;
-
-typedef struct {
-    LongWord Type;          /* Data type */
-    LongWord RezNum;        /* Resource number */
-    LongWord Count;         /* Number of entries */
-    MyRezEntry2 Array[1];   /* First entry */
-} MyRezEntry;               /* Entry in memory */
-
-typedef struct {
-    Byte Name[4];       /* BRGR Signature */
-    LongWord Count;     /* Number of resource entries */
-    LongWord MemSize;   /* Bytes the header will occupy */
-} MyRezHeader;
-
-#define HANDLELOCK 0x80         /* Lock flags */
-#define HANDLEFIXED 0x40        /* Fixed memory flag */
-#define HANDLEPURGEBITS 0x01    /* Allow purge flag */
-
-typedef struct MyHandle {
-    void *MemPtr;                   /* Pointer to true memory */
-    LongWord Length;                /* Length of memory */
-    LongWord Flags;                 /* Memory flags */
-    struct MyHandle *NextHandle;    /* Next handle in the chain */
-    struct MyHandle *PrevHandle;
-} MyHandle;
-
-extern char RezFileName[];  /* Default resource filename "REZFILE" */
-extern MyRezEntry2 *ScanRezMap(Word RezNum,Word Type);
 extern Item VideoItem;          /* 3DO Specific! */
 extern Item VideoScreen;        /* 3DO Specific! */
 
