@@ -26,13 +26,13 @@
 extern "C" {
 #endif
 
-typedef unsigned int Word;
-typedef unsigned char Byte;
-typedef unsigned long LongWord;
-typedef unsigned short Short;
-typedef int32_t Frac;               /* DC: was 'long' in original 3DO source */
-typedef int32_t Fixed;              /* DC: was 'long' in original 3DO source */
-typedef double extended;
+typedef uint16_t    Word;       // DC: was 'unsigned int' in original 3DO source
+typedef uint8_t     Byte;       // DC: was 'unsigned char' in original 3DO source
+typedef uint32_t    LongWord;   // DC: was 'unsigned long' in original 3DO source
+typedef uint16_t    Short;      // DC: was 'unsigned short' in original 3DO source
+typedef int32_t     Frac;       // DC: was 'long' in original 3DO source
+typedef int32_t     Fixed;      // DC: was 'long' in original 3DO source
+typedef double      extended;
 
 typedef struct {
     Word top,left,bottom,right;
