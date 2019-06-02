@@ -102,27 +102,6 @@ set(LIB_SOURCES
     #${LIB_SRC_DIR}/mvelib/nfhicolordecomp.s
     #${LIB_SRC_DIR}/mvelib/nfhicolordecomp.s2
     #${LIB_SRC_DIR}/mvelib/nfhicolordecomp.snew
-    #${LIB_SRC_DIR}/string/memchr.s
-    #${LIB_SRC_DIR}/string/memcmp.s
-    #${LIB_SRC_DIR}/string/memmove.s
-    #${LIB_SRC_DIR}/string/memset.s
-    #${LIB_SRC_DIR}/string/strcat.s
-    #${LIB_SRC_DIR}/string/strchr.s
-    #${LIB_SRC_DIR}/string/strcmp.s
-    #${LIB_SRC_DIR}/string/strcpy.s
-    #${LIB_SRC_DIR}/string/strcspn.s
-    #${LIB_SRC_DIR}/string/stricmp.s
-    #${LIB_SRC_DIR}/string/string.h
-    #${LIB_SRC_DIR}/string/strlen.s
-    #${LIB_SRC_DIR}/string/strlwr.s
-    #${LIB_SRC_DIR}/string/strncat.s
-    #${LIB_SRC_DIR}/string/strncmp.s
-    #${LIB_SRC_DIR}/string/strncpy.s
-    #${LIB_SRC_DIR}/string/strrev.s
-    #${LIB_SRC_DIR}/string/strset.s
-    #${LIB_SRC_DIR}/string/strtol.s
-    #${LIB_SRC_DIR}/string/strtoul.s
-    #${LIB_SRC_DIR}/string/strupr.s
 )
 
 set(GAME_INCLUDE_DIRS
