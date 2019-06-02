@@ -1,8 +1,9 @@
 #include "doom.h"
-#include "DoomResources.h"
 
-#include <intmath.h>
+#include "DoomResources.h"
 #include "Mem.h"
+#include "Textures.h"
+#include <intmath.h>
 #include <string.h>
 
 /* lump order in a map wad */
@@ -537,124 +538,120 @@ static void LoadThings(Word lump)
     freeDoomResource(lump);    /* Release the list */
 }
 
-/**********************************
-
-    Draw the word "Loading" on the screen
-
-**********************************/
-
-static void LoadingPlaque(void)
-{
-    DrawPlaque(rLOADING);   /* Show the loading logo */
+//---------------------------------------------------------------------------------------------------------------------
+// Draw the word "Loading" on the screen
+//---------------------------------------------------------------------------------------------------------------------
+static void LoadingPlaque() {
+    DrawPlaque(rLOADING);
 }
 
-/**********************************
-
-    Preload all the wall and flat shapes
-
-**********************************/
-
-static void PreloadWalls(void)
-{
-    Word i;             /* Index */
-    texture_t *TexPtr;
-    bool TextureLoadFlags[100];      /* Which textures should I load? */
-
-    memset(TextureLoadFlags,0,sizeof(TextureLoadFlags));        /* Set to zilch */
-
-    i = numsides;       /* How many side do I have? */
-    if (i) {
-        Word Tex;       /* Temp */
-        side_t *sd;     /* Pointer to sidedef table */
-
-        sd = sides;     /* Init the pointer */
-        do {
-            Tex = sd->toptexture;       /* Is there a top texture? */
-            if (Tex<NumTextures) {
-                TextureLoadFlags[Tex] = true;   /* Load it in */
-            }
-            Tex = sd->midtexture;
-            if (Tex<NumTextures) {
-                TextureLoadFlags[Tex] = true;
-            }
-            Tex = sd->bottomtexture;
-            if (Tex<NumTextures) {
-                TextureLoadFlags[Tex] = true;
-            }
-            ++sd;       /* Next side def */
-        } while (--i);  /* All done? */
-    }
-
-    /* Now, scan the walls for switches */
+//---------------------------------------------------------------------------------------------------------------------
+// Preload all the wall and flat shapes
+//---------------------------------------------------------------------------------------------------------------------
+static void PreloadWalls() {
+    const uint32_t numWallTex = getNumWallTextures();
+    const uint32_t numFlatTex = getNumFlatTextures();
+    const uint32_t numLoadTexFlags = (numWallTex > numFlatTex) ? numWallTex : numFlatTex;
     
-    i = NumSwitches;
-    if (i) {
-        do {
-            --i;
-            if (TextureLoadFlags[SwitchList[i]]) {      /* Found a switch? */
-                TextureLoadFlags[SwitchList[i^1]] = true;   /* Get the alternate */
-            }
-        } while (i);    /* Any more? */
-    }
-
-    /* Now load in the walls */
+    // This array holds which textures (and flats, later) to load
+    bool* const bLoadTexFlags = MemAlloc(numLoadTexFlags * sizeof(bool));
+    memset(bLoadTexFlags, 0, numLoadTexFlags * sizeof(bool));
     
-    i = 0;          /* Init index */
-    TexPtr = TextureInfo;       /* Init texture table */
-    do {
-        if (TextureLoadFlags[i]) {  /* Load it in? */
-            TexPtr->data = loadDoomResourceData(i+FirstTexture); /* Get it */
+    // Scan all textures used by sidedefs and mark them for loading
+    {
+        const side_t* pSidedef = sides;
+        const side_t* const pEndSidedef = pSidedef + numsides;
+        
+        while (pSidedef < pEndSidedef) {
+            if (pSidedef->toptexture < numWallTex) {
+                bLoadTexFlags[pSidedef->toptexture] = true;
+            }
+            
+            if (pSidedef->midtexture < numWallTex) {
+                bLoadTexFlags[pSidedef->midtexture] = true;
+            }
+            
+            if (pSidedef->bottomtexture < numWallTex) {
+                bLoadTexFlags[pSidedef->bottomtexture] = true;
+            }
+            
+            ++pSidedef;
         }
-        ++TexPtr;
-    } while (++i<NumTextures);
-
-    /* Now scan for the flats */
-    
-    memset(TextureLoadFlags,0,sizeof(TextureLoadFlags));        /* Set to zilch */
-    i = numsectors;
-    if (i) {
-        Word Tex;       /* Temp */
-        sector_t *sd;       /* Pointer to sidedef table */
-
-        sd = sectors;       /* Init the pointer */
-        do {
-            TextureLoadFlags[sd->FloorPic] = true;  /* Load it in */
-            Tex = sd->CeilingPic;
-            if (Tex<NumFlats) {     /* Make sure it's ok */
-                TextureLoadFlags[Tex] = true;
-            }
-            ++sd;       /* Next side def */
-        } while (--i);  /* All done? */
-    }
-    i = NumFlatAnims;
-    if (i) {
-        anim_t *sd;
-        Word j;
-        sd = FlatAnims;
-        do {
-            if (TextureLoadFlags[sd->LastPicNum]) {
-                j = sd->BasePic;
-                do {
-                    TextureLoadFlags[j] = true;
-                } while (++j<=sd->LastPicNum);
-            }
-            ++sd;
-        } while (--i);
     }
     
-    i = 0;          /* Init index */
-    do {
-        if (TextureLoadFlags[i]) {  /* Load it in? */
-            FlatInfo[i] = loadDoomResourceData(i+FirstFlat); /* Get it */
+    // Now scan the walls for switches; mark for loading the alternate switch state texture:
+    for (uint32_t switchNum = 0; switchNum < NumSwitches; ++switchNum) {
+        if (bLoadTexFlags[SwitchList[switchNum]]) {         // Found a switch?
+            bLoadTexFlags[SwitchList[switchNum^1]] = true;  // Load the alternate texture for the switch
         }
-    } while (++i<NumFlats);
-    memcpy(FlatTranslation,FlatInfo,sizeof(Byte *)*NumFlats);
-    i = 0;
-    do {
-        loadDoomResourceData(PreLoadTable[i]);
-        releaseDoomResource(PreLoadTable[i]);
-        ++i;
-    } while (PreLoadTable[i]!=-1);
+    }
+    
+    // Now load in the wall textures that were marked for loading
+    for (uint32_t texNum = 0; texNum < numWallTex; ++texNum) {
+        if (bLoadTexFlags[texNum]) {
+            loadWallTexture(texNum);
+        }
+    }
+    
+    // Reset the portion of the flags we will use for flats.
+    // Then scan all flats for what textures we need to load:
+    memset(bLoadTexFlags, 0, numFlatTex * sizeof(bool));
+    
+    // Now scan for the flat textures used in all sectors and mark them for loading
+    {
+        const sector_t* pSector = sectors;
+        const sector_t* const pEndSector = sectors + numsectors;
+        
+        while (pSector < pEndSector) {
+            bLoadTexFlags[pSector->FloorPic] = true;
+            
+            if (pSector->CeilingPic < numFlatTex) {
+                bLoadTexFlags[pSector->CeilingPic] = true;
+            }
+            
+            ++pSector;
+        }
+    }
+    
+    // Mark for loading the other frames for any animated flats that we will load
+    {
+        const anim_t* pAnim = FlatAnims;
+        const anim_t* const pEndAnim = FlatAnims + NumFlatAnims;
+        
+        while (pAnim < pEndAnim) {
+            const uint32_t lastAnimTexNum = pAnim->LastPicNum;
+        
+            if (bLoadTexFlags[lastAnimTexNum]) {
+                // Animated flat is loading: load all other frames
+                for (uint32_t texNum = pAnim->BasePic; texNum < lastAnimTexNum; ++texNum) {
+                    bLoadTexFlags[texNum] = true;
+                }
+            }
+            
+            ++pAnim;
+        }
+    }
+    
+    // Now load all of the flat textures we marked for loading
+    for (uint32_t texNum = 0; texNum < numFlatTex; ++texNum) {
+        if (bLoadTexFlags[texNum]) {
+            loadFlatTexture(texNum);
+        }
+    }
+    
+    // Preloading other resources that were marked for preloading in the fixed preload table
+    {
+        uint32_t tableIdx = 0;
+        
+        while (PreLoadTable[tableIdx] != -1) {
+            loadDoomResourceData(PreLoadTable[tableIdx]);
+            releaseDoomResource(PreLoadTable[tableIdx]);
+            ++tableIdx;
+        }
+    }
+    
+    // Cleanup
+    MemFree(bLoadTexFlags);
 }
 
 /**********************************
@@ -711,61 +708,39 @@ void SetupLevel(Word map)
     gamepaused = false;     /* Game in progress */
 }
 
-/**********************************
-
-    Dispose of all memory allocated by loading a level
-
-**********************************/
-
-void ReleaseMapMemory(void)
-{
-    Word i;
-    
-    MEM_FREE_AND_NULL(sectors);                 /* Dispose of the sectors */
-    MEM_FREE_AND_NULL(sides);                   /* Dispose of the side defs */
-    MEM_FREE_AND_NULL(lines);                   /* Dispose of the lines */
-    freeDoomResource(LoadedLevel+ML_BLOCKMAP);  /* Make sure it's discarded since I modified it */
-    MEM_FREE_AND_NULL(BlockLinkPtr);            /* Discard the block map mobj linked list */
-    MEM_FREE_AND_NULL(segs);                    /* Release the line segment memory */
-    MEM_FREE_AND_NULL(subsectors);              /* Release the sub sectors */
-    freeDoomResource(LoadedLevel+ML_NODES);     /* Release the BSP tree */
-    freeDoomResource(LoadedLevel+ML_REJECT);    /* Release the quick reject matrix */
+//---------------------------------------------------------------------------------------------------------------------
+// Dispose of all memory allocated by loading a level
+//---------------------------------------------------------------------------------------------------------------------
+void ReleaseMapMemory() {
+    MEM_FREE_AND_NULL(sectors);                     // Dispose of the sectors
+    MEM_FREE_AND_NULL(sides);                       // Dispose of the side defs
+    MEM_FREE_AND_NULL(lines);                       // Dispose of the lines
+    freeDoomResource(LoadedLevel + ML_BLOCKMAP);    // Make sure it's discarded since I modified it
+    MEM_FREE_AND_NULL(BlockLinkPtr);                // Discard the block map mobj linked list
+    MEM_FREE_AND_NULL(segs);                        // Release the line segment memory
+    MEM_FREE_AND_NULL(subsectors);                  // Release the sub sectors
+    freeDoomResource(LoadedLevel + ML_NODES);       // Release the BSP tree
+    freeDoomResource(LoadedLevel + ML_REJECT);      // Release the quick reject matrix
     MEM_FREE_AND_NULL(LineArrayBuffer);
     
-    sectors = 0;        /* Zap the pointers */
-    sides = 0;          /* May cause a memory fault, but this will aid in debugging! */
+    sectors = 0;            // Zap the pointers
+    sides = 0;              // May cause a memory fault, but this will aid in debugging!
     lines = 0;
-    BlockMapLines = 0;  /* Force zero for resource */
+    BlockMapLines = 0;      // Force zero for resource
     BlockLinkPtr = 0;
     segs = 0;
     subsectors = 0;
     FirstBSPNode = 0;
     RejectMatrix = 0;
     
-    i = 0;  /* Start at the first wall texture */
-    
-    do {
-        releaseDoomResource(i+FirstTexture);    /* Release all wall textures */
-    } while (++i<NumTextures);                  /* All released? */
-    
-    i = 0;  /* Start at the first flat texture */
-    
-    do {
-        releaseDoomResource(i+FirstFlat);
-    } while (++i<NumFlats);
-    
-    memset(FlatInfo,0,NumFlats*sizeof(void *));     /* Kill the cached flat table */
-    InitThinkers();                                 /* Dispose of all remaining memory */
+    texturesReleaseAll();
+    InitThinkers();         // Dispose of all remaining memory
 }
 
-/**********************************
-
-    Init the machine independant code
-
-**********************************/
-
-void P_Init(void)
-{
-    P_InitSwitchList();     /* Init the switch picture lookup list */
-    P_InitPicAnims();       /* Init the picture animation scripts */
+//---------------------------------------------------------------------------------------------------------------------
+// Init the machine independant code
+//---------------------------------------------------------------------------------------------------------------------
+void P_Init() {
+    P_InitSwitchList();     // Init the switch picture lookup list
+    P_InitPicAnims();       // Init the picture animation scripts
 }

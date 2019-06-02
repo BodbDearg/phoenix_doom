@@ -1,6 +1,8 @@
 #include "doom.h"
+
 #include "DoomResources.h"
 #include "Mem.h"
+#include "Textures.h"
 #include <intmath.h>
 #include <string.h>
 
@@ -16,15 +18,6 @@ static Fixed Stretchs[6] = {
     STRETCH(160, 96),
     STRETCH(128, 80)
 };
-Word NumTextures;       /* Number of textures in the game */
-Word FirstTexture;      /* First texture resource */
-Word NumFlats;          /* Number of flats in the game */
-Word FirstFlat;         /* Resource number to first flat texture */
-texture_t *TextureInfo; /* Array describing textures */
-void ***FlatInfo;       /* Array describing flats */
-texture_t **TextureTranslation; /* Indexs to textures for global animation */
-void ***FlatTranslation;        /* Indexs to textures for global animation */
-texture_t* SkyTexture;      /* Pointer to the sky texture */
 
 /**********************************
 
@@ -35,51 +28,20 @@ texture_t* SkyTexture;      /* Pointer to the sky texture */
 
 **********************************/
 
-void R_InitData(void)
-{
-    Word i;
-    
-    {
-        Filemaptexture_t *maptex;   // Pointer to data loaded from disk
-        texture_t **TransPtr;
-        texture_t *TexturePtr;
-
-        // Load the map texture definitions from Textures1
-        maptex = (Filemaptexture_t*) loadDoomResourceData(rTEXTURE1);  // Load it in
-        NumTextures = maptex->Count;                            // How many are there?
-        FirstTexture = maptex->First;                           // First resource number for loading
-        NumFlats = maptex->FlatCount;
-        FirstFlat = maptex->FirstFlat;
-        TextureInfo = &maptex->Array[0];                        // Index to the first entry
-
-        // Translation table for global animation
-        TransPtr = (texture_t**) MemAlloc(NumTextures * sizeof(texture_t *));
-        
-        TextureTranslation = TransPtr;  // Save the data pointer
-        TexturePtr = TextureInfo;
-        i = NumTextures;
-        
-        do {
-            TransPtr[0] = TexturePtr;   // Init the table with sequential numbers
-            ++TransPtr;
-            ++TexturePtr;
-        } while (--i);      // All done?
-    }
-    
-    FlatInfo = (void***) MemAlloc(NumFlats * sizeof(Byte*));
-    memset(FlatInfo, 0, NumFlats*sizeof(void *));   // Blank out the array for shape handles
-    
-    FlatTranslation = (void***) MemAlloc(NumFlats * sizeof(Byte*));
-    memset(FlatTranslation, 0, sizeof(Byte*) * NumFlats);   // Translate table for flat animation
+void R_InitData(void) {
+    texturesInit();
     
     // Create a recipocal mul table so that I can divide 0-8191 from 1.0.
     // This way I can fake a divide with a multiply.
     IDivTable[0] = -1;
-    i = 1;
     
-    do {
-        IDivTable[i] = IMFixDiv(512<<FRACBITS,i<<FRACBITS); // 512.0 / i
-    } while (++i<(sizeof(IDivTable)/sizeof(Word)));
+    {
+        uint32_t i = 1;
+    
+        do {
+            IDivTable[i] = IMFixDiv(512 << FRACBITS, i << FRACBITS);    // 512.0 / i
+        } while (++i < (sizeof(IDivTable) / sizeof(Word)));
+    }
     
     InitMathTables();
 }

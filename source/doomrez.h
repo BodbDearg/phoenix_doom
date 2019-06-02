@@ -1,10 +1,12 @@
-/**********************************
+#pragma once
 
-    Resource map for all data in DOOM
+//---------------------------------------------------------------------------------------------------------------------
+// Resource map for all data in DOOM
+//---------------------------------------------------------------------------------------------------------------------
 
-**********************************/
+#define rTEXTURE1 1     // Lump containing info on all textures
 
-#define rTEXTURE1 1     /* List of wall textures to preload */
+// Textures
 enum {
     rT_START=2,
     rBIGDOOR2=rT_START,
@@ -84,6 +86,7 @@ enum {
     rT_END
 };
 
+// Flats
 enum {
     rF_START=rT_END,
     rFLAT14=rF_START,
@@ -132,6 +135,7 @@ enum {
     rF_END
 };
 
+// Other stuff, maps & sprites
 enum {
     rBACKGROUNDMASK=rF_END,     // Background for actual game play
     rTITLE=rBACKGROUNDMASK+6,   // Large doom logo

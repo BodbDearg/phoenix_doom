@@ -511,20 +511,6 @@ typedef struct {
     void *Children[2];      /* If low bit is set then it's a subsector */
 } node_t;
 
-typedef struct {        /* Describe all wall textures */
-    Word width;         /* Width of the texture in pixels */
-    Word height;        /* Height of the texture in pixels */
-    void** data;        /* Handle to cached data to draw from */
-} texture_t;
-
-typedef struct {        /* Actual structure of TEXTURE1 */
-    Word Count;         /* Count of entries */
-    Word First;         /* Starting resource # */
-    Word FlatCount;     /* Count of flats */
-    Word FirstFlat;     /* Starting resource # for flats */
-    texture_t Array[1]; /* Array of entries[Count] */
-} Filemaptexture_t;
-
 #define AC_ADDFLOOR 1
 #define AC_ADDCEILING 2
 #define AC_TOPTEXTURE 4
@@ -546,13 +532,13 @@ typedef struct {        /* Describe a wall segment to be drawn */
     int t_topheight;    /* Describe the top texture */
     int t_bottomheight;
     int t_texturemid;
-    texture_t *t_texture; /* Pointer to the top texture */
-
+    struct Texture* t_texture; /* Pointer to the top texture */
+    
     int b_topheight;    /* Describe the bottom texture */
     int b_bottomheight;
     int b_texturemid;
-    texture_t *b_texture;       /* Pointer to the bottom texture */
-
+    struct Texture* b_texture;       /* Pointer to the bottom texture */
+    
     int floorheight;
     int floornewheight;
 
@@ -579,12 +565,7 @@ typedef struct {        /* Describe data on the status bar */
     bool tryopen[NUMCARDS]; /* Tried to open a card or skull door */
 } stbar_t;
 
-/* In Stdlib.c */
-
-extern int abs(int val);
-
 /* In Data.c */
-
 extern ammotype_t WeaponAmmos[NUMWEAPONS];  /* Ammo for weapons */
 extern Word maxammo[NUMAMMO];   /* Max ammo for ammo types */
 extern Word PadAttack;  /* Joypad bit for attack */
@@ -881,7 +862,7 @@ extern Word P_FindMinSurroundingLight(sector_t *sector,Word max);
 extern void P_CrossSpecialLine(line_t *line,mobj_t *thing);
 extern void P_ShootSpecialLine(mobj_t *thing,line_t *line);
 extern void PlayerInSpecialSector(player_t *player,sector_t *sector);
-extern void P_UpdateSpecials(void);
+extern void P_UpdateSpecials();
 extern void SpawnSpecials(void);
 extern void PurgeLineSpecials(void);
 
@@ -939,17 +920,6 @@ extern void P_Init(void);
 extern bool EV_Teleport(line_t *line,mobj_t *thing);
 
 /* In RData.c */
-
-extern Word NumTextures;        /* Number of textures in the game */
-extern Word FirstTexture;       /* First texture resource */
-extern Word NumFlats;           /* Number of flats in the game */
-extern Word FirstFlat;          /* Resource number to first flat texture */
-extern texture_t* TextureInfo;  /* Array describing textures */
-extern void ***FlatInfo;        /* Array describing flats */
-extern texture_t **TextureTranslation; /* Indexs to textures for global animation */
-extern void ***FlatTranslation; /* Indexs to textures for global animation */
-extern texture_t* SkyTexture;   /* Pointer to the sky texture */
-
 extern void R_InitData(void);
 extern void InitMathTables(void);
 
@@ -1078,7 +1048,7 @@ extern void ReadPrefsFile(void);
 extern void UpdateAndPageFlip(void);
 extern void DrawPlaque(Word RezNum);
 extern void DrawSkyLine(void);
-extern void DrawWallColumn(Word y,Word colnum,Byte *Source,Word Run);
+extern void DrawWallColumn(const Word y, const Word colnum, const Byte* const Source, const Word Run);
 extern void DrawFloorColumn(Word ds_y,Word ds_x1,Word Count,LongWord xfrac,
     LongWord yfrac,Fixed ds_xstep,Fixed ds_ystep);
 extern void DrawSpriteNoClip(vissprite_t *vis);

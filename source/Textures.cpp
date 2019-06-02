@@ -1,5 +1,6 @@
 #include "Textures.h"
 
+#include "doom.h"
 #include "DoomResources.h"
 #include "doomrez.h"
 #include "Endian.h"
@@ -37,11 +38,14 @@ static uint32_t                 gFirstFlatTexResourceNum;
 static std::vector<Texture>     gWallTextures;
 static std::vector<Texture>     gFlatTextures;
 
-static void clearTextures(std::vector<Texture>& textures) noexcept {
+static void releaseTextures(std::vector<Texture>& textures) noexcept {
     for (Texture& texture : textures) {
         releaseDoomResource(texture.resourceNum);
     }
-    
+}
+
+static void clearTextures(std::vector<Texture>& textures) noexcept {
+    releaseTextures(textures);
     textures.clear();
 }
 
@@ -114,7 +118,12 @@ void texturesShutdown() {
     gFirstWallTexResourceNum = 0;
     gFirstFlatTexResourceNum = 0;
 }
-    
+
+void texturesReleaseAll() {
+    releaseTextures(gWallTextures);
+    releaseTextures(gFlatTextures);
+}
+
 uint32_t getNumWallTextures() {
     return (uint32_t) gWallTextures.size();
 }
@@ -133,6 +142,16 @@ uint32_t getSky2TexNum() {
 
 uint32_t getSky3TexNum() {
     return (uint32_t) rSKY3 - gFirstWallTexResourceNum;
+}
+
+uint32_t getCurrentSkyTexNum() {
+    if (gamemap < 9 || gamemap == 24) {
+        return getSky1TexNum();
+    } else if (gamemap < 18) {
+        return getSky2TexNum();
+    } else {
+        return getSky3TexNum();
+    }
 }
 
 const Texture* getWallTexture(const uint32_t num) {
@@ -167,11 +186,13 @@ void releaseFlatTexture(const uint32_t num) {
 
 void setWallAnimTexNum(const uint32_t num, const uint32_t animTexNum) {
     ASSERT(num < gWallTextures.size());
+    ASSERT(animTexNum < gWallTextures.size());
     gWallTextures[num].animTexNum = animTexNum;
 }
 
 void setFlatAnimTexNum(const uint32_t num, const uint32_t animTexNum) {
     ASSERT(num < gFlatTextures.size());
+    ASSERT(animTexNum < gFlatTextures.size());
     gFlatTextures[num].animTexNum = animTexNum;
 }
 

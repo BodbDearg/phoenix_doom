@@ -1,5 +1,7 @@
 #include "doom.h"
 
+#include "Textures.h"
+
 /**********************************
 
     Local structs
@@ -217,18 +219,26 @@ bool EV_DoFloor(line_t *line,floor_e floortype)
                 floor->direction = 1;
                 i = 0;
                 minsize = 32767U;       /* Maximum height */
+                
                 while (i<sec->linecount) {
-                    if (twoSided(sec,i)) {      /* Only process two sided lines */
-                        side = getSide(sec,i,0);        /* Get the first side */
-                        if (!(side->bottomtexture&0x8000)) {    /* Valid texture? */
-                            Height = TextureInfo[side->bottomtexture].height;
+                    if (twoSided(sec,i)) {  // Only process two sided lines
+                        side = getSide(sec, i, 0);    // Get the first side
+                        
+                        if (!(side->bottomtexture & 0x8000)) {  // Valid texture?
+                            const Texture* const pBottomTex = getWallTexture(side->bottomtexture);
+                            Height = pBottomTex->height;
+                            
                             if (Height < minsize) {
                                 minsize = Height;
                             }
                         }
-                        side = getSide(sec,i,1);        /* Get the second side */
-                        if (!(side->bottomtexture&0x8000)) {    /* Valid texture? */
-                            Height = TextureInfo[side->bottomtexture].height;
+                        
+                        side = getSide(sec, i, 1);    // Get the second side
+                        
+                        if (!(side->bottomtexture & 0x8000)) {  // Valid texture?
+                            const Texture* const pBottomTex = getWallTexture(side->bottomtexture);
+                            Height = pBottomTex->height;
+                            
                             if (Height < minsize) {
                                 minsize = Height;
                             }

@@ -19,6 +19,7 @@ extern "C" {
 
 void texturesInit();
 void texturesShutdown();
+void texturesReleaseAll();
 
 uint32_t getNumWallTextures();
 uint32_t getNumFlatTextures();
@@ -26,11 +27,13 @@ uint32_t getNumFlatTextures();
 uint32_t getSky1TexNum();
 uint32_t getSky2TexNum();
 uint32_t getSky3TexNum();
+uint32_t getCurrentSkyTexNum();
 
 // N.B: Texture numbers must all be in range!
 // If safety is required, check against the texture counts.
 const Texture* getWallTexture(const uint32_t num);
 const Texture* getFlatTexture(const uint32_t num);
+
 void loadWallTexture(const uint32_t num);
 void loadFlatTexture(const uint32_t num);
 void releaseWallTexture(const uint32_t num);

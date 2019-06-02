@@ -1,5 +1,6 @@
 #include "doom.h"
 #include <intmath.h>
+#include <stdlib.h>
 
 /**********************************
 

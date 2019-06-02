@@ -1,7 +1,7 @@
 #include "doom.h"
-
-#include <string.h>
 #include "Mem.h"
+#include "Textures.h"
+#include <string.h>
 
 Word NumFlatAnims;      /* Number of flat anims */
 anim_t FlatAnims[] = {
@@ -600,48 +600,43 @@ void PlayerInSpecialSector(player_t *player,sector_t *sector)
     }
 }
 
-/**********************************
-
-    Animate planes, scroll walls, etc
-
-**********************************/
-
-void P_UpdateSpecials(void)
-{
-    Word i;
-
-    /* Animate flats and textures globaly */
-
-    if (Tick4) {        /* Time yet? */
-        anim_t *AnimPtr;
-        i = 0;
-        AnimPtr = FlatAnims;    /* Index to the flat anims */
+//---------------------------------------------------------------------------------------------------------------------
+// Animate planes, scroll walls, etc
+//---------------------------------------------------------------------------------------------------------------------
+void P_UpdateSpecials() {
+    // Animate flats and textures globaly periodically
+    if (Tick4) {
+        uint32_t i = 0;
+        anim_t* AnimPtr = FlatAnims;    // Index to the flat anims
+        
         do {
-            ++AnimPtr->CurrentPic;      /* Next picture index */
-            if (AnimPtr->CurrentPic >= AnimPtr->LastPicNum+1) { /* Off the end? */
-                AnimPtr->CurrentPic = AnimPtr->BasePic;     /* Reset the animation */
+            ++AnimPtr->CurrentPic;                                  // Next picture index
+            if (AnimPtr->CurrentPic >= AnimPtr->LastPicNum+1) {     // Off the end?
+                AnimPtr->CurrentPic = AnimPtr->BasePic;             // Reset the animation
             }
-                    /* Set the frame */
-            FlatTranslation[AnimPtr->LastPicNum] = FlatInfo[AnimPtr->CurrentPic];
+            
+            // Set the frame
+            setFlatAnimTexNum(AnimPtr->LastPicNum, AnimPtr->CurrentPic);
             ++AnimPtr;
         } while (++i<NumFlatAnims);
     }
-
-    /* Animate line specials */
-
-    i = numlinespecials;
-    if (i) {
-        line_t **line;
-        line = linespeciallist;
-        do {
-            line_t *theline;
-            theline = line[0];      /* Get the pointer */
-            if (theline->special==48) { /* Effect firstcol scroll */
-                        /* Scroll it */
-                theline->SidePtr[0]->textureoffset += FRACUNIT;
-            }
-            ++line;
-        } while (--i);
+    
+    // Animate line specials
+    {
+        uint32_t i = numlinespecials;
+        if (i != 0) {
+            line_t **line;
+            line = linespeciallist;
+            do {
+                line_t *theline;
+                theline = line[0];  // Get the pointer
+                
+                if (theline->special == 48) {                           // Effect firstcol scroll
+                    theline->SidePtr[0]->textureoffset += FRACUNIT;     // Scroll it
+                }
+                ++line;
+            } while (--i);
+        }
     }
 }
 

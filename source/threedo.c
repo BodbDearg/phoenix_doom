@@ -389,12 +389,7 @@ void InitTools(void)
 
     initDoomResources();
     InterceptKey();         // Init events
-    
-    // DC: 3DO specific code - disabling
-    #if 0
-        SetErrBombFlag(TRUE);   /* Any OS errors will kill me */
-    #endif
-    
+        
     {
         MyCCB *CCBPtr;
         i = CCBTotal;
@@ -957,7 +952,7 @@ void DrawSkyLine(void)
     
 **********************************/
 
-void DrawWallColumn(Word y,Word Colnum,Byte *Source,Word Run)
+void DrawWallColumn(const Word y, const Word Colnum, const Byte* const Source, const Word Run)
 {
     // DC: FIXME: implement/replace
     #if 0

@@ -148,9 +148,6 @@ extern Short SwapUShort(Short Val);
 extern short SwapShort(short Val);
 extern long SwapLong(long Val);
 extern LongWord SwapULong(LongWord Val);
-extern void Fatal(char *FatalMsg);
-extern void NonFatal(char *ErrorMsg);
-extern void SetErrBombFlag(bool Flag);
 extern char *ErrorMsg;
 extern void LongWordToAscii(LongWord Input,Byte *AsciiPtr);
 extern void longToAscii(long Input,Byte *AsciiPtr);
@@ -202,18 +199,6 @@ extern void FreeSomeMem(void *MemPtr);
 
 extern Item VideoItem;          /* 3DO Specific! */
 extern Item VideoScreen;        /* 3DO Specific! */
-
-/**********************************
-
-    3DO Hacks
-
-**********************************/
-
-extern int abs(int Val);        /* 3DO doesn't have these ANSI library routines */
-extern int atexit(void (*func)(void));
-extern void exit2(int errcode);
-extern void Show3DOLogo(void);
-#define exit(x) exit2(x)        /* Make SURE that Burger.h is first!! */
 
 #ifdef __cplusplus
 };

@@ -20,9 +20,6 @@ set(LIB_INCLUDE_DIRS
 )
 
 set(LIB_SOURCES
-    ${LIB_SRC_DIR}/burger/abs.c
-    ${LIB_SRC_DIR}/burger/atexit.c
-    ${LIB_SRC_DIR}/burger/bombflag.c
     ${LIB_SRC_DIR}/burger/burger.h
     ${LIB_SRC_DIR}/burger/clearthescreen.c
     ${LIB_SRC_DIR}/burger/detectmouse.c
@@ -33,8 +30,6 @@ set(LIB_SOURCES
     ${LIB_SRC_DIR}/burger/drawshape.c
     ${LIB_SRC_DIR}/burger/erasembshape.c
     ${LIB_SRC_DIR}/burger/errormsg.c
-    ${LIB_SRC_DIR}/burger/exit2.c
-    ${LIB_SRC_DIR}/burger/fatal.c
     ${LIB_SRC_DIR}/burger/flushkeys.c
     #${LIB_SRC_DIR}/burger/fontlib/font3
     #${LIB_SRC_DIR}/burger/fontlib/font5
@@ -62,7 +57,6 @@ set(LIB_SOURCES
     ${LIB_SRC_DIR}/burger/music.c
     ${LIB_SRC_DIR}/burger/mygetch.c
     ${LIB_SRC_DIR}/burger/mykbhit.c
-    ${LIB_SRC_DIR}/burger/nonfatal.c
     ${LIB_SRC_DIR}/burger/readjoybuttons.c
     ${LIB_SRC_DIR}/burger/readmouseabs.c
     ${LIB_SRC_DIR}/burger/readmousebuttons.c
@@ -71,8 +65,6 @@ set(LIB_SOURCES
     ${LIB_SRC_DIR}/burger/screenheight.c
     ${LIB_SRC_DIR}/burger/screenwidth.c
     #${LIB_SRC_DIR}/burger/setapixel.s
-    ${LIB_SRC_DIR}/burger/seterrbombflag.c
-    ${LIB_SRC_DIR}/burger/show3dologo.c
     #${LIB_SRC_DIR}/burger/showmcga.s
     #${LIB_SRC_DIR}/burger/showpic.s
     #${LIB_SRC_DIR}/burger/showpicptr.s

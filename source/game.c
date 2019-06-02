@@ -1,35 +1,26 @@
 #include "doom.h"
+
 #include "DoomResources.h"
 #include "Mem.h"
+#include "Textures.h"
 #include <string.h>
 
-/**********************************
+static void loadSkyTexture() {
+    const uint32_t skyTexNum = getCurrentSkyTexNum();
+    loadWallTexture(skyTexNum);
+}
 
-    Prepare to load a game level
-
-**********************************/
-
-void G_DoLoadLevel(void)
-{
-    Word Sky;
-
+//---------------------------------------------------------------------------------------------------------------------
+// Prepare to load a game level
+//---------------------------------------------------------------------------------------------------------------------
+void G_DoLoadLevel(void) {
     if (players.playerstate == PST_DEAD) {
-        players.playerstate = PST_REBORN;   /* Force rebirth */
+        players.playerstate = PST_REBORN;   // Force rebirth
     }
     
-/* Set the sky map for the episode */
-
-    if (gamemap < 9 || gamemap==24) {           /* First 9 levels? */
-        Sky = rSKY1;
-    } else if (gamemap < 18) {
-        Sky = rSKY2;
-    } else {
-        Sky = rSKY3;
-    }
-    SkyTexture = &TextureInfo[Sky-FirstTexture];    /* Set pointer to sky texture record */
-    SkyTexture->data = loadDoomResourceData(Sky);   /* Preload the sky texture */
-    SetupLevel(gamemap);    /* Load the level into memory */
-    gameaction = ga_nothing;        /* Game in progress */
+    loadSkyTexture();
+    SetupLevel(gamemap);        // Load the level into memory
+    gameaction = ga_nothing;    // Game in progress
 }
 
 /**********************************

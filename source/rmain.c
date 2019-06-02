@@ -26,7 +26,7 @@ angle_t doubleclipangle; /* Doubled leftmost clipping angle */
 
 void R_Init(void)
 {
-    R_InitData();           /* Init the data (Via loading or calculations) */
+    R_InitData();                   /* Init the data (Via loading or calculations) */
     clipangle = xtoviewangle[0];    /* Get the left clip angle from viewport */
     doubleclipangle = clipangle*2;  /* Precalc angle * 2 */
 }

@@ -1,5 +1,6 @@
 #include "doom.h"
 #include <intmath.h>
+#include "Textures.h"
 
 /**********************************
 
@@ -121,162 +122,168 @@ static void LatePrep(viswall_t *wc,seg_t *LineSeg,angle_t LeftAngle)
 
 **********************************/
 
-void WallPrep(Word LeftX,Word RightX,seg_t *LineSeg,angle_t LeftAngle)
+void WallPrep(Word LeftX, Word RightX, seg_t* LineSeg, angle_t LeftAngle)
 {
-    viswall_t *CurWallPtr;  /* Pointer to work record */
-    Word LineFlags;         /* Render flags for current line */
-    side_t *SidePtr;        /* Pointer to line side record */
-    sector_t *FrontSecPtr;  /* Pointer to front facing sector */
-    sector_t *BackSecPtr;   /* Pointer to rear sector (Or empty_sector if single sided) */
-    Word actionbits;        /* Flags */
-    Word f_ceilingpic;      /* Front sector ceiling image # */
-    Word f_lightlevel;      /* Front sector light level */
-    Fixed f_floorheight;    /* Front sector floor height - viewz */
-    Fixed f_ceilingheight;  /* Front sector ceiling height - viewz */
-    Word b_ceilingpic;      /* Back sector ceiling image # */
-    Word b_lightlevel;      /* Back sector light level */
-    Fixed b_floorheight, b_ceilingheight;
-
-    CurWallPtr = lastwallcmd;       /* Get the first wall pointer */
-    lastwallcmd = CurWallPtr+1;     /* Inc my pointer */
-    CurWallPtr->LeftX = LeftX;      /* Set the edges of the visible wall */
-    CurWallPtr->RightX = RightX;    /* Right is inclusive! */
-    CurWallPtr->SegPtr = LineSeg;   /* For clipping */
+    viswall_t* CurWallPtr;  // Pointer to work record
+    Word LineFlags;         // Render flags for current line
+    side_t* SidePtr;        // Pointer to line side record
+    sector_t* FrontSecPtr;  // Pointer to front facing sector
+    sector_t* BackSecPtr;   // Pointer to rear sector (Or empty_sector if single sided)
+    Word actionbits;        // Flags
+    Word f_ceilingpic;      // Front sector ceiling image #
+    Word f_lightlevel;      // Front sector light level
+    Fixed f_floorheight;    // Front sector floor height - viewz
+    Fixed f_ceilingheight;  // Front sector ceiling height - viewz
+    Word b_ceilingpic;      // Back sector ceiling image #
+    Word b_lightlevel;      // Back sector light level
+    Fixed b_floorheight;
+    Fixed b_ceilingheight;
+    
+    CurWallPtr = lastwallcmd;       // Get the first wall pointer
+    lastwallcmd = CurWallPtr+1;     // Inc my pointer
+    CurWallPtr->LeftX = LeftX;      // Set the edges of the visible wall
+    CurWallPtr->RightX = RightX;    // Right is inclusive!
+    CurWallPtr->SegPtr = LineSeg;   // For clipping
     
     {
-    line_t *LinePtr;
-    LinePtr = LineSeg->linedef;     /* Get the line record */
-    LineFlags = LinePtr->flags;     /* Copy flags into a global */
-    LinePtr->flags = LineFlags|ML_MAPPED;   /* Mark as seen... */
+        line_t *LinePtr;
+        LinePtr = LineSeg->linedef;                 // Get the line record
+        LineFlags = LinePtr->flags;                 // Copy flags into a global
+        LinePtr->flags = LineFlags | ML_MAPPED;     // Mark as seen...
     }
     
-    SidePtr = LineSeg->sidedef;     /* Get the line side */
-    FrontSecPtr = LineSeg->frontsector; /* Get the front sector */
-    f_ceilingpic = FrontSecPtr->CeilingPic;     /* Store into locals */
+    SidePtr = LineSeg->sidedef;                             // Get the line side
+    FrontSecPtr = LineSeg->frontsector;                     // Get the front sector
+    f_ceilingpic = FrontSecPtr->CeilingPic;                 // Store into locals
     f_lightlevel = FrontSecPtr->lightlevel;
-    f_floorheight = FrontSecPtr->floorheight - viewz;   /* Adjust for camera z */
+    f_floorheight = FrontSecPtr->floorheight - viewz;       // Adjust for camera z
     f_ceilingheight = FrontSecPtr->ceilingheight - viewz;
     
-    /* Set the floor and ceiling shape handles */
+    // Set the floor and ceiling shape handles & look up animated texture numbers.
+    // Note that ceiling might NOT exist!
+    CurWallPtr->FloorPic = getFlatTexture(FrontSecPtr->FloorPic)->animTexNum;
     
-    CurWallPtr->FloorPic = FlatTranslation[FrontSecPtr->FloorPic];  /* Store the floor shape */
     if (f_ceilingpic == -1) {
-        CurWallPtr->CeilingPic = 0;     /* Set a null handle */
+        CurWallPtr->CeilingPic = 0;
     } else {
-        CurWallPtr->CeilingPic = FlatTranslation[f_ceilingpic]; /* Normal image */
+        CurWallPtr->CeilingPic = getFlatTexture(f_ceilingpic)->animTexNum;
     }
-
-    BackSecPtr = LineSeg->backsector;   /* Get the back sector */
-    if (!BackSecPtr) {                  /* Invalid? */
+    
+    BackSecPtr = LineSeg->backsector;   // Get the back sector
+    if (!BackSecPtr) {                  // Invalid?
         BackSecPtr = &emptysector;
     }
-    b_ceilingpic = BackSecPtr->CeilingPic;  /* Get backsector data into locals */
-    b_lightlevel = BackSecPtr->lightlevel;
-    b_floorheight = BackSecPtr->floorheight - viewz;    /* Adjust for camera z */
-    b_ceilingheight = BackSecPtr->ceilingheight - viewz;
-
-    actionbits = 0;     /* Reset vars for future storage */
     
-/* Add floors and ceilings if the wall needs one */
-
-    if (f_floorheight < 0 &&        /* Is the camera above the floor? */
-        (FrontSecPtr->FloorPic != BackSecPtr->FloorPic ||   /* Floor texture changed? */
-        f_floorheight != b_floorheight ||   /* Differant height? */
-        f_lightlevel != b_lightlevel ||     /* Differant light? */
-        b_ceilingheight == b_floorheight) ) {   /* No thickness line? */
+    b_ceilingpic = BackSecPtr->CeilingPic;                  // Get backsector data into locals
+    b_lightlevel = BackSecPtr->lightlevel;
+    b_floorheight = BackSecPtr->floorheight - viewz;        // Adjust for camera z
+    b_ceilingheight = BackSecPtr->ceilingheight - viewz;
+    actionbits = 0;                                         // Reset vars for future storage
+    
+    // Add floors and ceilings if the wall needs one
+    if (f_floorheight < 0 && (                                  // Is the camera above the floor?
+            (FrontSecPtr->FloorPic != BackSecPtr->FloorPic) ||  // Floor texture changed?
+            (f_floorheight != b_floorheight) ||                 // Differant height?
+            (f_lightlevel != b_lightlevel) ||                   // Differant light?
+            (b_ceilingheight == b_floorheight)                  // No thickness line?
+        )
+    ) {
         CurWallPtr->floorheight = CurWallPtr->floornewheight = f_floorheight>>FIXEDTOHEIGHT;
-        actionbits = (AC_ADDFLOOR|AC_NEWFLOOR); /* Create floor */
+        actionbits = (AC_ADDFLOOR|AC_NEWFLOOR); // Create floor
     }
 
-    if ((f_ceilingpic != -1 || b_ceilingpic != -1) &&       /* Normal ceiling? */
-        (f_ceilingheight > 0 || f_ceilingpic == -1) &&  /* Camera below ceiling? Sky ceiling? */
-        (f_ceilingpic != b_ceilingpic ||    /* New ceiling image? */
-        f_ceilingheight != b_ceilingheight ||   /* Differant ceiling height? */
-        f_lightlevel != b_lightlevel ||         /* Differant ceiling light? */
-        b_ceilingheight == b_floorheight ) ) {  /* Thin dividing line? */
-        CurWallPtr->ceilingheight = CurWallPtr->ceilingnewheight = f_ceilingheight >>FIXEDTOHEIGHT;         
+    if ((f_ceilingpic != -1 || b_ceilingpic != -1) &&       // Normal ceiling?
+        (f_ceilingheight > 0 || f_ceilingpic == -1) && (    // Camera below ceiling? Sky ceiling?
+            (f_ceilingpic != b_ceilingpic) ||               // New ceiling image?
+            (f_ceilingheight != b_ceilingheight) ||         // Differant ceiling height?
+            (f_lightlevel != b_lightlevel) ||               // Differant ceiling light?
+            (b_ceilingheight == b_floorheight)              // Thin dividing line?
+        )
+    ) {
+        CurWallPtr->ceilingheight = CurWallPtr->ceilingnewheight = f_ceilingheight >>FIXEDTOHEIGHT;
+        
         if (f_ceilingpic == -1) {
-            actionbits |= AC_ADDSKY|AC_NEWCEILING;  /* Add sky to the ceiling */
+            actionbits |= AC_ADDSKY | AC_NEWCEILING;        // Add sky to the ceiling
         } else {
-            actionbits |= AC_ADDCEILING|AC_NEWCEILING;  /* Add ceiling texture */
+            actionbits |= AC_ADDCEILING | AC_NEWCEILING;    // Add ceiling texture
         }
     }
+    
+    CurWallPtr->t_topheight = f_ceilingheight>>FIXEDTOHEIGHT;   // Y coord of the top texture
 
-    CurWallPtr->t_topheight = f_ceilingheight>>FIXEDTOHEIGHT;   /* Y coord of the top texture */
-
-/* Single sided line? They only have a center texture. */
-
-    if (BackSecPtr == &emptysector) {       /* Bogus back sector? */
+    // Single sided line? They only have a center texture
+    if (BackSecPtr == &emptysector) {   // Bogus back sector?
+        CurWallPtr->t_texture = getWallTexture(SidePtr->midtexture)->animTexNum;
         int t_texturemid;
-        CurWallPtr->t_texture = TextureTranslation[SidePtr->midtexture];
-        if (LineFlags & ML_DONTPEGBOTTOM) { /* bottom of texture at bottom */
+        
+        if (LineFlags & ML_DONTPEGBOTTOM) {     // Bottom of texture at bottom
             t_texturemid = f_floorheight + (CurWallPtr->t_texture->height << FRACBITS);
         } else {
-            t_texturemid = f_ceilingheight;     /* top of texture at top */
+            t_texturemid = f_ceilingheight;     // Top of texture at top
         }
-        t_texturemid += SidePtr->rowoffset; /* Add texture anchor offset */
-        CurWallPtr->t_texturemid = t_texturemid;    /* Save the top texture anchor var */
+        
+        t_texturemid += SidePtr->rowoffset;                         // Add texture anchor offset
+        CurWallPtr->t_texturemid = t_texturemid;                    // Save the top texture anchor var
         CurWallPtr->t_bottomheight = f_floorheight>>FIXEDTOHEIGHT;
-        actionbits |= (AC_TOPTEXTURE|AC_SOLIDSIL);  /* Draw the middle texture only */
+        actionbits |= (AC_TOPTEXTURE | AC_SOLIDSIL);                // Draw the middle texture only
     } else {
-
-/* Two sided lines are more tricky since I may be able to see through it */
-
-        if (b_floorheight > f_floorheight) {    /* Is the bottom wall texture visible? */
+        // Two sided lines are more tricky since I may be able to see through it.
+        if (b_floorheight > f_floorheight) {    // Is the bottom wall texture visible?
+            // Draw the bottom texture
+            CurWallPtr->b_texture = getWallTexture(SidePtr->bottomtexture)->animTexNum;
             int b_texturemid;
-                
-            /* Draw the bottom texture */
             
-            CurWallPtr->b_texture = TextureTranslation[SidePtr->bottomtexture];
             if (LineFlags & ML_DONTPEGBOTTOM) {
-                b_texturemid = f_ceilingheight; /* bottom of texture at bottom */
-            } else {                                  
-                b_texturemid = b_floorheight;   /* Top of texture at top */
+                b_texturemid = f_ceilingheight;     // bottom of texture at bottom
+            } else {
+                b_texturemid = b_floorheight;       // Top of texture at top
             }
-            b_texturemid += SidePtr->rowoffset; /* Add the adjustment */
+            
+            b_texturemid += SidePtr->rowoffset;     // Add the adjustment
 
             CurWallPtr->b_texturemid = b_texturemid;
             CurWallPtr->b_topheight = CurWallPtr->floornewheight = b_floorheight>>FIXEDTOHEIGHT;
             CurWallPtr->b_bottomheight = f_floorheight>>FIXEDTOHEIGHT;
-            actionbits |= AC_NEWFLOOR|AC_BOTTOMTEXTURE; /* Generate a floor and bottom wall texture */
+            actionbits |= AC_NEWFLOOR|AC_BOTTOMTEXTURE; // Generate a floor and bottom wall texture
         }
 
 
-        if (b_ceilingheight < f_ceilingheight && (f_ceilingpic != -1 || b_ceilingpic != -1)) {  /* Ceiling wall without sky */
+        if (b_ceilingheight < f_ceilingheight && (f_ceilingpic != -1 || b_ceilingpic != -1)) {  // Ceiling wall without sky
+            // Draw the top texture
+            CurWallPtr->t_texture = getWallTexture(SidePtr->toptexture)->animTexNum;
             int t_texturemid;
             
-        /* Draw the top texture */
-            
-            CurWallPtr->t_texture = TextureTranslation[SidePtr->toptexture];
             if (LineFlags & ML_DONTPEGTOP) {
                 t_texturemid = f_ceilingheight; // top of texture at top
             } else {
                 t_texturemid = b_ceilingheight + (CurWallPtr->t_texture->height<<FRACBITS);
             }
-            t_texturemid += SidePtr->rowoffset; /* Anchor the top texture */
-            CurWallPtr->t_texturemid = t_texturemid;    /* Save the top texture anchor var */
+            
+            t_texturemid += SidePtr->rowoffset;             // Anchor the top texture
+            CurWallPtr->t_texturemid = t_texturemid;        // Save the top texture anchor var
             CurWallPtr->t_bottomheight = CurWallPtr->ceilingnewheight = b_ceilingheight>>FIXEDTOHEIGHT;
-            actionbits |= AC_NEWCEILING|AC_TOPTEXTURE;      /* Generate the top texture */
+            actionbits |= AC_NEWCEILING | AC_TOPTEXTURE;    // Generate the top texture
         }
         
-        /* Check if this wall is solid (This is for sprite clipping) */
+        // Check if this wall is solid (This is for sprite clipping)
         if (b_floorheight >= f_ceilingheight || b_ceilingheight <= f_floorheight) {
-            actionbits |= AC_SOLIDSIL;      /* This is solid (For sprite masking) */
+            actionbits |= AC_SOLIDSIL;      // This is solid (For sprite masking)
         } else {
-            int width;
+            int width = (RightX-LeftX+1);   // Get width of opening
             
-            width = (RightX-LeftX+1);       /* Get width of opening */
-            if ( (b_floorheight > 0 && b_floorheight > f_floorheight) ||
-                (f_floorheight < 0 && f_floorheight > b_floorheight) ) {
-                actionbits |= AC_BOTTOMSIL;     /* There is a mask on the bottom */
+            if ((b_floorheight > 0 && b_floorheight > f_floorheight) ||
+                (f_floorheight < 0 && f_floorheight > b_floorheight)
+            ) {
+                actionbits |= AC_BOTTOMSIL;     // There is a mask on the bottom
                 CurWallPtr->BottomSil = lastopening - LeftX;
                 lastopening += width;
             }
             
-            if (f_ceilingpic != -1 || b_ceilingpic != -1) { /* Only if no sky */
-                if ( (b_ceilingheight <= 0 && b_ceilingheight < f_ceilingheight) ||
-                    (f_ceilingheight > 0 && b_ceilingheight > f_ceilingheight) ) {  /* Top sil? */
-                    actionbits |= AC_TOPSIL;        /* There is a mask on the bottom */
+            if (f_ceilingpic != -1 || b_ceilingpic != -1) {                             // Only if no sky
+                if ((b_ceilingheight <= 0 && b_ceilingheight < f_ceilingheight) ||
+                    (f_ceilingheight > 0 && b_ceilingheight > f_ceilingheight)          // Top sil?
+                ) {
+                    actionbits |= AC_TOPSIL;    // There is a mask on the bottom
                     CurWallPtr->TopSil = lastopening - LeftX;
                     lastopening += width;
                 }
@@ -284,15 +291,17 @@ void WallPrep(Word LeftX,Word RightX,seg_t *LineSeg,angle_t LeftAngle)
         }
     }
     
-    CurWallPtr->WallActions = actionbits;       /* Save the action bits */
-    if (f_lightlevel < 240) {       /* Get the light level */
-        f_lightlevel += extralight; /* Add the light factor */
+    CurWallPtr->WallActions = actionbits;   // Save the action bits
+    
+    if (f_lightlevel < 240) {               // Get the light level
+        f_lightlevel += extralight;         // Add the light factor
+        
         if (f_lightlevel > 240) {
             f_lightlevel = 240;
         }
     }
-    CurWallPtr->seglightlevel = f_lightlevel;   /* Save the light level */
-    CurWallPtr->offset = SidePtr->textureoffset+LineSeg->offset;    /* Texture anchor X */
-    LatePrep(CurWallPtr,LineSeg,LeftAngle);
-
+    
+    CurWallPtr->seglightlevel = f_lightlevel;                       // Save the light level
+    CurWallPtr->offset = SidePtr->textureoffset + LineSeg->offset;  // Texture anchor X
+    LatePrep(CurWallPtr, LineSeg, LeftAngle);
 }

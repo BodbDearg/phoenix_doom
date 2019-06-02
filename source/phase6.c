@@ -1,5 +1,6 @@
 #include "doom.h"
 #include <intmath.h>
+#include "Textures.h"
 
 #define OPENMARK ((MAXSCREENHEIGHT-1)<<8)
 
@@ -19,7 +20,7 @@ static Word clipboundtop[MAXSCREENWIDTH];       /* Bounds top y for vertical cli
 static Word clipboundbottom[MAXSCREENWIDTH];    /* Bounds bottom y for vertical clipping */
 
 typedef struct {
-    Byte *data;         /* Pointer to raw texture data */
+    const Byte* data;   /* Pointer to raw texture data */
     Word width;         /* Width of texture in pixels */
     Word height;        /* Height of texture in pixels */
     int topheight;      /* Top texture height in global pixels */
@@ -76,75 +77,88 @@ static void DrawTexture(drawtex_t *tex)
 
 static void DrawSeg(viswall_t *segl)
 {
-    register Word x;        /* Current x coord */
+    register Word x;        // Current x coord
     register int scale;
     int _scalefrac;
     Word ActionBits;
-
     ActionBits = segl->WallActions;
+    
     if (ActionBits & (AC_TOPTEXTURE|AC_BOTTOMTEXTURE)) {
-        
         x = segl->seglightlevel;
         lightmin = lightmins[x];
         lightmax = x;
         lightsub = lightsubs[x];
         lightcoef = lightcoefs[x];
             
-        if (ActionBits&AC_TOPTEXTURE) {     /* Is there a top wall? */
-            texture_t *tex;
-            toptex.topheight = segl->t_topheight;   /* Init the top texture */
+        if (ActionBits & AC_TOPTEXTURE) {   // Is there a top wall?
+            toptex.topheight = segl->t_topheight;   // Init the top texture
             toptex.bottomheight = segl->t_bottomheight;
             toptex.texturemid = segl->t_texturemid;
-            tex = segl->t_texture;
-            toptex.width = tex->width;
-            toptex.height = tex->height;
-            toptex.data = (Byte *)*tex->data;
+            
+            const Texture* const pTex = segl->t_texture;
+            toptex.width = pTex->width;
+            toptex.height = pTex->height;
+            toptex.data = (const Byte*) pTex->pData;
         }
-        if (ActionBits&AC_BOTTOMTEXTURE) {  /* Is there a bottom wall? */
-            texture_t *tex;
+        
+        if (ActionBits & AC_BOTTOMTEXTURE) {  // Is there a bottom wall?
             bottomtex.topheight = segl->b_topheight;
             bottomtex.bottomheight = segl->b_bottomheight;
             bottomtex.texturemid = segl->b_texturemid;
-            tex = segl->b_texture;
-            bottomtex.width = tex->width;
-            bottomtex.height = tex->height;
-            bottomtex.data = (Byte *)*tex->data;
+            
+            const Texture* const pTex = segl->t_texture;
+            bottomtex.width = pTex->width;
+            bottomtex.height = pTex->height;
+            bottomtex.data = (const Byte*) pTex->pData;
         }
-        _scalefrac = segl->LeftScale;       /* Init the scale fraction */
         
-        x = segl->LeftX;                /* Init the x coord */
-        do {                            /* Loop for each X coord */
-            scale = _scalefrac>>FIXEDTOSCALE;   /* Current scaling factor */
-            if (scale >= 0x2000) {      /* Too large? */
-                scale = 0x1fff;         /* Fix the scale to maximum */
-        }
-            tx_x = x;       /* Pass the X coord */
+        _scalefrac = segl->LeftScale;   // Init the scale fraction
+        x = segl->LeftX;                // Init the x coord
+        
+        do {                                        // Loop for each X coord
+            scale = _scalefrac >> FIXEDTOSCALE;     // Current scaling factor
+            
+            if (scale >= 0x2000) {                  // Too large?
+                scale = 0x1fff;                     // Fix the scale to maximum
+            }
+            
+            tx_x = x;   // Pass the X coord
 
-/* Calculate texture offset into shape */
-
-            tx_texturecolumn = (segl->offset-IMFixMul(
-                finetangent[(segl->CenterAngle+xtoviewangle[x])>>ANGLETOFINESHIFT],
-                segl->distance))>>FRACBITS;
-            tx_scale = scale;           /* 0-0x1FFF */
+            // Calculate texture offset into shape
+            tx_texturecolumn = (
+                segl->offset - IMFixMul(
+                    finetangent[(segl->CenterAngle + xtoviewangle[x]) >> ANGLETOFINESHIFT],
+                    segl->distance
+                )
+            ) >> FRACBITS;
+            
+            tx_scale = scale;   // 0-0x1FFF
+            
             {
-            int texturelight;
-            texturelight = ((scale*lightcoef)>>16) - lightsub;
-            if (texturelight < lightmin) {
-                texturelight = lightmin;
+                int texturelight = ((scale * lightcoef) >> 16) - lightsub;
+                
+                if (texturelight < lightmin) {
+                    texturelight = lightmin;
+                }
+                
+                if (texturelight > lightmax) {
+                    texturelight = lightmax;
+                }
+                
+                tx_texturelight = texturelight;
             }
-            if (texturelight > lightmax) {
-                texturelight = lightmax;
-            }
-            tx_texturelight = texturelight;
-            }
+            
             if (ActionBits&AC_TOPTEXTURE) {
-                DrawTexture(&toptex);       /* Draw upper texture */
+                DrawTexture(&toptex);           // Draw upper texture
             }
+            
             if (ActionBits&AC_BOTTOMTEXTURE) {
-                DrawTexture(&bottomtex);    /* Draw lower texture */
+                DrawTexture(&bottomtex);        // Draw lower texture
             }
-            _scalefrac += segl->ScaleStep;      /* Step to the next scale */
-        } while (++x<=segl->RightX);
+            
+            _scalefrac += segl->ScaleStep;      // Step to the next scale
+            
+        } while (++x <= segl->RightX);
     }
 }
 
