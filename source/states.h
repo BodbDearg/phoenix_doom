@@ -1,3 +1,5 @@
+#pragma once
+
 /****************************
 
     Indexs to all the sprites in DOOM!

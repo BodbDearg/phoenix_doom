@@ -24,6 +24,10 @@ static inline uint32_t byteSwappedU32(const uint32_t num) {
     );
 }
 
+static inline int32_t byteSwappedI32(const int32_t num) {
+    return int32_t(byteSwappedU32(uint32_t(num)));
+}
+
 #ifdef __cplusplus
 
 static inline void byteSwapU16(uint16_t& num) noexcept {
@@ -32,6 +36,10 @@ static inline void byteSwapU16(uint16_t& num) noexcept {
 
 static inline void byteSwapU32(uint32_t& num) noexcept {
     num = byteSwappedU32(num);
+}
+
+static inline void byteSwapI32(int32_t& num) noexcept {
+    num = byteSwappedI32(num);
 }
 
 #endif  // #ifdef __cplusplus

@@ -1,4 +1,5 @@
 #include "doom.h"
+#include "MapData.h"
 #include "Mem.h"
 #include "Resources.h"
 #include "Textures.h"
@@ -12,7 +13,6 @@ enum {
     ML_TOTAL
 };
 
-static vertex_t *vertexes;  /* Only needed during load, then discarded before game play */
 static Word LoadedLevel;    /* Resource number of the loaded level */
 static Word numsides;   /* Number of sides loaded */
 static side_t *sides;       /* Pointer to array of loaded sides */
@@ -179,12 +179,12 @@ static void LoadLineDefs(Word lump)
     i = numlines;           
     do {
         Fixed dx,dy;
-        ld->flags = mld->flags;     /* Copy the flags */
-        ld->special = mld->special; /* Copy the special type */
-        ld->tag = mld->tag;         /* Copy the external tag ID trigger */
-        ld->v1 = vertexes[mld->v1];     /* Copy the end points to the line */
-        ld->v2 = vertexes[mld->v2];
-        dx = ld->v2.x - ld->v1.x;   /* Get the delta offset (Line vector) */
+        ld->flags = mld->flags;             /* Copy the flags */
+        ld->special = mld->special;         /* Copy the special type */
+        ld->tag = mld->tag;                 /* Copy the external tag ID trigger */
+        ld->v1 = gpVertexes[mld->v1];       /* Copy the end points to the line */
+        ld->v2 = gpVertexes[mld->v2];
+        dx = ld->v2.x - ld->v1.x;           /* Get the delta offset (Line vector) */
         dy = ld->v2.y - ld->v1.y;
         
         /* What type of line is this? */
@@ -325,24 +325,28 @@ static void LoadSegs(Word lump)
         line_t *ldef;
         Word side;
         
-        li->v1 = vertexes[ml->v1];  /* Get the line points */
-        li->v2 = vertexes[ml->v2];
-        li->angle = ml->angle;      /* Set the angle of the line */
-        li->offset = ml->offset;    /* Get the texture offset */
-        ldef = &lines[ml->linedef]; /* Get the line pointer */
+        li->v1 = gpVertexes[ml->v1];            /* Get the line points */
+        li->v2 = gpVertexes[ml->v2];
+        li->angle = ml->angle;                  /* Set the angle of the line */
+        li->offset = ml->offset;                /* Get the texture offset */
+        ldef = &lines[ml->linedef];             /* Get the line pointer */
         li->linedef = ldef;
-        side = ml->side;        /* Get the side number */
-        li->sidedef = ldef->SidePtr[side];  /* Grab the side pointer */
+        side = ml->side;                        /* Get the side number */
+        li->sidedef = ldef->SidePtr[side];      /* Grab the side pointer */
         li->frontsector = li->sidedef->sector;  /* Get the front sector */
-        if (ldef->flags & ML_TWOSIDED) {        /* Two sided? */
-            li->backsector = ldef->SidePtr[side^1]->sector; /* Mark the back sector */
+        
+        if (ldef->flags & ML_TWOSIDED) {                        /* Two sided? */
+            li->backsector = ldef->SidePtr[side^1]->sector;     /* Mark the back sector */
         }
-        if (ldef->v1.x == li->v1.x && ldef->v1.y == li->v1.y) { /* Init the fineangle */
-            ldef->fineangle = li->angle>>ANGLETOFINESHIFT;  /* This is a point only */
+        
+        if (ldef->v1.x == li->v1.x && ldef->v1.y == li->v1.y) {     /* Init the fineangle */
+            ldef->fineangle = li->angle>>ANGLETOFINESHIFT;          /* This is a point only */
         }
-        ++li;       /* Next entry */
-        ++ml;       /* Next resource entry */
+        
+        ++li;   /* Next entry */
+        ++ml;   /* Next resource entry */
     } while (++i<numsegs);
+    
     freeResource(lump);    /* Release the resource */
 }
 
@@ -683,10 +687,10 @@ void SetupLevel(Word map)
 
     lumpnum = ((map-1)*ML_TOTAL)+rMAP01;    /* Get the map number */
     LoadedLevel = lumpnum;      /* Save the loaded resource number */
+    
+    mapDataInit(map);
 
-/* Note: most of this ordering is important */
-
-    vertexes = (vertex_t *)loadResourceData(lumpnum+ML_VERTEXES);  /* Load the map vertexes */
+    /* Note: most of this ordering is important */
     LoadSectors(lumpnum+ML_SECTORS);    /* Needs nothing */
     LoadSideDefs(lumpnum+ML_SIDEDEFS);  /* Needs sectors */
     LoadLineDefs(lumpnum+ML_LINEDEFS);  /* Needs vertexes,sectors and sides */
@@ -711,6 +715,8 @@ void SetupLevel(Word map)
 // Dispose of all memory allocated by loading a level
 //---------------------------------------------------------------------------------------------------------------------
 void ReleaseMapMemory() {
+    mapDataShutdown();
+    
     MEM_FREE_AND_NULL(sectors);                 // Dispose of the sectors
     MEM_FREE_AND_NULL(sides);                   // Dispose of the side defs
     MEM_FREE_AND_NULL(lines);                   // Dispose of the lines

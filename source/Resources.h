@@ -9,10 +9,10 @@ extern "C" {
 void resourcesInit();
 void resourcesShutdown();
     
-const struct Resource* getResource(const uint32_t num);
+const Resource* getResource(const uint32_t num);
 void* getResourceData(const uint32_t num);
 
-const struct Resource* loadResource(const uint32_t num);
+const Resource* loadResource(const uint32_t num);
 void* loadResourceData(const uint32_t num);
 
 void freeResource(const uint32_t num);

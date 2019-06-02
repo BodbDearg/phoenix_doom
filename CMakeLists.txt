@@ -149,6 +149,8 @@ set(GAME_SOURCES
     ${GAME_SRC_DIR}/plats.c
     ${GAME_SRC_DIR}/pspr.c
     ${GAME_SRC_DIR}/rdata.c
+    ${GAME_SRC_DIR}/MapData.cpp
+    ${GAME_SRC_DIR}/MapData.h
     ${GAME_SRC_DIR}/Resource.h
     ${GAME_SRC_DIR}/ResourceMgr.cpp
     ${GAME_SRC_DIR}/ResourceMgr.h

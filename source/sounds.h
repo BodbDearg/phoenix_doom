@@ -1,3 +1,5 @@
+#pragma once
+
 typedef enum {      /* All the sounds in the game */
     Song_None,
     Song_intro,

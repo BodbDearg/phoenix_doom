@@ -1,3 +1,5 @@
+#pragma once
+
 #include <burger.h>
 #include "states.h"
 #include "sounds.h"
