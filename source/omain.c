@@ -1,5 +1,5 @@
 #include "doom.h"
-#include "DoomResources.h"
+#include "Resources.h"
 #include <string.h>
 
 #define CURSORX 45      /* X coord for skulls */
@@ -239,9 +239,9 @@ void O_Drawer(void)
     
 /* Erase old and Draw new cursor frame */
 
-    DrawMShape(CURSORX,CursorYs[cursorpos],GetShapeIndexPtr(loadDoomResourceData(rSKULLS),cursorframe));
-    releaseDoomResource(rSKULLS);
-    Shapes = loadDoomResourceData(rSLIDER);
+    DrawMShape(CURSORX,CursorYs[cursorpos],GetShapeIndexPtr(loadResourceData(rSKULLS),cursorframe));
+    releaseResource(rSKULLS);
+    Shapes = loadResourceData(rSLIDER);
 
 /* Draw menu text */
 
@@ -282,6 +282,6 @@ void O_Drawer(void)
         }
         DrawMShape(SLIDERX+5+offset,SIZEY+20,GetShapeIndexPtr(Shapes,HANDLE));
     }
-    releaseDoomResource(rSLIDER);
+    releaseResource(rSLIDER);
     UpdateAndPageFlip();
 }

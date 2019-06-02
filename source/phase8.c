@@ -1,6 +1,6 @@
 #include "doom.h"
-#include "DoomResources.h"
 #include <intmath.h>
+#include "Resources.h"
 
 #define SCREENGUNY -40      /* Y offset to center the player's weapon properly */
 
@@ -348,7 +348,7 @@ static void DrawAWeapon(pspdef_t *psp,Word Shadow)
 
     StatePtr = psp->StatePtr;       /* Get the state struct pointer */
     RezNum = StatePtr->SpriteFrame>>FF_SPRITESHIFT; /* Get the file */
-    Input = (Short *)loadDoomResourceData(RezNum); /* Get the main pointer */
+    Input = (Short *)loadResourceData(RezNum); /* Get the main pointer */
     Input = (Short *)GetShapeIndexPtr(Input,StatePtr->SpriteFrame & FF_FRAMEMASK);
     
     ((LongWord *)Input)[7] = GunXScale;     /* Set the scale factor */
@@ -370,9 +370,9 @@ static void DrawAWeapon(pspdef_t *psp,Word Shadow)
     x = ((psp->WeaponX+x)*(int)GunXScale)>>20;
     y = ((psp->WeaponY+SCREENGUNY+y)*(int)GunYScale)>>16;
     x+=ScreenXOffset;
-    y+=ScreenYOffset+2;         /* Add 2 pixels to cover up the hole in the bottom */
-    DrawMShape(x,y,&Input[2]);  /* Draw the weapon's shape */
-    releaseDoomResource(RezNum);
+    y+=ScreenYOffset+2;             /* Add 2 pixels to cover up the hole in the bottom */
+    DrawMShape(x,y,&Input[2]);      /* Draw the weapon's shape */
+    releaseResource(RezNum);
 }
 
 /**********************************
@@ -403,7 +403,7 @@ void DrawWeapons(void)
         ++psp;      /* Next... */
     } while (++i<NUMPSPRITES);  /* All done? */
     
-    i = ScreenSize+rBACKGROUNDMASK;             /* Get the resource needed */
-    DrawMShape(0,0,loadDoomResourceData(i));    /* Draw the border */
-    releaseDoomResource(i);                     /* Release the resource */
+    i = ScreenSize+rBACKGROUNDMASK;         /* Get the resource needed */
+    DrawMShape(0,0,loadResourceData(i));    /* Draw the border */
+    releaseResource(i);                     /* Release the resource */
 }

@@ -1,7 +1,6 @@
 #include "doom.h"
-
-#include "DoomResources.h"
 #include "Mem.h"
+#include "Resources.h"
 #include "Textures.h"
 #include <intmath.h>
 #include <string.h>

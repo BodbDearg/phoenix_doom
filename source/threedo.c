@@ -1,6 +1,5 @@
 #include "doom.h"
-
-#include "DoomResources.h"
+#include "Resources.h"
 #include <intmath.h>
 #include <memory.h>
 #include <stdio.h>
@@ -387,9 +386,9 @@ void InitTools(void)
         #endif
     } while (++i<(NUMSFX-1));
 
-    initDoomResources();
+    resourcesInit();
     InterceptKey();         // Init events
-        
+    
     {
         MyCCB *CCBPtr;
         i = CCBTotal;
@@ -653,10 +652,10 @@ void DrawPlaque(Word RezNum)
     }
     FlushCCBs();        /* Flush pending draws */
     SetMyScreen(PrevPage);      /* Draw to the active screen */
-    PicPtr = loadDoomResourceData(RezNum);
+    PicPtr = loadResourceData(RezNum);
     DrawShape(160-(GetShapeWidth(PicPtr)/2),80,PicPtr);
     FlushCCBs();        /* Make sure it's drawn */
-    releaseDoomResource(RezNum);
+    releaseResource(RezNum);
     SetMyScreen(WorkPage);      /* Reset to normal */
 }
 
@@ -1175,7 +1174,7 @@ void DrawSpriteNoClip(vissprite_t *vis)
     Word ColorMap;
     int x;
     
-    patch = (patch_t *)loadDoomResourceData(vis->PatchLump);   
+    patch = (patch_t *)loadResourceData(vis->PatchLump);   
     patch =(patch_t *) &((Byte *)patch)[vis->PatchOffset];
 
     ((LongWord *)patch)[7] = 0;
@@ -1195,7 +1194,7 @@ void DrawSpriteNoClip(vissprite_t *vis)
         ((LongWord *)patch)[9] = vis->xscale;
     }
     DrawMShape(x+ScreenXOffset,vis->y1+ScreenYOffset,&patch->Data);
-    releaseDoomResource(vis->PatchLump);
+    releaseResource(vis->PatchLump);
 }
 
 /**********************************
@@ -1326,7 +1325,7 @@ void DrawSpriteClip(Word x1,Word x2,vissprite_t *vis)
     patch_t *patch;
     Fixed XStep,XFrac;
     
-    patch = (patch_t *)loadDoomResourceData(vis->PatchLump);   /* Get shape data */
+    patch = (patch_t *)loadResourceData(vis->PatchLump);   /* Get shape data */
     patch =(patch_t *) &((Byte *)patch)[vis->PatchOffset];  /* Get true pointer */
     SpriteYScale = vis->yscale<<4;      /* Get scale Y factor */
     SpritePLUT = &((Byte *)patch)[64];  /* Get pointer to PLUT */

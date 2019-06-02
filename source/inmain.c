@@ -1,5 +1,5 @@
 #include "doom.h"
-#include "DoomResources.h"
+#include "Resources.h"
 #include <string.h>
 
 #define KVALX   232
@@ -107,8 +107,8 @@ void PrintBigFont(Word x,Word y,Byte *string)
                 continue;
             }
         }
-        if (!Current) {     /* Do I need the ASCII set? */
-            ucharx = loadDoomResourceData(rCHARSET);   /* Make sure I have the text font */
+        if (!Current) {                             /* Do I need the ASCII set? */
+            ucharx = loadResourceData(rCHARSET);    /* Make sure I have the text font */
             Current = ucharx;
         }
         Current = GetShapeIndexPtr(Current,c);  /* Get the shape pointer */
@@ -117,7 +117,7 @@ void PrintBigFont(Word x,Word y,Byte *string)
     } while ((c = string[0])!=0);       /* Next index */
     
     if (ucharx) {                       /* Did I load the ASCII font? */
-        releaseDoomResource(rCHARSET);  /* Release the ASCII font */
+        releaseResource(rCHARSET);      /* Release the ASCII font */
     }
 }
 
@@ -164,15 +164,15 @@ Word GetBigStringWidth(Byte *string)
                 continue;
             }
         }
-        if (!Current) {     /* Do I need ucharx? */
-            ucharx = loadDoomResourceData(rCHARSET);   /* Load it in */
-            Current = ucharx;       /* Set the pointer */
+        if (!Current) {                             /* Do I need ucharx? */
+            ucharx = loadResourceData(rCHARSET);    /* Load it in */
+            Current = ucharx;                       /* Set the pointer */
         }
         Current = GetShapeIndexPtr(Current,c);  /* Get the shape pointer */
         Width+=GetShapeWidth(Current)+1;        /* Get the width to tab */
     } while ((c = string[0])!=0);       /* Next index */
-    if (ucharx) {       /* Did I load in the ASCII font? */
-        releaseDoomResource(rCHARSET);         /* Release the text font */
+    if (ucharx) {                       /* Did I load in the ASCII font? */
+        releaseResource(rCHARSET);      /* Release the text font */
     }
     return Width;
 }
@@ -310,7 +310,7 @@ void IN_Drawer(void)
     const void* IntermisShapes;         /* Cached pointer */
     DrawRezShape(0,0,rBACKGRNDBROWN);   /* Load and draw the skulls */
     
-    IntermisShapes = loadDoomResourceData(rINTERMIS);   /* Load the intermission shapes */
+    IntermisShapes = loadResourceData(rINTERMIS);       /* Load the intermission shapes */
     PrintBigFontCenter(160,10,mapnames[gamemap-1]);     /* Print the current map name */
     PrintBigFontCenter(160,34,Finished);                /* Print "Finished" */
     
@@ -326,6 +326,6 @@ void IN_Drawer(void)
     PrintNumber(KVALX,KVALY,killvalue,PNPercent|PNRight);   /* Print the numbers */
     PrintNumber(IVALX,IVALY,itemvalue,PNPercent|PNRight);
     PrintNumber(SVALX,SVALY,secretvalue,PNPercent|PNRight);
-    releaseDoomResource(rINTERMIS);
+    releaseResource(rINTERMIS);
     UpdateAndPageFlip();                /* Show the screen */
 }

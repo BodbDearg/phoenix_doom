@@ -118,8 +118,6 @@ set(GAME_SOURCES
     ${GAME_SRC_DIR}/data.c
     ${GAME_SRC_DIR}/dmain.c
     ${GAME_SRC_DIR}/doom.h
-    ${GAME_SRC_DIR}/DoomResources.cpp
-    ${GAME_SRC_DIR}/DoomResources.h
     ${GAME_SRC_DIR}/doomrez.h
     ${GAME_SRC_DIR}/doors.c
     ${GAME_SRC_DIR}/Endian.h
@@ -154,6 +152,8 @@ set(GAME_SOURCES
     ${GAME_SRC_DIR}/Resource.h
     ${GAME_SRC_DIR}/ResourceMgr.cpp
     ${GAME_SRC_DIR}/ResourceMgr.h
+    ${GAME_SRC_DIR}/Resources.cpp
+    ${GAME_SRC_DIR}/Resources.h
     ${GAME_SRC_DIR}/rmain.c
     ${GAME_SRC_DIR}/setup.c
     ${GAME_SRC_DIR}/shoot.c

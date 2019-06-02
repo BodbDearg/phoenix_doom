@@ -1,11 +1,11 @@
 #include "Textures.h"
 
 #include "doom.h"
-#include "DoomResources.h"
 #include "doomrez.h"
 #include "Endian.h"
 #include "Macros.h"
 #include "Mem.h"
+#include "Resources.h"
 #include <vector>
 
 struct TextureInfoHeader {
@@ -40,7 +40,7 @@ static std::vector<Texture>     gFlatTextures;
 
 static void releaseTextures(std::vector<Texture>& textures) noexcept {
     for (Texture& texture : textures) {
-        releaseDoomResource(texture.resourceNum);
+        releaseResource(texture.resourceNum);
     }
 }
 
@@ -50,12 +50,12 @@ static void clearTextures(std::vector<Texture>& textures) noexcept {
 }
 
 static void loadTexture(Texture& tex) noexcept {
-    tex.pData = loadDoomResourceData(tex.resourceNum);
+    tex.pData = loadResourceData(tex.resourceNum);
 }
 
 static void releaseTexture(Texture& tex) noexcept {
     if (tex.pData) {
-        releaseDoomResource(tex.resourceNum);
+        releaseResource(tex.resourceNum);
         tex.pData = nullptr;
     }
 }
@@ -66,7 +66,7 @@ void texturesInit() {
     // Read the header for all the texture info.
     // Note that we do NOT byte swap the original resources the may be cached and reused multiple times.
     // If we byte swapped the originals then we might double swap back to big endian accidently...
-    const std::byte* pData = (const std::byte*) loadDoomResourceData(rTEXTURE1);
+    const std::byte* pData = (const std::byte*) loadResourceData(rTEXTURE1);
     
     TextureInfoHeader header = (const TextureInfoHeader&) *pData;
     header.swapEndian();
@@ -96,7 +96,7 @@ void texturesInit() {
     }
     
     // Now done with this resource
-    releaseDoomResource(rTEXTURE1);
+    releaseResource(rTEXTURE1);
     
     // We don't have texture info for flats, all flats for 3DO are 64x64.
     // This was done orignally to help optimize the flat renderer, which was done in software on the 3DO's CPU.
