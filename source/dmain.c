@@ -298,11 +298,17 @@ static void DRAW_Credits(void)
 
 static void RunMenu(void)
 {
+    // DC: FIXME: temp - skipping past the title into the game
+    #if 1
+    #else
     if (MiniLoop(M_Start,M_Stop,M_Ticker,M_Drawer)==ga_completed) {     /* Process the menu */
+    #endif
         S_StopSong();
         G_InitNew(StartSkill,StartMap);     /* Init the new game */
         G_RunGame();                    /* Play the game */
+    #if 0
     }
+    #endif
 }
 
 
@@ -314,9 +320,14 @@ static void RunMenu(void)
 
 static void RunTitle(void)
 {
+    // DC: FIXME: temp - skipping past the title into the game
+    #if 1
+        RunMenu();
+    #else
     if (MiniLoop(START_Title,STOP_Title,TIC_Abortable,DRAW_Title)==ga_exitdemo) {
         RunMenu();          /* Process the main menu */
     }
+    #endif
 }
 
 /**********************************
