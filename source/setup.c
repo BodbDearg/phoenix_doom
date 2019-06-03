@@ -14,8 +14,6 @@ enum {
 };
 
 static Word LoadedLevel;            /* Resource number of the loaded level */
-static Word numsides;               /* Number of sides loaded */
-static side_t *sides;               /* Pointer to array of loaded sides */
 static line_t **LineArrayBuffer;    /* Pointer to array of line_t pointers used by sectors */
 
 static Word PreLoadTable[] = {
@@ -54,48 +52,6 @@ mobj_t **BlockLinkPtr;      /* Starting link for thing chains */
 Byte *RejectMatrix;         /* For fast sight rejection */
 mapthing_t deathmatchstarts[10],*deathmatch_p;  /* Deathmatch starts */
 mapthing_t playerstarts;    /* Starting position for players */
-
-/**********************************
-
-    Load in the wall side definitions
-    Requires that the sectors are loaded.
-
-**********************************/
-
-typedef struct {        /* Map sidedef loaded from disk */
-    Fixed textureoffset;
-    Fixed rowoffset;
-    Word toptexture,bottomtexture,midtexture;
-    Word sector;        /* on viewer's side */
-} mapsidedef_t;
-
-static void LoadSideDefs(Word lump)
-{
-    Word i;
-    mapsidedef_t *MapSide;
-    side_t *sd;
-    
-    MapSide = (mapsidedef_t *)loadResourceData(lump);   /* Load in the data */
-    numsides = ((Word *)MapSide)[0];                    /* Get the side count */
-    MapSide = (mapsidedef_t *)&((Word *)MapSide)[1];    /* Index to the array */
-
-    i = numsides*sizeof(side_t);    /* How much data do I need? */
-    sd = (side_t *)MemAlloc(i);     /* Allocate it */
-    sides=sd;                       /* Save the data */
-    i = numsides;                   /* Number of sides to process */
-    
-    do {
-        sd->textureoffset = MapSide->textureoffset;     /* Copy the texture X offset */
-        sd->rowoffset = MapSide->rowoffset;             /* Copy the texture Y offset */
-        sd->toptexture = MapSide->toptexture;           /* Topmost texture */
-        sd->bottomtexture = MapSide->bottomtexture;     /* Bottommost texture */
-        sd->midtexture = MapSide->midtexture;           /* Center texture */
-        sd->sector = &gpSectors[MapSide->sector];       /* Parent sector */
-        ++MapSide;                                      /* Next indexs */
-        ++sd;
-    } while (--i);          /* Count down */
-    freeResource(lump);     /* Release the memory */
-}
 
 /**********************************
 
@@ -171,12 +127,11 @@ static void LoadLineDefs(Word lump)
         }
         
         /* Copy the side numbers and sector pointers */
-        
-        ld->SidePtr[0] = &sides[mld->sidenum[0]];       /* Get the side number */
-        ld->frontsector = ld->SidePtr[0]->sector;   /* All lines have a front side */   
-        if (mld->sidenum[1] != -1) {                /* But maybe not a back side */
-            ld->SidePtr[1] = &sides[mld->sidenum[1]];
-            ld->backsector = ld->SidePtr[1]->sector;    /* Get the sector pointed to */
+        ld->SidePtr[0] = &gpSides[mld->sidenum[0]];         /* Get the side number */
+        ld->frontsector = ld->SidePtr[0]->sector;           /* All lines have a front side */
+        if (mld->sidenum[1] != -1) {                        /* But maybe not a back side */
+            ld->SidePtr[1] = &gpSides[mld->sidenum[1]];
+            ld->backsector = ld->SidePtr[1]->sector;        /* Get the sector pointed to */
         }
         ++ld;           /* Next indexes */
         ++mld;
@@ -516,23 +471,23 @@ static void PreloadWalls() {
     
     // Scan all textures used by sidedefs and mark them for loading
     {
-        const side_t* pSidedef = sides;
-        const side_t* const pEndSidedef = pSidedef + numsides;
+        const side_t* pSide = gpSides;
+        const side_t* const pEndSide = pSide + gNumSides;
         
-        while (pSidedef < pEndSidedef) {
-            if (pSidedef->toptexture < numWallTex) {
-                bLoadTexFlags[pSidedef->toptexture] = true;
+        while (pSide < pEndSide) {
+            if (pSide->toptexture < numWallTex) {
+                bLoadTexFlags[pSide->toptexture] = true;
             }
             
-            if (pSidedef->midtexture < numWallTex) {
-                bLoadTexFlags[pSidedef->midtexture] = true;
+            if (pSide->midtexture < numWallTex) {
+                bLoadTexFlags[pSide->midtexture] = true;
             }
             
-            if (pSidedef->bottomtexture < numWallTex) {
-                bLoadTexFlags[pSidedef->bottomtexture] = true;
+            if (pSide->bottomtexture < numWallTex) {
+                bLoadTexFlags[pSide->bottomtexture] = true;
             }
             
-            ++pSidedef;
+            ++pSide;
         }
     }
     
@@ -645,7 +600,6 @@ void SetupLevel(Word map)
     mapDataInit(map);
 
     /* Note: most of this ordering is important */
-    LoadSideDefs(lumpnum+ML_SIDEDEFS);                              /* Needs sectors */
     LoadLineDefs(lumpnum+ML_LINEDEFS);                              /* Needs vertexes,sectors and sides */
     LoadBlockMap(lumpnum+ML_BLOCKMAP);                              /* Needs lines */
     LoadSegs(lumpnum+ML_SEGS);                                      /* Needs vertexes,lines,sides */
@@ -670,7 +624,6 @@ void SetupLevel(Word map)
 void ReleaseMapMemory() {
     mapDataShutdown();
     
-    MEM_FREE_AND_NULL(sides);                   // Dispose of the side defs
     MEM_FREE_AND_NULL(lines);                   // Dispose of the lines
     freeResource(LoadedLevel + ML_BLOCKMAP);    // Make sure it's discarded since I modified it
     MEM_FREE_AND_NULL(BlockLinkPtr);            // Discard the block map mobj linked list
@@ -680,7 +633,6 @@ void ReleaseMapMemory() {
     freeResource(LoadedLevel + ML_REJECT);      // Release the quick reject matrix
     MEM_FREE_AND_NULL(LineArrayBuffer);
     
-    sides = 0;              // May cause a memory fault, but this will aid in debugging!
     lines = 0;
     BlockMapLines = 0;      // Force zero for resource
     BlockLinkPtr = 0;

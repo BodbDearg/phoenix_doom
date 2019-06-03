@@ -59,14 +59,14 @@ void ResourceMgr::init(const char* const fileName) noexcept {
     mpResourceFile = std::fopen(fileName, "rb");
     
     if (!mpResourceFile) {
-        FATAL_ERROR("ERROR: Unable to open game resource file '%s'!\n", fileName);
+        FATAL_ERROR_F("ERROR: Unable to open game resource file '%s'!", fileName);
     }
     
     // Read the file header and verify
     ResourceFileHeader fileHeader = {};
     
     if (std::fread(&fileHeader, sizeof(ResourceFileHeader), 1, mpResourceFile) != 1) {
-        FATAL_ERROR("ERROR: Failed to read game resource file '%s' header!\n", fileName);
+        FATAL_ERROR_F("ERROR: Failed to read game resource file '%s' header!", fileName);
     }
     
     fileHeader.swapEndian();
@@ -81,14 +81,14 @@ void ResourceMgr::init(const char* const fileName) noexcept {
     );
     
     if (!bHeaderOk) {
-        FATAL_ERROR("ERROR: Game resource file '%s' has an invalid header!\n", fileName);
+        FATAL_ERROR_F("ERROR: Game resource file '%s' has an invalid header!", fileName);
     }
     
     // Now read all of the resource group and individual resource headers
     std::unique_ptr<std::byte[]> pResourceHeadersData(new std::byte[fileHeader.resourceGroupHeadersSize]);
     
     if (std::fread(pResourceHeadersData.get(), fileHeader.resourceGroupHeadersSize, 1, mpResourceFile) != 1) {
-        FATAL_ERROR("ERROR: Failed to read game resource file '%s' header!\n", fileName);
+        FATAL_ERROR_F("ERROR: Failed to read game resource file '%s' header!", fileName);
     }
     
     mResources.reserve(fileHeader.numResourceGroups * 4);
@@ -107,7 +107,7 @@ void ResourceMgr::init(const char* const fileName) noexcept {
             
             while (resourceNum < endResourceNum) {
                 if (pCurBytes + sizeof(ResourceHeader) > pEndBytes) {
-                    FATAL_ERROR("Resource file '%s' is invalid! Unexpected head of resource header data!\n", fileName);
+                    FATAL_ERROR_F("Resource file '%s' is invalid! Unexpected head of resource header data!", fileName);
                 }
                 
                 ResourceHeader* const pResourceHeader = (ResourceHeader*) pCurBytes;
@@ -161,18 +161,18 @@ const Resource* ResourceMgr::loadResource(const uint32_t number) noexcept {
     Resource* const pResource = getMutableResource(number);
     
     if (!pResource) {
-        FATAL_ERROR("Invalid resource number to load: %u!", unsigned(number));
+        FATAL_ERROR_F("Invalid resource number to load: %u!", unsigned(number));
     }
     
     if (!pResource->pData) {
         pResource->pData = MemAlloc(pResource->size);
         
         if (std::fseek(mpResourceFile, pResource->offset, SEEK_SET) != 0) {
-            FATAL_ERROR("Failed to read resource number %u!", unsigned(number));
+            FATAL_ERROR_F("Failed to read resource number %u!", unsigned(number));
         }
         
         if (std::fread(pResource->pData, pResource->size, 1, mpResourceFile) != 1) {
-            FATAL_ERROR("Failed to read resource number %u!", unsigned(number));
+            FATAL_ERROR_F("Failed to read resource number %u!", unsigned(number));
         }
     }
     

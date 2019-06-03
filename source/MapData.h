@@ -8,8 +8,11 @@ extern "C" {
 
 /* Pointers to global map data for ease of access */
 extern const vertex_t*      gpVertexes;
-extern uint32_t             gNumSectors;
+extern uint32_t             gNumVertexes;
 extern sector_t*            gpSectors;
+extern uint32_t             gNumSectors;
+extern side_t*              gpSides;
+extern uint32_t             gNumSides;
 
 /* Load all map data for the specified map and release it */
 void mapDataInit(const uint32_t mapNum);
