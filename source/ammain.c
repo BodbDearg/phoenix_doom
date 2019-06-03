@@ -1,4 +1,5 @@
 #include "doom.h"
+#include "MapData.h"
 #include <intmath.h>
 #include <string.h>
 
@@ -386,7 +387,6 @@ void AM_Control(player_t *player)
     Draws the current frame to workingscreen
 
 **********************************/
-
 void AM_Drawer(void)
 {
     player_t *p;        /* Pointer to current player record */
@@ -400,15 +400,15 @@ void AM_Drawer(void)
 
     DrawARect(0,0,320,160,BLACK);       /* Blank out the screen */
 
-    p = &players;       /* Get pointer to the player */
+    p = &players;           /* Get pointer to the player */
     ox = p->automapx;       /* Get the x and y to draw from */
     oy = p->automapy;
-    line = lines;   /* Init the list pointer to the line segment array */
-    drawn = 0;      /* Init the count of drawn lines */
-    i = numlines;           /* Init the line count */
+    line = gpLines;         /* Init the list pointer to the line segment array */
+    drawn = 0;              /* Init the count of drawn lines */
+    i = gNumLines;          /* Init the line count */
     do {
-        if (ShowAllLines ||             /* Cheat? */
-            p->powers[pw_allmap] ||     /* Automap enabled? */
+        if (ShowAllLines ||                     /* Cheat? */
+            p->powers[pw_allmap] ||             /* Automap enabled? */
             ((line->flags & ML_MAPPED) &&       /* If not mapped or don't draw */
             !(line->flags & ML_DONTDRAW)) )  {
 
@@ -421,8 +421,7 @@ void AM_Drawer(void)
                 goto Skip;      /* Is the line clipped? */
             }
 
-        /* Figure out color */
-
+            /* Figure out color */
             if ((ShowAllLines ||
                 p->powers[pw_allmap]) &&    /* If compmap && !Mapped yet */
                 !(line->flags & ML_MAPPED)) {
@@ -454,17 +453,16 @@ Skip:
     {
         Fixed NoseScale;        /* Scale factor for triangle size */
         mobj_t *mo;
-        angle_t angle;      /* Angle of view */
+        angle_t angle;          /* Angle of view */
         int nx3,ny3;            /* Other points for the triangle */
         
         /* Get the size of the triangle into a cached local */
-
         NoseScale = IMFixMul(NOSELENGTH,MapScale);
         mo = players.mo;
 
-        x1 = MulByMapScale(mo->x-ox);   /* Get the screen */
-        y1 = MulByMapScale(mo->y-oy);   /* coords */
-        angle = mo->angle>>ANGLETOFINESHIFT;    /* Get angle */
+        x1 = MulByMapScale(mo->x-ox);                           /* Get the screen */
+        y1 = MulByMapScale(mo->y-oy);                           /* coords */
+        angle = mo->angle>>ANGLETOFINESHIFT;                    /* Get angle */
         nx3 = IMFixMulGetInt(finecosine[angle],NoseScale)+x1;
         ny3 = IMFixMulGetInt(finesine[angle],NoseScale)+y1;
 
@@ -510,9 +508,8 @@ Skip:
     }
 
     /* If less than 5 lines drawn, move to last position! */
-
     if (drawn < 5) {
-        p->automapx = OldPlayerX;   /* Restore the x,y */
+        p->automapx = OldPlayerX;       /* Restore the x,y */
         p->automapy = OldPlayerY;
         MapScale = OldScale;            /* Restore scale factor as well... */
     }

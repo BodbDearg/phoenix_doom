@@ -217,7 +217,13 @@ typedef enum {      /* Enums for door types */
     raiseIn5Mins
 } vldoor_e;
 
-enum {BOXTOP,BOXBOTTOM,BOXLEFT,BOXRIGHT,BOXCOUNT};  /* bbox coordinates */
+enum {          /* bbox coordinates */
+    BOXTOP,
+    BOXBOTTOM,
+    BOXLEFT,
+    BOXRIGHT,
+    BOXCOUNT
+};
 
 /****************************
 
@@ -900,8 +906,6 @@ extern void P_SpawnGlowingLight(sector_t *sector);
 extern seg_t *segs;                                     /* Pointer to array of loaded segs */
 extern subsector_t *subsectors;                         /* Pointer to array of loaded subsectors */
 extern node_t *FirstBSPNode;                            /* First BSP node */
-extern Word numlines;                                   /* Number of lines loaded */
-extern line_t *lines;                                   /* Pointer to array of loaded lines */
 extern line_t ***BlockMapLines;                         /* Pointer to line lists based on blockmap */
 extern Word BlockMapWidth,BlockMapHeight;               /* Size of blockmap in blocks */
 extern Fixed BlockMapOrgX,BlockMapOrgY;                 /* Origin of block map */

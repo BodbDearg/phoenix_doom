@@ -43,8 +43,6 @@ static Word PreLoadTable[] = {
 seg_t *segs;                /* Pointer to array of loaded segs */
 subsector_t *subsectors;    /* Pointer to array of loaded subsectors */
 node_t *FirstBSPNode;   /* First BSP entry */
-Word numlines;      /* Number of lines loaded */
-line_t *lines;      /* Pointer to array of loaded lines */
 line_t ***BlockMapLines;    /* Pointer to line lists based on blockmap */
 Word BlockMapWidth,BlockMapHeight;  /* Size of blockmap in blocks */
 Fixed BlockMapOrgX,BlockMapOrgY;    /* Origin of block map */
@@ -52,92 +50,6 @@ mobj_t **BlockLinkPtr;      /* Starting link for thing chains */
 Byte *RejectMatrix;         /* For fast sight rejection */
 mapthing_t deathmatchstarts[10],*deathmatch_p;  /* Deathmatch starts */
 mapthing_t playerstarts;    /* Starting position for players */
-
-/**********************************
-
-    Load in all the line definitions.
-    Requires vertexes,sectors and sides to be loaded.
-    I also calculate the line's slope for quick processing by line
-    slope comparisons.
-    I also calculate the line's bounding box in Fixed pixels.
-
-**********************************/
-
-typedef struct {
-    Word v1,v2;         /* Indexes to the vertex table */
-    Word flags;         /* Line flags */
-    Word special;       /* Special event type */
-    Word tag;           /* ID tag for external trigger */
-    Word sidenum[2];    /* sidenum[1] will be -1 if one sided */
-} maplinedef_t;
-
-static void LoadLineDefs(Word lump)
-{
-    Word i;
-    maplinedef_t *mld;
-    line_t *ld;
-
-    mld = (maplinedef_t *)loadResourceData(lump);  /* Load in the data */
-    numlines = ((Word*)mld)[0];         /* Get the number of lines in the struct array */   
-    i = numlines*sizeof(line_t);        /* Get the size of the dest buffer */
-    ld = (line_t *)MemAlloc(i);         /* Get the memory for the lines array */
-    lines = ld;                         /* Save the lines */
-    memset(ld,0,i);                     /* Blank out the buffer */
-    mld = (maplinedef_t *)&((Word *)mld)[1];    /* Index to the first record of the struct array */
-    i = numlines;           
-    do {
-        Fixed dx,dy;
-        ld->flags = mld->flags;             /* Copy the flags */
-        ld->special = mld->special;         /* Copy the special type */
-        ld->tag = mld->tag;                 /* Copy the external tag ID trigger */
-        ld->v1 = gpVertexes[mld->v1];       /* Copy the end points to the line */
-        ld->v2 = gpVertexes[mld->v2];
-        dx = ld->v2.x - ld->v1.x;           /* Get the delta offset (Line vector) */
-        dy = ld->v2.y - ld->v1.y;
-        
-        /* What type of line is this? */
-        
-        if (!dx) {              /* No x motion? */
-            ld->slopetype = ST_VERTICAL;        /* Vertical line only */
-        } else if (!dy) {       /* No y motion? */
-            ld->slopetype = ST_HORIZONTAL;      /* Horizontal line only */
-        } else {
-            if ((dy^dx) >= 0) { /* Is this a positive or negative slope */
-                ld->slopetype = ST_POSITIVE;    /* Like signs, positive slope */
-            } else {
-                ld->slopetype = ST_NEGATIVE;    /* Unlike signs, negative slope */
-            }
-        }
-        
-        /* Create the bounding box */
-        
-        if (dx>=0) {            /* V2>=V1? */
-            ld->bbox[BOXLEFT] = ld->v1.x;       /* Leftmost x */
-            ld->bbox[BOXRIGHT] = ld->v2.x;      /* Rightmost x */
-        } else {
-            ld->bbox[BOXLEFT] = ld->v2.x;
-            ld->bbox[BOXRIGHT] = ld->v1.x;
-        }
-        if (dy>=0) {
-            ld->bbox[BOXBOTTOM] = ld->v1.y;     /* Bottommost y */
-            ld->bbox[BOXTOP] = ld->v2.y;        /* Topmost y */
-        } else {
-            ld->bbox[BOXBOTTOM] = ld->v2.y;
-            ld->bbox[BOXTOP] = ld->v1.y;
-        }
-        
-        /* Copy the side numbers and sector pointers */
-        ld->SidePtr[0] = &gpSides[mld->sidenum[0]];         /* Get the side number */
-        ld->frontsector = ld->SidePtr[0]->sector;           /* All lines have a front side */
-        if (mld->sidenum[1] != -1) {                        /* But maybe not a back side */
-            ld->SidePtr[1] = &gpSides[mld->sidenum[1]];
-            ld->backsector = ld->SidePtr[1]->sector;        /* Get the sector pointed to */
-        }
-        ++ld;           /* Next indexes */
-        ++mld;
-    } while (--i);
-    freeResource(lump);     /* Release the resource */
-}
 
 /**********************************
 
@@ -166,29 +78,28 @@ static void LoadBlockMap(Word lump)
     BlockMapWidth = ((Word *)MyLumpPtr)[2];     /* Get the map size */
     BlockMapHeight = ((Word *)MyLumpPtr)[3];
 
-    Entries = BlockMapWidth*BlockMapHeight; /* How many entries are there? */
+    Entries = BlockMapWidth*BlockMapHeight;     /* How many entries are there? */
     
-/* Convert the loaded block map table into a huge array of block entries */
-
-    Count = Entries;            /* Init the longword count */
-    StartIndex = &((LongWord *)MyLumpPtr)[4];   /* Index to the offsets! */
-    BlockMapLines = (line_t ***)StartIndex;     /* Save in global */
+    /* Convert the loaded block map table into a huge array of block entries */
+    Count = Entries;                                            /* Init the longword count */
+    StartIndex = &((LongWord *)MyLumpPtr)[4];                   /* Index to the offsets! */
+    BlockMapLines = (line_t ***)StartIndex;                     /* Save in global */
     do {
         StartIndex[0] = (LongWord)&MyLumpPtr[StartIndex[0]];    /* Convert to pointer */
-        ++StartIndex;       /* Next offset entry */
-    } while (--Count);      /* All done? */ 
+        ++StartIndex;                                           /* Next offset entry */
+    } while (--Count);                                          /* All done? */
 
     /* Convert the lists appended to the array into pointers to lines */
-    Count = pBlockResource->size / 4;      /* How much memory is needed? (Longs) */
+    Count = pBlockResource->size / 4;                               /* How much memory is needed? (Longs) */
     
-    Count -= (Entries+4);       /* Remove the header count */
+    Count -= (Entries+4);                                           /* Remove the header count */
     do {
-        if (StartIndex[0]!=-1) {    /* End of a list? */
-            StartIndex[0] = (LongWord)&lines[StartIndex[0]];    /* Get the line pointer */
+        if (StartIndex[0]!=-1) {                                    /* End of a list? */
+            StartIndex[0] = (LongWord)&gpLines[StartIndex[0]];      /* Get the line pointer */
         } else {
-            StartIndex[0] = 0;  /* Insert a null pointer */
+            StartIndex[0] = 0;                                      /* Insert a null pointer */
         }
-        ++StartIndex;   /* Next entry */
+        ++StartIndex;                                               /* Next entry */
     } while (--Count);
     
     /* Clear out mobj chains */
@@ -236,7 +147,7 @@ static void LoadSegs(Word lump)
         li->v2 = gpVertexes[ml->v2];
         li->angle = ml->angle;                  /* Set the angle of the line */
         li->offset = ml->offset;                /* Get the texture offset */
-        ldef = &lines[ml->linedef];             /* Get the line pointer */
+        ldef = &gpLines[ml->linedef];           /* Get the line pointer */
         li->linedef = ldef;
         side = ml->side;                        /* Get the side number */
         li->sidedef = ldef->SidePtr[side];      /* Grab the side pointer */
@@ -354,30 +265,28 @@ static void LoadNodes(Word lump)
 static void GroupLines(void)
 {
     line_t **linebuffer;    /* Pointer to linebuffer array */
-    Word total;     /* Number of entries needed for linebuffer array */
-    line_t *li;     /* Pointer to a work line record */
+    Word total;             /* Number of entries needed for linebuffer array */
+    line_t *li;             /* Pointer to a work line record */
     Word i,j;
-    sector_t *sector;   /* Work sector pointer */
-    Fixed block;    /* Clipped bounding box value */
+    sector_t *sector;       /* Work sector pointer */
+    Fixed block;            /* Clipped bounding box value */
     Fixed bbox[4];
 
-/* count number of lines in each sector */
-
-    li = lines;     /* Init pointer to line array */
-    total = 0;      /* How many line pointers are needed for sector line array */
-    i = numlines;   /* How many lines to process */
+    /* count number of lines in each sector */
+    li = gpLines;       /* Init pointer to line array */
+    total = 0;          /* How many line pointers are needed for sector line array */
+    i = gNumLines;      /* How many lines to process */
     do {
-        li->frontsector->linecount++;   /* Inc the front sector's line count */
+        li->frontsector->linecount++;                               /* Inc the front sector's line count */
         if (li->backsector && li->backsector != li->frontsector) {  /* Two sided line? */
-            li->backsector->linecount++;    /* Add the back side referance */
-            ++total;    /* Inc count */
+            li->backsector->linecount++;                            /* Add the back side referance */
+            ++total;                                                /* Inc count */
         }
-        ++total;    /* Inc for the front */
-        ++li;       /* Next line down */
+        ++total;                                                    /* Inc for the front */
+        ++li;                                                       /* Next line down */
     } while (--i);
 
-/* Build line tables for each sector */
-
+    /* Build line tables for each sector */
     linebuffer = (line_t**)MemAlloc(total * sizeof(line_t*));
     
     LineArrayBuffer = linebuffer;   /* Save in global for later disposal */
@@ -388,8 +297,8 @@ static void GroupLines(void)
         bbox[BOXTOP] = bbox[BOXRIGHT] = MININT;     /* Invalidate the rect */
         bbox[BOXBOTTOM] = bbox[BOXLEFT] = MAXINT;
         sector->lines = linebuffer;                 /* Get the current list entry */
-        li = lines;                                 /* Init the line array pointer */
-        j = numlines;
+        li = gpLines;                               /* Init the line array pointer */
+        j = gNumLines;
         
         do {
             if (li->frontsector == sector || li->backsector == sector) {
@@ -402,12 +311,10 @@ static void GroupLines(void)
         } while (--j);      /* All done? */
 
         /* Set the sound origin to the center of the bounding box */
-
-        sector->SoundX = (bbox[BOXRIGHT]+bbox[BOXLEFT])/2;  /* Get average */
-        sector->SoundY = (bbox[BOXTOP]+bbox[BOXBOTTOM])/2;  /* This is SIGNED! */
+        sector->SoundX = (bbox[BOXRIGHT]+bbox[BOXLEFT])/2;      /* Get average */
+        sector->SoundY = (bbox[BOXTOP]+bbox[BOXBOTTOM])/2;      /* This is SIGNED! */
 
         /* Adjust bounding box to map blocks and clip to unsigned values */
-
         block = (bbox[BOXTOP]-BlockMapOrgY+MAXRADIUS)>>MAPBLOCKSHIFT;
         ++block;
         block = (block > (int)BlockMapHeight) ? BlockMapHeight : block;
@@ -600,7 +507,6 @@ void SetupLevel(Word map)
     mapDataInit(map);
 
     /* Note: most of this ordering is important */
-    LoadLineDefs(lumpnum+ML_LINEDEFS);                              /* Needs vertexes,sectors and sides */
     LoadBlockMap(lumpnum+ML_BLOCKMAP);                              /* Needs lines */
     LoadSegs(lumpnum+ML_SEGS);                                      /* Needs vertexes,lines,sides */
     LoadSubsectors(lumpnum+ML_SSECTORS);                            /* Needs sectors and segs and sides */
@@ -624,7 +530,6 @@ void SetupLevel(Word map)
 void ReleaseMapMemory() {
     mapDataShutdown();
     
-    MEM_FREE_AND_NULL(lines);                   // Dispose of the lines
     freeResource(LoadedLevel + ML_BLOCKMAP);    // Make sure it's discarded since I modified it
     MEM_FREE_AND_NULL(BlockLinkPtr);            // Discard the block map mobj linked list
     MEM_FREE_AND_NULL(segs);                    // Release the line segment memory
@@ -633,7 +538,6 @@ void ReleaseMapMemory() {
     freeResource(LoadedLevel + ML_REJECT);      // Release the quick reject matrix
     MEM_FREE_AND_NULL(LineArrayBuffer);
     
-    lines = 0;
     BlockMapLines = 0;      // Force zero for resource
     BlockLinkPtr = 0;
     segs = 0;

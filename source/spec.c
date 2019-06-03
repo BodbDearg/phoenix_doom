@@ -691,12 +691,12 @@ void SpawnSpecials(void)
     /* Init line EFFECTs, first pass, count the effects detected */
 
     numlinespecials = 0;        /* No specials found */
-    i = numlines;           /* Get the line count */
+    i = gNumLines;              /* Get the line count */
     if (i) {
         line_t *line;
-        line = lines;       /* Traverse the list */
+        line = gpLines;         /* Traverse the list */
         do {
-            if (line->special==48) {        /* EFFECT FIRSTCOL SCROLL+ */
+            if (line->special==48) {    /* EFFECT FIRSTCOL SCROLL+ */
                 ++numlinespecials;      /* Inc the count */
             }
             ++line;
@@ -709,8 +709,8 @@ void SpawnSpecials(void)
         /* Get memory for the list */
         linelist = (line_t**) MemAlloc(sizeof(line_t*) * numlinespecials);
         linespeciallist = linelist;     /* Save the pointer */
-        i = numlines;
-        line = lines;                   /* Reset the count */
+        i = gNumLines;
+        line = gpLines;                 /* Reset the count */
         
         do {
             if (line->special==48) {    /* EFFECT FIRSTCOL SCROLL+ */
