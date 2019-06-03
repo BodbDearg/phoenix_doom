@@ -1,4 +1,5 @@
 #include "doom.h"
+#include "MapData.h"
 
 /**********************************
 
@@ -187,19 +188,18 @@ bool EV_DoCeiling(line_t *line, ceiling_e  type)
     }
 
     while ((secnum = P_FindSectorFromLineTag(line,secnum)) != -1) {
-        sec = &sectors[secnum];     /* Get the sector pointer */
+        sec = &gpSectors[secnum];   /* Get the sector pointer */
         if (sec->specialdata) {     /* Already something is here? */
             continue;
         }
 
         /* New ceiling thinker */
-
         rtn = true;
         ceiling = (ceiling_t *)AddThinker(T_MoveCeiling,sizeof(ceiling_t));
         sec->specialdata = ceiling;     /* Pass the pointer */
-        ceiling->sector = sec;      /* Save the sector ptr */
+        ceiling->sector = sec;          /* Save the sector ptr */
         ceiling->tag = sec->tag;        /* Set the tag number */
-        ceiling->crush = false;     /* Assume it can't crush */
+        ceiling->crush = false;         /* Assume it can't crush */
         ceiling->type = type;           /* Set the ceiling type */
         switch(type) {
         case fastCrushAndRaise:

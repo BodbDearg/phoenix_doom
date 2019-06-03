@@ -1,4 +1,5 @@
 #include "doom.h"
+#include "MapData.h"
 
 /**********************************
 
@@ -57,7 +58,7 @@ bool EV_Teleport(line_t *line,mobj_t *thing)
 
     tag = line->tag;        /* Cache the teleport item tag */
     i = 0;
-    sec = sectors;          /* Get the sector pointer */
+    sec = gpSectors;          /* Get the sector pointer */
     do {
         if (sec->tag == tag) {
             for (m=mobjhead.next ; m != &mobjhead ; m=m->next) {
@@ -71,10 +72,10 @@ bool EV_Teleport(line_t *line,mobj_t *thing)
                 oldx = thing->x;        /* Previous x,y,z */
                 oldy = thing->y;
                 oldz = thing->z;
-                thing->flags |= MF_TELEPORT;    /* Mark as a teleport */
-                P_Telefrag(thing,m->x,m->y);    /* Frag everything at dest */
+                thing->flags |= MF_TELEPORT;        /* Mark as a teleport */
+                P_Telefrag(thing,m->x,m->y);        /* Frag everything at dest */
                 flag = P_TryMove(thing,m->x,m->y);  /* Put it there */
-                thing->flags &= ~MF_TELEPORT;   /* Clear the flag */
+                thing->flags &= ~MF_TELEPORT;       /* Clear the flag */
                 if (!flag) {
                     return false;   /* (Can't teleport) move is blocked */
                 }
@@ -97,6 +98,6 @@ bool EV_Teleport(line_t *line,mobj_t *thing)
             }
         }
         ++sec;      /* Next sector */
-    } while (++i<numsectors);
+    } while (++i < gNumSectors);
     return false;   /* Didn't teleport */
 }

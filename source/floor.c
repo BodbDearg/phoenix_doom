@@ -1,5 +1,5 @@
 #include "doom.h"
-
+#include "MapData.h"
 #include "Textures.h"
 
 /**********************************
@@ -155,20 +155,19 @@ bool EV_DoFloor(line_t *line,floor_e floortype)
     Word i;
     sector_t *sec;      /* Pointer to sector */
     floormove_t *floor; /* Pointer to floor record */
-
     rtn = false;        /* Assume no entry */
     secnum = -1;
+    
     while ((secnum = P_FindSectorFromLineTag(line,secnum)) !=-1) {
-        sec = &sectors[secnum];     /* Get pointer to sector */
-
+        sec = &gpSectors[secnum];     /* Get pointer to sector */
+        
         /* Already moving?  If so, keep going... */
         if (sec->specialdata) {     /* Already has a floor attached? */
             continue;
         }
 
         /* New floor thinker */
-
-        rtn = true;     /* I created a floor */
+        rtn = true;                     /* I created a floor */
         floor = (floormove_t *)AddThinker(T_MoveFloor,sizeof(floormove_t));
         sec->specialdata = floor;       /* Mark the sector */
         floor->type = floortype;        /* Save the type of floor */
@@ -295,7 +294,7 @@ bool EV_BuildStairs(line_t *line)
     rtn = false;        /* Assume no thinkers made */
     secnum = -1;
     while ((secnum = P_FindSectorFromLineTag(line,secnum)) != -1) {
-        sec = &sectors[secnum];     /* Get the base sector pointer */
+        sec = &gpSectors[secnum];     /* Get the base sector pointer */
 
         /* Already moving? If so, try another one */
         if (sec->specialdata) {
@@ -307,45 +306,45 @@ bool EV_BuildStairs(line_t *line)
         rtn = true;
         height = sec->floorheight + (8<<FRACBITS);  /* Go up 8 pixels */
         floor = (floormove_t *)AddThinker(T_MoveFloor,sizeof(floormove_t));
-        sec->specialdata = floor;       /* Attach the record */
-        floor->direction = 1;       /* Move up */
-        floor->sector = sec;        /* Set the proper sector */
-        floor->speed = FLOORSPEED/2;    /* Normal speed */
+        sec->specialdata = floor;           /* Attach the record */
+        floor->direction = 1;               /* Move up */
+        floor->sector = sec;                /* Set the proper sector */
+        floor->speed = FLOORSPEED/2;        /* Normal speed */
         floor->floordestheight = height;    /* Set the new height */
-        texture = sec->FloorPic;        /* Cache the texture for the stairs */
+        texture = sec->FloorPic;            /* Cache the texture for the stairs */
 
         /* Find next sector to raise */
         /* 1. Find 2-sided line with same sector side[0] */
         /* 2. Other side is the next sector to raise */
-
         do {
-            Stay = false;           /* Assume I fall out */
+            Stay = false;                       /* Assume I fall out */
             for (i=0;i<sec->linecount;++i) {
-                if (!twoSided(sec,i)) {     /* Two sided line? */
+                if (!twoSided(sec,i)) {         /* Two sided line? */
                     continue;
                 }
 
                 tsec = (sec->lines[i])->frontsector;    /* Is this the sector? */
-                if (sec != tsec) {  /* Not a match! */
+                if (sec != tsec) {                      /* Not a match! */
                     continue;
                 }
-                tsec = (sec->lines[i])->backsector; /* Get the possible dest */
-                if (tsec->FloorPic != texture) {    /* Not the same texture? */
+                tsec = (sec->lines[i])->backsector;     /* Get the possible dest */
+                if (tsec->FloorPic != texture) {        /* Not the same texture? */
                     continue;
                 }
                 height += (8<<FRACBITS);        /* Increase the height */
                 if (tsec->specialdata) {        /* Busy already? */
                     continue;
                 }
-                sec = tsec;         /* I continue from here */
+                
+                sec = tsec;                         /* I continue from here */
                 floor = (floormove_t *)AddThinker(T_MoveFloor,sizeof(floormove_t));
-                sec->specialdata = floor;   /* Attach this floor */
-                floor->direction = 1;   /* Go up */
-                floor->sector = sec;    /* Set the sector I will affect */
-                floor->speed = FLOORSPEED/2;    /* Slow speed */
+                sec->specialdata = floor;           /* Attach this floor */
+                floor->direction = 1;               /* Go up */
+                floor->sector = sec;                /* Set the sector I will affect */
+                floor->speed = FLOORSPEED/2;        /* Slow speed */
                 floor->floordestheight = height;
-                Stay = true;            /* I linked to a sector */
-                break;          /* Restart the loop */
+                Stay = true;                        /* I linked to a sector */
+                break;                              /* Restart the loop */
             }
         } while (Stay);
     }
@@ -371,8 +370,8 @@ bool EV_DoDonut(line_t *line)
     secnum = -1;
     rtn = false;
     while ((secnum = P_FindSectorFromLineTag(line,secnum)) != -1) {
-        s1 = &sectors[secnum];
-
+        s1 = &gpSectors[secnum];
+        
         /* ALREADY MOVING?  IF SO, KEEP GOING... */
         if (s1->specialdata) {
             continue;
@@ -388,7 +387,6 @@ bool EV_DoDonut(line_t *line)
             s3 = s2->lines[i]->backsector;  /* Get the back sector */
 
             /* Spawn rising slime */
-
             floor = (floormove_t *)AddThinker(T_MoveFloor,sizeof(floormove_t));
             s2->specialdata = floor;
             floor->type = donutRaise;
@@ -401,7 +399,6 @@ bool EV_DoDonut(line_t *line)
             floor->floordestheight = s3->floorheight;
 
             /* Spawn lowering donut-hole */
-
             floor = (floormove_t *)AddThinker(T_MoveFloor,sizeof(floormove_t));
             s1->specialdata = floor;
             floor->type = lowerFloor;

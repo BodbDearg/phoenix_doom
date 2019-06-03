@@ -13,9 +13,9 @@ enum {
     ML_TOTAL
 };
 
-static Word LoadedLevel;    /* Resource number of the loaded level */
-static Word numsides;   /* Number of sides loaded */
-static side_t *sides;       /* Pointer to array of loaded sides */
+static Word LoadedLevel;            /* Resource number of the loaded level */
+static Word numsides;               /* Number of sides loaded */
+static side_t *sides;               /* Pointer to array of loaded sides */
 static line_t **LineArrayBuffer;    /* Pointer to array of line_t pointers used by sectors */
 
 static Word PreLoadTable[] = {
@@ -43,8 +43,6 @@ static Word PreLoadTable[] = {
 };
 
 seg_t *segs;                /* Pointer to array of loaded segs */
-Word numsectors;            /* Number of sectors loaded */
-sector_t *sectors;          /* Pointer to array of loaded sectors */
 subsector_t *subsectors;    /* Pointer to array of loaded subsectors */
 node_t *FirstBSPNode;   /* First BSP entry */
 Word numlines;      /* Number of lines loaded */
@@ -56,53 +54,6 @@ mobj_t **BlockLinkPtr;      /* Starting link for thing chains */
 Byte *RejectMatrix;         /* For fast sight rejection */
 mapthing_t deathmatchstarts[10],*deathmatch_p;  /* Deathmatch starts */
 mapthing_t playerstarts;    /* Starting position for players */
-
-/**********************************
-
-    Load the sector data, this is loaded in first since it
-    doesn't require the presence of any other data type.
-
-**********************************/
-
-typedef struct {        /* Map sector loaded from disk */
-    Fixed floorheight;  /* Floor and ceiling height */
-    Fixed ceilingheight;
-    Word floorpic;      /* Floor image */
-    Word ceilingpic;    /* Ceiling image */
-    Word lightlevel;    /* Light level */
-    Word special;       /* Special flags */
-    Word tag;           /* Tag ID */
-} mapsector_t;
-
-static void LoadSectors(Word lump)
-{
-    Word i;
-    mapsector_t *Map;
-    sector_t *ss;
-
-    Map = (mapsector_t *)loadResourceData(lump);    /* Load the data in */
-    numsectors = ((Word *)Map)[0];                  /* Get the number of entries */
-    Map = (mapsector_t *)&((Word*)Map)[1];          /* Index past the entry count */
-    i = numsectors*sizeof(sector_t);                /* Get the data size */
-    ss = (sector_t*)MemAlloc(i);                    /* Get some memory */
-    memset(ss,0,i);                                 /* Clear out the memory (Extra fields present) */
-    sectors = ss;                                   /* Save the sector data */
-    i = numsectors;                                 /* Init the loop count */
-    
-    do {
-        ss->floorheight = Map->floorheight;     /* Copy the floor height */
-        ss->ceilingheight = Map->ceilingheight; /* Copy the ceiling height */
-        ss->FloorPic = Map->floorpic;           /* Copy the floor texture # */
-        ss->CeilingPic = Map->ceilingpic;       /* Copy the ceiling texture # */
-        ss->lightlevel = Map->lightlevel;       /* Copy the ambient light */
-        ss->special = Map->special;             /* Copy the event number type */
-        ss->tag = Map->tag;                     /* Copy the event tag ID */
-        ++ss;                                   /* Next indexs */
-        ++Map;
-    } while (--i);  /* All done? */
-    
-    freeResource(lump);    /* Dispose of the original */
-}
 
 /**********************************
 
@@ -123,23 +74,24 @@ static void LoadSideDefs(Word lump)
     Word i;
     mapsidedef_t *MapSide;
     side_t *sd;
-
-    MapSide = (mapsidedef_t *)loadResourceData(lump);  /* Load in the data */
-    numsides = ((Word *)MapSide)[0];            /* Get the side count */        
+    
+    MapSide = (mapsidedef_t *)loadResourceData(lump);   /* Load in the data */
+    numsides = ((Word *)MapSide)[0];                    /* Get the side count */
     MapSide = (mapsidedef_t *)&((Word *)MapSide)[1];    /* Index to the array */
 
-    i = numsides*sizeof(side_t);        /* How much data do I need? */
-    sd = (side_t *)MemAlloc(i);    /* Allocate it */
-    sides=sd;               /* Save the data */
-    i = numsides;           /* Number of sides to process */
+    i = numsides*sizeof(side_t);    /* How much data do I need? */
+    sd = (side_t *)MemAlloc(i);     /* Allocate it */
+    sides=sd;                       /* Save the data */
+    i = numsides;                   /* Number of sides to process */
+    
     do {
-        sd->textureoffset = MapSide->textureoffset; /* Copy the texture X offset */
-        sd->rowoffset = MapSide->rowoffset;     /* Copy the texture Y offset */
-        sd->toptexture = MapSide->toptexture;   /* Topmost texture */
-        sd->bottomtexture = MapSide->bottomtexture; /* Bottommost texture */
-        sd->midtexture = MapSide->midtexture;   /* Center texture */
-        sd->sector = &sectors[MapSide->sector]; /* Parent sector */
-        ++MapSide;      /* Next indexs */
+        sd->textureoffset = MapSide->textureoffset;     /* Copy the texture X offset */
+        sd->rowoffset = MapSide->rowoffset;             /* Copy the texture Y offset */
+        sd->toptexture = MapSide->toptexture;           /* Topmost texture */
+        sd->bottomtexture = MapSide->bottomtexture;     /* Bottommost texture */
+        sd->midtexture = MapSide->midtexture;           /* Center texture */
+        sd->sector = &gpSectors[MapSide->sector];       /* Parent sector */
+        ++MapSide;                                      /* Next indexs */
         ++sd;
     } while (--i);          /* Count down */
     freeResource(lump);     /* Release the memory */
@@ -156,10 +108,10 @@ static void LoadSideDefs(Word lump)
 **********************************/
 
 typedef struct {
-    Word v1,v2;     /* Indexes to the vertex table */
-    Word flags;     /* Line flags */
-    Word special;   /* Special event type */
-    Word tag;       /* ID tag for external trigger */
+    Word v1,v2;         /* Indexes to the vertex table */
+    Word flags;         /* Line flags */
+    Word special;       /* Special event type */
+    Word tag;           /* ID tag for external trigger */
     Word sidenum[2];    /* sidenum[1] will be -1 if one sided */
 } maplinedef_t;
 
@@ -472,20 +424,22 @@ static void GroupLines(void)
 /* Build line tables for each sector */
 
     linebuffer = (line_t**)MemAlloc(total * sizeof(line_t*));
+    
     LineArrayBuffer = linebuffer;   /* Save in global for later disposal */
-    sector = sectors;               /* Init the sector pointer */
-    i = numsectors;                 /* Get the sector count */
+    sector = gpSectors;             /* Init the sector pointer */
+    i = gNumSectors;                /* Get the sector count */
     
     do {
-        bbox[BOXTOP] = bbox[BOXRIGHT] = MININT; /* Invalidate the rect */
+        bbox[BOXTOP] = bbox[BOXRIGHT] = MININT;     /* Invalidate the rect */
         bbox[BOXBOTTOM] = bbox[BOXLEFT] = MAXINT;
-        sector->lines = linebuffer; /* Get the current list entry */
-        li = lines;     /* Init the line array pointer */
+        sector->lines = linebuffer;                 /* Get the current list entry */
+        li = lines;                                 /* Init the line array pointer */
         j = numlines;
+        
         do {
             if (li->frontsector == sector || li->backsector == sector) {
-                linebuffer[0] = li; /* Add the pointer to the entry list */
-                ++linebuffer;       /* Add to the count */
+                linebuffer[0] = li;                 /* Add the pointer to the entry list */
+                ++linebuffer;                       /* Add to the count */
                 AddToBox(bbox,li->v1.x,li->v1.y);   /* Adjust the bounding box */
                 AddToBox(bbox,li->v2.x,li->v2.y);   /* Both points */
             }
@@ -602,8 +556,8 @@ static void PreloadWalls() {
     
     // Now scan for the flat textures used in all sectors and mark them for loading
     {
-        const sector_t* pSector = sectors;
-        const sector_t* const pEndSector = sectors + numsectors;
+        const sector_t* pSector = gpSectors;
+        const sector_t* const pEndSector = gpSectors + gNumSectors;
         
         while (pSector < pEndSector) {
             bLoadTexFlags[pSector->FloorPic] = true;
@@ -691,20 +645,19 @@ void SetupLevel(Word map)
     mapDataInit(map);
 
     /* Note: most of this ordering is important */
-    LoadSectors(lumpnum+ML_SECTORS);    /* Needs nothing */
-    LoadSideDefs(lumpnum+ML_SIDEDEFS);  /* Needs sectors */
-    LoadLineDefs(lumpnum+ML_LINEDEFS);  /* Needs vertexes,sectors and sides */
-    LoadBlockMap(lumpnum+ML_BLOCKMAP);  /* Needs lines */
-    LoadSegs(lumpnum+ML_SEGS);      /* Needs vertexes,lines,sides */
-    LoadSubsectors(lumpnum+ML_SSECTORS);    /* Needs sectors and segs and sides */
-    LoadNodes(lumpnum+ML_NODES);        /* Needs subsectors */
-    freeResource(lumpnum+ML_VERTEXES);     /* Release the map vertexes */
-    RejectMatrix = (Byte *)loadResourceData(lumpnum+ML_REJECT);    /* Get the reject matrix */
-    GroupLines();           /* Final last minute data arranging */
+    LoadSideDefs(lumpnum+ML_SIDEDEFS);                              /* Needs sectors */
+    LoadLineDefs(lumpnum+ML_LINEDEFS);                              /* Needs vertexes,sectors and sides */
+    LoadBlockMap(lumpnum+ML_BLOCKMAP);                              /* Needs lines */
+    LoadSegs(lumpnum+ML_SEGS);                                      /* Needs vertexes,lines,sides */
+    LoadSubsectors(lumpnum+ML_SSECTORS);                            /* Needs sectors and segs and sides */
+    LoadNodes(lumpnum+ML_NODES);                                    /* Needs subsectors */
+    RejectMatrix = (Byte *)loadResourceData(lumpnum+ML_REJECT);     /* Get the reject matrix */
+    
+    GroupLines();                       /* Final last minute data arranging */
     deathmatch_p = deathmatchstarts;
-    LoadThings(lumpnum+ML_THINGS);  /* Spawn all the items */
-    SpawnSpecials();        /* Spawn all sector specials */
-    PreloadWalls();         /* Load all the wall textures and sprites */
+    LoadThings(lumpnum+ML_THINGS);      /* Spawn all the items */
+    SpawnSpecials();                    /* Spawn all sector specials */
+    PreloadWalls();                     /* Load all the wall textures and sprites */
 
 /* if deathmatch, randomly spawn the active players */
 
@@ -717,7 +670,6 @@ void SetupLevel(Word map)
 void ReleaseMapMemory() {
     mapDataShutdown();
     
-    MEM_FREE_AND_NULL(sectors);                 // Dispose of the sectors
     MEM_FREE_AND_NULL(sides);                   // Dispose of the side defs
     MEM_FREE_AND_NULL(lines);                   // Dispose of the lines
     freeResource(LoadedLevel + ML_BLOCKMAP);    // Make sure it's discarded since I modified it
@@ -728,7 +680,6 @@ void ReleaseMapMemory() {
     freeResource(LoadedLevel + ML_REJECT);      // Release the quick reject matrix
     MEM_FREE_AND_NULL(LineArrayBuffer);
     
-    sectors = 0;            // Zap the pointers
     sides = 0;              // May cause a memory fault, but this will aid in debugging!
     lines = 0;
     BlockMapLines = 0;      // Force zero for resource

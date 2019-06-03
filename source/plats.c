@@ -1,4 +1,5 @@
 #include "doom.h"
+#include "MapData.h"
 
 /**********************************
 
@@ -192,35 +193,34 @@ bool EV_DoPlat(line_t *line,plattype_e type,Word amount)
 
     secnum = -1;
     while ((secnum = P_FindSectorFromLineTag(line,secnum)) != -1) {
-        sec = &sectors[secnum]; /* Get the sector pointer */
+        sec = &gpSectors[secnum];   /* Get the sector pointer */
         if (sec->specialdata) {     /* Already has a platform? */
-            continue;       /* Skip */
+            continue;               /* Skip */
         }
 
         /* Find lowest & highest floors around sector */
-
-        rtn = true;     /* I created a sector */
-        plat = (plat_t *)AddThinker(T_PlatRaise,sizeof(plat_t));        /* Add to the thinker list */
-        plat->type = type;      /* Save the platform type */
-        plat->sector = sec;     /* Save the sector pointer */
-        plat->sector->specialdata = plat;   /* Point back to me... */
-        plat->crush = false;    /* Can't crush anything */
-        plat->tag = line->tag;  /* Assume the line's ID */
-        switch(type) {          /* Init vars based on type */
+        rtn = true;                                                 /* I created a sector */
+        plat = (plat_t*) AddThinker(T_PlatRaise,sizeof(plat_t));    /* Add to the thinker list */
+        plat->type = type;                                          /* Save the platform type */
+        plat->sector = sec;                                         /* Save the sector pointer */
+        plat->sector->specialdata = plat;                           /* Point back to me... */
+        plat->crush = false;                                        /* Can't crush anything */
+        plat->tag = line->tag;                                      /* Assume the line's ID */
+        switch(type) {                                              /* Init vars based on type */
 
         case raiseToNearestAndChange:   /* Go up and stop */
-            sec->special = 0;   /* If lava, then stop hurting the player */
+            sec->special = 0;           /* If lava, then stop hurting the player */
             plat->high = P_FindNextHighestFloor(sec,sec->floorheight);
             goto RaisePart2;
 
         case raiseAndChange:    /* Raise a specific amount and stop */
             plat->high = sec->floorheight + (amount<<FRACBITS);
 RaisePart2:
-            plat->speed = PLATSPEED/2;      /* Slow speed */
+            plat->speed = PLATSPEED/2;                      /* Slow speed */
             sec->FloorPic = line->frontsector->FloorPic;
-            plat->wait = 0;     /* No delay before moving */
-            plat->status = up;  /* Going up! */
-            S_StartSound(&sec->SoundX,sfx_stnmov);  /* Begin move */
+            plat->wait = 0;                                 /* No delay before moving */
+            plat->status = up;                              /* Going up! */
+            S_StartSound(&sec->SoundX,sfx_stnmov);          /* Begin move */
             break;
         case downWaitUpStay:
             plat->speed = PLATSPEED * 4;        /* Fast speed */
@@ -229,8 +229,8 @@ RaisePart2:
                 plat->low = sec->floorheight;       /* Go to the lowest mark */
             }
             plat->high = sec->floorheight;      /* Allow to return */
-            plat->wait = PLATWAIT;      /* Set the delay when it hits bottom */
-            plat->status = down;        /* Go down */
+            plat->wait = PLATWAIT;              /* Set the delay when it hits bottom */
+            plat->status = down;                /* Go down */
             S_StartSound(&sec->SoundX,sfx_pstart);
             break;
         case perpetualRaise:
@@ -243,7 +243,7 @@ RaisePart2:
             if (plat->high < sec->floorheight) {
                 plat->high = sec->floorheight;  /* Set highest mark */
             }
-            plat->wait = PLATWAIT;      /* Delay when it hits bottom */
+            plat->wait = PLATWAIT;                  /* Delay when it hits bottom */
             plat->status = (plat_e) GetRandom(1);   /* Up or down */
             S_StartSound(&sec->SoundX,sfx_pstart);  /* Start */
             break;

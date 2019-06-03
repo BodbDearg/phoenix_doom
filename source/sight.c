@@ -1,5 +1,6 @@
 #include "doom.h"
 #include <intmath.h>
+#include "MapData.h"
 
 static Fixed sightzstart;           // eye z of looker
 static Fixed topslope, bottomslope; // slopes to top and bottom of target
@@ -202,13 +203,11 @@ Word CheckSight(mobj_t *t1,mobj_t *t2)
 {
     int s1, s2;
     int pnum, bytenum, bitnum;
-
-//
-// check for trivial rejection
-//
-    s1 = (t1->subsector->sector - sectors);
-    s2 = (t2->subsector->sector - sectors);
-    pnum = s1*numsectors + s2;
+    
+    // Check for trivial rejection
+    s1 = (t1->subsector->sector - gpSectors);
+    s2 = (t2->subsector->sector - gpSectors);
+    pnum = s1 * gNumSectors + s2;
     bytenum = pnum>>3;
     bitnum = 1 << (pnum&7);
 
@@ -216,12 +215,10 @@ Word CheckSight(mobj_t *t1,mobj_t *t2)
         return false;   // can't possibly be connected
     }
 
-// look from eyes of t1 to any part of t2
-
+    // look from eyes of t1 to any part of t2
     ++validcount;
 
-// make sure it never lies exactly on a vertex coordinate
-
+    // make sure it never lies exactly on a vertex coordinate
     strace.x = (t1->x & ~0x1ffff) | 0x10000;
     strace.y = (t1->y & ~0x1ffff) | 0x10000;
     t2x = (t2->x & ~0x1ffff) | 0x10000;
@@ -240,5 +237,3 @@ Word CheckSight(mobj_t *t1,mobj_t *t2)
 
     return PS_CrossBSPNode(FirstBSPNode);
 }
-
-

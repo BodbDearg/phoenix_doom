@@ -115,7 +115,7 @@ void ResourceMgr::init(const char* const fileName) noexcept {
                 pCurBytes += sizeof(ResourceHeader);
                 
                 // Burgerlib used '0x80000000' to encode a 'fixed handle' (never unloaded) flag in the offset.
-                // It seemed to reserve other bits by masking by 0x3FFFFFFF - do the same here...
+                // It seemed to also reserve other bits by masking by 0x3FFFFFFF - do the same here...
                 pResourceHeader->offset &= 0x3FFFFFFF;
                 
                 Resource& resource = mResources.emplace_back();
@@ -160,17 +160,19 @@ const Resource* ResourceMgr::loadResource(const uint32_t number) noexcept {
     ASSERT(mpResourceFile);
     Resource* const pResource = getMutableResource(number);
     
-    if (pResource) {
-        if (!pResource->pData) {
-            pResource->pData = MemAlloc(pResource->size);
-            
-            if (std::fseek(mpResourceFile, pResource->offset, SEEK_SET) != 0) {
-                FATAL_ERROR("Failed to read resource number %u!", unsigned(number));
-            }
-            
-            if (std::fread(pResource->pData, pResource->size, 1, mpResourceFile) != 1) {
-                FATAL_ERROR("Failed to read resource number %u!", unsigned(number));
-            }
+    if (!pResource) {
+        FATAL_ERROR("Invalid resource number to load: %u!", unsigned(number));
+    }
+    
+    if (!pResource->pData) {
+        pResource->pData = MemAlloc(pResource->size);
+        
+        if (std::fseek(mpResourceFile, pResource->offset, SEEK_SET) != 0) {
+            FATAL_ERROR("Failed to read resource number %u!", unsigned(number));
+        }
+        
+        if (std::fread(pResource->pData, pResource->size, 1, mpResourceFile) != 1) {
+            FATAL_ERROR("Failed to read resource number %u!", unsigned(number));
         }
     }
     

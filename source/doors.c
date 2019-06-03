@@ -1,4 +1,5 @@
 #include "doom.h"
+#include "MapData.h"
 
 /**********************************
 
@@ -121,13 +122,12 @@ bool EV_DoDoor(line_t *line,vldoor_e type)
     secnum = -1;
     rtn = false;
     while ((secnum = P_FindSectorFromLineTag(line,secnum)) != -1) {
-        sec = &sectors[secnum];
+        sec = &gpSectors[secnum];
         if (sec->specialdata) {     /* Already something here? */
             continue;
         }
 
         /* new door thinker */
-
         rtn = true;
         door = (vldoor_t *)AddThinker(T_VerticalDoor,sizeof(vldoor_t));
         sec->specialdata = door;

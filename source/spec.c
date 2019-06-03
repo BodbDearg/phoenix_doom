@@ -1,4 +1,5 @@
 #include "doom.h"
+#include "MapData.h"
 #include "Mem.h"
 #include "Textures.h"
 #include <string.h>
@@ -243,17 +244,18 @@ Word P_FindSectorFromLineTag(line_t *line,Word start)
 {
     Word tag;
     sector_t *sec;
-
     ++start;
-    if (start<numsectors) { /* Valid? */
-        tag = line->tag;    /* Cache the tag */
-        sec = &sectors[start];  /* Get the sector pointer */
+    
+    if (start < gNumSectors) {      /* Valid? */
+        tag = line->tag;            /* Cache the tag */
+        sec = &gpSectors[start];    /* Get the sector pointer */
+        
         do {
             if (sec->tag == tag) {  /* Tag match? */
                 return start;       /* Return the index */
             }
-            ++sec;      /* Next pointer */
-        } while (++start<numsectors);   /* Keep counting */
+            ++sec;                          /* Next pointer */
+        } while (++start < gNumSectors);    /* Keep counting */
     }
     return -1;      /* No good... */
 }
@@ -649,14 +651,11 @@ void P_UpdateSpecials() {
 
 void SpawnSpecials(void)
 {
-    sector_t *sector;
-    Word i;
-
     /* Init special SECTORs */
-
-    PurgeLineSpecials();        /* Make SURE they are gone */
-    sector = sectors;
-    i = 0;
+    PurgeLineSpecials();                /* Make SURE they are gone */
+    sector_t* sector = gpSectors;
+    Word i = 0;
+    
     do {
         switch(sector->special) {
         case 1:     /* FLICKERING LIGHTS */
@@ -687,7 +686,7 @@ void SpawnSpecials(void)
             P_SpawnDoorRaiseIn5Mins(sector);
         }
         ++sector;
-    } while (++i<numsectors);
+    } while (++i < gNumSectors);
 
     /* Init line EFFECTs, first pass, count the effects detected */
 

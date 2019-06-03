@@ -1,4 +1,5 @@
 #include "doom.h"
+#include "MapData.h"
 
 typedef struct {        /* Struct for light flashers */
     sector_t *sector;   /* Sector to affect */
@@ -132,8 +133,8 @@ void EV_StartLightStrobing(line_t *line)
 
     secnum = -1;
     while ((secnum = P_FindSectorFromLineTag(line,secnum)) != -1) {
-        sec = &sectors[secnum];
-        if (!sec->specialdata) {        /* Something here? */
+        sec = &gpSectors[secnum];
+        if (!sec->specialdata) {                        /* Something here? */
             P_SpawnStrobeFlash(sec,SLOWDARK, false);    /* Start a flash */
         }
     }
@@ -147,13 +148,10 @@ void EV_StartLightStrobing(line_t *line)
 
 void EV_TurnTagLightsOff(line_t *line)
 {
-    Word j;
-    Word tag;
-    sector_t *sector;
-
-    sector = sectors;
-    j = numsectors;
-    tag = line->tag;
+    sector_t *sector = gpSectors;
+    Word j = gNumSectors;
+    Word tag = line->tag;
+    
     do {
         if (sector->tag == tag) {
             line_t **templine;      /* Pointer to line_t array */
@@ -172,7 +170,7 @@ void EV_TurnTagLightsOff(line_t *line)
                     }
                 }
                 ++templine;
-            } while (--i);          /* All done? */
+            } while (--i);              /* All done? */
             sector->lightlevel = min;   /* Get the lowest light level */
         }
         ++sector;
@@ -187,27 +185,19 @@ void EV_TurnTagLightsOff(line_t *line)
 
 void EV_LightTurnOn(line_t *line,Word bright)
 {
-    Word i;
-    sector_t *sector;
-    Word tag;
-
-    tag = line->tag;
-    sector = sectors;
-    i = numsectors;
+    Word tag = line->tag;
+    sector_t *sector = gpSectors;
+    Word i = gNumSectors;
+    
     do {
         if (sector->tag == tag) {
-
-            /* bright = 0 means to search for highest */
-            /* light level surrounding sector */
-
+            // bright = 0 means to search for highest
+            // light level surrounding sector
             if (!bright) {
-                line_t **templine;
-                Word j;
-                j = sector->linecount;
-                templine = sector->lines;
+                Word j = sector->linecount;
+                line_t **templine = sector->lines;
                 do {
-                    sector_t *temp;
-                    temp = getNextSector(templine[0],sector);
+                    sector_t *temp = getNextSector(templine[0],sector);
                     if (temp) {
                         if (temp->lightlevel > bright) {
                             bright = temp->lightlevel;

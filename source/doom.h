@@ -897,21 +897,18 @@ extern void EV_LightTurnOn(line_t *line,Word bright);
 extern void P_SpawnGlowingLight(sector_t *sector);
 
 /* In Setup.c */
-
-extern seg_t *segs;             /* Pointer to array of loaded segs */
-extern Word numsectors;         /* Number of sectors loaded */
-extern sector_t *sectors;           /* Pointer to array of loaded sectors */
-extern subsector_t *subsectors; /* Pointer to array of loaded subsectors */
-extern node_t *FirstBSPNode;    /* First BSP node */
-extern Word numlines;       /* Number of lines loaded */
-extern line_t *lines;       /* Pointer to array of loaded lines */
-extern line_t ***BlockMapLines; /* Pointer to line lists based on blockmap */
-extern Word BlockMapWidth,BlockMapHeight;   /* Size of blockmap in blocks */
-extern Fixed BlockMapOrgX,BlockMapOrgY; /* Origin of block map */
-extern mobj_t **BlockLinkPtr;       /* Starting link for thing chains */
-extern Byte *RejectMatrix;          /* For fast sight rejection */
+extern seg_t *segs;                                     /* Pointer to array of loaded segs */
+extern subsector_t *subsectors;                         /* Pointer to array of loaded subsectors */
+extern node_t *FirstBSPNode;                            /* First BSP node */
+extern Word numlines;                                   /* Number of lines loaded */
+extern line_t *lines;                                   /* Pointer to array of loaded lines */
+extern line_t ***BlockMapLines;                         /* Pointer to line lists based on blockmap */
+extern Word BlockMapWidth,BlockMapHeight;               /* Size of blockmap in blocks */
+extern Fixed BlockMapOrgX,BlockMapOrgY;                 /* Origin of block map */
+extern mobj_t **BlockLinkPtr;                           /* Starting link for thing chains */
+extern Byte *RejectMatrix;                              /* For fast sight rejection */
 extern mapthing_t deathmatchstarts[10],*deathmatch_p;   /* Deathmatch starts */
-extern mapthing_t playerstarts; /* Starting position for players */
+extern mapthing_t playerstarts;                         /* Starting position for players */
 
 extern void SetupLevel(Word map);
 extern void ReleaseMapMemory(void);
