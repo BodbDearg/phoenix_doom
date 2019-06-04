@@ -1,0 +1,419 @@
+
+<!-- saved from url=(0082)http://altmer.arts-union.ru/3DO/docs/DevDocs/ppgfldr/smmfldr/cdmfldr/08CDM001.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=windows-1252"><title>3DO File Format</title>
+</head><body><h1><link name="XREF13933">3DO File Format</h1><hr>
+The 3DO file format is a simple tagged format designed to be: <p>
+</p><ul>
+<li>A target file format supporting the hardware features of the 3DO platform.
+<p>
+</p></li><li>A common format for all available tools, allowing you to mix and match various tools on various platforms without running into file format incompatibilities. 
+</li></ul>
+Each 3DO file consists of chunks. All chunks types (except one) are atomic, that is, they do not contain other chunks. Some chunks are, however, dependent on other chunks. This is explained in detail below. <p>
+The 3DO file format currently defines chunks for images, cels, and simple flip-book type animations. It also defines several informational chunks for things like copyright notices.</p><p>
+The one nonatomic chunk type is a wrapper type. An entire file (a concatenation of atomic chunks) can be "wrapped" in a single wrapper chunk. Wrapping is optional. Applications should be designed to handle either wrapped or unwrapped files.</p><p>
+The 3DO Company plans to define additional chunk types in the future, including chunks for digital audio and for 3D objects. The 3DO Company intends to coordinate the process of defining new chunk types, and to maintain the central registry of chunk names and definitions. Developers are encouraged to define new chunk types and refine existing chunk types, since the entire development community benefits from having a common file format.</p><p>
+</p><h2>File Format Description</h2>
+A file consists of one or more chunks. Each chunk contains:<p>
+</p><ul>
+<li>The chunk header, which consists of a <code>chunk_ID</code> and the <code>chunk_size</code>
+<p>
+</p></li><li>The chunk body, containing the data. 
+</li></ul>
+This section briefly discusses some special chunk types. The type definitions for all chunk types are listed in the next section. This <p>
+<a name="XREF24099"></a></p><h3><a name="XREF24099">Wrapper Chunks</a></h3>
+Wrapper chunks are the only chunks that can contain other chunks. A wrapper chunk must always be the first chunk in a file and must contain all other chunks in the file. The <code>chunk_size</code> of a wrapper chunk is therefore equal to the file size. A file need not be wrapped. <p>
+</p><ul>
+<li>Unwrapped files are convenient because they can be concatenated to form new legal unwrapped files. 
+<p>
+</p></li><li>Wrapped files are convenient because they provide an easy way to check if a file is actually a 3DO file by looking for the <code>wrap_chunk</code> at the beginning of the file. On the Macintosh, you should give the file type `3DO ` to both wrapped and unwrapped 3DO files.
+</li></ul>
+<h3>Packing of Data for Image Files </h3>
+The native format for the target hardware is 555 chunky RGB. For all chunky files, numcomponents is 3 and numplanes is 1. The table below illustrates what happens with chunky files:<p>
+</p><pre><b>Table 1: </b><i> RGB chunky files (numplanes = 1)</i>
+--------------------------------------------------------
+File type |Discussion                                   
+--------------------------------------------------------
+555 RGB   |1 pixel is packed right-justified into 2     
+chunky    |bytes. The value of the hvformat flag        
+          |determines the meaning of the                
+          |most-significant bit.                        
+--------------------------------------------------------
+24- bit   |1 pixel is packed into 3 bytes.              
+RGB chunky|                                             
+          |                                             
+--------------------------------------------------------
+8-bit RGB |1 pixel is packed into 1 byte. The encoding  
+chunky    |is 332 RGB (or YUV); 3 bits of Red (or Y), 3 
+          |bits of green (or U), and 2 bits of Blue (or 
+          |V). For display each component is expanded   
+          |into 5 bit quantities forming a 555 RGB (or  
+          |YUV) value. Red and Green are left-shifted   
+          |two bits, and Blue is left-shifted 3 bits.   
+          |The lower bits are 0-filled if hvformat = 0  
+          |and copied from the high bits if hvformat =  
+          |1.Having hvformat = 1 allows you to represent
+          |both pure white and pure black when going    
+          |from 332 to 555 mode.                        
+--------------------------------------------------------
+</pre>
+<p>
+For planar RGB files (numplanes =3), 1 component is stored right-justified in 1byte. For coded or color index images the data is packed as follows:</p><p>
+</p><pre><b>Table 2: </b><i>  Packed data for coded images</i>
+--------------------------------------------------------
+Bits Per Pixel    |Pixels Per Byte                      
+--------------------------------------------------------
+8                 |1                                    
+--------------------------------------------------------
+6                 |1 (right justified)                  
+--------------------------------------------------------
+4                 |2                                    
+--------------------------------------------------------
+2                 |4                                    
+--------------------------------------------------------
+1                 |8                                    
+--------------------------------------------------------
+</pre>
+<p>
+A coded (color-indexed) image requires a PLUT (pixel lookup table) chunk containing at least 2**(bits per pixel) entries.</p><p>
+</p><h3>PLUT and Color Lookup Table Chunks</h3>
+The PLUT (pixel lookup table) associates an entry in a color-indexed (coded) cel or image with a 555 RGB color value. The resulting 555 color is indexed once again through separate R, G, and B color lookup tables (CLUTs), which take a 5-bit index and yield an 8-bit color value. For more information, see the <i>3DO Portfolio </i><i>Graphic's Programmer's Guide.</i> <p>
+</p><h2>Using Multiple Chunks</h2>
+Information from more than one chunk may be needed to completely define an object. For example, a simple background image is defined by an image control chunk and a PDAT chunk. <p>
+</p><dl>
+<dd><code>{image control chunk} {PDAT chunk containing the pixel values}</code><br>
+</dd></dl>
+The order of chunks in a file is important because several consecutive data chunks can share one preceding control chunk as follows:<p>
+</p><ul>
+<li>Each chunk type has a <i>current value</i>.
+<p>
+</p></li><li>When a file is read and a chunk is encountered, the chunk's values become the current value for that chunk type.
+<p>
+</p></li><li>The current value for all chunk types is initialized to NULL at the beginning of a file. 
+<p>
+</p></li><li>When a data chunk is encountered, it is rendered in terms of the current values for all its components. 
+</li></ul>
+Here are two examples of how multiple chunks are used in defining one object:<p>
+Example 1: The 3DO format stores three separate backgrounds which share all image attributes (stored in the image control chunk):</p><p>
+<code>
+</code></p><pre><code>{image control chunk} {PDAT chunk} {PDAT chunk} {PDAT chunk}
+</code>
+</pre>
+Example 2:<b> </b>3DO format stores an animation using 10 cels, all the same size, and depth, half of which use one color table (PLUT) and the other half use another color table:<p>
+    <code>
+</code></p><pre><code>{ANIM Control Chunk}
+        {CEL Control Chunk}
+            {PLUT Chunk}
+                {PDAT} {PDAT} {PDAT} {PDAT} {PDAT}
+            {PLUT Chunk}
+                {PDAT} {PDAT} {PDAT} {PDAT} {PDAT}
+</code>
+</pre>
+<h3>Required and Optional Chunks</h3>
+Data chunks have required chunks and optional chunks. If any required chunk has a current value of <code>NULL</code> the data chunk is undefined. For example a chunk of type cel data requires a cel control chunk and can optionally have a PLUT chunk.<p>
+</p><h2>3DO File Format BNF</h2>
+This section contains the BNF for the 3DO file format. If you're not familiar with that notation, you can also extract the information from the definition above and the chunk definitions below. <p>
+<br>
+
+<code>
+</code></p><pre><code>{file}                ::=    {chunk} | {file}{chunk}c
+{chunk}                ::=    {chunk_header}{chunk_body}
+{chunk_header}                ::=    {chunk_ID} {chunk_size}
+{chunk_ID}                ::=    `3DO `    |        /* Optional wrapper chunk  */
+        `IMAG'|                    /* Image Control chunk */
+        `CCB `    |                /* CEL Control chunk */
+        `PDAT'    |                /* Pixel Data chunk */
+        `PLUT'    |                /* PLUT (Pixel Lookup Table) chunk*/
+        `ANIM'    |                /* Animation Info*
+        `VDL `    |                /* VDL (Video Display List) chunk */
+        `CPYR'    |                /* Copyright Notice */
+        `DESC'    |                /* Text description of image */
+        `KWRD'    |                /* Text Keywords for image*/ 
+        `CRDT'                    /* Text credits associated with image */
+{chunk_size}        ::=   
+                            /* Unsigned 32 bit integer*/
+                            /* Includes size of chunk_body plus size*/
+                            /* of chunk_header. chunk_size is 8 plus*/
+
+                            /* size of the chunk_body.*/
+                            /* Chunks must be Quad byte alligned.*/
+                            /* Chunks are padded with zeros to fill */
+                            /* the quadword alignment.*/
+                            /* chunk_size does NOT include pad bytes*/
+wrapped_file}                    ::=    {wrap_chunk} {file}{
+{wrap_chunk}                     ::=     {wrap_chunk_ID}{chunk_size}
+{wrap_chunk_ID)                    ::= `3DO ` 
+            /* uppercase characters followed by one space */
+</code>
+</pre>
+<br>
+
+<h3>Storing Multibyte Numbers</h3>
+The 3DO File Format uses big-endian format for storing multibyte numbers, which means that the most-significant byte is stored at the lowest address. This is the native byte order for the 68000 processor in the Macintosh and for the processor in the 3DO system. <p>
+</p><h2>Chunk Definitions</h2>
+This section lists type definitions are used in chunk data structures.<p>
+<a name="XREF21335">Integer types have the following definition:</a></p><p>
+<code>
+</code></p><pre><code>typedef    signed char Int8;
+typedef    unsigned char UInt8;
+typedef    short Int16;
+typedef    unsigned short UInt16;
+typedef    long int32;
+typedef    unsigned long UInt32;
+</code>
+</pre>
+<a name="XREF12588">Fixed point types have the following definition:</a><p>
+<code>
+</code></p><pre><code>typedef    Int32 Int1616;
+typedef    UInt32 UInt1616;
+typedef    Int32 Int1220;
+typedef    UInt32 UInt1220;
+</code>
+</pre>
+<a name="XREF15003">The following type describes a color in RGB 555 format</a><p>
+<code>
+</code></p><pre><code>typedef struct RGB555 {
+    unsigned            alpha : 1;
+    unsigned            red : 5;
+    unsigned            green : 5;
+    unsigned            blue : 5;
+} RGB555;
+</code>
+</pre>
+<a name="XREF19006">The following types are also used by chunk definitions</a><p>
+<code>
+</code></p><pre><code>typedef    unsigned char ubyte;
+typedef    unsigned long ulong;
+typedef    Int32 Color;
+typedef    Int32 Coord;
+typedef    Int32 CLUTEntry;
+typedef    Int32 RGB888;
+</code>
+</pre>
+<h3>Chunk Structure Definitions</h3>
+The wrapper chunk (see <a href="http://altmer.arts-union.ru/3DO/docs/DevDocs/ppgfldr/smmfldr/cdmfldr/08CDM001.html#XREF24099">Wrapper Chunks</a> above) has the following definition: <p>
+<code>
+</code></p><pre><code>typedef struct WrapperChunk                                        /*Optional. Must be first if present*/
+    {
+    Int32 chunk_ID;                                    /*`3DO ` Identifies wrapper chunk*/
+    Int32 chunk_size;                                    /*size of chunk including chunk_header */
+    ubyte data[1];                                    /*contains collection of atomic chunks*/
+    } WrapperChunk;
+</code>
+</pre>
+The image control chunk has the following definition. <p>
+<code>
+</code></p><pre><code>typedef struct ImageCC 
+    {
+    Int32         chunk_ID;                    /*`IMAG' Identifies image control chunk */
+    Int32        chunk_size;                    /*size of chunk including chunk_header (24)*/
+    Int32        w;                    /*width in pixels*/
+    Int32        h;                    /*height in pixels */
+    Int32        bytesperrow;                    /*may include pad bytes at end for alignment*/
+
+    ubyte        bitsperpixel;                    /*  8,16,24 */
+    ubyte        numcomponents;    
+                    /*  3 =&gt; RGB (or YUV) , 1 =&gt; color index */
+                    /*  3 =&gt; RGB (8  16 or 24 bits per pixel) */
+                    /*  8 bit is 332 RGB  (or YUV) */
+                    /*  16 bit is 555 RGB  (or YUV) */
+                    /*  24 bit is 888 RGB  (or YUV) */
+                    /*  1 =&gt; coded  meaning color index;   */
+                    /*  Coded images require a Palette Chunk */
+    ubyte        numplanes;    
+                    /*1 =&gt; chunky;  3=&gt; planar  */
+                    /*although the hardware does not support planar*/
+                    /*modes it is useful for some compression methods*/
+                    /*to separate the image into RGB planes or into*/
+                    /*YCrCb planes num components must be greater than*/
+                    /*1 for planar to have any effect*/
+    ubyte        colorspace;                    /*0 =&gt; RGB, 1 =&gt; YCrCb   */
+    ubyte        comptype;                
+                /*compression type; 0 =&gt; uncompressed 1=Cel bit packed */
+                /*other compression types will be defined later */
+    ubyte         hvformat;            /*0 =&gt; 0555; 1=&gt; 0554h; 2=&gt; 0554v; 3=&gt; v554h  */
+    ubyte         pixelorder;        
+                /*0 =&gt; (0,0), (1,0),  (2,0)   (x,y) is (row,column) */
+                /*1 =&gt; (0,0), (0,1), (1,0), (1,1)  Sherrie LRform  */
+                /*2 =&gt; (0,1), (0,0), (1,1), (1,0)  UGO LRform  */    
+    ubyte         version;
+                /*image control chunk version identifier. 0 for now*/    
+    } ImageCC;
+</code>
+</pre>
+The pixel chunk has the following definition: <p>
+<code>
+</code></p><pre><code>typedef struct PixelChunk
+    
+    Int32             chunk_ID;                /*`PDAT' Identifies pixel data */
+    Int32            chunk_size;
+                    /*size of chunk including chunk_header */
+    ubyte            pixels[1];
+                    /*data. Semantics depend on previous chunks*/
+    } PixelChunk;
+</code>
+</pre>
+<h3>Cel Control Chunk</h3>
+A Cel Control Chunk structure contains an actual CCB (cel control block) data structure, as required by the 3DO hardware. See the <i>3DO Portfolio Graphics Programmer's Guide</i> for descriptions of the fields in a CCB structure.<p>
+<code>
+</code></p><pre><code>typedef struct CCC
+    {
+    Int32        chunk_ID;                    /*`CCB ` Identifies pixel data */
+    Int32        chunk_size;                    /*size including chunk_header */
+    ulong        ccbversion;                    /*version number of struct. 0 now*/
+    ulong        ccb_Flags;                    /*32 bits of CCB flags */
+    struct CCB *ccb_NextPtr;
+    CelData        *ccb_CelData;
+    void        *ccb_PLUTPtr;                    
+    Coord         ccb_X;
+    Coord         ccb_Y;
+    long        ccb_hdx;
+    long        ccb_hdy;
+    long        ccb_vdx;
+    long        ccb_vdy;
+    long        ccb_ddx;
+    long        ccb_ddy;
+    ulong        ccb_PPMPC;
+    ulong        ccb_PRE0;                        /* Cel Preamble Word 0 */
+    ulong        ccb_PRE1;                        /* Cel Preamble Word 1 */
+    long        ccb_Width;
+    long        ccb_Height;
+    } CCC;
+</code>
+</pre>
+An animation chunk describes the sequencing and timing the hardware should apply to a series of cels to create a flip-book animation. The <code>LoopRec</code> structure is used by the <code>AnimChunk</code> structure. <p>
+<code>
+</code></p><pre><code>typedef struct LoopRec
+</code>
+</pre>
+    <code>
+</code><pre><code>{
+    Int32            loopStart;                /* start frame for loop in animation*/
+    Int32            loopEnd;                /* end frame for loop in animation*/
+    Int32            repeatCount;                /* repeats of looped portion*/
+    Int32            repeatDelay;        
+        /* number of 1/60s of a sec to delay each time thru loop */
+    } LoopRec;
+</code>
+</pre>
+
+
+<code>
+</code><pre><code>typedef struct AnimChunk
+</code>
+</pre>
+    <code>
+</code><pre><code>{
+    Int32             chunk_ID;                /* `ANIM' Identifies ANIM chunk */
+    Int32            chunk_size;                /* size including chunk_header */
+    Int32            version;                /* current version = 0 */
+    Int32            animType;                /* 0 = multi-CCB ; 1 = single CCB  */
+    Int32            numFrames;                /* number of frames for animation */
+    Int32            frameRate;            
+        /* number of 1/60s of a sec to display each frame */
+    Int32            startFrame;                /* first frame. Can be non zero */
+    Int32            numLoops;                
+        /*number of loops in loop array. Loops execute serially */
+    LoopRec            loop[1];                /* array of loop info. see numLoops */
+    } AnimChunk;
+</code>
+</pre>
+The PLUT (pixel lookup table) associates an entry in a color indexed (coded) cel or image with a 555 RGB color value. The resulting 555 color is indexed once again through separate R, G, and B color lookup tables (CLUTs,) which take a 5- bit index and yield an 8-bit color value. For more information, see the <i>3DO Portfolio Graphics Programmer's Guide</i><i>.</i> <p>
+A PLUT chunk has the following definition:</p><p>
+<code>
+</code></p><pre><code>typedef struct PLUTChunk
+</code>
+</pre>
+    <code>
+</code><pre><code>{
+    Int32         chunk_ID;                /* `PLUT' Identifies pixel data */
+    Int32        chunk_size;                /* size of chunk including chunk_header */
+    Int32        numentries;                /* number of entries in PLUT Table */
+    RGB555        PLUT[1];                /* PLUT entries  */
+    } PLUTChunk; 
+</code>
+</pre>
+To construct a custom color lookup table, define a number of A_CLUT structures that are then pointed to by the CLUTCHUNK structure:<p>
+<code>
+</code></p><pre><code>typedef unsigned long vdlentry; 
+</code>
+</pre>
+                <code>
+</code><pre><code>/* contains RGB8 triple and control bits */
+typedef struct A_VDL
+    {
+    Int32             palettePtr;    
+    Int32            dmaControl;    
+    vdlentry            vdls[33];                    /* VDL entries */
+    Int32            filler;                    /* 144 length for complex VDLs.*/
+    } A_VDL;
+
+typedef struct VDLCHUNK                                    /* use for standard 33 entry vdl */
+    {
+    Int32             chunk_ID;                    /* `VDL ` Identifies VDL chunk */
+    Int32            chunk_size;                    /* size including chunk_header */
+    Int32            vdlcount;                    /* number of vdls following */
+    A_VDL            vdl[1];                    /* VDL control words and entries */
+    } VdlChunk;
+</code>
+</pre>
+There are several different text chunks: <p>
+</p><ul>
+<li>CPYR-C String ASCII Copyright Notice
+</li><li>DESC-C String ASCII image description
+</li><li>KWRD-ASCII keywords, separated by `;'
+</li><li>KRDT-C String ASCII credits for image
+</li></ul>
+They have the following definition:<p>
+<code>
+</code></p><pre><code>typedef struct Cpyr
+</code>
+</pre>
+    <code>
+</code><pre><code>{
+    Int32 chunk_ID;                            /*`CPYR' Identifies pixel data */
+    Int32 chunk_size;                            /*size including chunk_header */
+    char copyright[1];                            /*C String ASCII Copyright Notice*/
+    } Cpyr;
+
+</code>
+</pre>
+<code>
+</code><pre><code>typedef struct Desc
+</code>
+</pre>
+    <code>
+</code><pre><code>{
+    Int32 chunk_ID;                            /* `DESC' Identifies pixel data */
+    Int32 chunk_size;                            /* size including chunk_header */
+    char descrip[1];                        
+                                /* C String ASCII image description*/ 
+    } Desc;
+
+</code>
+</pre>
+<code>
+</code><pre><code>typedef struct Kwrd
+</code>
+</pre>
+    <code>
+</code><pre><code>{
+    Int32 chunk_ID;                            /* `KWRD' Identifies pixel data */
+    Int32 chunk_size;                            /* size including chunk_header */
+    char keywords[1];                            /* ASCII keywords, separated by `;' */ 
+    } Kwrd;
+
+</code>
+</pre>
+<code>
+</code><pre><code>typedef struct Crdt
+</code>
+</pre>
+    <code>
+</code><pre><code>{
+    Int32 chunk_ID;                            /* `CRDT' Identifies pixel data */
+    Int32 chunk_size;                            /* size including chunk_header */
+    char credits[1];                            /* C String ASCII credits for image */ 
+    } Crdt;
+</code>
+</pre>
+</body></html>

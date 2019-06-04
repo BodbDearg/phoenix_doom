@@ -1,0 +1,78 @@
+gimp-plugin-3docel:  A GIMP plugin to load 3DO cel files.
+
+Written by Leo L. Schwab <ewhac AT ewhac.org>
+
+
+Description
+-----------
+
+	This is a plugin for The GIMP (v2.8) that loads cel files created
+for the 3DO video game console.  If you do not own a 3DO console or any 3DO
+titles, this plugin may not be of very much interest to you.
+
+	As of this writing, this is still very much a work in progress.  The
+plugin is fairly limited and a bit flaky.  It has been built and tested only
+on an x86 laptop running Debian 'sid'.
+
+	This is my first ever GIMP plugin/extension of any kind.  There's a
+fair amount of cargo-cult programming (i.e. cut-and-paste from other
+plugins) going on here, so it's bound to be ugly to more experienced eyes.
+
+	Feel free to email me bug reports and suggestions for improvement.
+Management makes no representations as to when such reports will be acted
+upon :-).
+
+
+Prerequisites
+-------------
+
+	You must have the following development packages installed in order
+to build gimp-plugin-3docel:
+
+	- libgimp2.0-dev
+
+
+Building and Installation
+-------------------------
+
+	To build and install the plugin to your local GIMP config folder,
+run the following command:
+
+$ gimptool-2.0 --install 3docel.c
+
+	To just build (not install) the plugin, run the following command:
+
+$ gimptool-2.0 --build 3docel.c
+
+	'gimptool' will invoke the compiler with all the appropriate command
+arguments, and (when using the --install argument) install the completed
+plugin to the correct location in your local GIMP config folder (usually
+inside  $HOME/.gimp-$(GIMP_VERSION) ).
+
+	Once installed (and GIMP is restarted), the plugin is available and
+may be used to load 3DO cel files.
+
+
+Usage
+-----
+
+	Because 3DO cel files have no common filename extension (such as
+'.CEL') -- and indeed frequently have no extension at all -- you will often
+have to force GIMP to use the plugin explicitly.  This may be done as
+follows in The GIMP v2.8:
+
+	- From the main menu, select File/Open...
+	- In the file selector dialog, click on the drop-down menu that
+	  (probably) reads, "All images".  In the drop-down, select the
+	  entry, "All files".
+	- Near the bottom of the file selector dialog, click on "Select File
+	  Type".
+	- In the newly displayed list of loadable filetypes, click on "3DO
+	  cel image".
+	- In the upper portion of the dialog, select the file you wish to
+	  open as a 3DO cel file.
+	- Click the "Open" button.
+
+	Your cel file should load into a GIMP window.  If the file is not a
+3DO cel file, or the cel is of an unsupported type, an error dialog will be
+displayed.

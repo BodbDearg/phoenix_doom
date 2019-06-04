@@ -1,0 +1,4 @@
+Source of these pieces of info:
+
+http://altmer.arts-union.ru/3DO/docs/DevDocs/ppgfldr/smmfldr/cdmfldr/08CDM001.html
+https://github.com/ewhac/gimp-plugin-3docel
