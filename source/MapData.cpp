@@ -45,6 +45,11 @@ struct MapLineSeg {
     uint32_t    side;       // Side of the line segment
 };
 
+struct MapSubSector {
+    uint32_t    numLines;       // Number of line segments
+    uint32_t    firstLine;      // Note: line segs are stored sequentially
+};
+
 // Order of the lumps in a Doom wad (and also the 3DO resource file)
 enum {
     ML_THINGS,
@@ -60,15 +65,16 @@ enum {
     ML_TOTAL
 };
 
-// Internal vertex arrays
-static std::vector<vertex_t>    gVertexes;
-static std::vector<sector_t>    gSectors;
-static std::vector<side_t>      gSides;
-static std::vector<line_t>      gLines;
-static std::vector<seg_t>       gLineSegs;
-static std::vector<line_t*>     gBlockMapLines;
-static std::vector<line_t**>    gBlockMapLineLists;
-static std::vector<mobj_t*>     gBlockMapThingLists;
+// Internal data arrays
+static std::vector<vertex_t>        gVertexes;
+static std::vector<sector_t>        gSectors;
+static std::vector<side_t>          gSides;
+static std::vector<line_t>          gLines;
+static std::vector<seg_t>           gLineSegs;
+static std::vector<subsector_t>     gSubSectors;
+static std::vector<line_t*>         gBlockMapLines;
+static std::vector<line_t**>        gBlockMapLineLists;
+static std::vector<mobj_t*>         gBlockMapThingLists;
 
 static void loadVertexes(const uint32_t lumpResourceNum) noexcept {
     const Resource* const pResource = loadResource(lumpResourceNum);
@@ -139,7 +145,7 @@ static void loadSides(const uint32_t lumpResourceNum) noexcept {
     const uint32_t numSides = byteSwappedU32(((const uint32_t*) pResourceData)[0]);
     gNumSides = numSides;
     
-    // Get the source side def data and alloc room for the runtime sides
+    // Get the source side def data and alloc room for the runtime equivalent
     const MapSide* pSrcSide = (const MapSide*)(pResourceData + sizeof(uint32_t));
     const MapSide* const pEndSrcSide = pSrcSide + numSides;
     
@@ -257,17 +263,17 @@ static void loadLines(const uint32_t lumpResourceNum) noexcept {
 }
 
 static void loadLineSegs(const uint32_t lumpResourceNum) noexcept {
-    // Load the segs resource
+    // Load the line segs resource
     ASSERT_LOG(gVertexes.size() > 0, "Vertices must be loaded first!");
     ASSERT_LOG(gLines.size() > 0, "Lines must be loaded first!");
     const Resource* const pResource = loadResource(lumpResourceNum);
     const std::byte* const pResourceData = (const std::byte*) pResource->pData;
     
-    // Get the number line segments first (first u32)
+    // Get the number of line segments first (first u32)
     const uint32_t numLineSegs = byteSwappedU32(((const uint32_t*) pResourceData)[0]);
     gNumLineSegs = numLineSegs;
     
-    // Get the source line def data and alloc room for the runtime lines
+    // Get the source line seg data and alloc room for the runtime equivalent
     const MapLineSeg* pSrcLineSeg = (const MapLineSeg*)(pResourceData + sizeof(uint32_t));
     const MapLineSeg* const pEndSrcLineSeg = pSrcLineSeg + numLineSegs;
     
@@ -302,6 +308,41 @@ static void loadLineSegs(const uint32_t lumpResourceNum) noexcept {
     
         ++pSrcLineSeg;
         ++pDstLineSeg;
+    }
+    
+    // Don't need this anymore
+    freeResource(lumpResourceNum);
+}
+
+static void loadSubSectors(const uint32_t lumpResourceNum) noexcept {
+    // Load the sub sectors resource
+    ASSERT_LOG(gLineSegs.size() > 0, "Line segments must be loaded first!");
+    const Resource* const pResource = loadResource(lumpResourceNum);
+    const std::byte* const pResourceData = (const std::byte*) pResource->pData;
+    
+    // Get the number of sub sectors first (first u32)
+    const uint32_t numSubSectors = byteSwappedU32(((const uint32_t*) pResourceData)[0]);
+    gNumSubSectors = numSubSectors;
+    
+    // Get the source sub sector data and alloc room for the runtime equivalent
+    const MapSubSector* pSrcSubSector = (const MapSubSector*)(pResourceData + sizeof(uint32_t));
+    const MapSubSector* const pEndSrcSubSector = pSrcSubSector + numSubSectors;
+    
+    gSubSectors.clear();
+    gSubSectors.resize(numSubSectors);
+    gpSubSectors = gSubSectors.data();
+    
+    subsector_t* pDstSubSector = gSubSectors.data();
+    
+    while (pSrcSubSector < pEndSrcSubSector) {
+        pDstSubSector->numsublines = byteSwappedU32(pSrcSubSector->numLines);
+        
+        seg_t* const pLineSeg = &gLineSegs[byteSwappedU32(pSrcSubSector->firstLine)];
+        pDstSubSector->firstline = pLineSeg;
+        pDstSubSector->sector = pLineSeg->sidedef->sector;
+    
+        ++pSrcSubSector;
+        ++pDstSubSector;
     }
     
     // Don't need this anymore
@@ -404,8 +445,10 @@ side_t*             gpSides;
 uint32_t            gNumSides;
 line_t*             gpLines;
 uint32_t            gNumLines;
-seg_t*              gpLineSegs;
+const seg_t*        gpLineSegs;
 uint32_t            gNumLineSegs;
+const subsector_t*  gpSubSectors;
+uint32_t            gNumSubSectors;
 line_t***           gpBlockMapLineLists;
 mobj_t**            gpBlockMapThingLists;
 uint32_t            gBlockMapWidth;
@@ -424,6 +467,7 @@ void mapDataInit(const uint32_t mapNum) {
     loadSides(mapStartLump + ML_SIDEDEFS);
     loadLines(mapStartLump + ML_LINEDEFS);
     loadLineSegs(mapStartLump + ML_SEGS);
+    loadSubSectors(mapStartLump + ML_SSECTORS);
     loadBlockMap(mapStartLump + ML_BLOCKMAP);
 }
 
@@ -447,6 +491,10 @@ void mapDataShutdown() {
     gLineSegs.clear();
     gpLineSegs = nullptr;
     gNumLineSegs = 0;
+    
+    gSubSectors.clear();
+    gpSubSectors = nullptr;
+    gNumSubSectors = 0;
     
     gBlockMapLines.clear();
     gBlockMapLineLists.clear();

@@ -40,51 +40,10 @@ static Word PreLoadTable[] = {
     -1
 };
 
-subsector_t *subsectors;    /* Pointer to array of loaded subsectors */
 node_t *FirstBSPNode;   /* First BSP entry */
 Byte *RejectMatrix;         /* For fast sight rejection */
 mapthing_t deathmatchstarts[10],*deathmatch_p;  /* Deathmatch starts */
 mapthing_t playerstarts;    /* Starting position for players */
-
-/**********************************
-
-    Load in all the subsectors
-    Requires segs, sectors, sides
-
-**********************************/
-
-typedef struct {        /* Loaded map subsectors */
-    Word numlines;      /* Number of line segments */
-    Word firstline;     /* Segs are stored sequentially */
-} mapsubsector_t;
-
-static void LoadSubsectors(Word lump)
-{
-    Word numsubsectors;
-    Word i;
-    mapsubsector_t *ms;
-    subsector_t *ss;
-
-    ms = (mapsubsector_t *)loadResourceData(lump);  /* Get the map data */
-    numsubsectors = ((Word*)ms)[0];                 /* Get the subsector count */
-    i = numsubsectors*sizeof(subsector_t);          /* Calc needed buffer */
-    ss = (subsector_t *)MemAlloc(i);                /* Get the memory */
-    subsectors=ss;                                  /* Save in global */
-    ms = (mapsubsector_t *)&((Word *)ms)[1];        /* Index to first entry */
-    i = numsubsectors;
-    
-    do {
-        seg_t *seg;
-        ss->numsublines = ms->numlines;     /* Number of lines in the sub sectors */
-        seg = &gpLineSegs[ms->firstline];   /* Get the first line segment pointer */
-        ss->firstline = seg;                /* Save it */
-        ss->sector = seg->sidedef->sector;  /* Get the parent sector */
-        ++ss;                               /* Index to the next entry */
-        ++ms;
-    } while (--i);
-    
-    freeResource(lump);
-}
 
 /**********************************
 
@@ -122,7 +81,7 @@ static void LoadNodes(Word lump)
             k = (Word)mn->children[j];  /* Get the child offset */
             if (k&NF_SUBSECTOR) {       /* Subsector? */
                 k&=(~NF_SUBSECTOR);     /* Clear the flag */
-                no->Children[j] = (void *)((LongWord)&subsectors[k]|1);
+                no->Children[j] = (void *)((LongWord)&gpSubSectors[k]|1);
             } else {    
                 no->Children[j] = &nodes[k];    /* It's a node offset */
             }
@@ -379,7 +338,6 @@ void SetupLevel(Word map) {
     mapDataInit(map);
 
     /* Note: most of this ordering is important */
-    LoadSubsectors(lumpnum+ML_SSECTORS);                            /* Needs sectors and segs and sides */
     LoadNodes(lumpnum+ML_NODES);                                    /* Needs subsectors */
     RejectMatrix = (Byte *)loadResourceData(lumpnum+ML_REJECT);     /* Get the reject matrix */
     
@@ -397,12 +355,10 @@ void SetupLevel(Word map) {
 void ReleaseMapMemory() {
     mapDataShutdown();
     
-    MEM_FREE_AND_NULL(subsectors);              // Release the sub sectors
     freeResource(LoadedLevel + ML_NODES);       // Release the BSP tree
     freeResource(LoadedLevel + ML_REJECT);      // Release the quick reject matrix
     MEM_FREE_AND_NULL(LineArrayBuffer);
     
-    subsectors = 0;
     FirstBSPNode = 0;
     RejectMatrix = 0;
     
