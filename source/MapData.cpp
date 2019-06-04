@@ -7,7 +7,7 @@
 #include <vector>
 
 // On-disk versions of various map data structures.
-// These differ in many cases to the runtime versions.
+// These differ in many (all?) cases to the runtime versions.
 struct MapSector {
     Fixed       floorHeight;
     Fixed       ceilingHeight;
@@ -36,6 +36,15 @@ struct MapLine {
     uint32_t    sideNum[2];     // sideNum[1] will be -1 if one sided
 };
 
+struct MapLineSeg {
+    uint32_t    v1;         // Vertex index: 1
+    uint32_t    v2;         // Vertex index: 2
+    angle_t     angle;      // Angle of the line segment
+    Fixed       offset;     // Texture offset
+    uint32_t    lineDef;    // Line definition
+    uint32_t    side;       // Side of the line segment
+};
+
 // Order of the lumps in a Doom wad (and also the 3DO resource file)
 enum {
     ML_THINGS,
@@ -56,6 +65,7 @@ static std::vector<vertex_t>    gVertexes;
 static std::vector<sector_t>    gSectors;
 static std::vector<side_t>      gSides;
 static std::vector<line_t>      gLines;
+static std::vector<seg_t>       gLineSegs;
 static std::vector<line_t*>     gBlockMapLines;
 static std::vector<line_t**>    gBlockMapLineLists;
 static std::vector<mobj_t*>     gBlockMapThingLists;
@@ -148,7 +158,7 @@ static void loadSides(const uint32_t lumpResourceNum) noexcept {
         pDstSide->midtexture = byteSwappedU32(pSrcSide->midTexture);
         
         const uint32_t sectorNum = byteSwappedU32(pSrcSide->sector);
-        pDstSide->sector = &gpSectors[sectorNum];
+        pDstSide->sector = &gSectors[sectorNum];
         
         ++pSrcSide;
         ++pDstSide;
@@ -187,8 +197,8 @@ static void loadLines(const uint32_t lumpResourceNum) noexcept {
         // Copy the end points to the line
         const uint32_t v1Idx = byteSwappedU32(pSrcLine->v1);
         const uint32_t v2Idx = byteSwappedU32(pSrcLine->v2);
-        pDstLine->v1 = gpVertexes[v1Idx];
-        pDstLine->v2 = gpVertexes[v2Idx];
+        pDstLine->v1 = gVertexes[v1Idx];
+        pDstLine->v2 = gVertexes[v2Idx];
         
         // Get the delta offset (Line vector)
         const Fixed dx = pDstLine->v2.x - pDstLine->v1.x;
@@ -229,17 +239,69 @@ static void loadLines(const uint32_t lumpResourceNum) noexcept {
         const uint32_t sideNum1 = byteSwappedU32(pSrcLine->sideNum[0]);
         const uint32_t sideNum2 = byteSwappedU32(pSrcLine->sideNum[1]);
         
-        pDstLine->SidePtr[0] = &gpSides[sideNum1];
+        pDstLine->SidePtr[0] = &gSides[sideNum1];
         pDstLine->frontsector = pDstLine->SidePtr[0]->sector;
         
         if (sideNum2 != -1) {
             // Line has a back side also
-            pDstLine->SidePtr[1] = &gpSides[sideNum2];
+            pDstLine->SidePtr[1] = &gSides[sideNum2];
             pDstLine->backsector = pDstLine->SidePtr[1]->sector;
         }
         
         ++pSrcLine;
         ++pDstLine;
+    }
+    
+    // Don't need this anymore
+    freeResource(lumpResourceNum);
+}
+
+static void loadLineSegs(const uint32_t lumpResourceNum) noexcept {
+    // Load the segs resource
+    ASSERT_LOG(gVertexes.size() > 0, "Vertices must be loaded first!");
+    ASSERT_LOG(gLines.size() > 0, "Lines must be loaded first!");
+    const Resource* const pResource = loadResource(lumpResourceNum);
+    const std::byte* const pResourceData = (const std::byte*) pResource->pData;
+    
+    // Get the number line segments first (first u32)
+    const uint32_t numLineSegs = byteSwappedU32(((const uint32_t*) pResourceData)[0]);
+    gNumLineSegs = numLineSegs;
+    
+    // Get the source line def data and alloc room for the runtime lines
+    const MapLineSeg* pSrcLineSeg = (const MapLineSeg*)(pResourceData + sizeof(uint32_t));
+    const MapLineSeg* const pEndSrcLineSeg = pSrcLineSeg + numLineSegs;
+    
+    gLineSegs.clear();
+    gLineSegs.resize(numLineSegs);
+    gpLineSegs = gLineSegs.data();
+    
+    seg_t* pDstLineSeg = gLineSegs.data();
+    
+    while (pSrcLineSeg < pEndSrcLineSeg) {
+        pDstLineSeg->v1 = gVertexes[byteSwappedU32(pSrcLineSeg->v1)];
+        pDstLineSeg->v2 = gVertexes[byteSwappedU32(pSrcLineSeg->v2)];
+        pDstLineSeg->angle = byteSwappedU32(pSrcLineSeg->angle);
+        pDstLineSeg->offset = byteSwappedI32(pSrcLineSeg->offset);
+        
+        line_t* const pLine = &gLines[byteSwappedU32(pSrcLineSeg->lineDef)];
+        pDstLineSeg->linedef = pLine;
+        
+        const uint32_t side = byteSwappedU32(pSrcLineSeg->side);
+        pDstLineSeg->sidedef = pLine->SidePtr[side];
+        pDstLineSeg->frontsector = pDstLineSeg->sidedef->sector;
+        
+        if (pLine->flags & ML_TWOSIDED) {
+            // Store a reference to the joining sector as well for segs on a two sided line
+            pDstLineSeg->backsector = pLine->SidePtr[side ^ 1]->sector;
+        }
+        
+        // Init the finea ngle on the line
+        if (pLine->v1.x == pDstLineSeg->v1.x && pLine->v1.y == pDstLineSeg->v1.y) {
+            pLine->fineangle = pDstLineSeg->angle >> ANGLETOFINESHIFT;  // This is a point only
+        }
+    
+        ++pSrcLineSeg;
+        ++pDstLineSeg;
     }
     
     // Don't need this anymore
@@ -324,6 +386,9 @@ static void loadBlockMap(const uint32_t lumpResourceNum) noexcept {
     gBlockMapThingLists.clear();
     gBlockMapThingLists.resize(numBlockMapEntries);
     gpBlockMapThingLists = gBlockMapThingLists.data();
+    
+    // Don't need this anymore
+    freeResource(lumpResourceNum);
 }
 
 #ifdef __cplusplus
@@ -339,6 +404,8 @@ side_t*             gpSides;
 uint32_t            gNumSides;
 line_t*             gpLines;
 uint32_t            gNumLines;
+seg_t*              gpLineSegs;
+uint32_t            gNumLineSegs;
 line_t***           gpBlockMapLineLists;
 mobj_t**            gpBlockMapThingLists;
 uint32_t            gBlockMapWidth;
@@ -356,6 +423,7 @@ void mapDataInit(const uint32_t mapNum) {
     loadSectors(mapStartLump + ML_SECTORS);
     loadSides(mapStartLump + ML_SIDEDEFS);
     loadLines(mapStartLump + ML_LINEDEFS);
+    loadLineSegs(mapStartLump + ML_SEGS);
     loadBlockMap(mapStartLump + ML_BLOCKMAP);
 }
 
@@ -375,6 +443,10 @@ void mapDataShutdown() {
     gLines.clear();
     gpLines = nullptr;
     gNumLines = 0;
+    
+    gLineSegs.clear();
+    gpLineSegs = nullptr;
+    gNumLineSegs = 0;
     
     gBlockMapLines.clear();
     gBlockMapLineLists.clear();

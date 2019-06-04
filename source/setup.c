@@ -40,72 +40,11 @@ static Word PreLoadTable[] = {
     -1
 };
 
-seg_t *segs;                /* Pointer to array of loaded segs */
 subsector_t *subsectors;    /* Pointer to array of loaded subsectors */
 node_t *FirstBSPNode;   /* First BSP entry */
 Byte *RejectMatrix;         /* For fast sight rejection */
 mapthing_t deathmatchstarts[10],*deathmatch_p;  /* Deathmatch starts */
 mapthing_t playerstarts;    /* Starting position for players */
-
-/**********************************
-
-    Load the line segments structs for rendering
-    Requires vertexes,sides and lines to be preloaded
-
-**********************************/
-
-typedef struct {
-    Word v1,v2;         /* Index to the vertexs */
-    angle_t angle;      /* Angle of the line segment */
-    Fixed offset;       /* Texture offset */
-    Word linedef;       /* Line definition */
-    Word side;          /* Side of the line segment */
-} mapseg_t;
-
-static void LoadSegs(Word lump)
-{
-    Word i;
-    mapseg_t *ml;
-    seg_t *li;
-    Word numsegs;
-
-    ml = (mapseg_t *)loadResourceData(lump);    /* Load in the map data */
-    numsegs = ((Word*)ml)[0];                   /* Get the count */
-    i = numsegs*sizeof(seg_t);                  /* Get the memory size */
-    li = (seg_t*)MemAlloc(i);                   /* Allocate it */
-    segs = li;                                  /* Save pointer to global */
-    memset(li,0,i);                             /* Clear it out */
-
-    ml = (mapseg_t *)&((Word *)ml)[1];  /* Init pointer to first record */
-    i = 0;
-    do {
-        line_t *ldef;
-        Word side;
-        
-        li->v1 = gpVertexes[ml->v1];            /* Get the line points */
-        li->v2 = gpVertexes[ml->v2];
-        li->angle = ml->angle;                  /* Set the angle of the line */
-        li->offset = ml->offset;                /* Get the texture offset */
-        ldef = &gpLines[ml->linedef];           /* Get the line pointer */
-        li->linedef = ldef;
-        side = ml->side;                        /* Get the side number */
-        li->sidedef = ldef->SidePtr[side];      /* Grab the side pointer */
-        li->frontsector = li->sidedef->sector;  /* Get the front sector */
-        
-        if (ldef->flags & ML_TWOSIDED) {                        /* Two sided? */
-            li->backsector = ldef->SidePtr[side^1]->sector;     /* Mark the back sector */
-        }
-        
-        if (ldef->v1.x == li->v1.x && ldef->v1.y == li->v1.y) {     /* Init the fineangle */
-            ldef->fineangle = li->angle>>ANGLETOFINESHIFT;          /* This is a point only */
-        }
-        
-        ++li;   /* Next entry */
-        ++ml;   /* Next resource entry */
-    } while (++i<numsegs);
-    
-    freeResource(lump);    /* Release the resource */
-}
 
 /**********************************
 
@@ -137,7 +76,7 @@ static void LoadSubsectors(Word lump)
     do {
         seg_t *seg;
         ss->numsublines = ms->numlines;     /* Number of lines in the sub sectors */
-        seg = &segs[ms->firstline];         /* Get the first line segment pointer */
+        seg = &gpLineSegs[ms->firstline];   /* Get the first line segment pointer */
         ss->firstline = seg;                /* Save it */
         ss->sector = seg->sidedef->sector;  /* Get the parent sector */
         ++ss;                               /* Index to the next entry */
@@ -440,7 +379,6 @@ void SetupLevel(Word map) {
     mapDataInit(map);
 
     /* Note: most of this ordering is important */
-    LoadSegs(lumpnum+ML_SEGS);                                      /* Needs vertexes,lines,sides */
     LoadSubsectors(lumpnum+ML_SSECTORS);                            /* Needs sectors and segs and sides */
     LoadNodes(lumpnum+ML_NODES);                                    /* Needs subsectors */
     RejectMatrix = (Byte *)loadResourceData(lumpnum+ML_REJECT);     /* Get the reject matrix */
@@ -459,13 +397,11 @@ void SetupLevel(Word map) {
 void ReleaseMapMemory() {
     mapDataShutdown();
     
-    MEM_FREE_AND_NULL(segs);                    // Release the line segment memory
     MEM_FREE_AND_NULL(subsectors);              // Release the sub sectors
     freeResource(LoadedLevel + ML_NODES);       // Release the BSP tree
     freeResource(LoadedLevel + ML_REJECT);      // Release the quick reject matrix
     MEM_FREE_AND_NULL(LineArrayBuffer);
     
-    segs = 0;
     subsectors = 0;
     FirstBSPNode = 0;
     RejectMatrix = 0;

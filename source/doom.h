@@ -903,7 +903,6 @@ extern void EV_LightTurnOn(line_t *line,Word bright);
 extern void P_SpawnGlowingLight(sector_t *sector);
 
 /* In Setup.c */
-extern seg_t *segs;                                     /* Pointer to array of loaded segs */
 extern subsector_t *subsectors;                         /* Pointer to array of loaded subsectors */
 extern node_t *FirstBSPNode;                            /* First BSP node */
 extern Byte *RejectMatrix;                              /* For fast sight rejection */
