@@ -50,6 +50,17 @@ struct MapSubSector {
     uint32_t    firstLine;      // Note: line segs are stored sequentially
 };
 
+#define NF_SUBSECTOR 0x8000
+
+struct MapNode {
+    Fixed x;                // Partitioning vector
+    Fixed y;
+    Fixed dx;
+    Fixed dy;
+    Fixed bbox[2][4];       // Bounding box for each child
+    uint32_t children[2];   // if NF_SUBSECTOR it's a subsector index else node index
+};
+
 // Order of the lumps in a Doom wad (and also the 3DO resource file)
 enum {
     ML_THINGS,
@@ -72,6 +83,7 @@ static std::vector<side_t>          gSides;
 static std::vector<line_t>          gLines;
 static std::vector<seg_t>           gLineSegs;
 static std::vector<subsector_t>     gSubSectors;
+static std::vector<node_t>          gNodes;
 static std::vector<line_t*>         gBlockMapLines;
 static std::vector<line_t**>        gBlockMapLineLists;
 static std::vector<mobj_t*>         gBlockMapThingLists;
@@ -349,6 +361,67 @@ static void loadSubSectors(const uint32_t lumpResourceNum) noexcept {
     freeResource(lumpResourceNum);
 }
 
+static void loadNodes(const uint32_t lumpResourceNum) noexcept {
+    // Load the nodes resource
+    ASSERT_LOG(gSubSectors.size() > 0, "Sub sectors must be loaded first!");
+    const Resource* const pResource = loadResource(lumpResourceNum);
+    const std::byte* const pResourceData = (const std::byte*) pResource->pData;
+    
+    // Get the number of nodes first (first u32)
+    const uint32_t numNodes = byteSwappedU32(((const uint32_t*) pResourceData)[0]);
+    gNumNodes = numNodes;
+    
+    // Get the source node data and alloc room for the runtime equivalent
+    const MapNode* pSrcNode = (const MapNode*)(pResourceData + sizeof(uint32_t));
+    const MapNode* const pEndSrcNode = pSrcNode + numNodes;
+    
+    gNodes.clear();
+    gNodes.resize(numNodes);
+    gpNodes = gNodes.data();
+    
+    node_t* pDstNode = gNodes.data();
+    
+    while (pSrcNode < pEndSrcNode) {
+        pDstNode->Line.x = byteSwappedI32(pSrcNode->x);
+        pDstNode->Line.y = byteSwappedI32(pSrcNode->y);
+        pDstNode->Line.dx = byteSwappedI32(pSrcNode->dx);
+        pDstNode->Line.dy = byteSwappedI32(pSrcNode->dy);
+        
+        for (uint32_t childNum = 0; childNum < 2; ++childNum) {
+            pDstNode->bbox[childNum][0] = byteSwappedI32(pSrcNode->bbox[childNum][0]);
+            pDstNode->bbox[childNum][1] = byteSwappedI32(pSrcNode->bbox[childNum][1]);
+            pDstNode->bbox[childNum][2] = byteSwappedI32(pSrcNode->bbox[childNum][2]);
+            pDstNode->bbox[childNum][3] = byteSwappedI32(pSrcNode->bbox[childNum][3]);
+            
+            // See if this child is a leaf node (subsector) or another node.
+            // Unclear what happens here if node index is > 0x8000 - engine limitation on subsector count?
+            const uint32_t childNodeOrSubSecIdx = byteSwappedU32(pSrcNode->children[childNum]);
+            
+            if (childNodeOrSubSecIdx & NF_SUBSECTOR) {
+                // Child is a subsector (node is a leaf)
+                const uint32_t subSectorIdx = childNodeOrSubSecIdx & (~NF_SUBSECTOR);
+                
+                // This seems odd, but the game uses the lowest bit of the child pointer to indicate that
+                // the node is a leaf node, hence adding '1' here to the pointer address. Should be ok in
+                // all cases because the bit will never be used, due to alignment...
+                std::byte* pChildPtr = (std::byte*) &gSubSectors[subSectorIdx];
+                pChildPtr += 1;
+                pDstNode->Children[childNum] = pChildPtr;
+            }
+            else {
+                // Child is another node
+                pDstNode->Children[childNum] = &gNodes[childNodeOrSubSecIdx];
+            }
+        }
+        
+        ++pSrcNode;
+        ++pDstNode;
+    }
+    
+    // Don't need this anymore
+    freeResource(lumpResourceNum);
+}
+
 static void loadBlockMap(const uint32_t lumpResourceNum) noexcept {
     // Load the block map resource
     ASSERT_LOG(gLines.size() > 0, "Lines must be loaded first!");
@@ -449,6 +522,8 @@ const seg_t*        gpLineSegs;
 uint32_t            gNumLineSegs;
 const subsector_t*  gpSubSectors;
 uint32_t            gNumSubSectors;
+const node_t*       gpNodes;
+uint32_t            gNumNodes;
 line_t***           gpBlockMapLineLists;
 mobj_t**            gpBlockMapThingLists;
 uint32_t            gBlockMapWidth;
@@ -468,6 +543,7 @@ void mapDataInit(const uint32_t mapNum) {
     loadLines(mapStartLump + ML_LINEDEFS);
     loadLineSegs(mapStartLump + ML_SEGS);
     loadSubSectors(mapStartLump + ML_SSECTORS);
+    loadNodes(mapStartLump + ML_NODES);
     loadBlockMap(mapStartLump + ML_BLOCKMAP);
 }
 
@@ -495,6 +571,10 @@ void mapDataShutdown() {
     gSubSectors.clear();
     gpSubSectors = nullptr;
     gNumSubSectors = 0;
+    
+    gNodes.clear();
+    gpNodes = nullptr;
+    gNumNodes = 0;
     
     gBlockMapLines.clear();
     gBlockMapLineLists.clear();

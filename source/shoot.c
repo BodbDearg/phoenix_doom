@@ -1,5 +1,6 @@
 #include "doom.h"
 #include <intmath.h>
+#include "MapData.h"
 
 //===================
 //
@@ -35,39 +36,30 @@ static void *old_value;
 static bool old_isline;
 static int ssx1,ssy1,ssx2,ssy2;
 
-/**********************************
-
-    Returns true if strace crosses the given node successfuly
-
-**********************************/
-
-static bool PA_CrossBSPNode(node_t *bsp)
-{
-    Word side;
-
-    if ((Word)bsp & 1) {
-        return PA_CrossSubsector((subsector_t *)((LongWord)bsp&(~1UL)));
+//---------------------------------------------------------------------------------------------------------------------
+// Returns true if strace crosses the given node successfuly
+//---------------------------------------------------------------------------------------------------------------------
+static bool PA_CrossBSPNode(const node_t* pNode) {
+    if (isNodeChildASubSector(pNode)) {
+        // N.B: pointer has to be fixed up due to prescence of a flag in the lowest bit!
+        const subsector_t* const pSubSector = getActualNodeChildPtr(pNode);
+        return PA_CrossSubsector(pSubSector);
     }
-
-//
-// decide which side the start point is on
-//
-    side = PointOnVectorSide(shootdiv.x, shootdiv.y,&bsp->Line);
-
-// cross the starting side
-
-    if (!PA_CrossBSPNode((node_t*)bsp->Children[side]) ) {
+    
+    // Decide which side the start point is on and cross the starting side
+    const Word side = PointOnVectorSide(shootdiv.x, shootdiv.y, &pNode->Line);
+    
+    if (!PA_CrossBSPNode((const node_t*) pNode->Children[side])) {
         return false;
     }
 
-// the partition plane is crossed here
-
-    if (side == PointOnVectorSide(shootx2,shooty2,&bsp->Line)) {
-        return true;            // the line doesn't touch the other side
+    // The partition plane is crossed here
+    if (side == PointOnVectorSide(shootx2, shooty2, &pNode->Line)) {
+        return true;    // The line doesn't touch the other side
     }
-
-// cross the ending side
-    return PA_CrossBSPNode((node_t *)bsp->Children[side^1]);
+    
+    // Cross the ending side
+    return PA_CrossBSPNode((const node_t*) pNode->Children[side ^ 1]);
 }
 
 /*
@@ -111,8 +103,7 @@ void P_Shoot2(void)
 // cross everything
 //
     old_frac = 0;
-
-    PA_CrossBSPNode(FirstBSPNode);
+    PA_CrossBSPNode(gpNodes);
 
 // check the last intercept if needed
     if (!shootmobj)
@@ -378,7 +369,7 @@ static struct {
  vertex_t tv1,tv2;
 } thingline;
 
-bool PA_CrossSubsector (subsector_t *sub)
+bool PA_CrossSubsector(const subsector_t* sub)
 {
     seg_t       *seg;
     line_t      *line;

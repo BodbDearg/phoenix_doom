@@ -40,57 +40,9 @@ static Word PreLoadTable[] = {
     -1
 };
 
-node_t *FirstBSPNode;   /* First BSP entry */
 Byte *RejectMatrix;         /* For fast sight rejection */
 mapthing_t deathmatchstarts[10],*deathmatch_p;  /* Deathmatch starts */
 mapthing_t playerstarts;    /* Starting position for players */
-
-/**********************************
-
-    Load in the BSP tree and convert the indexs into pointers
-    to either the node list or the subsector array.
-    I require that the subsectors are loaded in.
-
-**********************************/
-
-#define NF_SUBSECTOR 0x8000
-
-typedef struct {
-    Fixed x,y,dx,dy;    /* Partition vector */
-    Fixed bbox[2][4];   /* Bounding box for each child */
-    LongWord children[2];   /* if NF_SUBSECTOR it's a subsector index else node index */
-} mapnode_t;
-
-static void LoadNodes(Word lump)
-{
-    Word numnodes;      /* Number of BSP nodes */
-    Word i,j,k;
-    mapnode_t *mn;
-    node_t *no; 
-    node_t *nodes;
-
-    mn = (mapnode_t *)loadResourceData(lump);   /* Get the data */
-    numnodes = ((Word*)mn)[0];                  /* How many nodes to process */
-    mn = (mapnode_t *)&((Word *)mn)[1];
-    no = (node_t *)mn;
-    nodes = no;
-    i = numnodes;           /* Get the node count */
-    do {
-        j = 0;
-        do {
-            k = (Word)mn->children[j];  /* Get the child offset */
-            if (k&NF_SUBSECTOR) {       /* Subsector? */
-                k&=(~NF_SUBSECTOR);     /* Clear the flag */
-                no->Children[j] = (void *)((LongWord)&gpSubSectors[k]|1);
-            } else {    
-                no->Children[j] = &nodes[k];    /* It's a node offset */
-            }
-        } while (++j<2);        /* Both branches done? */
-        ++no;       /* Next index */
-        ++mn;
-    } while (--i);
-    FirstBSPNode = no-1;    /* The last node is the first entry into the tree */
-}
 
 /**********************************
 
@@ -98,7 +50,6 @@ static void LoadNodes(Word lump)
     Finds block bounding boxes for sectors
 
 **********************************/
-
 static void GroupLines(void)
 {
     line_t **linebuffer;    /* Pointer to linebuffer array */
@@ -178,7 +129,6 @@ static void GroupLines(void)
     Spawn items and critters
 
 **********************************/
-
 static void LoadThings(Word lump)
 {
     Word i;
@@ -338,7 +288,6 @@ void SetupLevel(Word map) {
     mapDataInit(map);
 
     /* Note: most of this ordering is important */
-    LoadNodes(lumpnum+ML_NODES);                                    /* Needs subsectors */
     RejectMatrix = (Byte *)loadResourceData(lumpnum+ML_REJECT);     /* Get the reject matrix */
     
     GroupLines();                       /* Final last minute data arranging */
@@ -355,11 +304,8 @@ void SetupLevel(Word map) {
 void ReleaseMapMemory() {
     mapDataShutdown();
     
-    freeResource(LoadedLevel + ML_NODES);       // Release the BSP tree
     freeResource(LoadedLevel + ML_REJECT);      // Release the quick reject matrix
     MEM_FREE_AND_NULL(LineArrayBuffer);
-    
-    FirstBSPNode = 0;
     RejectMatrix = 0;
     
     texturesReleaseAll();

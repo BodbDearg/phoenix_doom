@@ -519,6 +519,27 @@ typedef struct {
     void *Children[2];      /* If low bit is set then it's a subsector */
 } node_t;
 
+//---------------------------------------------------------------------------------------------------------------------
+// DC: BSP nodes use the lowest bit of their child pointers to indicate whether or not the child
+// pointed to is a subsector or just another BSP node. These 3 functions help with checking for
+// the prescence of this flag and adding/removing it from a node child pointer.
+//---------------------------------------------------------------------------------------------------------------------
+static inline bool isNodeChildASubSector(const void* const pPtr) {
+    return ((((uintptr_t) pPtr) & 1) != 0);
+}
+
+static inline const void* markNodeChildAsSubSector(const void* const pPtr) {
+    // Set the lowest bit to mark the node's child pointer as a subsector
+    return (const void*)(((uintptr_t) pPtr) | 1);
+}
+
+static inline const void* getActualNodeChildPtr(const void* const pPtr) {
+    // Remove the lowest bit to get the actual child pointer for a node.
+    // May be set in order to indicate that the child is a subsector:
+    const uintptr_t mask = ~((uintptr_t) 1);
+    return (const void*)(((uintptr_t) pPtr) & mask);
+}
+
 #define AC_ADDFLOOR 1
 #define AC_ADDCEILING 2
 #define AC_TOPTEXTURE 4
@@ -779,17 +800,15 @@ extern Fixed AimLineAttack(mobj_t *t1,angle_t angle,Fixed distance);
 extern void LineAttack(mobj_t *t1,angle_t angle,Fixed distance,Fixed slope,Word damage);
 
 /* In Inter.c */
-
 extern void TouchSpecialThing(mobj_t *special,mobj_t *toucher);
 extern void DamageMObj(mobj_t *target,mobj_t *inflictor,mobj_t *source,Word damage);
 
 /* In MapUtl.c */
-
 extern angle_t SlopeAngle(LongWord num,LongWord den);
 extern angle_t PointToAngle(Fixed x1,Fixed y1,Fixed x2,Fixed y2);
 extern Fixed PointToDist(Fixed x,Fixed y);
 extern Fixed GetApproxDistance(Fixed dx,Fixed dy);
-extern Word PointOnVectorSide(Fixed x,Fixed y,vector_t *line);
+extern Word PointOnVectorSide(Fixed x, Fixed y, const vector_t* line);
 extern subsector_t *PointInSubsector(Fixed x,Fixed y);
 extern void MakeVector(line_t *li,vector_t *dl);
 extern Fixed InterceptVector(vector_t *v2,vector_t *v1);
@@ -800,7 +819,6 @@ extern Word BlockLinesIterator(Word x,Word y,Word(*func)(line_t*));
 extern Word BlockThingsIterator(Word x,Word y,Word(*func)(mobj_t*));
 
 /* In Move.c */
-
 extern bool trymove2;           /* Result from P_TryMove2 */
 extern bool floatok;            /* if true, move would be ok if within tmfloorz - tmceilingz */
 extern Fixed tmfloorz;          /* Current floor z for P_TryMove2 */
@@ -903,7 +921,6 @@ extern void EV_LightTurnOn(line_t *line,Word bright);
 extern void P_SpawnGlowingLight(sector_t *sector);
 
 /* In Setup.c */
-extern node_t *FirstBSPNode;                            /* First BSP node */
 extern Byte *RejectMatrix;                              /* For fast sight rejection */
 extern mapthing_t deathmatchstarts[10],*deathmatch_p;   /* Deathmatch starts */
 extern mapthing_t playerstarts;                         /* Starting position for players */
@@ -938,7 +955,7 @@ extern bool PA_DoIntercept(void *value, bool isline, int frac);
 extern bool PA_ShootLine(line_t *li,Fixed interceptfrac);
 extern bool PA_ShootThing(mobj_t *th,Fixed interceptfrac);
 extern Fixed PA_SightCrossLine(line_t *line);
-extern bool PA_CrossSubsector(subsector_t *sub);
+extern bool PA_CrossSubsector(const subsector_t* sub);
 
 /* In Change.c */
 
@@ -1007,28 +1024,23 @@ extern void ST_Ticker(void);
 extern void ST_Drawer(void);
 
 /* In Phase1.c */
-
 extern Word SpriteTotal;        /* Total number of sprites to render */
 extern Word *SortedSprites;     /* Pointer to array of words of sprites to render */
-extern void BSP(void);
+extern void BSP();
 
 /* In Phase2.c */
-
 extern void WallPrep(Word LeftX,Word RightX,seg_t *LineSeg,angle_t LineAngle);
 
 /* In Phase6.c */
-
 extern void SegCommands(void);
 
 /* In Phase7.c */
-
-extern Byte *PlaneSource;       /* Pointer to floor shape */
-extern Fixed planey;        /* latched viewx / viewy for floor drawing */
+extern Byte *PlaneSource;                           /* Pointer to floor shape */
+extern Fixed planey;                                /* latched viewx / viewy for floor drawing */
 extern Fixed basexscale,baseyscale;
 extern void DrawVisPlane(visplane_t *PlanePtr);
 
 /* In Phase8.c */
-
 extern Word spropening[MAXSCREENWIDTH];     /* clipped range */
 extern Word *SortWords(Word *Before,Word *After,Word Total);
 extern void DrawVisSprite(vissprite_t *vis);

@@ -82,7 +82,7 @@ static Fixed PS_SightCrossLine (line_t *line)
 =================
 */
 
-static bool PS_CrossSubsector (subsector_t *sub)
+static bool PS_CrossSubsector(const subsector_t* sub)
 {
     seg_t       *seg;
     line_t      *line;
@@ -157,40 +157,29 @@ static bool PS_CrossSubsector (subsector_t *sub)
     return true;            // passed the subsector ok
 }
 
-/*
-=================
-=
-= PS_CrossBSPNode
-=
-= Returns true if strace crosses the given node successfuly
-=================
-*/
-
-static bool PS_CrossBSPNode(node_t *bsp)
-{
-    Word side;
-
-    if ((Word)bsp & 1) {
-        return PS_CrossSubsector((subsector_t *)((LongWord)bsp&(~1UL)));
+//---------------------------------------------------------------------------------------------------------------------
+// Returns true if strace crosses the given node successfuly
+//---------------------------------------------------------------------------------------------------------------------
+static bool PS_CrossBSPNode(const node_t* pNode) {
+    if (isNodeChildASubSector(pNode)) {
+        // N.B: pointer has to be fixed up due to prescence of a flag in the lowest bit!
+        const subsector_t* const pSubSector = (const subsector_t*) getActualNodeChildPtr(pNode);
+        return PS_CrossSubsector(pSubSector);
     }
+    
+    // Decide which side the start point is on
+    const Word side = PointOnVectorSide(strace.x, strace.y, &pNode->Line);
 
-//
-// decide which side the start point is on
-//
-    side = PointOnVectorSide(strace.x, strace.y,&bsp->Line);
-
-// cross the starting side
-
-    if (!PS_CrossBSPNode((node_t *)bsp->Children[side]) )
+    // Cross the starting side
+    if (!PS_CrossBSPNode((const node_t*) pNode->Children[side]))
         return false;
-
-// the partition plane is crossed here
-
-    if (side == PointOnVectorSide(t2x,t2y,&bsp->Line))
-        return true;            // the line doesn't touch the other side
-
-// cross the ending side
-    return PS_CrossBSPNode((node_t *)bsp->Children[side^1]);
+    
+    // The partition plane is crossed here
+    if (side == PointOnVectorSide(t2x, t2y, &pNode->Line))
+        return true;    // The line doesn't touch the other side
+    
+    // Cross the ending side
+    return PS_CrossBSPNode((const node_t*) pNode->Children[side ^ 1]);
 }
 
 /**********************************
@@ -235,5 +224,5 @@ Word CheckSight(mobj_t *t1,mobj_t *t2)
     topslope = (t2->z+t2->height) - sightzstart;
     bottomslope = (t2->z) - sightzstart;
 
-    return PS_CrossBSPNode(FirstBSPNode);
+    return PS_CrossBSPNode(gpNodes);
 }

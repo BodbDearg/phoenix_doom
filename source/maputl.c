@@ -135,7 +135,7 @@ Fixed GetApproxDistance(Fixed dx,Fixed dy)
     
 **********************************/
 
-Word PointOnVectorSide(Fixed x,Fixed y,vector_t *line)
+Word PointOnVectorSide(Fixed x, Fixed y, const vector_t *line)
 {
     Word Result;
     Fixed dx,dy;
@@ -193,22 +193,25 @@ Word PointOnVectorSide(Fixed x,Fixed y,vector_t *line)
     return Result;          /* Return the side */
 }
 
-/**********************************
-
-    Return the pointer to a subsector record using an input
-    x and y. I may need to follow the BSP tree to assist.
-
-**********************************/
-
-subsector_t *PointInSubsector(Fixed x,Fixed y)
-{
-    node_t *node;           /* Current BSP node */
-
-    node = FirstBSPNode;    /* Get the node count from the BSP tree */
-    do {                    /* There is ALWAYS a BSP tree */
-        node = (node_t *)node->Children[PointOnVectorSide(x,y,&node->Line)];    /* Branch there */
-    } while (!((Word)node&1));      /* Valid pointer? */
-    return (subsector_t *)(((Byte *)node)-1);   /* Remove the flag */
+//---------------------------------------------------------------------------------------------------------------------
+// Return the pointer to a subsector record using an input x and y.
+// Uses the BSP tree to assist.
+//---------------------------------------------------------------------------------------------------------------------
+subsector_t* PointInSubsector(Fixed x, Fixed y) {
+    // Note: there is ALWAYS a BSP tree - no checks needed on loop start!
+    const node_t* pNode = gpNodes;
+    
+    while (true) {
+        // Goto the child on the side of the split that the point is on.
+        // Stop the loop when we encounter a subsector child:
+        const uint32_t sidePointIsOn = PointOnVectorSide(x, y, &pNode->Line);
+        pNode = (const node_t*) pNode->Children[sidePointIsOn];
+        
+        if (isNodeChildASubSector(pNode))
+            break;
+    }
+    
+    return (subsector_t*) getActualNodeChildPtr(pNode);     // N.B: Pointer needs flag removed via this!
 }
 
 /**********************************

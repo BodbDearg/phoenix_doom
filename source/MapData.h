@@ -19,6 +19,8 @@ extern const seg_t*         gpLineSegs;
 extern uint32_t             gNumLineSegs;
 extern const subsector_t*   gpSubSectors;
 extern uint32_t             gNumSubSectors;
+extern const node_t*        gpNodes;                // Note: first node is the BSP tree root
+extern uint32_t             gNumNodes;
 extern line_t***            gpBlockMapLineLists;    // For each blockmap entry, a pointer to a list of line pointers (all lines in the block)
 extern mobj_t**             gpBlockMapThingLists;   // For each blockmap entry, a pointer to the first thing in a linked list of things (all things in the block)
 extern uint32_t             gBlockMapWidth;

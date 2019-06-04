@@ -1,6 +1,7 @@
 #include "doom.h"
-#include <intmath.h>
+#include "MapData.h"
 #include "Resources.h"
+#include <intmath.h>
 
 #define MAXSEGS 32      /* Maximum number of segs to scan */
 
@@ -441,7 +442,7 @@ static void AddLine(seg_t *line,sector_t *FrontSector)
     
 **********************************/
 
-static void Subsector(subsector_t *sub)
+static void Subsector(const subsector_t* sub)
 {
     Word count;
     seg_t *line;
@@ -466,7 +467,7 @@ static void Subsector(subsector_t *sub)
     
 **********************************/
 
-static Word CheckBBox(Fixed *bspcoord)
+static Word CheckBBox(const Fixed *bspcoord)
 {
     angle_t angle1,angle2;  /* Left and right angles for view */
 
@@ -558,51 +559,41 @@ static Word CheckBBox(Fixed *bspcoord)
     }   /* End use of start */
 }
 
-/**********************************
-
-    Traverse the BSP tree starting from a tree node (Or sector)
-    and recursively subdivide if needed.
-    Use a cross product from the line cast from the viewxy to the bspxy
-    and the bsp line itself.
-
-**********************************/
-
-static void RenderBSPNode(node_t *bsp)
-{
-    Word Side;
-    if ((Word)bsp & 1) {        /* Is this a BSP sector node? */
-        Subsector((subsector_t *)(((Byte *)bsp)-1));    /* Process the sector */
-        return;         /* Exit */
+//---------------------------------------------------------------------------------------------------------------------
+// Traverse the BSP tree starting from a tree node (Or sector) and recursively subdivide if needed.
+// Use a cross product from the line cast from the viewxy to the bspxy and the bsp line itself.
+//---------------------------------------------------------------------------------------------------------------------
+static void RenderBSPNode(const node_t* pNode) {
+    // Is this node actual pointing to a sub sector?
+    if (isNodeChildASubSector(pNode)) {
+        // Process the sub sector.
+        // N.B: Need to fix up the pointer as well due to the lowest bit set as a flag!
+        const subsector_t* pSubSector = (const subsector_t*) getActualNodeChildPtr(pNode);
+        Subsector(pSubSector);
+        return;
     }
-
-/* Decide which side the view point is on */
-
-    Side = PointOnVectorSide(viewx,viewy,&bsp->Line);   /* Is this the front side? */
-    RenderBSPNode((node_t *)bsp->Children[Side]);   /* Process the side closer to me */
-    Side ^= 1;          /* Swap the side */
-    if (CheckBBox(bsp->bbox[Side])) {       /* Is the viewing rect on both sides? */
-        RenderBSPNode((node_t *)bsp->Children[Side]);   /* Render the back side */
-    }
-}
-
-/**********************************
-
-    Find all walls that can be rendered in the current view plane.
-    I make it handle the whole screen by placing fake posts
-    on the farthest left and right sides in solidsegs 0 and 1.
     
-**********************************/
-
-void BSP(void)
-{
-    ++validcount;                   /* For sprite recursion */
-    solidsegs[0].LeftX = -0x4000;   /* Fake leftmost post */
-    solidsegs[0].RightX = -1;
-    solidsegs[1].LeftX = ScreenWidth;   /* Fake rightmost post */
-    solidsegs[1].RightX = 0x4000;
-    newend = solidsegs+2;           /* Init the free memory pointer */
-    RenderBSPNode(FirstBSPNode);    /* Begin traversing the BSP tree for all walls in render range */
-    SortAllSprites();           /* Sort the sprites from front to back */
+    // Decide which side the view point is on
+    uint32_t Side = PointOnVectorSide(viewx, viewy, &pNode->Line);  // Is this the front side?
+    RenderBSPNode((node_t*) pNode->Children[Side]);                 // Process the side closer to me
+    Side ^= 1;                                                      // Swap the side
+    
+    if (CheckBBox(pNode->bbox[Side])) {                     // Is the viewing rect on both sides?
+        RenderBSPNode((node_t*) pNode->Children[Side]);     // Render the back side
+    }
 }
 
-
+//---------------------------------------------------------------------------------------------------------------------
+// Find all walls that can be rendered in the current view plane. I make it handle the whole
+// screen by placing fake posts on the farthest left and right sides in solidsegs 0 and 1.
+//---------------------------------------------------------------------------------------------------------------------
+void BSP() {
+    ++validcount;                       // For sprite recursion
+    solidsegs[0].LeftX = -0x4000;       // Fake leftmost post
+    solidsegs[0].RightX = -1;
+    solidsegs[1].LeftX = ScreenWidth;   // Fake rightmost post
+    solidsegs[1].RightX = 0x4000;
+    newend = solidsegs+2;               // Init the free memory pointer
+    RenderBSPNode(gpNodes);             // Begin traversing the BSP tree for all walls in render range
+    SortAllSprites();                   // Sort the sprites from front to back
+}
