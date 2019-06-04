@@ -1,5 +1,6 @@
 #include "doom.h"
 #include <intmath.h>
+#include "MapData.h"
 
 #define CLIPRADIUS  23
 #define SIDE_ON 0
@@ -111,75 +112,72 @@ void P_SlideMove (mobj_t *mo)
 }
 
 
-/*
-===================
-=
-= P_CompletableFrac
-=
-= Returns the fraction of the move that is completable
-===================
-*/
-
-Fixed P_CompletableFrac(Fixed dx,Fixed dy)
-{
-    int         xl,xh,yl,yh,bx,by;
-
-
-    blockfrac = 0x10000;        // the entire dist until shown otherwise
+//---------------------------------------------------------------------------------------------------------------------
+// Returns the fraction of the move that is completable
+//---------------------------------------------------------------------------------------------------------------------
+Fixed P_CompletableFrac(Fixed dx, Fixed dy) {
+    blockfrac = 0x10000;    // The entire dist until shown otherwise
     slidedx = dx;
     slidedy = dy;
+    
+    endbox[BOXTOP] = slidey + CLIPRADIUS * FRACUNIT;
+    endbox[BOXBOTTOM] = slidey - CLIPRADIUS * FRACUNIT;
+    endbox[BOXRIGHT] = slidex + CLIPRADIUS * FRACUNIT;
+    endbox[BOXLEFT] = slidex - CLIPRADIUS * FRACUNIT;
 
-    endbox[BOXTOP] = slidey + CLIPRADIUS*FRACUNIT;
-    endbox[BOXBOTTOM] = slidey - CLIPRADIUS*FRACUNIT;
-    endbox[BOXRIGHT] = slidex + CLIPRADIUS*FRACUNIT;
-    endbox[BOXLEFT] = slidex - CLIPRADIUS*FRACUNIT;
-
-    if (dx > 0)
+    if (dx > 0) {
         endbox[BOXRIGHT] += dx;
-    else
+    }
+    else {
         endbox[BOXLEFT] += dx;
-    if (dy > 0)
+    }
+    
+    if (dy > 0) {
         endbox[BOXTOP] += dy;
-    else
+    }
+    else {
         endbox[BOXBOTTOM] += dy;
+    }
 
     ++validcount;
+    
+    // Check lines
+    int xl = (endbox[BOXLEFT] - gBlockMapOriginX) >> MAPBLOCKSHIFT;
+    int xh = (endbox[BOXRIGHT] - gBlockMapOriginX) >> MAPBLOCKSHIFT;
+    int yl = (endbox[BOXBOTTOM] - gBlockMapOriginY) >> MAPBLOCKSHIFT;
+    int yh = (endbox[BOXTOP] - gBlockMapOriginY) >> MAPBLOCKSHIFT;
 
-//
-// check lines
-//
-    xl = (endbox[BOXLEFT] - BlockMapOrgX)>>MAPBLOCKSHIFT;
-    xh = (endbox[BOXRIGHT] - BlockMapOrgX)>>MAPBLOCKSHIFT;
-    yl = (endbox[BOXBOTTOM] - BlockMapOrgY)>>MAPBLOCKSHIFT;
-    yh = (endbox[BOXTOP] - BlockMapOrgY)>>MAPBLOCKSHIFT;
-
-    if (xl<0)
+    if (xl < 0) {
         xl = 0;
-    if (yl<0)
+    }
+    
+    if (yl < 0) {
         yl = 0;
-    if (xh>=BlockMapWidth)
-        xh = BlockMapWidth-1;
-    if (yh>=BlockMapHeight)
-        yh = BlockMapHeight-1;
+    }
+    
+    if (xh >= gBlockMapWidth) {
+        xh = gBlockMapWidth - 1;
+    }
+    
+    if (yh >= gBlockMapHeight) {
+        yh = gBlockMapHeight - 1;
+    }
 
-    for (bx=xl ; bx<=xh ; bx++)
-        for (by=yl ; by<=yh ; by++) {
-            BlockLinesIterator(bx,by,SL_CheckLine);
+    for (int bx = xl; bx <= xh; bx++) {
+        for (int by = yl; by <= yh; by++) {
+            BlockLinesIterator(bx, by, SL_CheckLine);
         }
-
-//
-// examine results
-//
-    if (blockfrac < 0x1000)
-    {
+    }
+    
+    // Examine results
+    if (blockfrac < 0x1000) {
         blockfrac = 0;
-        specialline = 0;    // can't cross anything on a bad move
-        return 0;               // solid wall or thing
+        specialline = 0;
+        return 0;           // Can't cross anything on a bad move, solid wall or thing
     }
 
     return blockfrac;
 }
-
 
 int SL_PointOnSide (int x, int y)
 {
@@ -410,12 +408,9 @@ findfrac:
 static line_t **list;
 static line_t *ld;
 
-void SL_CheckSpecialLines (int x1, int y1, int x2, int y2)
-{
-    int         bx, by, xl, xh, yl, yh, bxl, bxh, byl, byh;
-    int         x3,y3,x4,y4;
-    int         side1, side2;
-
+void SL_CheckSpecialLines(int x1, int y1, int x2, int y2) {
+    int xl, xh, yl, yh;
+    
     if (x1<x2) {
         xl = x1;
         xh = x2;
@@ -423,6 +418,7 @@ void SL_CheckSpecialLines (int x1, int y1, int x2, int y2)
         xl = x2;
         xh = x1;
     }
+    
     if (y1<y2) {
         yl = y1;
         yh = y2;
@@ -431,60 +427,72 @@ void SL_CheckSpecialLines (int x1, int y1, int x2, int y2)
         yh = y1;
     }
 
-    bxl = (xl - BlockMapOrgX)>>MAPBLOCKSHIFT;
-    bxh = (xh - BlockMapOrgX)>>MAPBLOCKSHIFT;
-    byl = (yl - BlockMapOrgY)>>MAPBLOCKSHIFT;
-    byh = (yh - BlockMapOrgY)>>MAPBLOCKSHIFT;
+    int bxl = (xl - gBlockMapOriginX) >> MAPBLOCKSHIFT;
+    int bxh = (xh - gBlockMapOriginX) >> MAPBLOCKSHIFT;
+    int byl = (yl - gBlockMapOriginY) >> MAPBLOCKSHIFT;
+    int byh = (yh - gBlockMapOriginY) >> MAPBLOCKSHIFT;
 
-    if (bxl<0)
+    if (bxl < 0) {
         bxl = 0;
-    if (byl<0)
+    }
+    
+    if (byl < 0) {
         byl = 0;
-    if (bxh>=BlockMapWidth)
-        bxh = BlockMapWidth-1;
-    if (byh>=BlockMapHeight)
-        byh = BlockMapHeight-1;
-
+    }
+    
+    if (bxh >= gBlockMapWidth) {
+        bxh = gBlockMapWidth - 1;
+    }
+    
+    if (byh >= gBlockMapHeight) {
+        byh = gBlockMapHeight - 1;
+    }
+    
     specialline = 0;
     ++validcount;
-
-    for (bx=bxl ; bx<=bxh ; bx++)
-        for (by=byl ; by<=byh ; by++) {
-
-            for ( list = BlockMapLines[(by*BlockMapWidth)+bx] ;list[0];++list) {
+    
+    int x3, y3, x4, y4;
+    int side1, side2;
+    
+    for (int bx = bxl; bx <= bxh; bx++) {
+        for (int by = byl; by <= byh; by++) {
+            for (list = gpBlockMapLineLists[(by * gBlockMapWidth) + bx]; list[0]; ++list) {
                 ld = list[0];
+                
                 if (!ld->special)
                     continue;
+                
                 if (ld->validcount == validcount)
-                    continue;       // line has already been checked
+                    continue;   // Line has already been checked
+                
                 ld->validcount = validcount;
-
+                
                 if (xh < ld->bbox[BOXLEFT]
                 ||  xl > ld->bbox[BOXRIGHT]
                 ||  yh < ld->bbox[BOXBOTTOM]
-                ||  yl > ld->bbox[BOXTOP] )
+                ||  yl > ld->bbox[BOXTOP])
                     continue;
-
+                
                 x3 = ld->v1.x;
                 y3 = ld->v1.y;
                 x4 = ld->v2.x;
                 y4 = ld->v2.y;
-
-                side1 = SL_PointOnSide2 (x1,y1, x3,y3, x4,y4);
-                side2 = SL_PointOnSide2 (x2,y2, x3,y3, x4,y4);
-
-                if (side1 == side2)
-                    continue;       // move doesn't cross line
-
-                side1 = SL_PointOnSide2 (x3,y3, x1,y1, x2,y2);
-                side2 = SL_PointOnSide2 (x4,y4, x1,y1, x2,y2);
+                
+                side1 = SL_PointOnSide2(x1,y1, x3,y3, x4,y4);
+                side2 = SL_PointOnSide2(x2,y2, x3,y3, x4,y4);
 
                 if (side1 == side2)
-                    continue;       // line doesn't cross move
+                    continue;   // Move doesn't cross line
+                
+                side1 = SL_PointOnSide2(x3,y3, x1,y1, x2,y2);
+                side2 = SL_PointOnSide2(x4,y4, x1,y1, x2,y2);
+
+                if (side1 == side2)
+                    continue;   // Line doesn't cross move
 
                 specialline = ld;
                 return;
             }
         }
-
+    }
 }

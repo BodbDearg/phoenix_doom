@@ -1,17 +1,19 @@
 #include "doom.h"
+#include "MapData.h"
 
-bool trymove2;          /* Result from P_TryMove2 */
-bool floatok;           /* if true, move would be ok if within tmfloorz - tmceilingz */
-Fixed tmfloorz;         /* Current floor z for P_TryMove2 */
-Fixed tmceilingz;       /* Current ceiling z for P_TryMove2 */
-mobj_t *movething;      /* Either a skull/missile target or a special pickup */
-line_t *blockline;      /* Might be a door that can be opened */
+bool        trymove2;       // Result from P_TryMove2
+bool        floatok;        // If true, move would be ok if within tmfloorz - tmceilingz
+Fixed       tmfloorz;       // Current floor z for P_TryMove2
+Fixed       tmceilingz;     // Current ceiling z for P_TryMove2
+mobj_t*     movething;      // Either a skull/missile target or a special pickup
+line_t*     blockline;      // Might be a door that can be opened
 
-static Fixed        oldx, oldy;
-static Fixed        tmbbox[4];
-static Word tmflags;
-static Fixed tmdropoffz;    /* Lowest point contacted */
-static subsector_t *newsubsec;  /* Dest subsector */
+static Fixed            oldx;
+static Fixed            oldy;
+static Fixed            tmbbox[4];
+static Word             tmflags;
+static Fixed            tmdropoffz;     // Lowest point contacted
+static subsector_t*     newsubsec;      // Dest subsector
 
 
 /*
@@ -60,9 +62,9 @@ void P_TryMove2(void)
             return;         // don't stand over a dropoff
     }
 
-//
-// the move is ok, so link the thing into its new position
-//
+    //
+    // the move is ok, so link the thing into its new position
+    //
     UnsetThingPosition(tmthing);
 
     tmthing->floorz = tmfloorz;
@@ -86,6 +88,7 @@ static Word PM_CrossCheck(line_t *ld)
     }
     return true;
 }
+
 /*
 ==================
 =
@@ -107,88 +110,94 @@ movething
 
 ==================
 */
-
-void PM_CheckPosition (void)
-{
-    int         xl,xh,yl,yh,bx,by;
-
+void PM_CheckPosition() {
     tmflags = tmthing->flags;
-
+    
     tmbbox[BOXTOP] = tmy + tmthing->radius;
     tmbbox[BOXBOTTOM] = tmy - tmthing->radius;
     tmbbox[BOXRIGHT] = tmx + tmthing->radius;
     tmbbox[BOXLEFT] = tmx - tmthing->radius;
-
+    
     newsubsec = PointInSubsector(tmx,tmy);
 
-//
-// the base floor / ceiling is from the subsector that contains the
-// point.  Any contacted lines the step closer together will adjust them
-//
+    // The base floor / ceiling is from the subsector that contains the point.
+    // Any contacted lines the step closer together will adjust them.
     tmfloorz = tmdropoffz = newsubsec->sector->floorheight;
     tmceilingz = newsubsec->sector->ceilingheight;
 
     ++validcount;
-
+    
     movething = 0;
     blockline = 0;
 
-    if ( tmflags & MF_NOCLIP )
-    {
+    if (tmflags & MF_NOCLIP) {
         trymove2 = true;
         return;
     }
-
-//
-// check things first, possibly picking things up
-// the bounding box is extended by MAXRADIUS because mobj_ts are grouped
-// into mapblocks based on their origin point, and can overlap into adjacent
-// blocks by up to MAXRADIUS units
-//
-    xl = (tmbbox[BOXLEFT] - BlockMapOrgX - MAXRADIUS)>>MAPBLOCKSHIFT;
-    xh = (tmbbox[BOXRIGHT] - BlockMapOrgX + MAXRADIUS)>>MAPBLOCKSHIFT;
-    yl = (tmbbox[BOXBOTTOM] - BlockMapOrgY - MAXRADIUS)>>MAPBLOCKSHIFT;
-    yh = (tmbbox[BOXTOP] - BlockMapOrgY + MAXRADIUS)>>MAPBLOCKSHIFT;
-
-    if (xl<0)
+    
+    // Check things first, possibly picking things up.
+    // The bounding box is extended by MAXRADIUS because mobj_ts are grouped into mapblocks based
+    // on their origin point, and can overlap into adjacent blocks by up to MAXRADIUS units.
+    int xl = (tmbbox[BOXLEFT] - gBlockMapOriginX - MAXRADIUS) >> MAPBLOCKSHIFT;
+    int xh = (tmbbox[BOXRIGHT] - gBlockMapOriginX + MAXRADIUS) >> MAPBLOCKSHIFT;
+    int yl = (tmbbox[BOXBOTTOM] - gBlockMapOriginY - MAXRADIUS) >> MAPBLOCKSHIFT;
+    int yh = (tmbbox[BOXTOP] - gBlockMapOriginY + MAXRADIUS) >> MAPBLOCKSHIFT;
+    
+    if (xl < 0) {
         xl = 0;
-    if (yl<0)
+    }
+    
+    if (yl < 0) {
         yl = 0;
-    if (xh>=BlockMapWidth)
-        xh = BlockMapWidth-1;
-    if (yh>=BlockMapHeight)
-        yh = BlockMapHeight-1;
+    }
+    
+    if (xh >= gBlockMapWidth) {
+        xh = gBlockMapWidth - 1;
+    }
+    
+    if (yh >= gBlockMapHeight) {
+        yh = gBlockMapHeight-1;
+    }
 
-    for (bx=xl ; bx<=xh ; bx++)
-        for (by=yl ; by<=yh ; by++)
+    for (int bx = xl; bx <= xh; bx++) {
+        for (int by = yl; by <= yh; by++) {
             if (!BlockThingsIterator(bx,by,PIT_CheckThing)) {
                 trymove2 = false;
                 return;
             }
+        }
+    }
+    
+    // Check lines
+    xl = (tmbbox[BOXLEFT] - gBlockMapOriginX) >> MAPBLOCKSHIFT;
+    xh = (tmbbox[BOXRIGHT] - gBlockMapOriginX) >> MAPBLOCKSHIFT;
+    yl = (tmbbox[BOXBOTTOM] - gBlockMapOriginY) >> MAPBLOCKSHIFT;
+    yh = (tmbbox[BOXTOP] - gBlockMapOriginY) >> MAPBLOCKSHIFT;
 
-//
-// check lines
-//
-    xl = (tmbbox[BOXLEFT] - BlockMapOrgX)>>MAPBLOCKSHIFT;
-    xh = (tmbbox[BOXRIGHT] - BlockMapOrgX)>>MAPBLOCKSHIFT;
-    yl = (tmbbox[BOXBOTTOM] - BlockMapOrgY)>>MAPBLOCKSHIFT;
-    yh = (tmbbox[BOXTOP] - BlockMapOrgY)>>MAPBLOCKSHIFT;
-
-    if (xl<0)
+    if (xl < 0) {
         xl = 0;
-    if (yl<0)
+    }
+    
+    if (yl < 0) {
         yl = 0;
-    if (xh>=BlockMapWidth)
-        xh = BlockMapWidth-1;
-    if (yh>=BlockMapHeight)
-        yh = BlockMapHeight-1;
+    }
+    
+    if (xh >= gBlockMapWidth) {
+        xh = gBlockMapWidth - 1;
+    }
+    
+    if (yh >= gBlockMapHeight) {
+        yh = gBlockMapHeight - 1;
+    }
 
-    for (bx=xl ; bx<=xh ; bx++)
-        for (by=yl ; by<=yh ; by++)
-            if (!BlockLinesIterator(bx,by,PM_CrossCheck)) {
+    for (int bx = xl; bx <= xh; bx++) {
+        for (int by = yl; by <= yh; by++) {
+            if (!BlockLinesIterator(bx, by, PM_CrossCheck)) {
                 trymove2 = false;
                 return;
             }
+        }
+    }
 
     trymove2 = true;
     return;
@@ -265,13 +274,13 @@ bool PIT_CheckLine (line_t *ld)
     Fixed       pm_lowfloor;
     sector_t    *front, *back;
 
-// a line has been hit
+    // a line has been hit
 
-/*
-=
-= The moving thing's destination position will cross the given line.
-= If this should not be allowed, return false.
-*/
+    /*
+    =
+    = The moving thing's destination position will cross the given line.
+    = If this should not be allowed, return false.
+    */
     if (!ld->backsector)
         return false;       // one sided line
 
@@ -309,7 +318,7 @@ bool PIT_CheckLine (line_t *ld)
         pm_lowfloor = front->floorheight;
     }
 
-// adjust floor / ceiling heights
+    // adjust floor / ceiling heights
     if (pm_opentop < tmceilingz)
         tmceilingz = pm_opentop;
     if (pm_openbottom > tmfloorz)
@@ -351,19 +360,18 @@ Word PIT_CheckThing (mobj_t *thing)
     if (thing == tmthing)
         return true;        // don't clip against self
 
-//
-// check for skulls slamming into things
-//
+    //
+    // check for skulls slamming into things
+    //
     if (tmthing->flags & MF_SKULLFLY)
     {
         movething = thing;
         return false;       // stop moving
     }
-
-
-//
-// missiles can hit other things
-//
+    
+    //
+    // missiles can hit other things
+    //
     if (tmthing->flags & MF_MISSILE)
     {
     // see if it went over / under
@@ -387,9 +395,9 @@ Word PIT_CheckThing (mobj_t *thing)
         return false;           // don't traverse any more
     }
 
-//
-// check for special pickup
-//
+    //
+    // check for special pickup
+    //
     if ( (thing->flags&MF_SPECIAL) && (tmflags&MF_PICKUP) )
     {
         movething = thing;

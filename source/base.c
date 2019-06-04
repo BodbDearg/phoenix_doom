@@ -1,4 +1,5 @@
 #include "doom.h"
+#include "MapData.h"
 
 static mobj_t *CheckThingMo;        /* Used for PB_CheckThing */
 static Fixed testx, testy;
@@ -300,69 +301,63 @@ hitthing
 
 ==================
 */
-
-static Word PB_CheckPosition(mobj_t *mo)
-{
-    int         xl,xh,yl,yh,bx,by;
-    int         r;
-
+static Word PB_CheckPosition(mobj_t *mo) {
     testflags = mo->flags;
 
-    r = mo->radius;
+    int r = mo->radius;
     testbbox[BOXTOP] = testy + r;
     testbbox[BOXBOTTOM] = testy - r;
     testbbox[BOXRIGHT] = testx + r;
     testbbox[BOXLEFT] = testx - r;
-
-//
-// the base floor / ceiling is from the subsector that contains the
-// point.  Any contacted lines the step closer together will adjust them
-//
+    
+    // The base floor / ceiling is from the subsector that contains the point.
+    // Any contacted lines the step closer together will adjust them.
     testsubsec = PointInSubsector(testx,testy);
     testfloorz = testdropoffz = testsubsec->sector->floorheight;
     testceilingz = testsubsec->sector->ceilingheight;
-
+    
     ++validcount;
-
+    
     ceilingline = 0;
     hitthing = 0;
 
-//
-// the bounding box is extended by MAXRADIUS because mobj_ts are grouped
-// into mapblocks based on their origin point, and can overlap into adjacent
-// blocks by up to MAXRADIUS units
-//
-    xl = (testbbox[BOXLEFT] - BlockMapOrgX - MAXRADIUS)>>MAPBLOCKSHIFT;
-    xh = (testbbox[BOXRIGHT] - BlockMapOrgX + MAXRADIUS)>>MAPBLOCKSHIFT;
-    yl = (testbbox[BOXBOTTOM] - BlockMapOrgY - MAXRADIUS)>>MAPBLOCKSHIFT;
-    yh = (testbbox[BOXTOP] - BlockMapOrgY + MAXRADIUS)>>MAPBLOCKSHIFT;
-
-    if (xl<0) {
+    // The bounding box is extended by MAXRADIUS because mobj_ts are grouped
+    // into mapblocks based on their origin point, and can overlap into adjacent
+    // blocks by up to MAXRADIUS units.
+    int xl = (testbbox[BOXLEFT] - gBlockMapOriginX - MAXRADIUS) >> MAPBLOCKSHIFT;
+    int xh = (testbbox[BOXRIGHT] - gBlockMapOriginX + MAXRADIUS) >> MAPBLOCKSHIFT;
+    int yl = (testbbox[BOXBOTTOM] - gBlockMapOriginY - MAXRADIUS) >> MAPBLOCKSHIFT;
+    int yh = (testbbox[BOXTOP] - gBlockMapOriginY + MAXRADIUS) >> MAPBLOCKSHIFT;
+    
+    if (xl < 0) {
         xl = 0;
     }
-    if (yl<0) {
+    
+    if (yl < 0) {
         yl = 0;
     }
-    if (xh>=BlockMapWidth) {
-        xh = BlockMapWidth-1;
+    
+    if (xh >= gBlockMapWidth) {
+        xh = gBlockMapWidth - 1;
     }
-    if (yh>=BlockMapHeight) {
-        yh = BlockMapHeight-1;
+    
+    if (yh >= gBlockMapHeight) {
+        yh = gBlockMapHeight - 1;
     }
-
-    CheckThingMo = mo;          /* Store for PB_CheckThing */
-    for (bx=xl ; bx<=xh ; bx++)
-        for (by=yl ; by<=yh ; by++) {
-            if (!BlockThingsIterator(bx,by,PB_CheckThing))
+    
+    CheckThingMo = mo;  // Store for PB_CheckThing
+    
+    for (int bx = xl; bx <= xh; bx++) {
+        for (int by = yl; by <= yh; by++) {
+            if (!BlockThingsIterator(bx, by, PB_CheckThing))
                 return false;
-            if (!BlockLinesIterator(bx,by,PB_CrossCheck))
+            if (!BlockLinesIterator(bx, by, PB_CrossCheck))
                 return false;
         }
+    }
 
     return true;
 }
-
-
 
 /*
 ===================

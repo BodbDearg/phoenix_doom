@@ -43,70 +43,9 @@ static Word PreLoadTable[] = {
 seg_t *segs;                /* Pointer to array of loaded segs */
 subsector_t *subsectors;    /* Pointer to array of loaded subsectors */
 node_t *FirstBSPNode;   /* First BSP entry */
-line_t ***BlockMapLines;    /* Pointer to line lists based on blockmap */
-Word BlockMapWidth,BlockMapHeight;  /* Size of blockmap in blocks */
-Fixed BlockMapOrgX,BlockMapOrgY;    /* Origin of block map */
-mobj_t **BlockLinkPtr;      /* Starting link for thing chains */
 Byte *RejectMatrix;         /* For fast sight rejection */
 mapthing_t deathmatchstarts[10],*deathmatch_p;  /* Deathmatch starts */
 mapthing_t playerstarts;    /* Starting position for players */
-
-/**********************************
-
-    Load in the block map
-    I need to have the lines preloaded before I can process the blockmap
-    The data has 4 longwords at the beginning which will have an array of offsets
-    to a series of line #'s. These numbers will be turned into pointers into the line
-    array for quick compares to lines.
-    
-**********************************/
-
-static void LoadBlockMap(Word lump)
-{
-    Word Count;
-    Word Entries;
-    Byte *MyLumpPtr;
-    void **BlockHandle;
-    LongWord *StartIndex;
-
-    const Resource* pBlockResource = loadResource(lump);
-    BlockHandle = pBlockResource->pData;    /* Load the data */
-    
-    MyLumpPtr = (Byte*) BlockHandle;
-    BlockMapOrgX = ((Word *)MyLumpPtr)[0];      /* Get the orgx and y */
-    BlockMapOrgY = ((Word *)MyLumpPtr)[1];
-    BlockMapWidth = ((Word *)MyLumpPtr)[2];     /* Get the map size */
-    BlockMapHeight = ((Word *)MyLumpPtr)[3];
-
-    Entries = BlockMapWidth*BlockMapHeight;     /* How many entries are there? */
-    
-    /* Convert the loaded block map table into a huge array of block entries */
-    Count = Entries;                                            /* Init the longword count */
-    StartIndex = &((LongWord *)MyLumpPtr)[4];                   /* Index to the offsets! */
-    BlockMapLines = (line_t ***)StartIndex;                     /* Save in global */
-    do {
-        StartIndex[0] = (LongWord)&MyLumpPtr[StartIndex[0]];    /* Convert to pointer */
-        ++StartIndex;                                           /* Next offset entry */
-    } while (--Count);                                          /* All done? */
-
-    /* Convert the lists appended to the array into pointers to lines */
-    Count = pBlockResource->size / 4;                               /* How much memory is needed? (Longs) */
-    
-    Count -= (Entries+4);                                           /* Remove the header count */
-    do {
-        if (StartIndex[0]!=-1) {                                    /* End of a list? */
-            StartIndex[0] = (LongWord)&gpLines[StartIndex[0]];      /* Get the line pointer */
-        } else {
-            StartIndex[0] = 0;                                      /* Insert a null pointer */
-        }
-        ++StartIndex;                                               /* Next entry */
-    } while (--Count);
-    
-    /* Clear out mobj chains */
-    Count = sizeof(*BlockLinkPtr)*Entries;      /* Get memory */
-    BlockLinkPtr = (mobj_t**) MemAlloc(Count);  /* Allocate memory */
-    memset(BlockLinkPtr,0,Count);               /* Clear it out */
-}
 
 /**********************************
 
@@ -315,23 +254,23 @@ static void GroupLines(void)
         sector->SoundY = (bbox[BOXTOP]+bbox[BOXBOTTOM])/2;      /* This is SIGNED! */
 
         /* Adjust bounding box to map blocks and clip to unsigned values */
-        block = (bbox[BOXTOP]-BlockMapOrgY+MAXRADIUS)>>MAPBLOCKSHIFT;
+        block = (bbox[BOXTOP] - gBlockMapOriginY + MAXRADIUS) >> MAPBLOCKSHIFT;
         ++block;
-        block = (block > (int)BlockMapHeight) ? BlockMapHeight : block;
-        sector->blockbox[BOXTOP]=block;     /* Save the topmost point */
+        block = (block > (int) gBlockMapHeight) ? gBlockMapHeight : block;
+        sector->blockbox[BOXTOP] = block;       // Save the topmost point
 
-        block = (bbox[BOXBOTTOM]-BlockMapOrgY-MAXRADIUS)>>MAPBLOCKSHIFT;
+        block = (bbox[BOXBOTTOM] - gBlockMapOriginY - MAXRADIUS) >> MAPBLOCKSHIFT;
         block = (block < 0) ? 0 : block;
-        sector->blockbox[BOXBOTTOM]=block;  /* Save the bottommost point */
+        sector->blockbox[BOXBOTTOM] = block;    // Save the bottommost point
 
-        block = (bbox[BOXRIGHT]-BlockMapOrgX+MAXRADIUS)>>MAPBLOCKSHIFT;
+        block = (bbox[BOXRIGHT] - gBlockMapOriginX + MAXRADIUS) >> MAPBLOCKSHIFT;
         ++block;
-        block = (block > (int)BlockMapWidth) ? BlockMapWidth : block;
-        sector->blockbox[BOXRIGHT]=block;   /* Save the rightmost point */
+        block = (block > (int) gBlockMapWidth) ? gBlockMapWidth : block;
+        sector->blockbox[BOXRIGHT] = block;     // Save the rightmost point
 
-        block = (bbox[BOXLEFT]-BlockMapOrgX-MAXRADIUS)>>MAPBLOCKSHIFT;
+        block = (bbox[BOXLEFT] - gBlockMapOriginX - MAXRADIUS) >> MAPBLOCKSHIFT;
         block = (block < 0) ? 0 : block;
-        sector->blockbox[BOXLEFT]=block;    /* Save the leftmost point */
+        sector->blockbox[BOXLEFT] = block;      // Save the leftmost point
         ++sector;
     } while (--i);
 }
@@ -473,17 +412,10 @@ static void PreloadWalls() {
     MemFree(bLoadTexFlags);
 }
 
-/**********************************
-
-    Load and prepare the game level
-
-**********************************/
-
-void SetupLevel(Word map)
-{
-    Word lumpnum;
-    player_t *p;
-
+//---------------------------------------------------------------------------------------------------------------------
+// Load and prepare the game level
+//---------------------------------------------------------------------------------------------------------------------
+void SetupLevel(Word map) {
     Randomize();            /* Reset the random number generator */
     LoadingPlaque();        /* Display "Loading" */
 
@@ -494,20 +426,20 @@ void SetupLevel(Word map)
     #endif
     
     TotalKillsInLevel = ItemsFoundInLevel = SecretsFoundInLevel = 0;
-    p = &players;
+    
+    player_t* p = &players;
     p->killcount = 0;       /* Nothing killed */
     p->secretcount = 0;     /* No secrets found */
     p->itemcount = 0;       /* No items found */
     
     InitThinkers();         /* Zap the think logics */
-
-    lumpnum = ((map-1)*ML_TOTAL)+rMAP01;    /* Get the map number */
+    
+    Word lumpnum = ((map-1)*ML_TOTAL)+rMAP01;    /* Get the map number */
     LoadedLevel = lumpnum;      /* Save the loaded resource number */
     
     mapDataInit(map);
 
     /* Note: most of this ordering is important */
-    LoadBlockMap(lumpnum+ML_BLOCKMAP);                              /* Needs lines */
     LoadSegs(lumpnum+ML_SEGS);                                      /* Needs vertexes,lines,sides */
     LoadSubsectors(lumpnum+ML_SSECTORS);                            /* Needs sectors and segs and sides */
     LoadNodes(lumpnum+ML_NODES);                                    /* Needs subsectors */
@@ -518,10 +450,7 @@ void SetupLevel(Word map)
     LoadThings(lumpnum+ML_THINGS);      /* Spawn all the items */
     SpawnSpecials();                    /* Spawn all sector specials */
     PreloadWalls();                     /* Load all the wall textures and sprites */
-
-/* if deathmatch, randomly spawn the active players */
-
-    gamepaused = false;     /* Game in progress */
+    gamepaused = false;                 /* Game in progress */
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -530,16 +459,12 @@ void SetupLevel(Word map)
 void ReleaseMapMemory() {
     mapDataShutdown();
     
-    freeResource(LoadedLevel + ML_BLOCKMAP);    // Make sure it's discarded since I modified it
-    MEM_FREE_AND_NULL(BlockLinkPtr);            // Discard the block map mobj linked list
     MEM_FREE_AND_NULL(segs);                    // Release the line segment memory
     MEM_FREE_AND_NULL(subsectors);              // Release the sub sectors
     freeResource(LoadedLevel + ML_NODES);       // Release the BSP tree
     freeResource(LoadedLevel + ML_REJECT);      // Release the quick reject matrix
     MEM_FREE_AND_NULL(LineArrayBuffer);
     
-    BlockMapLines = 0;      // Force zero for resource
-    BlockLinkPtr = 0;
     segs = 0;
     subsectors = 0;
     FirstBSPNode = 0;

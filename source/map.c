@@ -1,4 +1,5 @@
 #include "doom.h"
+#include "MapData.h"
 #include <stdlib.h>
 
 mobj_t *linetarget;         /* Object that was targeted */
@@ -128,39 +129,31 @@ static Word PIT_UseLines(line_t *li)
     return true;        /* Can't use for than one special line in a row */
 }
 
-/**********************************
-
-    Looks for special lines in front of the player to activate
-    Used when the player presses "Use" to open a door or such
-
-**********************************/
-
-void P_UseLines (player_t *player)
-{
-    Word angle;
-    Fixed x1,y1,x2,y2;
-    int x,y,xl,xh,yl,yh;
-
-    angle = player->mo->angle >> ANGLETOFINESHIFT;
-    x1 = player->mo->x;     /* Get the source x,y */
-    y1 = player->mo->y;
-    x2 = x1 + (USERANGE>>FRACBITS)*finecosine[angle];   /* Get the dest X,Y */
-    y2 = y1 + (USERANGE>>FRACBITS)*finesine[angle];
-
-    useline.x = x1;     /* Create the useline record */
+//---------------------------------------------------------------------------------------------------------------------
+// Looks for special lines in front of the player to activate.
+// Used when the player presses "Use" to open a door or such.
+//---------------------------------------------------------------------------------------------------------------------
+void P_UseLines(player_t* player) {
+    Word angle = player->mo->angle >> ANGLETOFINESHIFT;
+    Fixed x1 = player->mo->x;                                       // Get the source x,y
+    Fixed y1 = player->mo->y;
+    Fixed x2 = x1 + (USERANGE >> FRACBITS) * finecosine[angle];     // Get the dest X,Y
+    Fixed y2 = y1 + (USERANGE >> FRACBITS) * finesine[angle];
+    
+    useline.x = x1;         // Create the useline record
     useline.y = y1;
-    useline.dx = x2-x1; /* Delta x and y */
+    useline.dx = x2-x1;     // Delta x and y
     useline.dy = y2-y1;
 
     if (useline.dx >= 0) {
-        usebbox[BOXRIGHT] = x2;     /* Create the bounding box */
+        usebbox[BOXRIGHT] = x2;     // Create the bounding box
         usebbox[BOXLEFT] = x1;
     } else {
         usebbox[BOXRIGHT] = x1;
         usebbox[BOXLEFT] = x2;
     }
 
-    if (useline.dy >= 0) {      /* Create the bounding box */
+    if (useline.dy >= 0) {          // Create the bounding box
         usebbox[BOXTOP] = y2;
         usebbox[BOXBOTTOM] = y1;
     } else {
@@ -168,32 +161,34 @@ void P_UseLines (player_t *player)
         usebbox[BOXBOTTOM] = y2;
     }
 
-    yh = (usebbox[BOXTOP] - BlockMapOrgY)>>MAPBLOCKSHIFT;   /* Bounding box */
-    yl = (usebbox[BOXBOTTOM] - BlockMapOrgY)>>MAPBLOCKSHIFT;
-    xh = (usebbox[BOXRIGHT] - BlockMapOrgX)>>MAPBLOCKSHIFT;
-    xl = (usebbox[BOXLEFT] - BlockMapOrgX)>>MAPBLOCKSHIFT;
-    ++xh;           /* For < compare later */
+    int yh = (usebbox[BOXTOP] - gBlockMapOriginY) >> MAPBLOCKSHIFT;     // Bounding box
+    int yl = (usebbox[BOXBOTTOM] - gBlockMapOriginY) >> MAPBLOCKSHIFT;
+    int xh = (usebbox[BOXRIGHT] - gBlockMapOriginX) >> MAPBLOCKSHIFT;
+    int xl = (usebbox[BOXLEFT] - gBlockMapOriginX) >> MAPBLOCKSHIFT;
+    
+    ++xh;   // For < compare later
     ++yh;
 
-    closeline = 0;      /* No line found */
-    closedist = FRACUNIT;   /* 1.0 units distance */
-    ++validcount;       /* Make unique sector mark */
-
-    y = yl;
-    do {
-        x = xl;
+    closeline = 0;          // No line found
+    closedist = FRACUNIT;   // 1.0 units distance
+    ++validcount;           // Make unique sector mark
+    
+    {
+        int y = yl;
         do {
-            BlockLinesIterator(x,y,PIT_UseLines);       /* Check the lines */
-        } while (++x<xh);
-    } while (++y<yh);
-
-/* check closest line */
-
-    if (closeline) {    /* Line nearby? */
-        if (!closeline->special) {      /* Is it special? */
-            S_StartSound(&player->mo->x,sfx_noway); /* Make the grunt sound */
+            int x = xl;
+            do {
+                BlockLinesIterator(x,y,PIT_UseLines);   // Check the lines
+            } while (++x < xh);
+        } while (++y < yh);
+    }
+    
+    // Check closest line
+    if (closeline) {                                    // Line nearby?
+        if (!closeline->special) {                      // Is it special?
+            S_StartSound(&player->mo->x, sfx_noway);    // Make the grunt sound
         } else {
-            P_UseSpecialLine (player->mo, closeline);   /* Activate the special */
+            P_UseSpecialLine(player->mo, closeline);    // Activate the special
         }
     }
 }
@@ -228,36 +223,34 @@ static Word PIT_RadiusAttack(mobj_t *thing)
     return true;        /* Continue */
 }
 
-/**********************************
-
-    Inflict damage to all items within blast range.
-    Source is the creature that casued the explosion at spot
-
-**********************************/
-
-void RadiusAttack(mobj_t *spot,mobj_t *source,Word damage)
-{
-    Word x,y,xl,xh,yl,yh;
-    Fixed dist;
-
-    dist = damage<<FRACBITS;        /* Convert to fixed */
-    yh = (spot->y + dist - BlockMapOrgY)>>MAPBLOCKSHIFT;
-    yl = (spot->y - dist - BlockMapOrgY)>>MAPBLOCKSHIFT;
-    xh = (spot->x + dist - BlockMapOrgX)>>MAPBLOCKSHIFT;
-    xl = (spot->x - dist - BlockMapOrgX)>>MAPBLOCKSHIFT;
+//---------------------------------------------------------------------------------------------------------------------
+// Inflict damage to all items within blast range.
+// Source is the creature that casued the explosion at spot.
+//---------------------------------------------------------------------------------------------------------------------
+void RadiusAttack(mobj_t* spot, mobj_t* source, Word damage) {
+    Fixed dist = damage << FRACBITS;    // Convert to fixed
+    
+    Word yh = (spot->y + dist - gBlockMapOriginY) >> MAPBLOCKSHIFT;
+    Word yl = (spot->y - dist - gBlockMapOriginY) >> MAPBLOCKSHIFT;
+    Word xh = (spot->x + dist - gBlockMapOriginX) >> MAPBLOCKSHIFT;
+    Word xl = (spot->x - dist - gBlockMapOriginX) >> MAPBLOCKSHIFT;
     ++xh;
     ++yh;
-    bombspot = spot;        /* Copy to globals so PIT_Radius can see it */
+    
+    bombspot = spot;        // Copy to globals so PIT_Radius can see it
     bombsource = source;
     bombdamage = damage;
-
-    y = yl;
-    do {
-        x=xl;
-        do {        /* Damage all things in collision range */
-            BlockThingsIterator(x,y,PIT_RadiusAttack);
-        } while (++x<xh);
-    } while (++y<yh);
+    
+    // Damage all things in collision range
+    {
+        Word y = yl;
+        do {
+            Word x = xl;
+            do {
+                BlockThingsIterator(x, y, PIT_RadiusAttack);
+            } while (++x < xh);
+        } while (++y < yh);
+    }
 }
 
 /**********************************
