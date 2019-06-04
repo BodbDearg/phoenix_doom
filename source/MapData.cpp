@@ -56,6 +56,9 @@ static std::vector<vertex_t>    gVertexes;
 static std::vector<sector_t>    gSectors;
 static std::vector<side_t>      gSides;
 static std::vector<line_t>      gLines;
+static std::vector<line_t*>     gBlockMapLines;
+static std::vector<line_t**>    gBlockMapLineLists;
+static std::vector<mobj_t*>     gBlockMapThingLists;
 
 static void loadVertexes(const uint32_t lumpResourceNum) noexcept {
     const Resource* const pResource = loadResource(lumpResourceNum);
@@ -243,6 +246,86 @@ static void loadLines(const uint32_t lumpResourceNum) noexcept {
     freeResource(lumpResourceNum);
 }
 
+static void loadBlockMap(const uint32_t lumpResourceNum) noexcept {
+    // Load the block map resource
+    ASSERT_LOG(gLines.size() > 0, "Lines must be loaded first!");
+    const Resource* const pResource = loadResource(lumpResourceNum);
+    const std::byte* const pResourceData = (const std::byte*) pResource->pData;
+    
+    // Read the header info for the blockmap (first 4 32-bit integers)
+    gBlockMapOriginX = byteSwappedI32(((const Fixed*) pResourceData)[0]);
+    gBlockMapOriginY = byteSwappedI32(((const Fixed*) pResourceData)[1]);
+    gBlockMapWidth = byteSwappedU32(((const uint32_t*) pResourceData)[2]);
+    gBlockMapHeight = byteSwappedU32(((const uint32_t*) pResourceData)[3]);
+    
+    // The number of entries in the blockmap
+    const uint32_t numBlockMapEntries = gBlockMapWidth * gBlockMapHeight;
+    
+    // This section of the blockmap gives the byte offset of first line number for each block within the blockmap data.
+    // The list of lines for each block is terminated by UINT32_MAX.
+    const uint32_t* const pBegLineListOffset = ((const uint32_t*) pResourceData) + 4;
+    const uint32_t* const pEndLineListOffset = pBegLineListOffset + numBlockMapEntries;
+    
+    // Now figure out how many actual line list entries there are in the blockmap and where they
+    // start and end in the resource data:
+    const uint32_t numLineListEntries = (pResource->size / sizeof(uint32_t)) - 4 - numBlockMapEntries;
+    const uint32_t* const pBegLineListEntry = pEndLineListOffset;
+    const uint32_t* const pEndLineListEntry = pBegLineListEntry + numLineListEntries;
+    
+    // Now first of all read all of the line list entries.
+    // These are simply a series of uint32_t line numbers, with UINT32_MAX meaning 'end of list':
+    gBlockMapLines.resize(numLineListEntries);
+    
+    {
+        const uint32_t* pCurLineListEntry = pBegLineListEntry;
+        line_t** pDstLinePtr = gBlockMapLines.data();
+        
+        while (pCurLineListEntry < pEndLineListEntry) {
+            const uint32_t lineNum = byteSwappedU32(*pCurLineListEntry);
+            
+            if (lineNum != UINT32_MAX) {
+                ASSERT(lineNum < gNumLines);
+                *pDstLinePtr = &gpLines[lineNum];
+            }
+            else {
+                *pDstLinePtr = nullptr;
+            }
+            
+            ++pCurLineListEntry;
+            ++pDstLinePtr;
+        }
+    }
+    
+    // This tells where the line list entries start in the resource data, in multiples of 'uint32_t'
+    const uint32_t lineListEntriesStartU32Idx = 4 + numBlockMapEntries;
+    
+    // Next read where the lines for each blockmap line list starts.
+    // This is given in terms of an offset into the blockmap resource:
+    gBlockMapLineLists.resize(numBlockMapEntries);
+    gpBlockMapLineLists = gBlockMapLineLists.data();
+    
+    {
+        const uint32_t* pCurLineListOffset = pBegLineListOffset;
+        line_t*** pDstLineList = gBlockMapLineLists.data();
+        
+        while (pCurLineListOffset < pEndLineListOffset) {
+            const uint32_t lineListByteOffset = byteSwappedU32(*pCurLineListOffset);
+            const uint32_t lineListIdx = (lineListByteOffset / sizeof(uint32_t)) - lineListEntriesStartU32Idx;
+            
+            ASSERT(lineListIdx < gBlockMapLines.size());
+            *pDstLineList = gBlockMapLines.data() + lineListIdx;
+            
+            ++pCurLineListOffset;
+            ++pDstLineList;
+        }
+    }
+    
+    // Finally allocate room for the linked list of things for each blockmap entry
+    gBlockMapThingLists.clear();
+    gBlockMapThingLists.resize(numBlockMapEntries);
+    gpBlockMapThingLists = gBlockMapThingLists.data();
+}
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -256,6 +339,12 @@ side_t*             gpSides;
 uint32_t            gNumSides;
 line_t*             gpLines;
 uint32_t            gNumLines;
+line_t***           gpBlockMapLineLists;
+mobj_t**            gpBlockMapThingLists;
+uint32_t            gBlockMapWidth;
+uint32_t            gBlockMapHeight;
+Fixed               gBlockMapOriginX;
+Fixed               gBlockMapOriginY;
 
 void mapDataInit(const uint32_t mapNum) {
     // Figure out the resource number for the first map lump
@@ -267,6 +356,7 @@ void mapDataInit(const uint32_t mapNum) {
     loadSectors(mapStartLump + ML_SECTORS);
     loadSides(mapStartLump + ML_SIDEDEFS);
     loadLines(mapStartLump + ML_LINEDEFS);
+    loadBlockMap(mapStartLump + ML_BLOCKMAP);
 }
 
 void mapDataShutdown() {
@@ -285,6 +375,16 @@ void mapDataShutdown() {
     gLines.clear();
     gpLines = nullptr;
     gNumLines = 0;
+    
+    gBlockMapLines.clear();
+    gBlockMapLineLists.clear();
+    gBlockMapThingLists.clear();
+    gpBlockMapLineLists = nullptr;
+    gpBlockMapThingLists = nullptr;
+    gBlockMapWidth = 0;
+    gBlockMapHeight = 0;
+    gBlockMapOriginX = 0;
+    gBlockMapOriginY = 0;
 }
 
 #ifdef __cplusplus
