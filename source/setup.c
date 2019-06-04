@@ -6,13 +6,6 @@
 #include <intmath.h>
 #include <string.h>
 
-/* lump order in a map wad */
-enum {
-    ML_THINGS,ML_LINEDEFS,ML_SIDEDEFS,ML_VERTEXES,ML_SEGS,
-    ML_SSECTORS,ML_SECTORS,ML_NODES,ML_REJECT,ML_BLOCKMAP,
-    ML_TOTAL
-};
-
 static line_t **LineArrayBuffer;    /* Pointer to array of line_t pointers used by sectors */
 
 static Word PreLoadTable[] = {
@@ -278,17 +271,16 @@ void SetupLevel(Word map) {
     p->secretcount = 0;         // No secrets found
     p->itemcount = 0;           // No items found
 
-    InitThinkers();             // Zap the think logics
+    InitThinkers();         // Zap the think logics
+    mapDataInit(map);       // Loads all map geometry, bsp, reject matrix etc. (everything except things)
+    GroupLines();           // Final last minute data arranging
     
-    Word lumpnum = ((map - 1) * ML_TOTAL) + rMAP01;     // Get the map number
-    mapDataInit(map);
-    
-    GroupLines();                       // Final last minute data arranging
     deathmatch_p = deathmatchstarts;
-    LoadThings(lumpnum + ML_THINGS);    // Spawn all the items
-    SpawnSpecials();                    // Spawn all sector specials
-    PreloadWalls();                     // Load all the wall textures and sprites
-    gamepaused = false;                 // Game in progress
+    
+    LoadThings(getMapStartLump(map) + ML_THINGS);   // Spawn all the items
+    SpawnSpecials();                                // Spawn all sector specials
+    PreloadWalls();                                 // Load all the wall textures and sprites
+    gamepaused = false;                             // Game in progress
 }
 
 //---------------------------------------------------------------------------------------------------------------------

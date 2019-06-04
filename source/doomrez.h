@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Macros.h"
+
 //---------------------------------------------------------------------------------------------------------------------
 // Resource map for all data in DOOM
 //---------------------------------------------------------------------------------------------------------------------
@@ -277,3 +279,24 @@ enum {
     rSPR_PUFF,              /* Gun sparks on wall */
     rLASTSPRITE
 };
+
+// Order of the lumps in a Doom wad (and also the 3DO resource file)
+enum {
+    ML_THINGS,
+    ML_LINEDEFS,
+    ML_SIDEDEFS,
+    ML_VERTEXES,
+    ML_SEGS,
+    ML_SSECTORS,
+    ML_SECTORS,
+    ML_NODES,
+    ML_REJECT,
+    ML_BLOCKMAP,
+    ML_TOTAL
+};
+
+// Helper: gives the first of the 10 lumps for the specified map number
+// Assumes mapNum is in range!
+static uint32_t getMapStartLump(const uint32_t mapNum) {
+    return ((mapNum - 1) * ML_TOTAL) + rMAP01;
+}

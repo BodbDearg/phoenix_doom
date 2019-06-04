@@ -61,21 +61,6 @@ struct MapNode {
     uint32_t children[2];   // if NF_SUBSECTOR it's a subsector index else node index
 };
 
-// Order of the lumps in a Doom wad (and also the 3DO resource file)
-enum {
-    ML_THINGS,
-    ML_LINEDEFS,
-    ML_SIDEDEFS,
-    ML_VERTEXES,
-    ML_SEGS,
-    ML_SSECTORS,
-    ML_SECTORS,
-    ML_NODES,
-    ML_REJECT,
-    ML_BLOCKMAP,
-    ML_TOTAL
-};
-
 // Internal data arrays
 static std::vector<vertex_t>        gVertexes;
 static std::vector<sector_t>        gSectors;
@@ -540,11 +525,10 @@ Fixed               gBlockMapOriginX;
 Fixed               gBlockMapOriginY;
 
 void mapDataInit(const uint32_t mapNum) {
-    // Figure out the resource number for the first map lump
-    const uint32_t mapStartLump = ((mapNum - 1) * ML_TOTAL) + rMAP01;
-    
     // Load all the map data.
     // N.B: must be done in this order due to data dependencies!
+    const uint32_t mapStartLump = getMapStartLump(mapNum);
+    
     loadVertexes(mapStartLump + ML_VERTEXES);
     loadSectors(mapStartLump + ML_SECTORS);
     loadSides(mapStartLump + ML_SIDEDEFS);
