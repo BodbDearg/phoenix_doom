@@ -84,6 +84,7 @@ static std::vector<line_t>          gLines;
 static std::vector<seg_t>           gLineSegs;
 static std::vector<subsector_t>     gSubSectors;
 static std::vector<node_t>          gNodes;
+static uint32_t                     gLoadedRejectMatrixResourceNum;
 static std::vector<line_t*>         gBlockMapLines;
 static std::vector<line_t**>        gBlockMapLineLists;
 static std::vector<mobj_t*>         gBlockMapThingLists;
@@ -422,6 +423,12 @@ static void loadNodes(const uint32_t lumpResourceNum) noexcept {
     freeResource(lumpResourceNum);
 }
 
+static void loadReject(const uint32_t lumpResourceNum) noexcept {
+    // Note: this one is easy!
+    gpRejectMatrix = (const Byte*) loadResourceData(lumpResourceNum);
+    gLoadedRejectMatrixResourceNum = lumpResourceNum;
+}
+
 static void loadBlockMap(const uint32_t lumpResourceNum) noexcept {
     // Load the block map resource
     ASSERT_LOG(gLines.size() > 0, "Lines must be loaded first!");
@@ -524,6 +531,7 @@ const subsector_t*  gpSubSectors;
 uint32_t            gNumSubSectors;
 const node_t*       gpNodes;
 uint32_t            gNumNodes;
+const Byte*         gpRejectMatrix;
 line_t***           gpBlockMapLineLists;
 mobj_t**            gpBlockMapThingLists;
 uint32_t            gBlockMapWidth;
@@ -544,6 +552,7 @@ void mapDataInit(const uint32_t mapNum) {
     loadLineSegs(mapStartLump + ML_SEGS);
     loadSubSectors(mapStartLump + ML_SSECTORS);
     loadNodes(mapStartLump + ML_NODES);
+    loadReject(mapStartLump + ML_REJECT);
     loadBlockMap(mapStartLump + ML_BLOCKMAP);
 }
 
@@ -575,6 +584,13 @@ void mapDataShutdown() {
     gNodes.clear();
     gpNodes = nullptr;
     gNumNodes = 0;
+    
+    if (gLoadedRejectMatrixResourceNum > 0) {
+        freeResource(gLoadedRejectMatrixResourceNum);
+        gLoadedRejectMatrixResourceNum = 0;
+    }
+    
+    gpRejectMatrix = nullptr;
     
     gBlockMapLines.clear();
     gBlockMapLineLists.clear();

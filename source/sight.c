@@ -200,7 +200,7 @@ Word CheckSight(mobj_t *t1,mobj_t *t2)
     bytenum = pnum>>3;
     bitnum = 1 << (pnum&7);
 
-    if (RejectMatrix[bytenum]&bitnum) {
+    if (gpRejectMatrix[bytenum]&bitnum) {
         return false;   // can't possibly be connected
     }
 

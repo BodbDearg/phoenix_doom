@@ -13,7 +13,6 @@ enum {
     ML_TOTAL
 };
 
-static Word LoadedLevel;            /* Resource number of the loaded level */
 static line_t **LineArrayBuffer;    /* Pointer to array of line_t pointers used by sectors */
 
 static Word PreLoadTable[] = {
@@ -40,7 +39,6 @@ static Word PreLoadTable[] = {
     -1
 };
 
-Byte *RejectMatrix;         /* For fast sight rejection */
 mapthing_t deathmatchstarts[10],*deathmatch_p;  /* Deathmatch starts */
 mapthing_t playerstarts;    /* Starting position for players */
 
@@ -264,38 +262,33 @@ static void PreloadWalls() {
 // Load and prepare the game level
 //---------------------------------------------------------------------------------------------------------------------
 void SetupLevel(Word map) {
-    Randomize();            /* Reset the random number generator */
-    LoadingPlaque();        /* Display "Loading" */
+    Randomize();            // Reset the random number generator
+    LoadingPlaque();        // Display "Loading"
 
     // DC: TODO: Remove
     #if 0
-        PurgeHandles(0);    /* Purge memory */
-        CompactHandles();   /* Pack remaining memory */
+        PurgeHandles(0);    // Purge memory
+        CompactHandles();   // Pack remaining memory
     #endif
     
     TotalKillsInLevel = ItemsFoundInLevel = SecretsFoundInLevel = 0;
     
     player_t* p = &players;
-    p->killcount = 0;       /* Nothing killed */
-    p->secretcount = 0;     /* No secrets found */
-    p->itemcount = 0;       /* No items found */
-    
-    InitThinkers();         /* Zap the think logics */
-    
-    Word lumpnum = ((map-1)*ML_TOTAL)+rMAP01;    /* Get the map number */
-    LoadedLevel = lumpnum;      /* Save the loaded resource number */
-    
-    mapDataInit(map);
+    p->killcount = 0;           // Nothing killed
+    p->secretcount = 0;         // No secrets found
+    p->itemcount = 0;           // No items found
 
-    /* Note: most of this ordering is important */
-    RejectMatrix = (Byte *)loadResourceData(lumpnum+ML_REJECT);     /* Get the reject matrix */
+    InitThinkers();             // Zap the think logics
     
-    GroupLines();                       /* Final last minute data arranging */
+    Word lumpnum = ((map - 1) * ML_TOTAL) + rMAP01;     // Get the map number
+    mapDataInit(map);
+    
+    GroupLines();                       // Final last minute data arranging
     deathmatch_p = deathmatchstarts;
-    LoadThings(lumpnum+ML_THINGS);      /* Spawn all the items */
-    SpawnSpecials();                    /* Spawn all sector specials */
-    PreloadWalls();                     /* Load all the wall textures and sprites */
-    gamepaused = false;                 /* Game in progress */
+    LoadThings(lumpnum + ML_THINGS);    // Spawn all the items
+    SpawnSpecials();                    // Spawn all sector specials
+    PreloadWalls();                     // Load all the wall textures and sprites
+    gamepaused = false;                 // Game in progress
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -303,11 +296,7 @@ void SetupLevel(Word map) {
 //---------------------------------------------------------------------------------------------------------------------
 void ReleaseMapMemory() {
     mapDataShutdown();
-    
-    freeResource(LoadedLevel + ML_REJECT);      // Release the quick reject matrix
     MEM_FREE_AND_NULL(LineArrayBuffer);
-    RejectMatrix = 0;
-    
     texturesReleaseAll();
     InitThinkers();         // Dispose of all remaining memory
 }
