@@ -1,4 +1,5 @@
 #include "doom.h"
+#include "Endian.h"
 #include "MapData.h"
 #include "Mem.h"
 #include "Resources.h"
@@ -115,24 +116,37 @@ static void GroupLines(void)
     } while (--i);
 }
 
-/**********************************
-
-    Spawn items and critters
-
-**********************************/
-static void LoadThings(Word lump)
-{
-    Word i;
-    mapthing_t *mt;
+//---------------------------------------------------------------------------------------------------------------------
+// Spawn items and critters
+//---------------------------------------------------------------------------------------------------------------------
+static void LoadThings(const uint32_t lumpResourceNum) {
+    // Load the things resource
+    const Resource* const pResource = loadResource(lumpResourceNum);
+    const Byte* const pResourceData = (const Byte*) pResource->pData;
     
-    mt = (mapthing_t *)loadResourceData(lump); /* Load the thing list */
-    i = ((Word*)mt)[0];         /* Get the count */
-    mt = (mapthing_t *)&((Word *)mt)[1];    /* Point to the first entry */
-    do {
-        SpawnMapThing(mt);  /* Spawn the thing */
-        ++mt;       /* Next item */
-    } while (--i);  /* More? */
-    freeResource(lump);    /* Release the list */
+    // Get the number of things first (first u32)
+    const uint32_t numThings = byteSwappedU32(((const uint32_t*) pResourceData)[0]);
+    
+    // Get the range of things and spawn each one
+    const mapthing_t* pSrcThing = (const mapthing_t*)(pResourceData + sizeof(uint32_t));
+    const mapthing_t* const pEndSrcThing = pSrcThing + numThings;
+    
+    while (pSrcThing < pEndSrcThing) {
+        // N.B: we must correct endianess before spawning due to big endian source data!
+        mapthing_t thing;
+        thing.x = byteSwappedI32(pSrcThing->x);
+        thing.y = byteSwappedI32(pSrcThing->y);
+        thing.angle = byteSwappedU32(pSrcThing->angle);
+        thing.type = byteSwappedU32(pSrcThing->type);
+        thing.ThingFlags = byteSwappedU32(pSrcThing->ThingFlags);
+        
+        // Spawn and move on
+        SpawnMapThing(&thing);
+        ++pSrcThing;
+    }
+    
+    // Done with this list
+    freeResource(lumpResourceNum);
 }
 
 //---------------------------------------------------------------------------------------------------------------------

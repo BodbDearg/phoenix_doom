@@ -10,22 +10,22 @@
 //---------------------------------------------------------------------------------------------------------------------
 static inline uint16_t byteSwappedU16(const uint16_t num) {
     return (
-        ((num & uint16_t(0x00FFU)) << 8) |
-        ((num & uint16_t(0xFF00U)) >> 8)
+        ((num & (uint16_t) 0x00FFU) << 8) |
+        ((num & (uint16_t) 0xFF00U) >> 8)
     );
 }
 
 static inline uint32_t byteSwappedU32(const uint32_t num) {
     return (
-        ((num & uint32_t(0x000000FFU)) << 24) |
-        ((num & uint32_t(0x0000FF00U)) << 8) |
-        ((num & uint32_t(0x00FF0000U)) >> 8) |
-        ((num & uint32_t(0xFF000000U)) >> 24)
+        ((num & (uint32_t) 0x000000FFU) << 24) |
+        ((num & (uint32_t) 0x0000FF00U) << 8) |
+        ((num & (uint32_t) 0x00FF0000U) >> 8) |
+        ((num & (uint32_t) 0xFF000000U) >> 24)
     );
 }
 
 static inline int32_t byteSwappedI32(const int32_t num) {
-    return int32_t(byteSwappedU32(uint32_t(num)));
+    return (int32_t) byteSwappedU32((uint32_t) num);
 }
 
 #ifdef __cplusplus
