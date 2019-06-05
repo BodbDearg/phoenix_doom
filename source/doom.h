@@ -5,6 +5,10 @@
 #include "sounds.h"
 #include "doomrez.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /****************************
 
     Global defines
@@ -1065,3 +1069,7 @@ extern void DrawSpriteCenter(Word SpriteNum);
 extern void EnableHardwareClipping(void);
 extern void DisableHardwareClipping(void);
 extern void DrawColors(void);
+
+#ifdef __cplusplus
+}
+#endif

@@ -133,9 +133,11 @@ set(GAME_SOURCES
     ${GAME_SRC_DIR}/Macros.h
     ${GAME_SRC_DIR}/Main.cpp
     ${GAME_SRC_DIR}/map.c
+    ${GAME_SRC_DIR}/MapData.cpp
+    ${GAME_SRC_DIR}/MapData.h
     ${GAME_SRC_DIR}/maputl.c
-    ${GAME_SRC_DIR}/Math.c
-    ${GAME_SRC_DIR}/Math.h
+    ${GAME_SRC_DIR}/MathUtils.c
+    ${GAME_SRC_DIR}/MathUtils.h
     ${GAME_SRC_DIR}/Mem.h    
     ${GAME_SRC_DIR}/mmain.c
     ${GAME_SRC_DIR}/mobj.c
@@ -149,8 +151,6 @@ set(GAME_SOURCES
     ${GAME_SRC_DIR}/plats.c
     ${GAME_SRC_DIR}/pspr.c
     ${GAME_SRC_DIR}/rdata.c
-    ${GAME_SRC_DIR}/MapData.cpp
-    ${GAME_SRC_DIR}/MapData.h
     ${GAME_SRC_DIR}/Resource.h
     ${GAME_SRC_DIR}/ResourceMgr.cpp
     ${GAME_SRC_DIR}/ResourceMgr.h
