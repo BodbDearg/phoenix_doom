@@ -196,4 +196,14 @@ void setFlatAnimTexNum(const uint32_t num, const uint32_t animTexNum) {
     gFlatTextures[num].animTexNum = animTexNum;
 }
 
+const Texture* getWallAnimTexture(const uint32_t num) {
+    const Texture* const pOrigTexture = getWallTexture(num);
+    return getWallTexture(pOrigTexture->animTexNum);
+}
+
+const Texture* getFlatAnimTexture(const uint32_t num) {
+    const Texture* const pOrigTexture = getFlatTexture(num);
+    return getFlatTexture(pOrigTexture->animTexNum);
+}
+
 }

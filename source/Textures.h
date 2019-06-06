@@ -42,6 +42,11 @@ void releaseFlatTexture(const uint32_t num);
 void setWallAnimTexNum(const uint32_t num, const uint32_t animTexNum);
 void setFlatAnimTexNum(const uint32_t num, const uint32_t animTexNum);
 
+// Helpers that dereference 'animTexNum' for the specified texture number.
+// They return the texture frame pointed to by 'animTexNum' within the specified texture.
+const Texture* getWallAnimTexture(const uint32_t num);
+const Texture* getFlatAnimTexture(const uint32_t num);
+
 #ifdef __cplusplus
 }
 #endif

@@ -213,7 +213,7 @@ void WallPrep(Word LeftX, Word RightX, seg_t* LineSeg, angle_t LeftAngle)
 
     // Single sided line? They only have a center texture
     if (BackSecPtr == &emptysector) {   // Bogus back sector?
-        CurWallPtr->t_texture = getWallTexture(SidePtr->midtexture)->animTexNum;
+        CurWallPtr->t_texture = getWallAnimTexture(SidePtr->midtexture);
         int t_texturemid;
         
         if (LineFlags & ML_DONTPEGBOTTOM) {     // Bottom of texture at bottom
@@ -230,7 +230,7 @@ void WallPrep(Word LeftX, Word RightX, seg_t* LineSeg, angle_t LeftAngle)
         // Two sided lines are more tricky since I may be able to see through it.
         if (b_floorheight > f_floorheight) {    // Is the bottom wall texture visible?
             // Draw the bottom texture
-            CurWallPtr->b_texture = getWallTexture(SidePtr->bottomtexture)->animTexNum;
+            CurWallPtr->b_texture = getWallAnimTexture(SidePtr->bottomtexture);
             int b_texturemid;
             
             if (LineFlags & ML_DONTPEGBOTTOM) {
@@ -250,7 +250,7 @@ void WallPrep(Word LeftX, Word RightX, seg_t* LineSeg, angle_t LeftAngle)
 
         if (b_ceilingheight < f_ceilingheight && (f_ceilingpic != -1 || b_ceilingpic != -1)) {  // Ceiling wall without sky
             // Draw the top texture
-            CurWallPtr->t_texture = getWallTexture(SidePtr->toptexture)->animTexNum;
+            CurWallPtr->t_texture = getWallAnimTexture(SidePtr->toptexture);
             int t_texturemid;
             
             if (LineFlags & ML_DONTPEGTOP) {
