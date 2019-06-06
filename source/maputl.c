@@ -199,7 +199,7 @@ Word PointOnVectorSide(Fixed x, Fixed y, const vector_t *line)
 //---------------------------------------------------------------------------------------------------------------------
 subsector_t* PointInSubsector(Fixed x, Fixed y) {
     // Note: there is ALWAYS a BSP tree - no checks needed on loop start!
-    const node_t* pNode = gpNodes;
+    const node_t* pNode = gpBSPTreeRoot;
     
     while (true) {
         // Goto the child on the side of the split that the point is on.

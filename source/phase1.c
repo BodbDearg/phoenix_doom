@@ -601,6 +601,6 @@ void BSP() {
     solidsegs[1].LeftX = ScreenWidth;   // Fake rightmost post
     solidsegs[1].RightX = 0x4000;
     newend = solidsegs+2;               // Init the free memory pointer
-    RenderBSPNode(gpNodes);             // Begin traversing the BSP tree for all walls in render range
+    RenderBSPNode(gpBSPTreeRoot);       // Begin traversing the BSP tree for all walls in render range
     SortAllSprites();                   // Sort the sprites from front to back
 }

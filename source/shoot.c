@@ -99,28 +99,24 @@ void P_Shoot2(void)
 
     aimmidslope = (aimtopslope + aimbottomslope)>>1;
 
-//
-// cross everything
-//
+    // Cross everything
     old_frac = 0;
-    PA_CrossBSPNode(gpNodes);
+    PA_CrossBSPNode(gpBSPTreeRoot);
 
-// check the last intercept if needed
-    if (!shootmobj)
+    // Check the last intercept if needed
+    if (!shootmobj) {
         PA_DoIntercept(0, false, FRACUNIT);
+    }
 
-//
-// post process
-//
+    // post process
     if (shootmobj)
         return;
 
     if (!shootline)
         return;
 
-//
-// calculate the intercept point for the first line hit
-//
+    // Calculate the intercept point for the first line hit
+    //
     // position a bit closer
     firstlinefrac -= IMFixDiv(4*FRACUNIT,attackrange);
 

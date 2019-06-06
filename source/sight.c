@@ -224,5 +224,5 @@ Word CheckSight(mobj_t *t1,mobj_t *t2)
     topslope = (t2->z+t2->height) - sightzstart;
     bottomslope = (t2->z) - sightzstart;
 
-    return PS_CrossBSPNode(gpNodes);
+    return PS_CrossBSPNode(gpBSPTreeRoot);
 }

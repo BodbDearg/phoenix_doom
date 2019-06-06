@@ -355,7 +355,6 @@ static void loadNodes(const uint32_t lumpResourceNum) noexcept {
     
     // Get the number of nodes first (first u32)
     const uint32_t numNodes = byteSwappedU32(((const uint32_t*) pResourceData)[0]);
-    gNumNodes = numNodes;
     
     // Get the source node data and alloc room for the runtime equivalent
     const MapNode* pSrcNode = (const MapNode*)(pResourceData + sizeof(uint32_t));
@@ -363,7 +362,6 @@ static void loadNodes(const uint32_t lumpResourceNum) noexcept {
     
     gNodes.clear();
     gNodes.resize(numNodes);
-    gpNodes = gNodes.data();
     
     node_t* pDstNode = gNodes.data();
     
@@ -403,6 +401,9 @@ static void loadNodes(const uint32_t lumpResourceNum) noexcept {
         ++pSrcNode;
         ++pDstNode;
     }
+
+    // The last node in the nodes array is the root of the BSP tree
+    gpBSPTreeRoot = &gNodes.back();
     
     // Don't need this anymore
     freeResource(lumpResourceNum);
@@ -514,8 +515,7 @@ const seg_t*        gpLineSegs;
 uint32_t            gNumLineSegs;
 const subsector_t*  gpSubSectors;
 uint32_t            gNumSubSectors;
-const node_t*       gpNodes;
-uint32_t            gNumNodes;
+const node_t*       gpBSPTreeRoot;
 const Byte*         gpRejectMatrix;
 line_t***           gpBlockMapLineLists;
 mobj_t**            gpBlockMapThingLists;
@@ -566,8 +566,7 @@ void mapDataShutdown() {
     gNumSubSectors = 0;
     
     gNodes.clear();
-    gpNodes = nullptr;
-    gNumNodes = 0;
+    gpBSPTreeRoot = nullptr;
     
     if (gLoadedRejectMatrixResourceNum > 0) {
         freeResource(gLoadedRejectMatrixResourceNum);
