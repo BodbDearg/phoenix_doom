@@ -161,12 +161,12 @@ void WallPrep(Word LeftX, Word RightX, seg_t* LineSeg, angle_t LeftAngle)
     
     // Set the floor and ceiling shape handles & look up animated texture numbers.
     // Note that ceiling might NOT exist!
-    CurWallPtr->FloorPic = getFlatTexture(FrontSecPtr->FloorPic)->animTexNum;
+    CurWallPtr->FloorPic = getFlatAnimTexture(FrontSecPtr->FloorPic);
     
     if (f_ceilingpic == -1) {
         CurWallPtr->CeilingPic = 0;
     } else {
-        CurWallPtr->CeilingPic = getFlatTexture(f_ceilingpic)->animTexNum;
+        CurWallPtr->CeilingPic = getFlatAnimTexture(f_ceilingpic);
     }
     
     BackSecPtr = LineSeg->backsector;   // Get the back sector
