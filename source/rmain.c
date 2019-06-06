@@ -77,5 +77,9 @@ void R_RenderPlayerView (void)
     BSP();          /* Traverse the BSP tree for possible walls to render */
     SegCommands();  /* Draw all everything Z Sorted */
     DrawColors();   /* Draw color overlay if needed */
+
+    // DC: FIXME: this is broken - skipping for now
+    #if 0
     DrawWeapons();      /* Draw the weapons on top of the screen */
+    #endif
 }

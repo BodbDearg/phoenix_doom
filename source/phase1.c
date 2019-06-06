@@ -1,4 +1,5 @@
 #include "doom.h"
+#include "Endian.h"
 #include "MapData.h"
 #include "Resources.h"
 #include <intmath.h>
@@ -128,17 +129,23 @@ static void PrepMObj(mobj_t *thing)
     StatePtr = thing->state;
     lump = StatePtr->SpriteFrame>>FF_SPRITESHIFT;   /* Get the resource # */
     PatchHandle = loadResourceData(lump);           /* Get the sprite group */
-    patch = (patch_t *)*PatchHandle;                /* Deref the handle */
-    Offset = ((LongWord *)patch)[StatePtr->SpriteFrame & FF_FRAMEMASK];
+    patch = (patch_t *) PatchHandle;                /* Deref the handle */
+
+    // TODO: DC: Find a better place for this endian conversion
+    Offset = byteSwappedU32(((LongWord *)patch)[StatePtr->SpriteFrame & FF_FRAMEMASK]);
+
     if (Offset&PT_NOROTATE) {       /* Do I rotate? */
         angle_t ang;
         angle_t rot;
-        patch = (patch_t *)&((Byte *)patch)[Offset & 0x3FFFFFFF];       /* Get pointer to rotation list */
-        ang = PointToAngle(viewx,viewy,thing->x,thing->y);      /* Get angle to critter */
-        ang -= thing->angle;        /* Adjust for object's facing */
-        rot = (ang+(angle_t)((ANG45/2)*9U))>>29;    /* Get rotation offset */
-        Offset = ((LongWord *)patch)[rot];      /* Use the rotated offset */
+        patch = (patch_t *)&((Byte *)patch)[Offset & 0x3FFFFFFF];   /* Get pointer to rotation list */
+        ang = PointToAngle(viewx,viewy,thing->x,thing->y);          /* Get angle to critter */
+        ang -= thing->angle;                                        /* Adjust for object's facing */
+        rot = (ang+(angle_t)((ANG45/2)*9U))>>29;                    /* Get rotation offset */
+
+        // TODO: DC: Find a better place for this endian conversion
+        Offset = byteSwappedU32(((LongWord *)patch)[rot]);      /* Use the rotated offset */
     }
+
     patch = (patch_t *) &((Byte *)patch)[Offset & 0x3FFFFFFF];  /* Get pointer to patch */
 
 /* Store information in a vissprite */

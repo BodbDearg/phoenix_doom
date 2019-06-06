@@ -257,7 +257,12 @@ void P_Drawer(void)
         refreshdrawn = true;
     } else {
         R_RenderPlayerView();   /* Render the 3D view */
+
+        // DC: FIXME: this is broken - skipping for now
+        #if 0
         ST_Drawer();            /* Draw the status bar */
+        #endif
+
         UpdateAndPageFlip();
         refreshdrawn = true;
     }
