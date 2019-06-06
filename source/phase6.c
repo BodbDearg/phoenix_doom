@@ -106,7 +106,7 @@ static void DrawSeg(viswall_t *segl)
             bottomtex.bottomheight = segl->b_bottomheight;
             bottomtex.texturemid = segl->b_texturemid;
             
-            const Texture* const pTex = segl->t_texture;
+            const Texture* const pTex = segl->b_texture;
             bottomtex.width = pTex->width;
             bottomtex.height = pTex->height;
             bottomtex.data = (const Byte*) pTex->pData;
