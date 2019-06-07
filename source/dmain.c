@@ -110,7 +110,11 @@ Word MiniLoop(void(*start)(void),void(*stop)(void),
     /* Init the joypad states */
     JoyPadButtons = PrevJoyPadButtons = NewJoyPadButtons = 0;
 
-    do {        /* Run the tic immediately */
+    do {        
+        // FIXME: DC: Put this somewhere better
+        SDL_PumpEvents();
+
+        /* Run the tic immediately */
         TotalGameTicks += ElapsedTime;      /* Add to the VBL count */
         exit = ticker();            /* Process the keypad commands */
 

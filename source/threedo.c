@@ -17,7 +17,10 @@
 #include <celutils.h>
 */
 
-static SDL_Window* gWindow;
+SDL_Window*     gWindow;
+SDL_Renderer*   gRenderer;
+Uint16          gFrameBuffer[SCREEN_WIDTH * SCREEN_HEIGHT];
+SDL_Texture*    gFramebufferTexture;
 
 static void createDisplay() {
     if (SDL_InitSubSystem(SDL_INIT_VIDEO) != 0) {
@@ -29,9 +32,30 @@ static void createDisplay() {
     if (!gWindow) {
         FATAL_ERROR("Unable to create a window!");
     }
+
+    gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED);
+    memset(gFrameBuffer, 0x00, sizeof(gFrameBuffer));
+
+    if (!gRenderer) {
+        FATAL_ERROR("Failed to create renderer!");
+    }
+
+    gFramebufferTexture = SDL_CreateTexture(
+        gRenderer,
+        SDL_PIXELFORMAT_RGBA5551,
+        SDL_TEXTUREACCESS_STREAMING,
+        SCREEN_WIDTH,
+        SCREEN_HEIGHT
+    );
+
+    if (!gFramebufferTexture) {
+        FATAL_ERROR("Failed to create a framebuffer texture!");
+    }
 }
 
 static void shutdownDisplay() {
+    SDL_DestroyRenderer(gRenderer);
+    gRenderer = 0;
     SDL_DestroyWindow(gWindow);
     gWindow = 0;
     SDL_QuitSubSystem(SDL_INIT_VIDEO);
@@ -614,6 +638,10 @@ static void FlushCCBs(void)
 
 void UpdateAndPageFlip(void)
 {
+    SDL_UpdateTexture(gFramebufferTexture, NULL, gFrameBuffer, SCREEN_WIDTH * 2);
+    SDL_RenderCopy(gRenderer, gFramebufferTexture, NULL, NULL);    
+    SDL_RenderPresent(gRenderer);
+
     // DC: FIXME: implement/replace
     #if 0
         LongWord NewTick;

@@ -1,13 +1,20 @@
 #pragma once
 
-#include <burger.h>
-#include "states.h"
-#include "sounds.h"
 #include "doomrez.h"
+#include "sounds.h"
+#include "states.h"
+#include <burger.h>
+#include <SDL.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define SCREEN_WIDTH 320
+#define SCREEN_HEIGHT 200
+
+extern SDL_Window*     gWindow;
+extern SDL_Renderer*   gRenderer;
 
 /****************************
 
