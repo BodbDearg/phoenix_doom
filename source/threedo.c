@@ -27,7 +27,7 @@ static void createDisplay() {
         FATAL_ERROR("Unable to initialize SDL!");
     }
 
-    gWindow = SDL_CreateWindow("PhoenixDoom", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 480, SDL_WINDOW_OPENGL);
+    gWindow = SDL_CreateWindow("PhoenixDoom", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH * 3, SCREEN_HEIGHT * 3, SDL_WINDOW_OPENGL);
     
     if (!gWindow) {
         FATAL_ERROR("Unable to create a window!");
@@ -1226,6 +1226,11 @@ void WipeDoom(LongWord *OldScreen,LongWord *NewScreen)
 
 void DrawSpriteNoClip(vissprite_t *vis)
 {
+    // FIXME: DC IMPLEMENT!
+    #if 1
+        return;
+    #endif
+
     patch_t *patch;     /* Pointer to the actual sprite record */
     Word ColorMap;
     int x;
@@ -1375,6 +1380,11 @@ static Byte *CalcLine(Fixed XFrac)
 
 void DrawSpriteClip(Word x1,Word x2,vissprite_t *vis)
 {
+    // FIXME: DC IMPLEMENT!
+    #if 1
+        return;
+    #endif
+
     Word y,MaxRun;
     Word y2;
     Word top,bottom;
