@@ -2,6 +2,7 @@
 #include "Resources.h"
 #include <intmath.h>
 #include <memory.h>
+#include <SDL.h>
 #include <stdio.h>
 #include <time.h>
 
@@ -16,6 +17,25 @@
 #include <celutils.h>
 */
 
+static SDL_Window* gWindow;
+
+static void createDisplay() {
+    if (SDL_InitSubSystem(SDL_INIT_VIDEO) != 0) {
+        FATAL_ERROR("Unable to initialize SDL!");
+    }
+
+    gWindow = SDL_CreateWindow("PhoenixDoom", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 480, SDL_WINDOW_OPENGL);
+    
+    if (!gWindow) {
+        FATAL_ERROR("Unable to create a window!");
+    }
+}
+
+static void shutdownDisplay() {
+    SDL_DestroyWindow(gWindow);
+    gWindow = 0;
+    SDL_QuitSubSystem(SDL_INIT_VIDEO);
+}
 
 //-----------------------------------------------------------------------------
 // DC: define these things from the 3DO SDK for now to fix compile errors
@@ -664,9 +684,11 @@ void DrawPlaque(Word RezNum)
 //---------------------------------------------------------------------------------------------------------------------
 void ThreeDOMain() {
     InitTools();            // Init the 3DO tool system
+    createDisplay();
     UpdateAndPageFlip();    // Init the video display's vars
     ReadPrefsFile();        // Load defaults
     D_DoomMain();           // Start doom
+    shutdownDisplay();
 }
 
 /**********************************

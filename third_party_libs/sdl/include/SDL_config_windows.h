@@ -184,74 +184,81 @@ typedef unsigned int uintptr_t;
 #endif
 
 /* Enable various audio drivers */
-#define SDL_AUDIO_DRIVER_WASAPI 1
-#define SDL_AUDIO_DRIVER_DSOUND 1
-#define SDL_AUDIO_DRIVER_WINMM  1
-#define SDL_AUDIO_DRIVER_DISK   1
+#define SDL_AUDIO_DRIVER_WASAPI 0
+#define SDL_AUDIO_DRIVER_DSOUND 0
+#define SDL_AUDIO_DRIVER_WINMM  0
+#define SDL_AUDIO_DRIVER_DISK   0
 #define SDL_AUDIO_DRIVER_DUMMY  1
 
 /* Enable various input drivers */
-#define SDL_JOYSTICK_DINPUT 1
+#define SDL_JOYSTICK_DINPUT 0
 #define SDL_JOYSTICK_XINPUT 1
-#define SDL_JOYSTICK_HIDAPI 1
-#define SDL_HAPTIC_DINPUT   1
-#define SDL_HAPTIC_XINPUT   1
+// -- #define SDL_JOYSTICK_HIDAPI 0
+#define SDL_HAPTIC_DINPUT  0
+#define SDL_HAPTIC_XINPUT 1
 
 /* Enable the dummy sensor driver */
-#define SDL_SENSOR_DUMMY  1
+#define SDL_SENSOR_DUMMY 1
 
 /* Enable various shared object loading systems */
-#define SDL_LOADSO_WINDOWS  1
+#define SDL_LOADSO_WINDOWS 1
 
 /* Enable various threading systems */
 #define SDL_THREAD_WINDOWS  1
 
 /* Enable various timer systems */
-#define SDL_TIMER_WINDOWS   1
+#define SDL_TIMER_WINDOWS 0
+#define SDL_TIMER_DUMMY 0
 
 /* Enable various video drivers */
-#define SDL_VIDEO_DRIVER_DUMMY  1
-#define SDL_VIDEO_DRIVER_WINDOWS    1
+#define SDL_VIDEO_DRIVER_DUMMY 0
+#define SDL_VIDEO_DRIVER_WINDOWS 1
 
 #ifndef SDL_VIDEO_RENDER_D3D
-#define SDL_VIDEO_RENDER_D3D    1
+#define SDL_VIDEO_RENDER_D3D 0
 #endif
+
 #ifndef SDL_VIDEO_RENDER_D3D11
-#define SDL_VIDEO_RENDER_D3D11  0
+#define SDL_VIDEO_RENDER_D3D11 0
 #endif
 
 /* Enable OpenGL support */
 #ifndef SDL_VIDEO_OPENGL
-#define SDL_VIDEO_OPENGL    1
+#define SDL_VIDEO_OPENGL 1
 #endif
+
 #ifndef SDL_VIDEO_OPENGL_WGL
-#define SDL_VIDEO_OPENGL_WGL    1
+#define SDL_VIDEO_OPENGL_WGL 1
 #endif
+
 #ifndef SDL_VIDEO_RENDER_OGL
-#define SDL_VIDEO_RENDER_OGL    1
+#define SDL_VIDEO_RENDER_OGL 1
 #endif
+
 #ifndef SDL_VIDEO_RENDER_OGL_ES2
-#define SDL_VIDEO_RENDER_OGL_ES2    1
+#define SDL_VIDEO_RENDER_OGL_ES2 0
 #endif
+
 #ifndef SDL_VIDEO_OPENGL_ES2
-#define SDL_VIDEO_OPENGL_ES2    1
+#define SDL_VIDEO_OPENGL_ES2 0
 #endif
+
 #ifndef SDL_VIDEO_OPENGL_EGL
-#define SDL_VIDEO_OPENGL_EGL    1
+#define SDL_VIDEO_OPENGL_EGL 0
 #endif
 
 /* Enable Vulkan support */
-#define SDL_VIDEO_VULKAN 1
+#define SDL_VIDEO_VULKAN 0
 
 /* Enable system power support */
-#define SDL_POWER_WINDOWS 1
+#define SDL_POWER_WINDOWS 0
 
 /* Enable filesystem support */
-#define SDL_FILESYSTEM_WINDOWS  1
+#define SDL_FILESYSTEM_WINDOWS 0
 
 /* Enable assembly routines (Win64 doesn't have inline asm) */
 #ifndef _WIN64
-#define SDL_ASSEMBLY_ROUTINES   1
+#define SDL_ASSEMBLY_ROUTINES 0
 #endif
 
 #endif /* SDL_config_windows_h_ */
