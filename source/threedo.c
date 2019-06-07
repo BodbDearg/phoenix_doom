@@ -640,6 +640,7 @@ void UpdateAndPageFlip(void)
 {
     SDL_UpdateTexture(gFramebufferTexture, NULL, gFrameBuffer, SCREEN_WIDTH * 2);
     SDL_RenderCopy(gRenderer, gFramebufferTexture, NULL, NULL);    
+    memset(gFrameBuffer, 0, sizeof(gFrameBuffer));
     SDL_RenderPresent(gRenderer);
 
     // DC: FIXME: implement/replace
@@ -1003,6 +1004,11 @@ void DrawSkyLine(void)
 
 void DrawWallColumn(const Word y, const Word Colnum, const Byte* const Source, const Word Run)
 {
+    // TODO: TEMP
+    if (y >= 0 && y < SCREEN_HEIGHT) {
+        gFrameBuffer[y * SCREEN_WIDTH + tx_x] = 0xFFFF;
+    }
+
     // DC: FIXME: implement/replace
     #if 0
         MyCCB* DestCCB;         /* Pointer to new CCB entry */

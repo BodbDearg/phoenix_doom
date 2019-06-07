@@ -1,6 +1,9 @@
 #include "doom.h"
 #include "Resources.h"
 
+// FIXME: DC: TEMP
+#include <time.h>
+
 /**********************************
 
     Grow a box if needed to encompass a point
@@ -114,6 +117,8 @@ Word MiniLoop(void(*start)(void),void(*stop)(void),
         // FIXME: DC: Put this somewhere better
         SDL_PumpEvents();
 
+        
+
         /* Run the tic immediately */
         TotalGameTicks += ElapsedTime;      /* Add to the VBL count */
         exit = ticker();            /* Process the keypad commands */
@@ -127,6 +132,18 @@ Word MiniLoop(void(*start)(void),void(*stop)(void),
             if (ElapsedTime >= 9) {     /* Too slow? */
                 ElapsedTime = 8;        /* Make 7.5 fps as my mark */
             }
+        }
+
+        // FIXME: DC: TEMP
+        static clock_t lastClock;
+        clock_t curClock = clock();
+
+        if ((curClock - lastClock) / (double) CLOCKS_PER_SEC > 1.0 / 30.0) {
+            ElapsedTime = 1;
+            lastClock = curClock;
+        }
+        else {
+            ElapsedTime = 0;
         }
 
 /* Get buttons for next tic */
