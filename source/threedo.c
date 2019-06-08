@@ -1,4 +1,5 @@
 #include "doom.h"
+#include "Endian.h"
 #include "Resources.h"
 #include <intmath.h>
 #include <memory.h>
@@ -1031,10 +1032,25 @@ void DrawWallColumn(const Word y, const Word Colnum, const Byte* const Source, c
     const uint32_t lightComponentValue = (tx_texturelight >> 3) & 0x1F;
     const uint32_t lightGreyValue = 1 | (lightComponentValue << 1) | (lightComponentValue << 6) | (lightComponentValue << 11);
 
+    const uint16_t* const pPLUT = (const uint16_t*) Source;
+
     for (uint32_t pixNum = 0; pixNum < numPixelsRounded; ++pixNum) {
         const uint32_t dstY = y + pixNum;
         if (dstY >= 0 && dstY < SCREEN_HEIGHT) {
-            gFrameBuffer[dstY * SCREEN_WIDTH + tx_x] = lightGreyValue;
+
+            const uint32_t texOffset = Colnum + (pixNum << SCALEBITS) / tx_scale;
+
+            const uint8_t colorByte = Source[32 + texOffset / 2];
+            const uint8_t colorIdx = (Colnum & 1) ? (colorByte & 0xF0) >> 4 : colorByte & 0xF;
+            const uint16_t color = byteSwappedU16(pPLUT[colorIdx]);
+            const uint16_t fixedColor = (
+                (((color & 0b0111110000000000) >> 10) << 11) |
+                (((color & 0b0000001111100000) >> 5) << 6) |
+                (((color & 0b0000000000011111) >> 0) << 1)
+            );
+
+            gFrameBuffer[dstY * SCREEN_WIDTH + tx_x] = fixedColor;
+            // gFrameBuffer[dstY * SCREEN_WIDTH + tx_x] = lightGreyValue;
         }
     }
     
