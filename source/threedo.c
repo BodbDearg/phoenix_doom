@@ -1137,9 +1137,40 @@ void DrawWallColumn(
 void DrawFloorColumn(Word ds_y,Word ds_x1,Word Count,LongWord xfrac,
     LongWord yfrac,Fixed ds_xstep,Fixed ds_ystep)
 {
+    const uint16_t* const pPLUT = (const uint16_t*) PlaneSource;
+
+    const uint32_t lightComponentValue2 = (tx_texturelight >> LIGHTSCALESHIFT);
+    const uint32_t lightComponentValue = lightComponentValue2 > 15 ? 15 : lightComponentValue2;
+    
     const uint16_t pixelColor = 0x1 | (0x1F << 11);
     for (uint32_t pixelNum = 0; pixelNum < Count; ++pixelNum) {
-        gFrameBuffer[ds_y * SCREEN_WIDTH + ds_x1 + pixelNum] = pixelColor;
+        Fixed tx = ((xfrac + ds_xstep * pixelNum) >> FRACBITS) & 63;    // assumes 64x64
+        Fixed ty = ((yfrac + ds_ystep * pixelNum) >> FRACBITS) & 63;    // assumes 64x64
+
+        Fixed offset = ty * 64 + tx;
+        const Byte lutByte = PlaneSource[64 + offset] & 31;
+        ASSERT(lutByte < 32);
+        uint8_t colorIdx = lutByte;
+        const uint16_t color = byteSwappedU16(pPLUT[colorIdx]);
+        const uint16_t texR = (color & 0b0111110000000000) >> 10;
+        const uint16_t texG = (color & 0b0000001111100000) >> 5;
+        const uint16_t texB = (color & 0b0000000000011111) >> 0;
+            
+        const uint16_t diminishedR = (texR * (1 + lightComponentValue)) >> 4;
+        const uint16_t diminishedG = (texG * (1 + lightComponentValue)) >> 4;
+        const uint16_t diminishedB = (texB * (1 + lightComponentValue)) >> 4;
+
+        const uint16_t diminishedRC = diminishedR > 0x1F ? 0x1F : diminishedR;
+        const uint16_t diminishedGC = diminishedG > 0x1F ? 0x1F : diminishedG;
+        const uint16_t diminishedBC = diminishedB > 0x1F ? 0x1F : diminishedB;
+
+        const uint16_t fixedColor = (
+            (diminishedRC << 11) |
+            (diminishedGC << 6) |
+            (diminishedBC << 1)
+        );
+
+        gFrameBuffer[ds_y * SCREEN_WIDTH + ds_x1 + pixelNum] = fixedColor;
     }
 
     // DC: FIXME: implement/replace

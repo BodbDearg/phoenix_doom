@@ -1,4 +1,5 @@
 #include "doom.h"
+#include "Textures.h"
 #include <intmath.h>
 
 #define OPENMARK ((MAXSCREENHEIGHT-1)<<8)
@@ -73,7 +74,8 @@ void DrawVisPlane(visplane_t *p)
     Word oldtop;
     register Word *open;
 
-    PlaneSource = (Byte *)*p->PicHandle;    /* Get the base shape index */
+    Texture* pTex = getFlatAnimTexture((Word) p->PicHandle);
+    PlaneSource = pTex->pData;
     x = p->height;
     if ((int)x<0) {
         x = -x;
