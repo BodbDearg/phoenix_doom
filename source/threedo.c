@@ -1023,7 +1023,14 @@ void DrawSkyLine(void)
     
 **********************************/
 
-void DrawWallColumn(const Word y, const Word Colnum, const Byte* const Source, const Word Run)
+void DrawWallColumn(
+    const Word y,
+    const Word Colnum,
+    const Word ColY,
+    const Word TexHeight,
+    const Byte* const Source,
+    const Word Run
+)
 {
     // TODO: TEMP
     const Word numPixels = (Run * tx_scale) >> SCALEBITS;
@@ -1038,7 +1045,11 @@ void DrawWallColumn(const Word y, const Word Colnum, const Byte* const Source, c
         const uint32_t dstY = y + pixNum;
         if (dstY >= 0 && dstY < SCREEN_HEIGHT) {
 
-            const uint32_t texOffset = Colnum + (pixNum << SCALEBITS) / tx_scale;
+            const uint32_t pixTexYOffsetFixed = (pixNum << (SCALEBITS + 1)) / tx_scale;
+            const uint32_t pixTexYOffset = pixTexYOffsetFixed & 1 ? (pixTexYOffsetFixed / 2) + 1 : pixTexYOffsetFixed / 2;
+
+            const uint32_t texYOffset = (ColY + pixTexYOffset) % (TexHeight);
+            const uint32_t texOffset = Colnum + texYOffset;
 
             const uint8_t colorByte = Source[32 + texOffset / 2];
             const uint8_t colorIdx = (Colnum & 1) ? (colorByte & 0xF0) >> 4 : colorByte & 0xF;

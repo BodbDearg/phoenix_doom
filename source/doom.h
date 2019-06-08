@@ -1068,7 +1068,16 @@ extern void ReadPrefsFile(void);
 extern void UpdateAndPageFlip(void);
 extern void DrawPlaque(Word RezNum);
 extern void DrawSkyLine(void);
-extern void DrawWallColumn(const Word y, const Word colnum, const Byte* const Source, const Word Run);
+
+extern void DrawWallColumn(
+    const Word y,
+    const Word Colnum,
+    const Word ColY,
+    const Word TexHeight,
+    const Byte* const Source,
+    const Word Run
+);
+
 extern void DrawFloorColumn(Word ds_y,Word ds_x1,Word Count,LongWord xfrac,
     LongWord yfrac,Fixed ds_xstep,Fixed ds_ystep);
 extern void DrawSpriteNoClip(vissprite_t *vis);

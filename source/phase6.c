@@ -35,7 +35,6 @@ Word tx_x;          /* Screen x coord being drawn */
 int tx_scale;       /* True scale value 0-0x7FFF */
 static Word tx_texturecolumn;   /* Column offset into source image */
 
-
 /**********************************
 
     Calculate texturecolumn and iscale for the rendertexture routine
@@ -62,10 +61,19 @@ static void DrawTexture(drawtex_t *tex)
         --colnum;
         frac += tex->height;        /* Make sure it's on the shape */
     }
-    frac&=0x7f;     /* Zap unneeded bits */
-    colnum &= (tex->width-1);       /* Wrap around the texture */
-    colnum = (colnum*tex->height)+frac; /* Index to the shape */
-    DrawWallColumn(top,colnum,tex->data,Run);   /* Project it */
+    frac&=0x7f;                         /* Zap unneeded bits */
+    colnum &= (tex->width-1);           /* Wrap around the texture */
+    colnum = (colnum * tex->height);    /* Index to the shape */
+
+    // Project it
+    DrawWallColumn(
+        top,
+        colnum,
+        frac,
+        tex->height,
+        tex->data,
+        Run
+    );   
 }
 
 /**********************************
