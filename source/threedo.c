@@ -1036,7 +1036,9 @@ void DrawWallColumn(
     const Word numPixels = (Run * tx_scale) >> SCALEBITS;
     const Word numPixelsRounded = ((Run * tx_scale) & 0x1F0) != 0 ? numPixels + 1 : numPixels;
     
-    const uint32_t lightComponentValue = (tx_texturelight >> 3) & 0x1F;
+    const uint32_t lightComponentValue2 = (tx_texturelight >> LIGHTSCALESHIFT);
+    const uint32_t lightComponentValue = lightComponentValue2 > 15 ? 15 : lightComponentValue2;
+
     const uint32_t lightGreyValue = 1 | (lightComponentValue << 1) | (lightComponentValue << 6) | (lightComponentValue << 11);
 
     const uint16_t* const pPLUT = (const uint16_t*) Source;
@@ -1054,10 +1056,23 @@ void DrawWallColumn(
             const uint8_t colorByte = Source[32 + texOffset / 2];
             const uint8_t colorIdx = (Colnum & 1) ? (colorByte & 0xF0) >> 4 : colorByte & 0xF;
             const uint16_t color = byteSwappedU16(pPLUT[colorIdx]);
+
+            const uint16_t texR = (color & 0b0111110000000000) >> 10;
+            const uint16_t texG = (color & 0b0000001111100000) >> 5;
+            const uint16_t texB = (color & 0b0000000000011111) >> 0;
+            
+            const uint16_t diminishedR = (texR * (1 + lightComponentValue)) >> 4;
+            const uint16_t diminishedG = (texG * (1 + lightComponentValue)) >> 4;
+            const uint16_t diminishedB = (texB * (1 + lightComponentValue)) >> 4;
+
+            const uint16_t diminishedRC = diminishedR > 0x1F ? 0x1F : diminishedR;
+            const uint16_t diminishedGC = diminishedG > 0x1F ? 0x1F : diminishedG;
+            const uint16_t diminishedBC = diminishedB > 0x1F ? 0x1F : diminishedB;
+
             const uint16_t fixedColor = (
-                (((color & 0b0111110000000000) >> 10) << 11) |
-                (((color & 0b0000001111100000) >> 5) << 6) |
-                (((color & 0b0000000000011111) >> 0) << 1)
+                (diminishedRC << 11) |
+                (diminishedGC << 6) |
+                (diminishedBC << 1)
             );
 
             gFrameBuffer[dstY * SCREEN_WIDTH + tx_x] = fixedColor;
