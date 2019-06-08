@@ -549,7 +549,7 @@ void ClearPrefsFile(void)
     MusicVolume = 15;           /* Init the music volume */
     ControlType = 3;            /* Use basic joypad controls */
     MaxLevel = 1;               /* Only allow level 1 to select from */
-    ScreenSize = 2;             /* Default screen size */
+    ScreenSize = 0;             /* Default screen size */
     LowDetail = false;          /* Detail mode */
     WritePrefsFile();           /* Output the new prefs */
 }

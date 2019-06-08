@@ -10,8 +10,9 @@
 extern "C" {
 #endif
 
-#define SCREEN_WIDTH 320
-#define SCREEN_HEIGHT 200
+// DC: FIXME: DO NOT HARDCODE LIKE THIS!
+#define SCREEN_WIDTH 280
+#define SCREEN_HEIGHT 160
 
 extern SDL_Window*     gWindow;
 extern SDL_Renderer*   gRenderer;
