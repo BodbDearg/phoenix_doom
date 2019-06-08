@@ -33,7 +33,7 @@ static void createDisplay() {
         FATAL_ERROR("Unable to create a window!");
     }
 
-    gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED);
+    gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     memset(gFrameBuffer, 0x00, sizeof(gFrameBuffer));
 
     if (!gRenderer) {
