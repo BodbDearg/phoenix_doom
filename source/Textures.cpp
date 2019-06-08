@@ -49,8 +49,9 @@ static void clearTextures(std::vector<Texture>& textures) noexcept {
     textures.clear();
 }
 
-static void loadTexture(Texture& tex) noexcept {
+static void loadTexture(Texture& tex, uint32_t textureNum) noexcept {
     tex.pData = loadResourceData(tex.resourceNum);
+    tex.animTexNum = textureNum;    // Initially redirects to itself for animation
 }
 
 static void releaseTexture(Texture& tex) noexcept {
@@ -166,12 +167,12 @@ const Texture* getFlatTexture(const uint32_t num) {
 
 void loadWallTexture(const uint32_t num) {
     ASSERT(num < gWallTextures.size());
-    loadTexture(gWallTextures[num]);
+    loadTexture(gWallTextures[num], num);
 }
 
 void loadFlatTexture(const uint32_t num) {
     ASSERT(num < gFlatTextures.size());
-    loadTexture(gFlatTextures[num]);
+    loadTexture(gFlatTextures[num], num);
 }
 
 void releaseWallTexture(const uint32_t num) {
