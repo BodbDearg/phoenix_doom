@@ -640,7 +640,27 @@ void UpdateAndPageFlip(void)
 {
     SDL_UpdateTexture(gFramebufferTexture, NULL, gFrameBuffer, SCREEN_WIDTH * 2);
     SDL_RenderCopy(gRenderer, gFramebufferTexture, NULL, NULL);    
-    memset(gFrameBuffer, 0, sizeof(gFrameBuffer));
+
+    // TODO: TEMP
+    // Clear the framebuffer to pink to spot rendering gaps.
+    {
+        const uint16_t pinkU16 = (
+            (0x1F << 11) |  // R
+            (0x00 << 6) |   // G
+            (0x1F << 1) |   // B
+            (0x1)           // A
+        );
+
+        uint16_t* pPixel = gFrameBuffer;
+        uint16_t* const pEndPixel = gFrameBuffer + SCREEN_WIDTH * SCREEN_HEIGHT;
+
+        while (pPixel < pEndPixel) {
+            *pPixel = pinkU16;
+            ++pPixel;
+        }
+    }
+    
+    // memset(gFrameBuffer, 0, sizeof(gFrameBuffer));
     SDL_RenderPresent(gRenderer);
 
     // DC: FIXME: implement/replace
@@ -1006,11 +1026,12 @@ void DrawWallColumn(const Word y, const Word Colnum, const Byte* const Source, c
 {
     // TODO: TEMP
     const Word numPixels = (Run * tx_scale) >> SCALEBITS;
+    const Word numPixelsRounded = ((Run * tx_scale) & 0x1F0) != 0 ? numPixels + 1 : numPixels;
     
     const uint32_t lightComponentValue = (tx_texturelight >> 3) & 0x1F;
     const uint32_t lightGreyValue = 1 | (lightComponentValue << 1) | (lightComponentValue << 6) | (lightComponentValue << 11);
 
-    for (uint32_t pixNum = 0; pixNum < numPixels; ++pixNum) {
+    for (uint32_t pixNum = 0; pixNum < numPixelsRounded; ++pixNum) {
         const uint32_t dstY = y + pixNum;
         if (dstY >= 0 && dstY < SCREEN_HEIGHT) {
             gFrameBuffer[dstY * SCREEN_WIDTH + tx_x] = lightGreyValue;
