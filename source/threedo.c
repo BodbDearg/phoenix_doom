@@ -1012,8 +1012,7 @@ void DrawWallColumn(const Word y, const Word Colnum, const Byte* const Source, c
 
     for (uint32_t pixNum = 0; pixNum < numPixels; ++pixNum) {
         const uint32_t dstY = y + pixNum;
-
-        if (y >= 0 && y < SCREEN_HEIGHT) {
+        if (dstY >= 0 && dstY < SCREEN_HEIGHT) {
             gFrameBuffer[dstY * SCREEN_WIDTH + tx_x] = lightGreyValue;
         }
     }
@@ -1076,7 +1075,7 @@ void DrawWallColumn(const Word y, const Word Colnum, const Byte* const Source, c
 void DrawFloorColumn(Word ds_y,Word ds_x1,Word Count,LongWord xfrac,
     LongWord yfrac,Fixed ds_xstep,Fixed ds_ystep)
 {
-    const uint16_t pixelColor = 0x1 | (0x1F << 1);
+    const uint16_t pixelColor = 0x1 | (0x1F << 11);
     for (uint32_t pixelNum = 0; pixelNum < Count; ++pixelNum) {
         gFrameBuffer[ds_y * SCREEN_WIDTH + ds_x1 + pixelNum] = pixelColor;
     }
