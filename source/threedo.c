@@ -1046,7 +1046,6 @@ void DrawWallColumn(
     for (uint32_t pixNum = 0; pixNum < numPixelsRounded; ++pixNum) {
         const uint32_t dstY = y + pixNum;
         if (dstY >= 0 && dstY < SCREEN_HEIGHT) {
-
             const uint32_t pixTexYOffsetFixed = (pixNum << (SCALEBITS + 1)) / tx_scale;
             const uint32_t pixTexYOffset = pixTexYOffsetFixed & 1 ? (pixTexYOffsetFixed / 2) + 1 : pixTexYOffsetFixed / 2;
 
@@ -1054,7 +1053,7 @@ void DrawWallColumn(
             const uint32_t texOffset = Colnum + texYOffset;
 
             const uint8_t colorByte = Source[32 + texOffset / 2];
-            const uint8_t colorIdx = (Colnum & 1) ? (colorByte & 0xF0) >> 4 : colorByte & 0xF;
+            const uint8_t colorIdx = (texOffset & 1) != 0 ? (colorByte & 0x0F) : (colorByte & 0xF0) >> 4;
             const uint16_t color = byteSwappedU16(pPLUT[colorIdx]);
 
             const uint16_t texR = (color & 0b0111110000000000) >> 10;
