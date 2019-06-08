@@ -27,7 +27,7 @@ static void createDisplay() {
         FATAL_ERROR("Unable to initialize SDL!");
     }
 
-    gWindow = SDL_CreateWindow("PhoenixDoom", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH * 3, SCREEN_HEIGHT * 3, SDL_WINDOW_OPENGL);
+    gWindow = SDL_CreateWindow("PhoenixDoom", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH * 4, SCREEN_HEIGHT * 4, SDL_WINDOW_OPENGL);
     
     if (!gWindow) {
         FATAL_ERROR("Unable to create a window!");
@@ -1005,10 +1005,19 @@ void DrawSkyLine(void)
 void DrawWallColumn(const Word y, const Word Colnum, const Byte* const Source, const Word Run)
 {
     // TODO: TEMP
-    if (y >= 0 && y < SCREEN_HEIGHT) {
-        gFrameBuffer[y * SCREEN_WIDTH + tx_x] = 0xFFFF;
-    }
+    const Word numPixels = (Run * tx_scale) >> SCALEBITS;
+    
+    const uint32_t lightComponentValue = (tx_texturelight >> 3) & 0x1F;
+    const uint32_t lightGreyValue = 1 | (lightComponentValue << 1) | (lightComponentValue << 6) | (lightComponentValue << 11);
 
+    for (uint32_t pixNum = 0; pixNum < numPixels; ++pixNum) {
+        const uint32_t dstY = y + pixNum;
+
+        if (y >= 0 && y < SCREEN_HEIGHT) {
+            gFrameBuffer[dstY * SCREEN_WIDTH + tx_x] = lightGreyValue;
+        }
+    }
+    
     // DC: FIXME: implement/replace
     #if 0
         MyCCB* DestCCB;         /* Pointer to new CCB entry */
