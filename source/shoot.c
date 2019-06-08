@@ -137,11 +137,11 @@ void P_Shoot2(void)
 
 bool PA_DoIntercept(void *value, bool isline, int frac)
 {
-    int     temp;
+    intptr_t     temp;
 
     if (old_frac < frac)
     {
-        temp = (int)old_value;
+        temp = (intptr_t)old_value;
         old_value = value;
         value = (void *)temp;
 
