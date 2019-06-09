@@ -194,8 +194,8 @@ Word CheckSight(mobj_t *t1,mobj_t *t2)
     int pnum, bytenum, bitnum;
     
     // Check for trivial rejection
-    s1 = (t1->subsector->sector - gpSectors);
-    s2 = (t2->subsector->sector - gpSectors);
+    s1 = (int)(t1->subsector->sector - gpSectors);
+    s2 = (int)(t2->subsector->sector - gpSectors);
     pnum = s1 * gNumSectors + s2;
     bytenum = pnum>>3;
     bitnum = 1 << (pnum&7);

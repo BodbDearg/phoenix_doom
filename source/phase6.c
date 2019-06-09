@@ -178,7 +178,7 @@ static void DrawSeg(viswall_t *segl)
 
 **********************************/
 
-static visplane_t *FindPlane(visplane_t *check,Fixed height,void **PicHandle,int start,int stop,Word Light)
+static visplane_t* FindPlane(visplane_t *check, Fixed height, uint32_t PicHandle, int start, int stop, Word Light)
 {
     Word i;
     Word j;

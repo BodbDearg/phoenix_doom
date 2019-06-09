@@ -76,131 +76,119 @@ static void SortAllSprites(void)
     }
 }
 
-/**********************************
-
-    I have a possible sprite record, transform to 2D coords 
-    and then see if it is clipped.
-    
-**********************************/
-
-static void PrepMObj(mobj_t *thing)
-{
-    Fixed Trx,Try,Trz;
-    Word lump;
-    LongWord Offset;
-    vissprite_t *vis;
-    state_t *StatePtr;
-    void **PatchHandle;
-    patch_t *patch;
-    int x1, x2;
-
-/* This is a HACK, so I don't draw the player for the 3DO version */
-
-    if (thing->player) {        /* Don't draw the player */
+//-------------------------------------------------------------------------------------------------
+// I have a possible sprite record, transform to 2D coords and then see if it is clipped.
+// If the sprite is not clipped then it is prepared for rendering.
+//-------------------------------------------------------------------------------------------------
+static void PrepMObj(const mobj_t* const pThing) {
+    // This is a HACK, so I don't draw the player for the 3DO version
+    if (pThing->player) {
         return;
     }
 
-/* Transform the origin point */
-
-    vis = vissprite_p;
-    if (vis == &vissprites[MAXVISSPRITES]) {        /* Too many? */
-        return;     /* sprite overload, don't draw it */
+    // Don't draw the sprite if we have hit the maximum limit
+    vissprite_t* vis = vissprite_p;
+    if (vis >= &vissprites[MAXVISSPRITES]) {
+        return;
     }
 
-    Trx = thing->x - viewx;     /* Get the point in 3 Space */
-    Try = thing->y - viewy;
+    // Transform the origin point
+    Fixed Trx = pThing->x - viewx;          // Get the point in 3 Space
+    Fixed Try = pThing->y - viewy;
+    Fixed Trz = IMFixMul(Trx, viewcos);     // Rotate around the camera
+    Trz += IMFixMul(Try, viewsin);          // Add together
 
-    Trz = IMFixMul(Trx,viewcos);    /* Rotate around the camera */
-    Trz += IMFixMul(Try,viewsin);   /* Add together */
-
-    if (Trz < MINZ) {   /* Too large? */
-        return;         /* Exit now */
+    // Ignore sprite if too close to the camera (too large)
+    if (Trz < MINZ) {
+        return;
     }
     
-    Trx = IMFixMul(Trx,viewsin);        /* Calc the 3Space x coord */
-    Trx -= IMFixMul(Try,viewcos);
+    // Calc the 3Space x coord
+    Trx = IMFixMul(Trx, viewsin);
+    Trx -= IMFixMul(Try, viewcos);
     
-    if (Trx > (Trz<<2) || Trx < -(Trz<<2) ) {
-        return;     /* Greater than 45 degrees off the side */
+    // Ignore sprite if greater than 45 degrees off the side
+    if (Trx > (Trz << 2) || Trx < -(Trz << 2)) {
+        return;
     }
 
-/* Decide which patch to use for sprite relative to player */
-
-    StatePtr = thing->state;
-    lump = StatePtr->SpriteFrame>>FF_SPRITESHIFT;   /* Get the resource # */
-    PatchHandle = loadResourceData(lump);           /* Get the sprite group */
-    patch = (patch_t *) PatchHandle;                /* Deref the handle */
+    // Decide which patch to use for sprite relative to player
+    state_t *StatePtr = pThing->state;
+    const uint32_t spriteResNum = StatePtr->SpriteFrame >> FF_SPRITESHIFT;      // Get the resource#
+    void **PatchHandle = loadResourceData(spriteResNum);                        // Get the sprite group
+    patch_t* patch = (patch_t*) PatchHandle;                                    // Deref the handle
 
     // TODO: DC: Find a better place for this endian conversion
-    Offset = byteSwappedU32(((LongWord *)patch)[StatePtr->SpriteFrame & FF_FRAMEMASK]);
+    LongWord Offset = byteSwappedU32(((LongWord*) patch)[StatePtr->SpriteFrame & FF_FRAMEMASK]);
 
-    if (Offset&PT_NOROTATE) {       /* Do I rotate? */
-        angle_t ang;
-        angle_t rot;
-        patch = (patch_t *)&((Byte *)patch)[Offset & 0x3FFFFFFF];   /* Get pointer to rotation list */
-        ang = PointToAngle(viewx,viewy,thing->x,thing->y);          /* Get angle to critter */
-        ang -= thing->angle;                                        /* Adjust for object's facing */
-        rot = (ang+(angle_t)((ANG45/2)*9U))>>29;                    /* Get rotation offset */
+    if (Offset & PT_NOROTATE) {     // Do I rotate?        
+        patch = (patch_t*) &((Byte*) patch)[Offset & 0x3FFFFFFF];           // Get pointer to rotation list
+        angle_t ang = PointToAngle(viewx, viewy, pThing->x, pThing->y);     // Get angle to critter
+        ang -= pThing->angle;                                               // Adjust for object's facing
+        const angle_t rot = (ang+(angle_t)((ANG45/2)*9U))>>29;              // Get rotation offset
 
         // TODO: DC: Find a better place for this endian conversion
-        Offset = byteSwappedU32(((LongWord *)patch)[rot]);      /* Use the rotated offset */
+        Offset = byteSwappedU32(((LongWord*) patch)[rot]);              // Use the rotated offset
     }
 
-    patch = (patch_t *) &((Byte *)patch)[Offset & 0x3FFFFFFF];  /* Get pointer to patch */
+    patch = (patch_t*) &((Byte*) patch)[Offset & 0x3FFFFFFF];   // Get pointer to patch
 
-/* Store information in a vissprite */
-/* I also will clip to screen coords */
+    // Store information in a vissprite.
+    // I also will clip to screen coords.
+    Trz = IMFixDiv(CenterX << FRACBITS, Trz);               // Get the scale factor
+    vis->xscale = Trz;                                      // Save it    
+    Trx -= patch->leftoffset << FRACBITS;                   // Adjust the x to the sprite's x
+    int x1 = (IMFixMul(Trx, Trz) >> FRACBITS) + CenterX;    // Scale to screen coords
 
-    Trz = IMFixDiv(CenterX<<FRACBITS,Trz);      /* Get the scale factor */
-    vis->xscale = Trz;          /* Save it */
-    
-    Trx -= patch->leftoffset<<FRACBITS;     /* Adjust the x to the sprite's x */
-    x1 = (IMFixMul(Trx,Trz)>>FRACBITS)+CenterX;     /* Scale to screen coords */
-    if (x1 > (int)ScreenWidth) {
-        releaseResource(lump);
-        return;     /* Off the right side, don't draw */
+    if (x1 > (int) ScreenWidth) {        
+        releaseResource(spriteResNum);      
+        return;                             // Off the right side, don't draw!
     }
 
-/* The shape is sideways, so I get the HEIGHT instead of the width! */
-    
-    x2 = IMFixMul(GetShapeHeight(&patch->Data),Trz)+x1;
-    if (x2 <= 0) {
-        releaseResource(lump);
-        return;     /* Off the left side */
+    // The shape is sideways, so I get the HEIGHT instead of the width!
+    int x2 = IMFixMul(GetShapeHeight((const CelControlBlock*) patch->Data), Trz) + x1;
+
+    if (x2 <= 0) {        
+        releaseResource(spriteResNum);      
+        return;                             // Off the left side, don't draw!
     }
 
-/* get light level */
-
-    Try = IMFixMul(Trz,Stretch);    /* Adjust for aspect ratio */
+    // Get light level
+    Try = IMFixMul(Trz,Stretch);                                // Adjust for aspect ratio
     vis->yscale = Try;
-    vis->PatchLump = lump;      /* Resource referance */
-    vis->PatchOffset = (Byte *)patch - (Byte *)*PatchHandle;    /* Shape offset */
-    vis->x1 = x1;   /* Save the edge coords */
+    vis->PatchLump = spriteResNum;                              // Resource referance
+    vis->PatchOffset = (Byte*)patch - (Byte*)*PatchHandle;      // Shape offset
+    vis->x1 = x1;                                               // Save the edge coords
     vis->x2 = x2;
-    vis->thing = thing;
-    if (thing->flags & MF_SHADOW) {     /* Draw a shadow... */
+    vis->thing = pThing;
+
+    if (pThing->flags & MF_SHADOW) {                        // Draw a shadow...
         x1 = 0x8000U;
     } else if (StatePtr->SpriteFrame & FF_FULLBRIGHT) {
-        x1 = 255;               /* full bright */
+        x1 = 255;                                           // full bright
     } else {
-        x1 = thing->subsector->sector->lightlevel; /* + extralight; */
-        if ((Word)x1 >= 256) {
-            x1 = 255;       /* Use maximum */
+        x1 = pThing->subsector->sector->lightlevel;         // + extralight;
+
+        if ((Word) x1 >= 256) {
+            x1 = 255;                                       // Use maximum
         }
     }
-    if (Offset&PT_FLIP) {   /* Reverse the shape */
-        x1 |=0x4000;
-    }
-    vis->colormap = x1; /* Save the light value */
     
-    Trz = thing->z-viewz;
-    vis->y2 = CenterY - (IMFixMul(Trz-(5<<FRACBITS),Try)>>FRACBITS);
-    Trz = Trz+(patch->topoffset<<FRACBITS);     /* Height offset */
-    vis->y1 = CenterY - (IMFixMul(Trz,Try)>>FRACBITS);      /* Get screen Y */
-    if (vis->y2>=0 || vis->y1<(int)ScreenHeight) {  /* Clipped vertically? */
-        vissprite_p = vis+1;        /* Use the record */
+    if (Offset & PT_FLIP) {     // Reverse the shape?
+        x1 |= 0x4000;
     }
-    releaseResource(lump);
+
+    vis->colormap = x1;                                                         // Save the light value
+    Trz = pThing->z - viewz;
+    vis->y2 = CenterY - (IMFixMul(Trz - (5 << FRACBITS), Try) >> FRACBITS);
+    Trz = Trz + (patch->topoffset << FRACBITS);                                 // Height offset
+    vis->y1 = CenterY - (IMFixMul(Trz, Try) >> FRACBITS);                       // Get screen Y
+
+    if (vis->y2 >= 0 || vis->y1 < (int) ScreenHeight) {     // Clipped vertically?
+        vissprite_p = vis + 1;                              // Used this sprite record
+    }
+
+    releaseResource(spriteResNum);
 }
 
 /**********************************

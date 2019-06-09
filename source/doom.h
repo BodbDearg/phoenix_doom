@@ -316,22 +316,24 @@ typedef struct {
     Byte Data[1];
 } patch_t;
 
-typedef struct {        /* Describe a 2D shape to the screen */
-    int x1,x2,y1,y2;    /* Clipped to screen edges column range */
-    Fixed xscale;       /* Scale factor */
-    Fixed yscale;       /* Y Scale factor */
-    Word PatchLump;     /* Resource to the sprite art data */
-    LongWord PatchOffset;   /* Offset to the proper record */
-    Word colormap;      /* 0x8000 = shadow draw,0x4000 flip, 0x3FFF color map */
-    struct mobj_s *thing;       /* Used for clipping... */
+// Describes a 2D shape rendered to the screen
+typedef struct {
+    int x1,x2,y1,y2;                // Clipped to screen edges column range
+    Fixed xscale;                   // Scale factor
+    Fixed yscale;                   // Y Scale factor
+    Word PatchLump;                 // Resource to the sprite art data
+    LongWord PatchOffset;           // Offset to the proper record
+    Word colormap;                  // 0x8000 = shadow draw,0x4000 flip, 0x3FFF color map
+    const struct mobj_s *thing;     // Used for clipping...
 } vissprite_t;
 
-typedef struct {        /* Describe a floor texture */
-    Word open[MAXSCREENWIDTH+1];    /* top<<8 | bottom */
-    Fixed height;       /* Height of the floor */
-    void **PicHandle;   /* Texture handle */
-    Word PlaneLight;    /* Light override */
-    int minx,maxx;      /* Minimum x, max x */
+// Describes a floor texture
+typedef struct {
+    Word        open[MAXSCREENWIDTH+1];     // top<<8 | bottom
+    Fixed       height;                     // Height of the floor
+    uint32_t    PicHandle;                  // Texture handle
+    Word        PlaneLight;                 // Light override
+    int         minx, maxx;                 // Minimum x, max x
 } visplane_t;
 
 #define MF_SPECIAL      1           // call P_SpecialThing when touched
@@ -563,47 +565,48 @@ static inline const void* getActualNodeChildPtr(const void* const pPtr) {
 #define AC_BOTTOMSIL 256
 #define AC_SOLIDSIL 512
 
-typedef struct {        /* Describe a wall segment to be drawn */
-    Word LeftX;         /* Leftmost x screen coord */
-    Word RightX;        /* Rightmost inclusive x coordinates */
-    void **FloorPic;    /* Picture handle to floor shape */
-    void **CeilingPic;  /* Picture handle to ceiling shape */
-    Word WallActions;   /* Actions to perform for draw */
+/* Describe a wall segment to be drawn */
+typedef struct {        
+    uint32_t    LeftX;          /* Leftmost x screen coord */
+    uint32_t    RightX;         /* Rightmost inclusive x coordinates */
+    uint32_t    FloorPic;       /* Picture handle to floor shape */
+    uint32_t    CeilingPic;     /* Picture handle to ceiling shape */
+    uint32_t    WallActions;    /* Actions to perform for draw */
 
-    int t_topheight;    /* Describe the top texture */
+    int t_topheight;                        /* Describe the top texture */
     int t_bottomheight;
     int t_texturemid;
-    struct Texture* t_texture; /* Pointer to the top texture */
+    const struct Texture* t_texture;        /* Pointer to the top texture */
     
-    int b_topheight;    /* Describe the bottom texture */
+    int b_topheight;                        /* Describe the bottom texture */
     int b_bottomheight;
     int b_texturemid;
-    struct Texture* b_texture;       /* Pointer to the bottom texture */
+    const struct Texture* b_texture;        /* Pointer to the bottom texture */
     
     int floorheight;
     int floornewheight;
-
     int ceilingheight;
     int ceilingnewheight;
 
-    Fixed LeftScale;    /* LeftX Scale */
-    Fixed RightScale;   /* RightX scale */
-    Fixed SmallScale;
-    Fixed LargeScale;
-    Byte *TopSil;       /* YClips for the top line */
-    Byte *BottomSil;    /* YClips for the bottom line */
-    Fixed ScaleStep;        /* Scale step factor */
-    angle_t CenterAngle;    /* Center angle */
-    Fixed offset;           /* Offset to the texture */
-    Word distance;
-    Word seglightlevel;
-    seg_t *SegPtr;          /* Pointer to line segment for clipping */  
+    Fixed       LeftScale;      /* LeftX Scale */
+    Fixed       RightScale;     /* RightX scale */
+    Fixed       SmallScale;
+    Fixed       LargeScale;
+    Byte*       TopSil;         /* YClips for the top line */
+    Byte*       BottomSil;      /* YClips for the bottom line */
+    Fixed       ScaleStep;      /* Scale step factor */
+    angle_t     CenterAngle;    /* Center angle */
+    Fixed       offset;         /* Offset to the texture */
+    Word        distance;
+    Word        seglightlevel;
+    seg_t*      SegPtr;         /* Pointer to line segment for clipping */  
 } viswall_t;
 
-typedef struct {        /* Describe data on the status bar */
-    spclface_e specialFace; /* Which type of special face to make */
-    bool    gotgibbed;          /* Got gibbed */
-    bool tryopen[NUMCARDS]; /* Tried to open a card or skull door */
+/* Describe data on the status bar */
+typedef struct {        
+    spclface_e  specialFace;        /* Which type of special face to make */
+    bool        gotgibbed;          /* Got gibbed */
+    bool        tryopen[NUMCARDS];  /* Tried to open a card or skull door */
 } stbar_t;
 
 /* In Data.c */

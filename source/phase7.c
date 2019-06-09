@@ -74,7 +74,7 @@ void DrawVisPlane(visplane_t *p)
     Word oldtop;
     register Word *open;
 
-    Texture* pTex = getFlatAnimTexture((Word) p->PicHandle);
+    const Texture* const pTex = getFlatAnimTexture((Word) p->PicHandle);
     PlaneSource = pTex->pData;
     x = p->height;
     if ((int)x<0) {

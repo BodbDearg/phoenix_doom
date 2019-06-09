@@ -10,9 +10,13 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_BUILD_TYPE Debug)
 
-# TODO: This is Clang/GCC specific - wrap
-set(CMAKE_C_FLAGS -g)
-set(CMAKE_CXX_FLAGS -g)
+# Clang, Apple Clang, or GCC - enable debugging
+if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang" OR 
+    "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"
+)
+    set(CMAKE_C_FLAGS -g)
+    set(CMAKE_CXX_FLAGS -g)
+endif()
 
 set(BURGERLIB_SRC_DIR "${PROJECT_SOURCE_DIR}/lib")
 set(GAME_SRC_DIR "${PROJECT_SOURCE_DIR}/source")
