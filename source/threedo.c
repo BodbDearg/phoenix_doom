@@ -1,5 +1,6 @@
 #include "doom.h"
 #include "Endian.h"
+#include "MathUtils.h"
 #include "Resources.h"
 #include <intmath.h>
 #include <memory.h>
@@ -1322,22 +1323,111 @@ void WipeDoom(LongWord *OldScreen,LongWord *NewScreen)
 }
 #endif
 
-/**********************************
+//-------------------------------------------------------------------------------------------------
+// This routine will draw a scaled sprite during the game. It is called when there is no 
+// onscreen clipping needed or if the only clipping is to the screen bounds.
+//-------------------------------------------------------------------------------------------------
+void DrawSpriteNoClip(const vissprite_t* const pSprite) {
+    // Get the cel control block definition for the sprite.
+    // Note that I have to skip 4 bytes of data here for some reason, unclear as to what this 4 bytes
+    // is from reading the original 3DO source...
+    const Byte* const pPatchData = (const Byte*) loadResourceData(pSprite->PatchLump);
+    const uint32_t patchCCBOffset = pSprite->PatchOffset + sizeof(uint32_t);
+    const CelControlBlock* const pCCB = (const CelControlBlock*)(pPatchData + patchCCBOffset);
 
-    This routine will draw a scaled sprite during the game.
-    It is called when there is no onscreen clipping needed or 
-    if the only clipping is to the screen bounds.
+    // The pixel LUT is a hardcoded 64 bytes from the start of the sprite data.
+    // Note that the last two fields of the 'CelControlBlock' aren't actually stored!
+    // This makes the CCB 60 bytes in total, then plus our mystery 4 bytes gives us an offset of 64...
+    const uint16_t* const pPLUT = (const uint16_t*)(pPatchData + 64);
 
-**********************************/
+    // Grab the actual indexed pixel data for the sprite.
+    // Note: for some reason we have to skip an additional 16 bytes also - not sure what this additional data is.
+    const uint32_t pixelsOffset = byteSwappedU32(pCCB->sourcePtr);
+    const uint8_t* const pPixels = (pPatchData + patchCCBOffset) + pixelsOffset + 16;
 
-void DrawSpriteNoClip(vissprite_t *vis)
-{
+    // Get the width and height of the sprite and convert to 16.16 fixed point.
+    // Note the reversal of these calls (call width in place of height etc.) since the sprites are in column major format. 
+    const int32_t spriteW = (int32_t) GetShapeHeight(pCCB);
+    const int32_t spriteH = (int32_t) GetShapeWidth(pCCB);
+    const int32_t spriteW16_16 = int32ToSFixed16_16(spriteW);
+    const int32_t spriteH16_16 = int32ToSFixed16_16(spriteH);
+
+    // Figure out the number of pixels being rendered in width and height
+    const uint32_t renderW = (pSprite->x2 - pSprite->x1) + 1;
+    const uint32_t renderH = (pSprite->y2 - pSprite->y1) + 1;
+
+    // Figure out the step in texels we want per x and y pixel in 16.16 format
+    const Fixed texelStepX = (renderW >= 2) ?
+        sfixedDiv16_16(spriteW16_16, int32ToSFixed16_16(renderW - 1)) :
+        int32ToSFixed16_16(spriteW16_16);
+    
+    const Fixed texelStepY = (renderH >= 2) ?
+        sfixedDiv16_16(spriteH16_16, int32ToSFixed16_16(renderH - 1)) :
+        int32ToSFixed16_16(spriteH16_16);
+    
+    {
+        Fixed texelYFrac = 0;
+
+        for (int dstY = pSprite->y1; dstY <= pSprite->y2; ++dstY) {
+            const int texelY = sfixed16_16ToInt32(texelYFrac);
+            Fixed texelXFrac = 0;
+
+            for (int dstX = pSprite->x1; dstX <= pSprite->x2; ++dstX) {
+                // Grab the index of this pixels color
+                const int texelX = sfixed16_16ToInt32(texelXFrac);
+                const uint8_t colorIdx = pPixels[(texelX * spriteH + texelY) / 2] & 0xFF;
+
+                // Lookup the color
+                const uint16_t color = byteSwappedU16(pPLUT[colorIdx]);
+                const uint16_t texR = (color & 0b0111110000000000) >> 10;
+                const uint16_t texG = (color & 0b0000001111100000) >> 5;
+                const uint16_t texB = (color & 0b0000000000011111) >> 0;
+
+                // FIXME:
+                /*
+                const uint16_t lightComponentValue = 32;
+
+                const uint16_t diminishedR = (texR * (1 + lightComponentValue)) >> 4;
+                const uint16_t diminishedG = (texG * (1 + lightComponentValue)) >> 4;
+                const uint16_t diminishedB = (texB * (1 + lightComponentValue)) >> 4;
+
+                const uint16_t diminishedRC = diminishedR > 0x1F ? 0x1F : diminishedR;
+                const uint16_t diminishedGC = diminishedG > 0x1F ? 0x1F : diminishedG;
+                const uint16_t diminishedBC = diminishedB > 0x1F ? 0x1F : diminishedB;
+
+                const uint16_t fixedColor = (
+                    (diminishedRC << 11) |
+                    (diminishedGC << 6) |
+                    (diminishedBC << 1)
+                );
+                */
+               const uint16_t fixedColor = (
+                    (texR << 11) |
+                    (texG << 6) |
+                    (texB << 1)
+                );
+
+                // TODO: optimize this
+                if (dstX >= 0 && dstX < SCREEN_WIDTH) {
+                    if (dstY >= 0 && dstY < SCREEN_HEIGHT) {
+                        gFrameBuffer[dstY * SCREEN_WIDTH + dstX] = fixedColor;
+                    }
+                }
+
+                texelXFrac += texelStepX;
+            }
+
+            texelYFrac += texelStepY;
+        }
+    }
+
     // FIXME: DC IMPLEMENT!
     #if 1
         return;
     #endif
 
-    patch_t *patch;     /* Pointer to the actual sprite record */
+    /*
+    patch_t *patch;     // Pointer to the actual sprite record
     Word ColorMap;
     int x;
     
@@ -1362,6 +1452,7 @@ void DrawSpriteNoClip(vissprite_t *vis)
     }
     DrawMShape(x+ScreenXOffset,vis->y1+ScreenYOffset,&patch->Data);
     releaseResource(vis->PatchLump);
+    */
 }
 
 /**********************************

@@ -1083,7 +1083,7 @@ extern void DrawWallColumn(
 
 extern void DrawFloorColumn(Word ds_y,Word ds_x1,Word Count,LongWord xfrac,
     LongWord yfrac,Fixed ds_xstep,Fixed ds_ystep);
-extern void DrawSpriteNoClip(vissprite_t *vis);
+extern void DrawSpriteNoClip(const vissprite_t* const pSprite);
 extern void DrawSpriteClip(Word x1,Word x2,vissprite_t *vis);
 extern void DrawSpriteCenter(Word SpriteNum);
 extern void EnableHardwareClipping(void);

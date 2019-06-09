@@ -163,7 +163,7 @@ static void PrepMObj(const mobj_t* const pThing) {
     Try = IMFixMul(Trz,Stretch);                                // Adjust for aspect ratio
     vis->yscale = Try;
     vis->PatchLump = spriteResNum;                              // Resource referance
-    vis->PatchOffset = (Byte*)patch - (Byte*)*PatchHandle;      // Shape offset
+    vis->PatchOffset = (Byte*) patch - (Byte*) PatchHandle;     // Shape offset
     vis->x1 = x1;                                               // Save the edge coords
     vis->x2 = x2;
     vis->thing = pThing;
