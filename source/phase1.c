@@ -111,14 +111,18 @@ static void PrepMObj(const mobj_t* const pThing) {
     if (Trx > (Trz << 2) || Trx < -(Trz << 2)) {
         return;
     }
-
+    
     // Decide which patch to use for sprite relative to player
     state_t *StatePtr = pThing->state;
     const uint32_t spriteResNum = StatePtr->SpriteFrame >> FF_SPRITESHIFT;      // Get the resource#
     void **PatchHandle = loadResourceData(spriteResNum);                        // Get the sprite group
     patch_t* patch = (patch_t*) PatchHandle;                                    // Deref the handle
 
-    // TODO: DC: Find a better place for this endian conversion
+    // TODO: DC: Find a better place for this endian conversion.
+    //  - The number of frames can be determined by looking at the first offset entry.
+    //    It tells us where the frame offsets end, and thus the number of frames (each offset is a u32).
+    //  - We could use that to preconvert the CCBs etc.
+    //
     LongWord Offset = byteSwappedU32(((LongWord*) patch)[StatePtr->SpriteFrame & FF_FRAMEMASK]);
 
     if (Offset & PT_NOROTATE) {     // Do I rotate?        
@@ -135,24 +139,26 @@ static void PrepMObj(const mobj_t* const pThing) {
 
     // Store information in a vissprite.
     // I also will clip to screen coords.
-    Trz = IMFixDiv(CenterX << FRACBITS, Trz);               // Get the scale factor
-    vis->xscale = Trz;                                      // Save it    
-    Trx -= patch->leftoffset << FRACBITS;                   // Adjust the x to the sprite's x
-    int x1 = (IMFixMul(Trx, Trz) >> FRACBITS) + CenterX;    // Scale to screen coords
+    Trz = IMFixDiv(CenterX << FRACBITS, Trz);   // Get the scale factor
+    vis->xscale = Trz;                          // Save it
 
-    if (x1 > (int) ScreenWidth) {        
-        releaseResource(spriteResNum);      
+    // TODO: DC: Find a better place for this endian conversion
+    Trx -= (Fixed) byteSwappedI16(patch->leftoffset) << FRACBITS;   // Adjust the x to the sprite's x
+    int x1 = (IMFixMul(Trx, Trz) >> FRACBITS) + CenterX;            // Scale to screen coords
+
+    if (x1 > (int) ScreenWidth) {
+        releaseResource(spriteResNum);
         return;                             // Off the right side, don't draw!
     }
 
     // The shape is sideways, so I get the HEIGHT instead of the width!
     int x2 = IMFixMul(GetShapeHeight((const CelControlBlock*) patch->Data), Trz) + x1;
 
-    if (x2 <= 0) {        
-        releaseResource(spriteResNum);      
+    if (x2 <= 0) {
+        releaseResource(spriteResNum);
         return;                             // Off the left side, don't draw!
     }
-
+    
     // Get light level
     Try = IMFixMul(Trz,Stretch);                                // Adjust for aspect ratio
     vis->yscale = Try;
@@ -181,8 +187,10 @@ static void PrepMObj(const mobj_t* const pThing) {
     vis->colormap = x1;                                                         // Save the light value
     Trz = pThing->z - viewz;
     vis->y2 = CenterY - (IMFixMul(Trz - (5 << FRACBITS), Try) >> FRACBITS);
-    Trz = Trz + (patch->topoffset << FRACBITS);                                 // Height offset
-    vis->y1 = CenterY - (IMFixMul(Trz, Try) >> FRACBITS);                       // Get screen Y
+
+    // TODO: DC: Find a better place for this endian conversion
+    Trz = Trz + ((Fixed) byteSwappedI16(patch->topoffset) << FRACBITS);     // Height offset
+    vis->y1 = CenterY - (IMFixMul(Trz, Try) >> FRACBITS);                   // Get screen Y
 
     if (vis->y2 >= 0 || vis->y1 < (int) ScreenHeight) {     // Clipped vertically?
         vissprite_p = vis + 1;                              // Used this sprite record

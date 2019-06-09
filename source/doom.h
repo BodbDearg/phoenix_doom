@@ -307,13 +307,13 @@ typedef struct {        /* Describe an actor's basic variables */
 /* a patch holds one or more columns */
 /* patches are used for sprites and all masked pictures */
 
-#define PT_FLIP 0x80000000
-#define PT_NOROTATE 0x40000000
+#define PT_FLIP         0x80000000
+#define PT_NOROTATE     0x40000000
 
 typedef struct {
-    short leftoffset;   /* pixels to the left of origin */
-    short topoffset;    /* pixels below the origin */
-    Byte Data[1];
+    int16_t     leftoffset;     // pixels to the left of origin
+    int16_t     topoffset;      // pixels below the origin
+    Byte        Data[1];
 } patch_t;
 
 // Describes a 2D shape rendered to the screen
