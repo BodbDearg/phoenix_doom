@@ -21,7 +21,7 @@ static inline int32_t floatToSFixed16_16(float num) {
 }
 
 // TODO: test
-static inline int32_t sfixed16_16ToFloat(int32_t num) {
+static inline float sfixed16_16ToFloat(int32_t num) {
     double doubleVal = (double) num;
     return (float) (doubleVal / 65536.0);
 }
