@@ -1,3 +1,4 @@
+#include "CelUtils.h"
 #include "doom.h"
 #include "Endian.h"
 #include "MathUtils.h"
@@ -724,7 +725,7 @@ void DrawPlaque(Word RezNum)
     FlushCCBs();        /* Flush pending draws */
     SetMyScreen(PrevPage);      /* Draw to the active screen */
     PicPtr = loadResourceData(RezNum);
-    DrawShape(160-(GetShapeWidth(PicPtr)/2),80,PicPtr);
+    DrawShape(160-(getCCBWidth(PicPtr)/2),80,PicPtr);
     FlushCCBs();        /* Make sure it's drawn */
     releaseResource(RezNum);
     SetMyScreen(WorkPage);      /* Reset to normal */
@@ -1377,8 +1378,8 @@ void DrawSpriteNoClip(const vissprite_t* const pSprite) {
 
     // Get the width and height of the sprite and convert to 16.16 fixed point.
     // Note the reversal of these calls (call width in place of height etc.) since the sprites are in column major format. 
-    const int32_t spriteW = (int32_t) GetShapeHeight(pCCB);
-    const int32_t spriteH = (int32_t) GetShapeWidth(pCCB);
+    const int32_t spriteW = (int32_t) getCCBHeight(pCCB);
+    const int32_t spriteH = (int32_t) getCCBWidth(pCCB);
     const int32_t spriteW16_16 = int32ToSFixed16_16(spriteW);
     const int32_t spriteH16_16 = int32ToSFixed16_16(spriteH);
 
@@ -1603,7 +1604,7 @@ void DrawSpriteClip(Word x1,Word x2,vissprite_t *vis)
     SpritePRE1 = ((Word *)patch)[15];       /* Get the proper height */
     y = ((Word *)patch)[3];     /* Get offset to the sprite shape data */
     StartLinePtr = &((Byte *)patch)[y+16];  /* Get pointer to first line of data */
-    SpriteWidth = GetShapeHeight(&((Word *)patch)[1]);
+    SpriteWidth = getCCBHeight(&((Word *)patch)[1]);
     SpritePIXC = (vis->colormap&0x8000) ? 0x9C81 : LightTable[(vis->colormap&0xFF)>>LIGHTSCALESHIFT];
     y = vis->y1;
     SpriteY = (y+ScreenYOffset)<<16;    /* Unmolested Y coord */

@@ -77,33 +77,6 @@ typedef int32_t Item;
 #define SetAuxType(x,y)
 #define SetFileType(x,y)
 
-//--------------------------------------------------------------------------------------------------
-// Definition for a 3DO Cel Control Block (CCB)
-// Obtained this from the 3DO SDK; required because some of the sprites in 3DO doom use this for metadata and rendering.
-//
-// More info about it here:
-//  https://github.com/trapexit/3DO-information/blob/master/software/sdk/3DO%20Online%20Developer%20Documentation/ppgfldr/smmfldr/cdmfldr/08CDM001.html
-//--------------------------------------------------------------------------------------------------
-typedef struct CelControlBlock {
-	uint32_t    flags;
-    uint32_t    nextPtr;        // N.B: can't use CelControlBlock* since that introduces 64-bit incompatibilities!
-	uint32_t    sourcePtr;      // N.B: can't use void* since that introduces 64-bit incompatibilities!
-	uint32_t    plutPtr;        // N.B: can't use void* since that introduces 64-bit incompatibilities!
-	int32_t     xPos;
-	int32_t     yPos;
-	int32_t     hdx;
-	int32_t     hdy;
-	int32_t     vdx;
-	int32_t     vdy;
-	int32_t     hddx;
-	int32_t     hddy;
-	uint32_t    pixc;
-	uint32_t    pre0;
-	uint32_t    pre1;
-	int32_t     width;
-	int32_t     height;
-} CelControlBlock;
-
 /* In Graphics */
 extern Word YTable[240];
 extern Byte *VideoPointer;
@@ -118,8 +91,6 @@ extern void DrawMShape(Word x, Word y, const void* ShapePtr);
 extern void EraseShape(Word x, Word y, void* ShapePtr);
 extern void EraseMBShape(Word x, Word y,void *ShapePtr,void *BackPtr);
 extern void DrawARect(Word x,Word y,Word Width,Word Height,Word Color);
-extern uint32_t GetShapeWidth(const CelControlBlock* const pShape);
-extern uint32_t GetShapeHeight(const CelControlBlock* const pShape);
 extern const void* GetShapeIndexPtr(const void* ShapeArrayPtr, Word Index);
 extern void DrawXMShape(Word x,Word y,void *ShapePtr);
 extern Word TestMShape(Word x,Word y,void *ShapePtr);

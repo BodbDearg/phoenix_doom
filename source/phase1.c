@@ -1,3 +1,4 @@
+#include "CelUtils.h"
 #include "doom.h"
 #include "Endian.h"
 #include "MapData.h"
@@ -152,7 +153,7 @@ static void PrepMObj(const mobj_t* const pThing) {
     }
 
     // The shape is sideways, so I get the HEIGHT instead of the width!
-    int x2 = IMFixMul(GetShapeHeight((const CelControlBlock*) patch->Data), Trz) + x1;
+    int x2 = IMFixMul(getCCBHeight((const CelControlBlock*) patch->Data), Trz) + x1;
 
     if (x2 <= 0) {
         releaseResource(spriteResNum);

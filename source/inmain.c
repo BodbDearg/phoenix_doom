@@ -1,3 +1,4 @@
+#include "CelUtils.h"
 #include "doom.h"
 #include "Resources.h"
 #include <string.h>
@@ -113,7 +114,7 @@ void PrintBigFont(Word x,Word y,Byte *string)
         }
         Current = GetShapeIndexPtr(Current,c);  /* Get the shape pointer */
         DrawMShape(x, y2, Current);       /* Draw the char */
-        x+=GetShapeWidth(Current)+1;    /* Get the width to tab */
+        x+=getCCBWidth(Current)+1;      /* Get the width to tab */
     } while ((c = string[0])!=0);       /* Next index */
     
     if (ucharx) {                       /* Did I load the ASCII font? */
@@ -169,7 +170,7 @@ Word GetBigStringWidth(Byte *string)
             Current = ucharx;                       /* Set the pointer */
         }
         Current = GetShapeIndexPtr(Current,c);  /* Get the shape pointer */
-        Width+=GetShapeWidth(Current)+1;        /* Get the width to tab */
+        Width+=getCCBWidth(Current)+1;          /* Get the width to tab */
     } while ((c = string[0])!=0);       /* Next index */
     if (ucharx) {                       /* Did I load in the ASCII font? */
         releaseResource(rCHARSET);      /* Release the text font */

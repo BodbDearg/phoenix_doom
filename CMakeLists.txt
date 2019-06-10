@@ -388,9 +388,7 @@ set(BURGERLIB_SOURCES
     ${BURGERLIB_SRC_DIR}/burger/getakey.c
     #${BURGERLIB_SRC_DIR}/burger/getapixel.s
     ${BURGERLIB_SRC_DIR}/burger/getrandom.c
-    ${BURGERLIB_SRC_DIR}/burger/getshapeheight.c
     ${BURGERLIB_SRC_DIR}/burger/getshapeindexptr.c
-    ${BURGERLIB_SRC_DIR}/burger/getshapewidth.c
     ${BURGERLIB_SRC_DIR}/burger/halt.s
     ${BURGERLIB_SRC_DIR}/burger/initytable.c
     ${BURGERLIB_SRC_DIR}/burger/interceptkey.c
@@ -469,6 +467,8 @@ set(GAME_SOURCES
     ${GAME_SRC_DIR}/ammain.c
     ${GAME_SRC_DIR}/base.c
     ${GAME_SRC_DIR}/ceilng.c
+    ${GAME_SRC_DIR}/CelUtils.cpp
+    ${GAME_SRC_DIR}/CelUtils.h
     ${GAME_SRC_DIR}/change.c
     ${GAME_SRC_DIR}/data.c
     ${GAME_SRC_DIR}/dmain.c
