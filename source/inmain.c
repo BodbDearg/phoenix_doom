@@ -307,6 +307,9 @@ Word IN_Ticker(void)
 
 void IN_Drawer(void)
 {
+    // FIXME: DC
+    return;
+
     const void* IntermisShapes;         /* Cached pointer */
     DrawRezShape(0,0,rBACKGRNDBROWN);   /* Load and draw the skulls */
     

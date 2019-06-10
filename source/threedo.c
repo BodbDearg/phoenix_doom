@@ -1323,27 +1323,57 @@ void WipeDoom(LongWord *OldScreen,LongWord *NewScreen)
 }
 #endif
 
+static Byte *SpritePLUT;
+static Word SpriteY;
+static Word SpriteYScale;
+static Word SpritePIXC;
+static Word SpritePRE0;
+static Word SpritePRE1;
+static Byte *StartLinePtr;
+static Word SpriteWidth;
+
+static Byte *CalcLine(Fixed XFrac)
+{
+    Byte *DataPtr;
+    
+    DataPtr = StartLinePtr;
+    XFrac>>=FRACBITS;
+    if (XFrac<=0) {     /* Left clip failsafe */
+        return DataPtr;
+    }
+    if (XFrac>=SpriteWidth) {   /* Clipping failsafe */
+        XFrac=SpriteWidth-1;
+    }
+    do {
+        Word Offset;
+        Offset = DataPtr[0]+2;
+        DataPtr = &DataPtr[Offset*4];
+    } while (--XFrac);
+    return DataPtr;
+}
+
+
 //-------------------------------------------------------------------------------------------------
 // This routine will draw a scaled sprite during the game. It is called when there is no 
 // onscreen clipping needed or if the only clipping is to the screen bounds.
 //-------------------------------------------------------------------------------------------------
 void DrawSpriteNoClip(const vissprite_t* const pSprite) {
-    // Get the cel control block definition for the sprite.
-    // Note that I have to skip 4 bytes of data here for some reason, unclear as to what this 4 bytes
-    // is from reading the original 3DO source...
-    const Byte* const pPatchData = (const Byte*) loadResourceData(pSprite->PatchLump);
-    const uint32_t patchCCBOffset = pSprite->PatchOffset + sizeof(uint32_t);
-    const CelControlBlock* const pCCB = (const CelControlBlock*)(pPatchData + patchCCBOffset);
+    // Get the cel control block definition for the sprite, it follows the patch header
+    const Byte* const pPatchesData = (const Byte*) loadResourceData(pSprite->PatchLump);
+    const Byte* const pThisPatchData = pPatchesData + pSprite->PatchOffset;
+    const patch_t* const pPatch = (const patch_t*) pThisPatchData;
+
+    const CelControlBlock* const pCCB = (const CelControlBlock*)(&pPatch->Data);
 
     // The pixel LUT is a hardcoded 64 bytes from the start of the sprite data.
     // Note that the last two fields of the 'CelControlBlock' aren't actually stored!
-    // This makes the CCB 60 bytes in total, then plus our mystery 4 bytes gives us an offset of 64...
-    const uint16_t* const pPLUT = (const uint16_t*)(pPatchData + 64);
+    // This makes the CCB 60 bytes in total, then plus our 4 bytes of patch header gives us an offset of 64...
+    const uint16_t* const pPLUT = (const uint16_t*)(pThisPatchData + 64);
 
     // Grab the actual indexed pixel data for the sprite.
-    // Note: for some reason we have to skip an additional 16 bytes also - not sure what this additional data is.
+    // Note: for some reason we have to skip an additional 12 bytes also - not sure what this additional data is.
     const uint32_t pixelsOffset = byteSwappedU32(pCCB->sourcePtr);
-    const uint8_t* const pPixels = (pPatchData + patchCCBOffset) + pixelsOffset + 16;
+    const uint8_t* const pPixels = ((Byte*) pCCB) + pixelsOffset + 16;
 
     // Get the width and height of the sprite and convert to 16.16 fixed point.
     // Note the reversal of these calls (call width in place of height etc.) since the sprites are in column major format. 
@@ -1375,7 +1405,13 @@ void DrawSpriteNoClip(const vissprite_t* const pSprite) {
             for (int dstX = pSprite->x1; dstX <= pSprite->x2; ++dstX) {
                 // Grab the index of this pixels color
                 const int texelX = sfixed16_16ToInt32(texelXFrac);
-                const uint8_t colorIdx = pPixels[(texelX * spriteH + texelY) / 2] & 0xFF;
+
+                // TODO: tidy this up
+                StartLinePtr = pPixels;
+                SpriteWidth = spriteW;
+                const Byte* pColumnPixels = CalcLine(texelXFrac);
+                const uint8_t colorIdx = pColumnPixels[texelY / 2] & 0x0F;
+                //const uint8_t colorIdx = pPixels[(texelX * spriteH + texelY) / 2] & 0xFF;
 
                 // Lookup the color
                 const uint16_t color = byteSwappedU16(pPLUT[colorIdx]);
@@ -1466,15 +1502,6 @@ void DrawSpriteNoClip(const vissprite_t* const pSprite) {
 
 **********************************/
 
-static Byte *SpritePLUT;
-static Word SpriteY;
-static Word SpriteYScale;
-static Word SpritePIXC;
-static Word SpritePRE0;
-static Word SpritePRE1;
-static Byte *StartLinePtr;
-static Word SpriteWidth;
-
 static void OneSpriteLine(Word x1,Byte *SpriteLinePtr)
 {
     // DC: FIXME: implement/replace
@@ -1553,26 +1580,6 @@ static void OneSpriteClipLine(Word x1,Byte *SpriteLinePtr,int Clip,int Run)
     
         CurrentCCB = DestCCB;   /* Save the CCB pointer */
     #endif
-}
-
-static Byte *CalcLine(Fixed XFrac)
-{
-    Byte *DataPtr;
-    
-    DataPtr = StartLinePtr;
-    XFrac>>=FRACBITS;
-    if (XFrac<=0) {     /* Left clip failsafe */
-        return DataPtr;
-    }
-    if (XFrac>=SpriteWidth) {   /* Clipping failsafe */
-        XFrac=SpriteWidth-1;
-    }
-    do {
-        Word Offset;
-        Offset = DataPtr[0]+2;
-        DataPtr = &DataPtr[Offset*4];
-    } while (--XFrac);
-    return DataPtr;
 }
 
 void DrawSpriteClip(Word x1,Word x2,vissprite_t *vis)
