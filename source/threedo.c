@@ -2,6 +2,7 @@
 #include "doom.h"
 #include "Endian.h"
 #include "MathUtils.h"
+#include "Mem.h"
 #include "Resources.h"
 #include <intmath.h>
 #include <memory.h>
@@ -1395,6 +1396,14 @@ void DrawSpriteNoClip(const vissprite_t* const pSprite) {
     const Fixed texelStepY = (renderH >= 2) ?
         sfixedDiv16_16(spriteH16_16, int32ToSFixed16_16(renderH - 1)) :
         int32ToSFixed16_16(spriteH16_16);
+
+    // TODO: TEMP
+    uint16_t* pImage = 0;
+    uint16_t imageWidth = 0;
+    uint16_t imageHeight = 0;
+    decodeDoomCelSprite(pCCB, &pImage, &imageWidth, &imageHeight);
+    MemFree(pImage);
+    pImage = 0;
     
     {
         Fixed texelYFrac = 0;

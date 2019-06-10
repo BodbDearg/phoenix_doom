@@ -12,6 +12,7 @@
 //      hence if you are dealing with CELs or CCBs it is assumed the data is big endian.
 //  (2) Most of these functions make tons of simplifying assumptions and shortcuts surrounding CEL
 //      files that hold true for 3DO Doom, but which won't work on all 3DO CEL files in general.
+//      They also make modifications for 3DO Doom's own specific way of way storing CEL data.
 //      If you want a more complete and robust reference for how to decode/encode 3DO CEL files,
 //      check out various resources available on the net, including the GIMP CEL plugin:
 //          https://github.com/ewhac/gimp-plugin-3docel
@@ -50,8 +51,18 @@ typedef struct CelControlBlock {
 } CelControlBlock;
 
 // Determine the width and height from the given Cel Control Block
-extern uint32_t getCCBWidth(const CelControlBlock* const pCCB);
-extern uint32_t getCCBHeight(const CelControlBlock* const pCCB);
+extern uint16_t getCCBWidth(const CelControlBlock* const pCCB);
+extern uint16_t getCCBHeight(const CelControlBlock* const pCCB);
+
+// Decodes the CEL image data for a Doom sprite and saves it to the given output.
+// The input image data is assumed to follow the pointer to the cel control block.
+// The output image data is saved in RGBA5551 little endian format.
+void decodeDoomCelSprite(
+    const CelControlBlock* const pCCB,
+    uint16_t** pImageOut,
+    uint16_t* pImageWidthOut,
+    uint16_t* pImageHeightOut
+);
 
 #ifdef __cplusplus
 }
