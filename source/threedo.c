@@ -1373,7 +1373,7 @@ void DrawSpriteNoClip(const vissprite_t* const pSprite) {
     // Grab the actual indexed pixel data for the sprite.
     // Note: for some reason we have to skip an additional 12 bytes also - not sure what this additional data is.
     const uint32_t pixelsOffset = byteSwappedU32(pCCB->sourcePtr);
-    const uint8_t* const pPixels = ((Byte*) pCCB) + pixelsOffset + 16;
+    const uint8_t* const pPixels = ((Byte*) pCCB) + pixelsOffset + 12;
 
     // Get the width and height of the sprite and convert to 16.16 fixed point.
     // Note the reversal of these calls (call width in place of height etc.) since the sprites are in column major format. 
