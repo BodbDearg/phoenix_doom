@@ -283,7 +283,7 @@ void decodeDoomCelSprite(
     
     // Get the pointers to the PLUT and image data
     const std::byte* const pCelBytes = (const std::byte*) pCCB;
-    const uint16_t* const pPLUT = (const uint16_t*)(pCelBytes + 64);        // 3DO Doom harcoded this offset?
+    const uint16_t* const pPLUT = (const uint16_t*)(pCelBytes + 60);        // 3DO Doom harcoded this offset?
     const std::byte* const pImageData = pCelBytes + imageDataOffset;
 
     // Decode and return!
