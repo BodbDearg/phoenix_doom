@@ -519,6 +519,8 @@ set(GAME_SOURCES
     ${GAME_SRC_DIR}/sound.c
     ${GAME_SRC_DIR}/sounds.h
     ${GAME_SRC_DIR}/spec.c
+    ${GAME_SRC_DIR}/Sprites.cpp
+    ${GAME_SRC_DIR}/Sprites.h
     ${GAME_SRC_DIR}/states.h
     ${GAME_SRC_DIR}/stmain.c
     ${GAME_SRC_DIR}/switch.c
