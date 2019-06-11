@@ -1389,11 +1389,11 @@ void DrawSpriteNoClip(const vissprite_t* const pSprite) {
 
     // Figure out the step in texels we want per x and y pixel in 16.16 format
     const Fixed texelStepX = (renderW >= 2) ?
-        sfixedDiv16_16(spriteW16_16, int32ToSFixed16_16(renderW - 1)) :
+        sfixedDiv16_16(spriteW16_16, int32ToSFixed16_16(renderW)) :
         int32ToSFixed16_16(spriteW16_16);
     
     const Fixed texelStepY = (renderH >= 2) ?
-        sfixedDiv16_16(spriteH16_16, int32ToSFixed16_16(renderH - 1)) :
+        sfixedDiv16_16(spriteH16_16, int32ToSFixed16_16(renderH)) :
         int32ToSFixed16_16(spriteH16_16);
 
     // TODO: TEMP
@@ -1407,11 +1407,13 @@ void DrawSpriteNoClip(const vissprite_t* const pSprite) {
 
         for (int dstY = pSprite->y1; dstY <= pSprite->y2; ++dstY) {
             const int texelY = sfixed16_16ToInt32(texelYFrac);
+            ASSERT(texelY < spriteH);
             Fixed texelXFrac = 0;
 
             for (int dstX = pSprite->x1; dstX <= pSprite->x2; ++dstX) {
                 // Grab the index of this pixels color
                 const int texelX = sfixed16_16ToInt32(texelXFrac);
+                ASSERT(texelX < spriteW);
 
                 // TODO: tidy this up
                 // StartLinePtr = pPixels;
@@ -1421,7 +1423,10 @@ void DrawSpriteNoClip(const vissprite_t* const pSprite) {
                 // const uint8_t colorIdx = pPixels[(texelX * spriteH + texelY) / 2] & 0xFF;
 
                 // Lookup the color
-                const uint16_t color = pImage[texelX * imageHeight + texelY];
+                //const uint16_t color = pImage[texelX * imageHeight + texelY];
+
+                const uint16_t color = pImage[texelX * spriteH + texelY];
+                const uint16_t texA = (color & 0b1000000000000000) >> 15;
                 const uint16_t texR = (color & 0b0111110000000000) >> 10;
                 const uint16_t texG = (color & 0b0000001111100000) >> 5;
                 const uint16_t texB = (color & 0b0000000000011111) >> 0;
@@ -1451,9 +1456,11 @@ void DrawSpriteNoClip(const vissprite_t* const pSprite) {
                 );
 
                 // TODO: optimize this
-                if (dstX >= 0 && dstX < SCREEN_WIDTH) {
-                    if (dstY >= 0 && dstY < SCREEN_HEIGHT) {
-                        gFrameBuffer[dstY * SCREEN_WIDTH + dstX] = fixedColor;
+                if (texA != 0) {
+                    if (dstX >= 0 && dstX < SCREEN_WIDTH) {
+                        if (dstY >= 0 && dstY < SCREEN_HEIGHT) {
+                            gFrameBuffer[dstY * SCREEN_WIDTH + dstX] = fixedColor;
+                        }
                     }
                 }
 

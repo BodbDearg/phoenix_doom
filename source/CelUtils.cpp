@@ -51,9 +51,9 @@ public:
             out <<= numBitsToRead;
 
             // Extract the required bits and add to the output
-            const uint8_t shiftToGetBits = (mCurBitIdx + uint8_t(1) - numBitsToRead);
-            const uint8_t readMask = uint8_t(0xFF) >> shiftToGetBits;
-            const uint8_t readBits = (curByte >> shiftToGetBits) & readMask;
+            const uint8_t shiftBitsToLSB = (mCurBitIdx + uint8_t(1) - numBitsToRead);
+            const uint8_t readMask = ~(uint8_t(0xFF) << numBitsToRead);
+            const uint8_t readBits = (curByte >> shiftBitsToLSB) & readMask;
             out |= readBits;
 
             // Move onto the next byte if appropriate and count the bits read
@@ -99,8 +99,15 @@ enum class CelColorMode : uint8_t {
     BPP_16
 };
 
+//-------------------------------------------------------------------------------------------------
+// Useful constants
+//-------------------------------------------------------------------------------------------------
+
 // The CCB flag set when CEL image data is in packed format
 static constexpr uint32_t CCB_FLAG_PACKED = 0x00000200;
+
+// Bitwise OR this with the decoded color to ensure an opaque pixel
+static constexpr uint16_t OPAQUE_PIXEL_BITS = 0x8000;
 
 //-------------------------------------------------------------------------------------------------
 // Determines how many bits per pixel a CEL is
@@ -155,7 +162,7 @@ static uint16_t* decodeCelImageData(
                 nextRowOffset = bitStream.readBitsAsUInt<uint16_t>(16) & uint16_t(0x3FF);
             }
             else {
-                nextRowOffset = bitStream.readBitsAsUInt<uint16_t>(16);
+                nextRowOffset = bitStream.readBitsAsUInt<uint16_t>(8);
             }
 
             // Both 3DO Doom and the GIMP CEL plugin do this to calculate the final offset!
@@ -168,7 +175,7 @@ static uint16_t* decodeCelImageData(
         const uint32_t rowSize = nextRowOffset;
 
         // Decode this row
-        uint16_t* const pRowPixels = pImageOut + y;
+        uint16_t* const pRowPixels = pImageOut + y * imageW;
         uint16_t x = 0;
 
         do {
@@ -193,7 +200,7 @@ static uint16_t* decodeCelImageData(
 
                 while (x < endX) {
                     const uint8_t colorIdx = bitStream.readBitsAsUInt<uint8_t>(imageBPP);
-                    const uint16_t color = byteSwappedU16(pPLUT[colorIdx]);
+                    const uint16_t color = byteSwappedU16(pPLUT[colorIdx]) | OPAQUE_PIXEL_BITS;
                     pRowPixels[x] = color;
                     ++x;
                 }
@@ -208,7 +215,7 @@ static uint16_t* decodeCelImageData(
                 ASSERT(packMode == CelPackMode::REPEAT);
 
                 const uint8_t colorIdx = bitStream.readBitsAsUInt<uint8_t>(imageBPP);
-                const uint16_t color = byteSwappedU16(pPLUT[colorIdx]);
+                const uint16_t color = byteSwappedU16(pPLUT[colorIdx]) | OPAQUE_PIXEL_BITS;
                 const uint16_t endX = x + packCount;
 
                 while (x < endX) {
