@@ -19,7 +19,7 @@ extern "C" {
 
 void texturesInit();
 void texturesShutdown();
-void texturesReleaseAll();
+void texturesFreeAll();
 
 uint32_t getNumWallTextures();
 uint32_t getNumFlatTextures();
@@ -36,8 +36,8 @@ const Texture* getFlatTexture(const uint32_t num);
 
 void loadWallTexture(const uint32_t num);
 void loadFlatTexture(const uint32_t num);
-void releaseWallTexture(const uint32_t num);
-void releaseFlatTexture(const uint32_t num);
+void freeWallTexture(const uint32_t num);
+void freeFlatTexture(const uint32_t num);
 
 void setWallAnimTexNum(const uint32_t num, const uint32_t animTexNum);
 void setFlatAnimTexNum(const uint32_t num, const uint32_t animTexNum);

@@ -303,7 +303,7 @@ void SetupLevel(Word map) {
 void ReleaseMapMemory() {
     mapDataShutdown();
     MEM_FREE_AND_NULL(LineArrayBuffer);
-    texturesReleaseAll();
+    texturesFreeAll();
     InitThinkers();         // Dispose of all remaining memory
 }
 

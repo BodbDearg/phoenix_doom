@@ -38,27 +38,27 @@ static uint32_t                 gFirstFlatTexResourceNum;
 static std::vector<Texture>     gWallTextures;
 static std::vector<Texture>     gFlatTextures;
 
-static void releaseTextures(std::vector<Texture>& textures) noexcept {
-    for (Texture& texture : textures) {
-        releaseResource(texture.resourceNum);
-    }
-}
-
-static void clearTextures(std::vector<Texture>& textures) noexcept {
-    releaseTextures(textures);
-    textures.clear();
-}
-
-static void loadTexture(Texture& tex, uint32_t textureNum) noexcept {
+static void loadTexture(Texture& tex, uint32_t textureNum) noexcept {    
     tex.pData = loadResourceData(tex.resourceNum);
     tex.animTexNum = textureNum;    // Initially redirects to itself for animation
 }
 
-static void releaseTexture(Texture& tex) noexcept {
+static void freeTexture(Texture& tex) noexcept {
     if (tex.pData) {
-        releaseResource(tex.resourceNum);
+        freeResource(tex.resourceNum);
         tex.pData = nullptr;
     }
+}
+
+static void freeTextures(std::vector<Texture>& textures) noexcept {
+    for (Texture& texture : textures) {
+        freeTexture(texture);
+    }
+}
+
+static void clearTextures(std::vector<Texture>& textures) noexcept {
+    freeTextures(textures);
+    textures.clear();
 }
 
 extern "C" {
@@ -120,9 +120,9 @@ void texturesShutdown() {
     gFirstFlatTexResourceNum = 0;
 }
 
-void texturesReleaseAll() {
-    releaseTextures(gWallTextures);
-    releaseTextures(gFlatTextures);
+void texturesFreeAll() {
+    freeTextures(gWallTextures);
+    freeTextures(gFlatTextures);
 }
 
 uint32_t getNumWallTextures() {
@@ -175,14 +175,14 @@ void loadFlatTexture(const uint32_t num) {
     loadTexture(gFlatTextures[num], num);
 }
 
-void releaseWallTexture(const uint32_t num) {
+void freeWallTexture(const uint32_t num) {
     ASSERT(num < gWallTextures.size());
-    releaseTexture(gWallTextures[num]);
+    freeTexture(gWallTextures[num]);
 }
 
-void releaseFlatTexture(const uint32_t num) {
+void freeFlatTexture(const uint32_t num) {
     ASSERT(num < gFlatTextures.size());
-    releaseTexture(gFlatTextures[num]);
+    freeTexture(gFlatTextures[num]);
 }
 
 void setWallAnimTexNum(const uint32_t num, const uint32_t animTexNum) {
