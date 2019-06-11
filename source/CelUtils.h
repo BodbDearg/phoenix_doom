@@ -54,9 +54,11 @@ typedef struct CelControlBlock {
 extern uint16_t getCCBWidth(const CelControlBlock* const pCCB);
 extern uint16_t getCCBHeight(const CelControlBlock* const pCCB);
 
+//--------------------------------------------------------------------------------------------------
 // Decodes the CEL image data for a Doom sprite and saves it to the given output.
 // The input image data is assumed to follow the pointer to the cel control block.
 // The output image data is saved in RGBA5551 little endian format.
+//--------------------------------------------------------------------------------------------------
 void decodeDoomCelSprite(
     const CelControlBlock* const pCCB,
     uint16_t** pImageOut,

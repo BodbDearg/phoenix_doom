@@ -6,8 +6,80 @@
 #include <cstddef>
 #include <cstdio>
 #include <cstring>
+#include <type_traits>
 
+//-------------------------------------------------------------------------------------------------
+// Utility class that allows for N bits (up to 64) to be read from a stream of unknown size.
+// The most significant bits are read first.
+//-------------------------------------------------------------------------------------------------
+class BitStream {
+public:
+    inline BitStream(const std::byte* const pData) noexcept
+        : mpData(pData)
+        , mCurByteIdx(0)
+        , mCurBitIdx(7)
+    {
+    }
+
+    inline void seekToByteIndex(const uint32_t byteIndex) noexcept {
+        mCurByteIdx = byteIndex;
+        mCurBitIdx = 7;
+    }
+
+    inline uint32_t getCurByteIndex() const noexcept {
+        return mCurByteIdx;
+    }
+
+    // Does the actual reading of the bits.
+    // Note: only unsigned integer types are supported at present!
+    template <class OutType>
+    OutType readBitsAsUInt(const uint8_t numBits) noexcept {
+        static_assert(std::is_integral_v<OutType>);
+        static_assert(std::is_unsigned_v<OutType>);
+        
+        ASSERT(numBits <= sizeof(OutType) * 8);
+        OutType out = 0;
+        uint8_t numBitsLeft = numBits;
+
+        while (numBitsLeft > 0) {
+            // Setup for reading up to 8 bits
+            const uint8_t curByte = (uint8_t) mpData[mCurByteIdx];
+            const uint8_t numByteBitsLeft = mCurBitIdx + 1;
+            const uint8_t numBitsToRead = (numBitsLeft > numByteBitsLeft) ? numByteBitsLeft : numBitsLeft;
+
+            // Make room in the output for the new bits
+            out <<= numBitsToRead;
+
+            // Extract the required bits and add to the output
+            const uint8_t shiftToGetBits = (mCurBitIdx + uint8_t(1) - numBitsToRead);
+            const uint8_t readMask = uint8_t(0xFF) >> shiftToGetBits;
+            const uint8_t readBits = (curByte >> shiftToGetBits) & readMask;
+            out |= readBits;
+
+            // Move onto the next byte if appropriate and count the bits read
+            if (numBitsToRead >= numByteBitsLeft) {
+                ++mCurByteIdx;
+                mCurBitIdx = 7;
+            }
+            else {
+                mCurBitIdx -= numBitsToRead;
+            }
+
+            numBitsLeft -= numBitsToRead;
+        }
+
+        return out;
+    }
+
+private:
+    const std::byte* const  mpData;
+    uint32_t                mCurByteIdx;
+    uint8_t                 mCurBitIdx;
+};
+
+//-------------------------------------------------------------------------------------------------
 // Pack modes for rows of packed CEL image data
+//-------------------------------------------------------------------------------------------------
 enum class CelPackMode : uint8_t {
     END = 0,            // End of the packed data, no pixels follow
     LITERAL = 1,        // A number of verbatim pixels follow
@@ -15,7 +87,9 @@ enum class CelPackMode : uint8_t {
     REPEAT = 3          // A pixel follows, which is then repeated a number of times
 };
 
+//-------------------------------------------------------------------------------------------------
 // Color formats for CEL image data
+//-------------------------------------------------------------------------------------------------
 enum class CelColorMode : uint8_t {
     BPP_1,
     BPP_2,
@@ -28,7 +102,9 @@ enum class CelColorMode : uint8_t {
 // The CCB flag set when CEL image data is in packed format
 static constexpr uint32_t CCB_FLAG_PACKED = 0x00000200;
 
+//-------------------------------------------------------------------------------------------------
 // Determines how many bits per pixel a CEL is
+//-------------------------------------------------------------------------------------------------
 static uint8_t getCCBBitsPerPixel(const CelControlBlock& ccb) {
     const uint32_t ccbPre0 = byteSwappedU32(ccb.pre0);
     const uint8_t mode = ccbPre0 & 0x07;                    // The first 3-bits define the format
@@ -45,16 +121,108 @@ static uint8_t getCCBBitsPerPixel(const CelControlBlock& ccb) {
     return 0;
 }
 
-// Decodes the control byte for a packed of packed pixels
-static void decodePackedCelControlByte(const uint8_t controlByte, CelPackMode& packMode, uint8_t& packedCount) noexcept {
-    packMode = (CelPackMode) (controlByte & uint8_t(0x03));
+//-------------------------------------------------------------------------------------------------
+// Decodes the actual CEL image data.
+// The pointer to the image data must point to the start data for the first row.
+//-------------------------------------------------------------------------------------------------
+static uint16_t* decodeCelImageData(
+    const std::byte* const pImageData,
+    const uint16_t* const pPLUT,
+    const uint16_t imageW,
+    const uint16_t imageH,
+    const uint8_t imageBPP,
+    const bool bImageIsPacked
+) noexcept {
+    if (!bImageIsPacked) {
+        FATAL_ERROR("Unable to decode non packed cels at the moment!");
+    }
 
-    if (packMode == CelPackMode::END) {
-        packedCount = 0;
+    // Alloc output image and start decoding each row
+    uint16_t* const pImageOut = (uint16_t*) MemAlloc(imageW * imageH * sizeof(uint16_t));
+    const std::byte* pCurRowData = pImageData;
+    const std::byte* pNextRowData = nullptr;
+
+    for (uint16_t y = 0; y < imageH; ++y) {
+        // Firstly read offset to the next row and store the pointer.
+        // That is the first bit of info for each row of pixels.
+        BitStream bitStream(pCurRowData);
+        uint32_t nextRowOffset;
+
+        {
+            // For 8 and 16-bit CEL images the offset is encoded in 10-bits of a u16.
+            // For other CEL image formats just a single byte is used.
+            if (imageBPP >= 8) {                
+                nextRowOffset = bitStream.readBitsAsUInt<uint16_t>(16) & uint16_t(0x3FF);
+            }
+            else {
+                nextRowOffset = bitStream.readBitsAsUInt<uint16_t>(16);
+            }
+
+            // Both 3DO Doom and the GIMP CEL plugin do this to calculate the final offset!
+            // I don't know WHY this is, just the way things are? (shrugs)
+            nextRowOffset += 2;
+            nextRowOffset *= 4;
+            pNextRowData = pCurRowData + nextRowOffset;
+        }
+
+        const uint32_t rowSize = nextRowOffset;
+
+        // Decode this row
+        uint16_t* const pRowPixels = pImageOut + y;
+        uint16_t x = 0;
+
+        do {
+            // Determine the pack mode for this pixel packet.
+            // If the row is ended then fill any remaining pixels in as blank:
+            const CelPackMode packMode = (CelPackMode) bitStream.readBitsAsUInt<uint8_t>(2);
+
+            if (packMode == CelPackMode::END) {
+                std::memset(pRowPixels + x, 0, (imageW - x) * sizeof(uint16_t));
+                break;
+            }
+
+            // Otherwise read the number of pixels in this packet and decide what to do.
+            // Note that the lowest count possible is '1', hence it is added implicitly:
+            const uint16_t packCount = bitStream.readBitsAsUInt<uint16_t>(6) + 1;
+            ASSERT(x + packCount <= imageW);
+
+            if (packMode == CelPackMode::LITERAL) {
+                // A number of literal pixels follow.
+                // Read each pixel and output it to the output buffer:
+                const uint16_t endX = x + packCount;
+
+                while (x < endX) {
+                    const uint8_t colorIdx = bitStream.readBitsAsUInt<uint8_t>(imageBPP);
+                    const uint16_t color = byteSwappedU16(pPLUT[colorIdx]);
+                    pRowPixels[x] = color;
+                    ++x;
+                }
+            }
+            else if (packMode == CelPackMode::TRANSPARENT) {
+                // A number of transparent pixels follow, write all 0s to the output buffer:
+                std::memset(pRowPixels + x, 0, packCount * sizeof(uint16_t));
+                x += packCount;
+            }
+            else {
+                // A repeated pixel follows
+                ASSERT(packMode == CelPackMode::REPEAT);
+
+                const uint8_t colorIdx = bitStream.readBitsAsUInt<uint8_t>(imageBPP);
+                const uint16_t color = byteSwappedU16(pPLUT[colorIdx]);
+                const uint16_t endX = x + packCount;
+
+                while (x < endX) {
+                    pRowPixels[x] = color;
+                    ++x;
+                }
+            }
+        } while (bitStream.getCurByteIndex() < rowSize && x < imageW);
+
+        // Move onto the next row
+        pCurRowData = pNextRowData;
     }
-    else {
-        packedCount = ((controlByte >> 3) & uint8_t(0x1F)) + uint8_t(1);
-    }
+
+    return pImageOut;
 }
 
 extern "C" {
@@ -80,9 +248,6 @@ uint16_t getCCBHeight(const CelControlBlock* const pCCB) {
     return height;
 }
 
-// TODO: TEMP REFERENCE:
-// https://github.com/libretro/4do-libretro/blob/master/libfreedo/freedo_madam.c
-
 void decodeDoomCelSprite(
     const CelControlBlock* const pCCB,
     uint16_t** pImageOut,
@@ -93,112 +258,36 @@ void decodeDoomCelSprite(
     ASSERT(pImageOut);
 
     // Get image width and height
-    const uint16_t imgW = getCCBWidth(pCCB);
-    const uint16_t imgH = getCCBHeight(pCCB);
+    const uint16_t imageW = getCCBWidth(pCCB);
+    const uint16_t imageH = getCCBHeight(pCCB);
 
     if (pImageWidthOut) {
-        *pImageWidthOut = imgW;
+        *pImageWidthOut = imageW;
     }
 
     if (pImageHeightOut) {
-        *pImageHeightOut = imgH;
+        *pImageHeightOut = imageH;
     }
 
     // Grabbing various bits of CCB info and endian correcting
-    const uint32_t ccbFlags = byteSwappedU32(pCCB->flags);
-
-    if (ccbFlags & CCB_FLAG_PACKED != 0) {
-        FATAL_ERROR("Unable to decode non packed cels at the moment!");
-    }
-
+    const uint32_t imageCCBFlags = byteSwappedU32(pCCB->flags);
     const uint32_t imageDataOffset = byteSwappedU32(pCCB->sourcePtr) + 12;  // For some reason 3DO Doom added '12' to this offset to get the image data?    
-    const uint8_t bpp = getCCBBitsPerPixel(*pCCB);
-
-    // Alloc output data
-    uint16_t* const pDecodedImage = (uint16_t*) MemAlloc(imgW * imgH * sizeof(uint16_t));
-    *pImageOut = pDecodedImage;
-
-    // Setup basic pointers
+    const uint8_t imageBPP = getCCBBitsPerPixel(*pCCB);
+    
+    // Get the pointers to the PLUT and image data
     const std::byte* const pCelBytes = (const std::byte*) pCCB;
     const uint16_t* const pPLUT = (const uint16_t*)(pCelBytes + 64);        // 3DO Doom harcoded this offset?
     const std::byte* const pImageData = pCelBytes + imageDataOffset;
 
-    // Start decoding each row
-    const uint8_t* pCurByte = (const uint8_t*) pImageData;
-    
-    for (uint16_t y = 0; y < imgH; ++y) {
-        // Get the offset to the next row.
-        // This logic seems strange and not at all what I would expect of the 3DO format but it's what 3DO Doom did so...?
-        const uint16_t nextRowOffset = (((const uint8_t*) pCurByte)[0] + 2) * 4;
-        const uint8_t* pNextRowBytes = pCurByte + nextRowOffset;
-
-        pCurByte += 2;
-        
-        // Decode the row
-        uint16_t* const pOutputRow = pDecodedImage + (y * imgW);
-        uint16_t x = 0;
-
-        while (x < imgW) {
-            // Read the control byte for the pixel packet
-            const uint8_t controlByte = (uint8_t) *pCurByte;
-            ++pCurByte;
-
-            CelPackMode packMode = {};
-            uint8_t packedCount = 0;
-            decodePackedCelControlByte(controlByte, packMode, packedCount);
-
-            // See what the packet type is
-            if (packMode == CelPackMode::END) {
-                // End of line, treat any remaining row pixels as whitespace
-                if (x < imgW) {
-                    std::memset(pOutputRow + x, 0x00, (imgW - x) * sizeof(uint16_t));
-                    break;
-                }
-            }
-            else if (packMode == CelPackMode::LITERAL) {
-                // A packet of literally stored pixels
-                ASSERT(x + packedCount <= imgW);
-
-                for (uint8_t pixelNum = 0; pixelNum < packedCount; ++pixelNum) {
-                    // Grab the pixel
-                    const uint8_t colorIdx = (uint8_t) *pCurByte;
-                    const uint16_t color = byteSwappedU16(pPLUT[colorIdx]);
-                    ++pCurByte;
-                    
-                    // Save the pixel
-                    uint16_t* const pOutputPixel = pOutputRow + x;
-                    *pOutputPixel = color;
-                    ++x;
-                }
-            }
-            else if (packMode == CelPackMode::TRANSPARENT) {
-                // A packet of transparent pixels
-                ASSERT(x + packedCount <= imgW);
-                std::memset(pOutputRow + x, 0x00, packedCount * sizeof(uint16_t));
-                x += packedCount;
-            }
-            else {
-                // A packet of repeated pixels
-                ASSERT(packMode == CelPackMode::REPEAT);
-                ASSERT(x + packedCount <= imgW);
-
-                // Grab the pixel
-                const uint8_t colorIdx = (uint8_t) *pCurByte;
-                const uint16_t color = byteSwappedU16(pPLUT[colorIdx]);
-                ++pCurByte;
-
-                // Repeat it a number of times
-                for (uint8_t pixelNum = 0; pixelNum < packedCount; ++pixelNum) {
-                    uint16_t* const pOutputPixel = pOutputRow + x;
-                    *pOutputPixel = color;
-                    ++x;
-                }
-            }
-        }
-
-        // Move onto the next row
-        pCurByte = pNextRowBytes;
-    }
+    // Decode and return!
+    *pImageOut = decodeCelImageData(
+        pImageData,
+        pPLUT,
+        imageW,
+        imageH,
+        imageBPP,
+        ((imageCCBFlags & CCB_FLAG_PACKED) != 0)
+    );
 }
 
 }

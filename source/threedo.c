@@ -1354,7 +1354,6 @@ static Byte *CalcLine(Fixed XFrac)
     return DataPtr;
 }
 
-
 //-------------------------------------------------------------------------------------------------
 // This routine will draw a scaled sprite during the game. It is called when there is no 
 // onscreen clipping needed or if the only clipping is to the screen bounds.
@@ -1402,8 +1401,6 @@ void DrawSpriteNoClip(const vissprite_t* const pSprite) {
     uint16_t imageWidth = 0;
     uint16_t imageHeight = 0;
     decodeDoomCelSprite(pCCB, &pImage, &imageWidth, &imageHeight);
-    MemFree(pImage);
-    pImage = 0;
     
     {
         Fixed texelYFrac = 0;
@@ -1417,14 +1414,14 @@ void DrawSpriteNoClip(const vissprite_t* const pSprite) {
                 const int texelX = sfixed16_16ToInt32(texelXFrac);
 
                 // TODO: tidy this up
-                StartLinePtr = pPixels;
-                SpriteWidth = spriteW;
-                const Byte* pColumnPixels = CalcLine(texelXFrac);
-                const uint8_t colorIdx = pColumnPixels[texelY / 2] & 0x0F;
-                //const uint8_t colorIdx = pPixels[(texelX * spriteH + texelY) / 2] & 0xFF;
+                // StartLinePtr = pPixels;
+                // SpriteWidth = spriteW;
+                // const Byte* pColumnPixels = CalcLine(texelXFrac);
+                // const uint8_t colorIdx = pColumnPixels[texelY / 2] & 0x0F;
+                // const uint8_t colorIdx = pPixels[(texelX * spriteH + texelY) / 2] & 0xFF;
 
                 // Lookup the color
-                const uint16_t color = byteSwappedU16(pPLUT[colorIdx]);
+                const uint16_t color = pImage[texelX * imageHeight + texelY];
                 const uint16_t texR = (color & 0b0111110000000000) >> 10;
                 const uint16_t texG = (color & 0b0000001111100000) >> 5;
                 const uint16_t texB = (color & 0b0000000000011111) >> 0;
@@ -1466,6 +1463,9 @@ void DrawSpriteNoClip(const vissprite_t* const pSprite) {
             texelYFrac += texelStepY;
         }
     }
+
+    MemFree(pImage);
+    pImage = 0;
 
     // FIXME: DC IMPLEMENT!
     #if 1
