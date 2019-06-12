@@ -7,6 +7,11 @@ extern "C" {
 #endif
 
 //---------------------------------------------------------------------------------------------------------------------
+// Constants
+//---------------------------------------------------------------------------------------------------------------------
+#define NUM_SPRITE_DIRECTIONS 8
+
+//---------------------------------------------------------------------------------------------------------------------
 // Represents the image to use for one angle of one frame in a sprite
 //---------------------------------------------------------------------------------------------------------------------
 typedef struct SpriteFrameAngle {
@@ -22,7 +27,7 @@ typedef struct SpriteFrameAngle {
 // Represents the images to use for all angles of all frames in a sprite
 //---------------------------------------------------------------------------------------------------------------------
 typedef struct SpriteFrame {
-    SpriteFrameAngle    angles[8];
+    SpriteFrameAngle    angles[NUM_SPRITE_DIRECTIONS];
 } SpriteFrame;
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -42,10 +47,14 @@ uint32_t getNumSprites();
 uint32_t getFirstSpriteResourceNum();
 uint32_t getEndSpriteResourceNum();     // N.B: 1 past the end index!
 
-// N.B: Resource number MUST be within the range of resource numbers used for sprites!
-// To check if valid, query the start and end sprite resource number.
-Sprite* getSprite(const uint32_t resourceNum);
-void loadSprite(const uint32_t resourceNum);
+//---------------------------------------------------------------------------------------------------------------------
+// Notes:
+//  (1) Sprites are only loaded if not already loaded.
+//  (2) Resource number given MUST be within the range of resource numbers used for sprites!
+//      To check if valid, query the start and end sprite resource number.
+//---------------------------------------------------------------------------------------------------------------------
+const Sprite* getSprite(const uint32_t resourceNum);
+const Sprite* loadSprite(const uint32_t resourceNum);
 void freeSprite(const uint32_t resourceNum);
 
 #ifdef __cplusplus
