@@ -179,14 +179,10 @@ static Word SegBehindPoint(viswall_t *ds,Fixed dx,Fixed dy)
     return false;
 }
 
-/**********************************
-
-    See if a sprite needs clipping and if so, then draw it clipped
-
-**********************************/
-
-void DrawVisSprite(vissprite_t *vis)
-{
+//--------------------------------------------------------------------------------------------------
+// See if a sprite needs clipping and if so, then draw it clipped
+//--------------------------------------------------------------------------------------------------
+void DrawVisSprite(const vissprite_t* const pVisSprite) {
     viswall_t *ds;
     int x, r1, r2;
     int silhouette;
@@ -197,28 +193,24 @@ void DrawVisSprite(vissprite_t *vis)
     Word scalefrac;
     Word Clipped;
 
-    x1 = vis->x1;       /* Get the sprite's screen posts */
-    x2 = vis->x2;
-    if (x1<0) {         /* These could be offscreen */
+    x1 = pVisSprite->x1;        /* Get the sprite's screen posts */
+    x2 = pVisSprite->x2;
+    if (x1<0) {                 /* These could be offscreen */
         x1 = 0;
     }
     if (x2>=(int)ScreenWidth) {
         x2 = ScreenWidth-1;
     }
-    scalefrac = vis->yscale;    /* Get the Z scale */
-    
-    Clipped = false;        /* Assume I don't clip */
+    scalefrac = pVisSprite->yscale;     /* Get the Z scale */    
+    Clipped = false;                    /* Assume I don't clip */
 
-/* scan drawsegs from end to start for obscuring segs */
-/* the first drawseg that has a greater scale is the clip seg */
-
-
+    /* scan drawsegs from end to start for obscuring segs */
+    /* the first drawseg that has a greater scale is the clip seg */
     ds = lastwallcmd;
     do {
         --ds;           /* Point to the next wall command */
         
         /* determine if the drawseg obscures the sprite */
-
         if (ds->LeftX > x2 || ds->RightX < x1 ||
             ds->LargeScale <= scalefrac ||
             !(ds->WallActions&(AC_TOPSIL|AC_BOTTOMSIL|AC_SOLIDSIL)) ) {
@@ -226,7 +218,7 @@ void DrawVisSprite(vissprite_t *vis)
         }
 
         if (ds->SmallScale<=scalefrac) {    /* In range of the wall? */
-            if (SegBehindPoint(ds,vis->thing->x,vis->thing->y)) {
+            if (SegBehindPoint(ds,pVisSprite->thing->x, pVisSprite->thing->y)) {
                 continue;           /* Wall seg is behind sprite */
             }
         }
@@ -241,8 +233,7 @@ void DrawVisSprite(vissprite_t *vis)
         r1 = ds->LeftX < x1 ? x1 : ds->LeftX;       /* Get the clip bounds */
         r2 = ds->RightX > x2 ? x2 : ds->RightX;
 
-/* clip this piece of the sprite */
-
+        /* clip this piece of the sprite */
         silhouette = ds->WallActions & (AC_TOPSIL|AC_BOTTOMSIL|AC_SOLIDSIL);
         x=r1;
         if (silhouette == AC_SOLIDSIL) {
@@ -286,17 +277,15 @@ void DrawVisSprite(vissprite_t *vis)
         }
     } while (ds!=viswalls);
     
-    /* Now that I have created the clip regions, let's see if I need to do this */
-    
-    if (!Clipped) {         /* Do I have to clip at all? */
-        DrawSpriteNoClip(vis);      /* Draw it using no clipping at all */
-        return;     /* Exit */
+    /* Now that I have created the clip regions, let's see if I need to do this */    
+    if (!Clipped) {                     // Do I have to clip at all?
+        DrawSpriteNoClip(pVisSprite);   // Draw it using no clipping at all */
+        return;                         // Exit
     }
     
-    /* Check the Y bounds to see if the clip rect even touches the sprite */
-    
-    r1 = vis->y1;
-    r2 = vis->y2;
+    /* Check the Y bounds to see if the clip rect even touches the sprite */    
+    r1 = pVisSprite->y1;
+    r2 = pVisSprite->y2;
     if (r1<0) {
         r1 = 0;     /* Clip to screen coords */
     }
@@ -311,7 +300,7 @@ void DrawVisSprite(vissprite_t *vis)
             top >>=8;
             if (r1<top || r2>=bottom) { /* Needs manual clipping! */
                 if (x!=x1) {        /* Was any part visible? */
-                    DrawSpriteClip(x1,x2,vis);  /* Draw it and exit */
+                    DrawSpriteClip(x1,x2,pVisSprite);  /* Draw it and exit */
                     return;
                 }
                 do {
@@ -320,7 +309,7 @@ void DrawVisSprite(vissprite_t *vis)
                         bottom = top&0xff;
                         top >>=8;
                         if (r1<bottom && r2>=top) { /* Is it even visible? */
-                            DrawSpriteClip(x1,x2,vis);      /* Draw it */
+                            DrawSpriteClip(x1,x2,pVisSprite);      /* Draw it */
                             return;
                         }
                     }
@@ -329,7 +318,7 @@ void DrawVisSprite(vissprite_t *vis)
             }
         }
     } while (++x<=x2);
-    DrawSpriteNoClip(vis);      /* It still didn't need clipping!! */
+    DrawSpriteNoClip(pVisSprite);      /* It still didn't need clipping!! */
 }
 
 /**********************************

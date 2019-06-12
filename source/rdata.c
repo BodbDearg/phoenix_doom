@@ -1,6 +1,7 @@
 #include "doom.h"
 #include "Mem.h"
 #include "Resources.h"
+#include "Sprites.h"
 #include "Textures.h"
 #include <intmath.h>
 #include <string.h>
@@ -29,6 +30,7 @@ static Fixed Stretchs[6] = {
 
 void R_InitData(void) {
     texturesInit();
+    spritesInit();
     
     // Create a recipocal mul table so that I can divide 0-8191 from 1.0.
     // This way I can fake a divide with a multiply.

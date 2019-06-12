@@ -15,7 +15,7 @@ extern "C" {
 // Represents the image to use for one angle of one frame in a sprite
 //---------------------------------------------------------------------------------------------------------------------
 typedef struct SpriteFrameAngle {
-    uint16_t*   pTexture;       // The sprite texture to use for the frame
+    uint16_t*   pTexture;       // The sprite texture to use for the frame. This texture is in RGBA5551 format and COLUMN MAJOR.
     uint16_t    width;          // Width of sprite texture
     uint16_t    height : 15;    // Height of sprite texture
     uint16_t    flipped : 1;    // If '1' then the frame is flipped horizontally when rendered

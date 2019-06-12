@@ -1358,34 +1358,18 @@ static Byte *CalcLine(Fixed XFrac)
 // This routine will draw a scaled sprite during the game. It is called when there is no 
 // onscreen clipping needed or if the only clipping is to the screen bounds.
 //-------------------------------------------------------------------------------------------------
-void DrawSpriteNoClip(const vissprite_t* const pSprite) {
-    // Get the cel control block definition for the sprite, it follows the patch header
-    const Byte* const pPatchesData = (const Byte*) loadResourceData(pSprite->PatchLump);
-    const Byte* const pThisPatchData = pPatchesData + pSprite->PatchOffset;
-    const patch_t* const pPatch = (const patch_t*) pThisPatchData;
+void DrawSpriteNoClip(const vissprite_t* const pVisSprite) {
+    // Get the width and height of the sprite and convert to 16.16 fixed point
+    const SpriteFrameAngle* const pSpriteFrame = pVisSprite->pSprite;
 
-    const CelControlBlock* const pCCB = (const CelControlBlock*)(&pPatch->Data);
-
-    // The pixel LUT is a hardcoded 64 bytes from the start of the sprite data.
-    // Note that the last two fields of the 'CelControlBlock' aren't actually stored!
-    // This makes the CCB 60 bytes in total, then plus our 4 bytes of patch header gives us an offset of 64...
-    const uint16_t* const pPLUT = (const uint16_t*)(pThisPatchData + 64);
-
-    // Grab the actual indexed pixel data for the sprite.
-    // Note: for some reason we have to skip an additional 12 bytes also - not sure what this additional data is.
-    const uint32_t pixelsOffset = byteSwappedU32(pCCB->sourcePtr);
-    const uint8_t* const pPixels = ((Byte*) pCCB) + pixelsOffset + 12;
-
-    // Get the width and height of the sprite and convert to 16.16 fixed point.
-    // Note the reversal of these calls (call width in place of height etc.) since the sprites are in column major format. 
-    const int32_t spriteW = (int32_t) getCCBHeight(pCCB);
-    const int32_t spriteH = (int32_t) getCCBWidth(pCCB);
+    const int32_t spriteW = pSpriteFrame->width;
+    const int32_t spriteH = pSpriteFrame->height;
     const int32_t spriteW16_16 = int32ToSFixed16_16(spriteW);
     const int32_t spriteH16_16 = int32ToSFixed16_16(spriteH);
 
     // Figure out the number of pixels being rendered in width and height
-    const uint32_t renderW = (pSprite->x2 - pSprite->x1) + 1;
-    const uint32_t renderH = (pSprite->y2 - pSprite->y1) + 1;
+    const uint32_t renderW = (pVisSprite->x2 - pVisSprite->x1) + 1;
+    const uint32_t renderH = (pVisSprite->y2 - pVisSprite->y1) + 1;
 
     // Figure out the step in texels we want per x and y pixel in 16.16 format
     const Fixed texelStepX = (renderW >= 2) ?
@@ -1395,37 +1379,24 @@ void DrawSpriteNoClip(const vissprite_t* const pSprite) {
     const Fixed texelStepY = (renderH >= 2) ?
         sfixedDiv16_16(spriteH16_16, int32ToSFixed16_16(renderH)) :
         int32ToSFixed16_16(spriteH16_16);
-
-    // TODO: TEMP
-    uint16_t* pImage = 0;
-    uint16_t imageWidth = 0;
-    uint16_t imageHeight = 0;
-    decodeDoomCelSprite(pCCB, &pImage, &imageWidth, &imageHeight);
     
+    // Render all the columns of the sprite
+    const uint16_t* const pImage = pSpriteFrame->pTexture;
+
     {
         Fixed texelYFrac = 0;
 
-        for (int dstY = pSprite->y1; dstY <= pSprite->y2; ++dstY) {
+        for (int dstY = pVisSprite->y1; dstY <= pVisSprite->y2; ++dstY) {
             const int texelY = sfixed16_16ToInt32(texelYFrac);
             ASSERT(texelY < spriteH);
             Fixed texelXFrac = 0;
 
-            for (int dstX = pSprite->x1; dstX <= pSprite->x2; ++dstX) {
-                // Grab the index of this pixels color
+            for (int dstX = pVisSprite->x1; dstX <= pVisSprite->x2; ++dstX) {
+                // Grab this pixels color
                 const int texelX = sfixed16_16ToInt32(texelXFrac);
                 ASSERT(texelX < spriteW);
 
-                // TODO: tidy this up
-                // StartLinePtr = pPixels;
-                // SpriteWidth = spriteW;
-                // const Byte* pColumnPixels = CalcLine(texelXFrac);
-                // const uint8_t colorIdx = pColumnPixels[texelY / 2] & 0x0F;
-                // const uint8_t colorIdx = pPixels[(texelX * spriteH + texelY) / 2] & 0xFF;
-
-                // Lookup the color
-                //const uint16_t color = pImage[texelX * imageHeight + texelY];
-
-                const uint16_t color = pImage[texelX * spriteH + texelY];
+                const uint16_t color = pImage[texelX * spriteH + texelY];   // N.B: Data is in column major format!
                 const uint16_t texA = (color & 0b1000000000000000) >> 15;
                 const uint16_t texR = (color & 0b0111110000000000) >> 10;
                 const uint16_t texG = (color & 0b0000001111100000) >> 5;
@@ -1448,7 +1419,8 @@ void DrawSpriteNoClip(const vissprite_t* const pSprite) {
                     (diminishedGC << 6) |
                     (diminishedBC << 1)
                 );
-                */
+               */
+
                const uint16_t fixedColor = (
                     (texR << 11) |
                     (texG << 6) |
@@ -1470,14 +1442,6 @@ void DrawSpriteNoClip(const vissprite_t* const pSprite) {
             texelYFrac += texelStepY;
         }
     }
-
-    MemFree(pImage);
-    pImage = 0;
-
-    // FIXME: DC IMPLEMENT!
-    #if 1
-        return;
-    #endif
 
     /*
     patch_t *patch;     // Pointer to the actual sprite record
@@ -1599,13 +1563,14 @@ static void OneSpriteClipLine(Word x1,Byte *SpriteLinePtr,int Clip,int Run)
     #endif
 }
 
-void DrawSpriteClip(Word x1,Word x2,vissprite_t *vis)
+void DrawSpriteClip(Word x1,Word x2, const vissprite_t* pVisSprite)
 {
     // FIXME: DC IMPLEMENT!
     #if 1
         return;
     #endif
 
+    #if 0
     Word y,MaxRun;
     Word y2;
     Word top,bottom;
@@ -1673,6 +1638,7 @@ void DrawSpriteClip(Word x1,Word x2,vissprite_t *vis)
         }
         XFrac+=XStep;
     } while (++x1<=x2);
+    #endif
 }
 
 /**********************************

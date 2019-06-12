@@ -304,6 +304,7 @@ void ReleaseMapMemory() {
     mapDataShutdown();
     MEM_FREE_AND_NULL(LineArrayBuffer);
     texturesFreeAll();
+    spritesFreeAll();
     InitThinkers();         // Dispose of all remaining memory
 }
 

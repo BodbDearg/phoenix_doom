@@ -15,7 +15,7 @@ static std::vector<void*>   gTmpPtrList;
 //--------------------------------------------------------------------------------------------------
 // Header for sprite data.
 //
-// This was known as a 'patch' previously in the 3DO source, but differs greatly to the PC version
+// This was known as a 'patch' previously in the 3DO source, but differed greatly to the PC version
 // of the same data structure since it does not include the sprite size. The sprite size is already
 // encoded in the CEL image data hence that would have been redundant...
 //
@@ -167,7 +167,7 @@ const Sprite* loadSprite(const uint32_t resourceNum) {
 
     const uint32_t firstFrameOffset = byteSwappedU32(pFrameOffsets[0]);
     ASSERT_LOG(firstFrameOffset % sizeof(uint32_t) == 0, "Expect offset to be in multiples of 'uint32_t'!");
-    const uint32_t numFrames = firstFrameOffset / sizeof(uint32_t);
+    const uint32_t numFrames = (firstFrameOffset & REMOVE_SPR_OFFSET_FLAGS_MASK) / sizeof(uint32_t);
 
     // Fill in basic sprite info and alloc frames
     sprite.pFrames = new SpriteFrame[numFrames];
@@ -192,42 +192,45 @@ const Sprite* loadSprite(const uint32_t resourceNum) {
     // Start reading the info for each frame and build up a list of what we need to decode
     for (uint32_t frameIdx = 0; frameIdx < numFrames; ++frameIdx) {
         SpriteFrame& frame = sprite.pFrames[frameIdx];
-        const uint32_t frameDataOffset = byteSwappedU32(pFrameOffsets[frameIdx]);
 
-        if (frameDataOffset & SPR_OFFSET_FLAG_ROTATED) {
+        const uint32_t frameOffsetWithFlags = byteSwappedU32(pFrameOffsets[frameIdx]);
+        const uint32_t frameOffset = frameOffsetWithFlags & REMOVE_SPR_OFFSET_FLAGS_MASK;
+
+        if (frameOffsetWithFlags & SPR_OFFSET_FLAG_ROTATED) {
             // Sprite frame defines data for different angles
-            const uint32_t* const pFrameAngleOffsets = (const uint32_t*)(pSpriteData + frameDataOffset);
+            const uint32_t* const pFrameAngleOffsets = (const uint32_t*)(pSpriteData + frameOffset);
 
             for (uint8_t angle = 0; angle < NUM_SPRITE_DIRECTIONS; ++angle) {
                 // Read the header for this angle and fill in its info
-                const uint32_t frameAngleDataOffset = byteSwappedU32(pFrameAngleOffsets[angle]);
-                const uint32_t frameAngleImageDataOffset = frameAngleDataOffset + sizeof(SpriteImageHeader);
+                const uint32_t frameAngleOffsetWithFlags = frameOffset + byteSwappedU32(pFrameAngleOffsets[angle]);
+                const uint32_t frameAngleOffset = frameAngleOffsetWithFlags & REMOVE_SPR_OFFSET_FLAGS_MASK;
+                const uint32_t imageDataOffset = frameAngleOffset + sizeof(SpriteImageHeader);
                 
-                SpriteImageHeader header = readSpriteFrameHeader(pSpriteData + frameAngleDataOffset);
+                SpriteImageHeader header = readSpriteFrameHeader(pSpriteData + frameAngleOffset);
 
                 SpriteFrameAngle& frameAngle = frame.angles[angle];
-                frameAngle.pTexture = (uint16_t*)(uintptr_t) frameAngleImageDataOffset;     // Hold the desired image offset for now
-                frameAngle.width = 0;                                                       // Unknown until we load the image
-                frameAngle.height = 0;                                                      // Unknown until we load the image
-                frameAngle.flipped = ((frameAngleDataOffset & SPR_OFFSET_FLAG_FLIP) != 0);
+                frameAngle.pTexture = (uint16_t*)(uintptr_t) imageDataOffset;   // Hold the desired image offset for now
+                frameAngle.width = 0;                                           // Unknown until we load the image
+                frameAngle.height = 0;                                          // Unknown until we load the image
+                frameAngle.flipped = ((frameAngleOffsetWithFlags & SPR_OFFSET_FLAG_FLIP) != 0);
                 frameAngle.leftOffset = header.leftOffset;
                 frameAngle.topOffset = header.topOffset;
 
                 // Ensure there is an entry making note to load this image
-                decodedImages[frameAngleImageDataOffset];
+                decodedImages[imageDataOffset];
             }
         }
         else {
             // No data for different angles, the actual sprite data follows read the header and fill in its info
-            const uint32_t frameImageDataOffset = frameDataOffset + sizeof(SpriteImageHeader);
+            const uint32_t imageDataOffset = frameOffset + sizeof(SpriteImageHeader);
 
-            SpriteImageHeader header = readSpriteFrameHeader(pSpriteData + frameDataOffset);
+            SpriteImageHeader header = readSpriteFrameHeader(pSpriteData + frameOffset);
          
             SpriteFrameAngle& frameAngle = frame.angles[0];
-            frameAngle.pTexture = (uint16_t*)(uintptr_t) frameImageDataOffset;      // Hold the desired image offset for now
-            frameAngle.width = 0;                                                   // Unknown until we load the image
-            frameAngle.height = 0;                                                  // Unknown until we load the image
-            frameAngle.flipped = ((frameDataOffset & SPR_OFFSET_FLAG_FLIP) != 0);
+            frameAngle.pTexture = (uint16_t*)(uintptr_t) imageDataOffset;       // Hold the desired image offset for now
+            frameAngle.width = 0;                                               // Unknown until we load the image
+            frameAngle.height = 0;                                              // Unknown until we load the image
+            frameAngle.flipped = ((frameOffsetWithFlags & SPR_OFFSET_FLAG_FLIP) != 0);
             frameAngle.leftOffset = header.leftOffset;
             frameAngle.topOffset = header.topOffset;
 
@@ -243,7 +246,7 @@ const Sprite* loadSprite(const uint32_t resourceNum) {
             frame.angles[7] = frame.angles[0];
 
             // Ensure there is an entry making note to load this image
-            decodedImages[frameImageDataOffset];
+            decodedImages[imageDataOffset];
         }
     }
 
@@ -268,9 +271,11 @@ const Sprite* loadSprite(const uint32_t resourceNum) {
             const uint32_t requestedImageOffset = (uint32_t)(uintptr_t) angle.pTexture;
             const DecodedImage& decodedImage = decodedImages.at(requestedImageOffset);
 
+            // Note: Doom sprites are stored in COLUMN MAJOR format, so the width is actually the height and visa versa...
+            // Swap them here to account for this!
             angle.pTexture = decodedImage.pPixels;
-            angle.width = decodedImage.width;
-            angle.height = decodedImage.height;
+            angle.width = decodedImage.height;
+            angle.height = decodedImage.width;
         }
     }
 

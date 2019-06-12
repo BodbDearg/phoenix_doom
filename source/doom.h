@@ -2,6 +2,7 @@
 
 #include "doomrez.h"
 #include "sounds.h"
+#include "Sprites.h"
 #include "states.h"
 #include <burger.h>
 #include <SDL.h>
@@ -304,25 +305,12 @@ typedef struct {        /* Describe an actor's basic variables */
     bool activesound;   /* Sound to play at random times for mood */
 } mobjinfo_t;
 
-/* a patch holds one or more columns */
-/* patches are used for sprites and all masked pictures */
-
-#define PT_FLIP         0x80000000
-#define PT_NOROTATE     0x40000000
-
-typedef struct {
-    int16_t     leftoffset;     // pixels to the left of origin
-    int16_t     topoffset;      // pixels below the origin
-    Byte        Data[1];
-} patch_t;
-
 // Describes a 2D shape rendered to the screen
 typedef struct {
     int x1,x2,y1,y2;                // Clipped to screen edges column range
     Fixed xscale;                   // Scale factor
     Fixed yscale;                   // Y Scale factor
-    Word PatchLump;                 // Resource to the sprite art data
-    LongWord PatchOffset;           // Offset to the proper record
+    SpriteFrameAngle* pSprite;      // What sprite frame to actually render
     Word colormap;                  // 0x8000 = shadow draw,0x4000 flip, 0x3FFF color map
     const struct mobj_s *thing;     // Used for clipping...
 } vissprite_t;
@@ -1057,7 +1045,7 @@ extern void DrawVisPlane(visplane_t *PlanePtr);
 /* In Phase8.c */
 extern Word spropening[MAXSCREENWIDTH];     /* clipped range */
 extern Word *SortWords(Word *Before,Word *After,Word Total);
-extern void DrawVisSprite(vissprite_t *vis);
+extern void DrawVisSprite(const vissprite_t* const pVisSprite);
 extern void DrawAllSprites(void);
 extern void DrawWeapons(void);
 
@@ -1084,7 +1072,7 @@ extern void DrawWallColumn(
 extern void DrawFloorColumn(Word ds_y,Word ds_x1,Word Count,LongWord xfrac,
     LongWord yfrac,Fixed ds_xstep,Fixed ds_ystep);
 extern void DrawSpriteNoClip(const vissprite_t* const pSprite);
-extern void DrawSpriteClip(Word x1,Word x2,vissprite_t *vis);
+extern void DrawSpriteClip(Word x1, Word x2, const vissprite_t* pVisSprite);
 extern void DrawSpriteCenter(Word SpriteNum);
 extern void EnableHardwareClipping(void);
 extern void DisableHardwareClipping(void);

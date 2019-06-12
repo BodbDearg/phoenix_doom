@@ -78,6 +78,16 @@ static void SortAllSprites(void)
 }
 
 //-------------------------------------------------------------------------------------------------
+// Get the sprite angle (0-7) to render a thing with
+//-------------------------------------------------------------------------------------------------
+static uint8_t getThingSpriteAngleForViewpoint(const Fixed viewpointX, const Fixed viewpointY, const mobj_t* const pThing) {
+    angle_t ang = PointToAngle(viewx, viewy, pThing->x, pThing->y);         // Get angle to thing
+    ang -= pThing->angle;                                                   // Adjust for which way the thing is facing
+    const uint8_t angleIdx = (ang + (angle_t)((ANG45 / 2) * 9U)) >> 29;     // Compute and return angle index (0-7)
+    return angleIdx;
+}
+
+//-------------------------------------------------------------------------------------------------
 // I have a possible sprite record, transform to 2D coords and then see if it is clipped.
 // If the sprite is not clipped then it is prepared for rendering.
 //-------------------------------------------------------------------------------------------------
@@ -112,66 +122,48 @@ static void PrepMObj(const mobj_t* const pThing) {
     if (Trx > (Trz << 2) || Trx < -(Trz << 2)) {
         return;
     }
-    
-    // Decide which patch to use for sprite relative to player
-    state_t *StatePtr = pThing->state;
-    const uint32_t spriteResNum = StatePtr->SpriteFrame >> FF_SPRITESHIFT;      // Get the resource#
-    void **PatchHandle = loadResourceData(spriteResNum);                        // Get the sprite group
-    patch_t* patch = (patch_t*) PatchHandle;                                    // Deref the handle
 
-    // TODO: DC: Find a better place for this endian conversion.
-    //  - The number of frames can be determined by looking at the first offset entry.
-    //    It tells us where the frame offsets end, and thus the number of frames (each offset is a u32).
-    //  - We could use that to preconvert the CCBs etc.
-    //
-    LongWord Offset = byteSwappedU32(((LongWord*) patch)[StatePtr->SpriteFrame & FF_FRAMEMASK]);
+    // Figure out what sprite, frame and frame angle we want
+    state_t* const pStatePtr = pThing->state;
+    const uint32_t spriteResourceNum = pStatePtr->SpriteFrame >> FF_SPRITESHIFT;
+    const uint32_t spriteFrameNum = pStatePtr->SpriteFrame & FF_FRAMEMASK;
+    const uint8_t spriteAngle = getThingSpriteAngleForViewpoint(viewx, viewy, pThing);
 
-    if (Offset & PT_NOROTATE) {     // Do I rotate?        
-        patch = (patch_t*) &((Byte*) patch)[Offset & 0x3FFFFFFF];           // Get pointer to rotation list
-        angle_t ang = PointToAngle(viewx, viewy, pThing->x, pThing->y);     // Get angle to critter
-        ang -= pThing->angle;                                               // Adjust for object's facing
-        const angle_t rot = (ang+(angle_t)((ANG45/2)*9U))>>29;              // Get rotation offset
+    // Load the current sprite for the thing and the info for the actual sprite to use
+    const Sprite* const pSprite = loadSprite(spriteResourceNum);
+    ASSERT(spriteFrameNum < pSprite->numFrames);
 
-        // TODO: DC: Find a better place for this endian conversion
-        Offset = byteSwappedU32(((LongWord*) patch)[rot]);              // Use the rotated offset
-    }
-
-    patch = (patch_t*) &((Byte*) patch)[Offset & 0x3FFFFFFF];   // Get pointer to patch
+    const SpriteFrame* const pSpriteFrame = &pSprite->pFrames[spriteFrameNum];
+    const SpriteFrameAngle* const pSpriteFrameAngle = &pSpriteFrame->angles[spriteAngle];
 
     // Store information in a vissprite.
     // I also will clip to screen coords.
-    Trz = IMFixDiv(CenterX << FRACBITS, Trz);   // Get the scale factor
-    vis->xscale = Trz;                          // Save it
-
-    // TODO: DC: Find a better place for this endian conversion
-    Trx -= (Fixed) byteSwappedI16(patch->leftoffset) << FRACBITS;   // Adjust the x to the sprite's x
+    Trz = IMFixDiv(CenterX << FRACBITS, Trz);                       // Get the scale factor
+    vis->xscale = Trz;                                              // Save it
+    Trx -= (Fixed) pSpriteFrameAngle->leftOffset << FRACBITS;       // Adjust the x to the sprite's x
     int x1 = (IMFixMul(Trx, Trz) >> FRACBITS) + CenterX;            // Scale to screen coords
 
     if (x1 > (int) ScreenWidth) {
-        releaseResource(spriteResNum);
-        return;                             // Off the right side, don't draw!
+        return;     // Off the right side, don't draw!
     }
 
-    // The shape is sideways, so I get the HEIGHT instead of the width!
-    int x2 = IMFixMul(getCCBHeight((const CelControlBlock*) patch->Data), Trz) + x1;
+    int x2 = IMFixMul(pSpriteFrameAngle->width, Trz) + x1;
 
     if (x2 <= 0) {
-        releaseResource(spriteResNum);
-        return;                             // Off the left side, don't draw!
+        return;     // Off the left side, don't draw!
     }
     
     // Get light level
-    Try = IMFixMul(Trz,Stretch);                                // Adjust for aspect ratio
+    Try = IMFixMul(Trz,Stretch);            // Adjust for aspect ratio
     vis->yscale = Try;
-    vis->PatchLump = spriteResNum;                              // Resource referance
-    vis->PatchOffset = (Byte*) patch - (Byte*) PatchHandle;     // Shape offset
-    vis->x1 = x1;                                               // Save the edge coords
+    vis->pSprite = pSpriteFrameAngle;
+    vis->x1 = x1;                           // Save the edge coords
     vis->x2 = x2;
     vis->thing = pThing;
 
     if (pThing->flags & MF_SHADOW) {                        // Draw a shadow...
         x1 = 0x8000U;
-    } else if (StatePtr->SpriteFrame & FF_FULLBRIGHT) {
+    } else if (pStatePtr->SpriteFrame & FF_FULLBRIGHT) {
         x1 = 255;                                           // full bright
     } else {
         x1 = pThing->subsector->sector->lightlevel;         // + extralight;
@@ -180,24 +172,20 @@ static void PrepMObj(const mobj_t* const pThing) {
             x1 = 255;                                       // Use maximum
         }
     }
-    
-    if (Offset & PT_FLIP) {     // Reverse the shape?
+
+    if (pSpriteFrameAngle->flipped != 0) {  // Reverse the shape?
         x1 |= 0x4000;
     }
 
     vis->colormap = x1;                                                         // Save the light value
     Trz = pThing->z - viewz;
     vis->y2 = CenterY - (IMFixMul(Trz - (5 << FRACBITS), Try) >> FRACBITS);
-
-    // TODO: DC: Find a better place for this endian conversion
-    Trz = Trz + ((Fixed) byteSwappedI16(patch->topoffset) << FRACBITS);     // Height offset
-    vis->y1 = CenterY - (IMFixMul(Trz, Try) >> FRACBITS);                   // Get screen Y
+    Trz = Trz + ((Fixed) pSpriteFrameAngle->topOffset << FRACBITS);             // Height offset
+    vis->y1 = CenterY - (IMFixMul(Trz, Try) >> FRACBITS);                       // Get screen Y
 
     if (vis->y2 >= 0 || vis->y1 < (int) ScreenHeight) {     // Clipped vertically?
         vissprite_p = vis + 1;                              // Used this sprite record
     }
-
-    releaseResource(spriteResNum);
 }
 
 /**********************************
