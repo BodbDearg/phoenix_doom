@@ -2067,8 +2067,8 @@ angle_t xtoviewangle[MAXSCREENWIDTH+1];
 Word yslope[MAXSCREENHEIGHT];
 Word distscale[MAXSCREENWIDTH];
 Word IDivTable[8192];
-Word CenterX;           /* Center X coord in fixed point */
-Word CenterY;           /* Center Y coord in fixed point */
+Word CenterX;           /* Center X coord */
+Word CenterY;           /* Center Y coord */
 Word ScreenWidth;   /* Width of the view screen */
 Word ScreenHeight;  /* Height of the view screen */
 Fixed Stretch;      /* Stretch factor */
