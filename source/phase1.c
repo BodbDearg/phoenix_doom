@@ -177,14 +177,19 @@ static void PrepMObj(const mobj_t* const pThing) {
         x1 |= 0x4000;
     }
 
-    vis->colormap = x1;                                                         // Save the light value
+    vis->colormap = x1;                                             // Save the light value
     Trz = pThing->z - viewz;
-    vis->y2 = CenterY - (IMFixMul(Trz - (5 << FRACBITS), yScale) >> FRACBITS);
-    Trz = Trz + ((Fixed) pSpriteFrameAngle->topOffset << FRACBITS);             // Height offset
-    vis->y1 = CenterY - (IMFixMul(Trz, yScale) >> FRACBITS);                    // Get screen Y
+    Trz += (((Fixed) pSpriteFrameAngle->topOffset) << FRACBITS);    // Height offset
 
-    if (vis->y2 >= 0 || vis->y1 < (int) ScreenHeight) {     // Clipped vertically?
-        vissprite_p = vis + 1;                              // Used this sprite record
+    // Determine screen top and bottom Y for the sprite
+    const Fixed topY = (CenterY << FRACBITS) - IMFixMul(Trz, yScale);
+    const Fixed botY = topY + IMFixMul(pSpriteFrameAngle->height << FRACBITS, yScale);
+    vis->y1 = topY >> FRACBITS;
+    vis->y2 = botY >> FRACBITS;
+
+    // Check if vertically offscreen, if not use the sprite record
+    if (vis->y2 >= 0 || vis->y1 < (int) ScreenHeight) {     
+        vissprite_p = vis + 1;
     }
 }
 
