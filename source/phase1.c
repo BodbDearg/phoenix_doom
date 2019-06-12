@@ -138,26 +138,26 @@ static void PrepMObj(const mobj_t* const pThing) {
 
     // Store information in a vissprite.
     // I also will clip to screen coords.
-    Trz = IMFixDiv(CenterX << FRACBITS, Trz);                       // Get the scale factor
-    vis->xscale = Trz;                                              // Save it
+    const Fixed xScale = IMFixDiv(CenterX << FRACBITS, Trz);        // Get the scale factor
+    vis->xscale = xScale;                                           // Save it
     Trx -= (Fixed) pSpriteFrameAngle->leftOffset << FRACBITS;       // Adjust the x to the sprite's x
-    int x1 = (IMFixMul(Trx, Trz) >> FRACBITS) + CenterX;            // Scale to screen coords
+    int x1 = (IMFixMul(Trx, xScale) >> FRACBITS) + CenterX;         // Scale to screen coords
 
     if (x1 > (int) ScreenWidth) {
         return;     // Off the right side, don't draw!
     }
 
-    int x2 = IMFixMul(pSpriteFrameAngle->width, Trz) + x1;
+    int x2 = IMFixMul(pSpriteFrameAngle->width, xScale) + x1;
 
     if (x2 <= 0) {
         return;     // Off the left side, don't draw!
     }
     
     // Get light level
-    Try = IMFixMul(Trz,Stretch);            // Adjust for aspect ratio
-    vis->yscale = Try;
+    const Fixed yScale = IMFixMul(xScale, Stretch);     // Adjust for aspect ratio
+    vis->yscale = yScale;
     vis->pSprite = pSpriteFrameAngle;
-    vis->x1 = x1;                           // Save the edge coords
+    vis->x1 = x1;                               // Save the edge coords
     vis->x2 = x2;
     vis->thing = pThing;
 
@@ -179,9 +179,9 @@ static void PrepMObj(const mobj_t* const pThing) {
 
     vis->colormap = x1;                                                         // Save the light value
     Trz = pThing->z - viewz;
-    vis->y2 = CenterY - (IMFixMul(Trz - (5 << FRACBITS), Try) >> FRACBITS);
+    vis->y2 = CenterY - (IMFixMul(Trz - (5 << FRACBITS), yScale) >> FRACBITS);
     Trz = Trz + ((Fixed) pSpriteFrameAngle->topOffset << FRACBITS);             // Height offset
-    vis->y1 = CenterY - (IMFixMul(Trz, Try) >> FRACBITS);                       // Get screen Y
+    vis->y1 = CenterY - (IMFixMul(Trz, yScale) >> FRACBITS);                    // Get screen Y
 
     if (vis->y2 >= 0 || vis->y1 < (int) ScreenHeight) {     // Clipped vertically?
         vissprite_p = vis + 1;                              // Used this sprite record
