@@ -1343,8 +1343,8 @@ static Byte *CalcLine(Fixed XFrac)
     if (XFrac<=0) {     /* Left clip failsafe */
         return DataPtr;
     }
-    if (XFrac>=SpriteWidth) {   /* Clipping failsafe */
-        XFrac=SpriteWidth-1;
+    if (XFrac>= (int) SpriteWidth) {   /* Clipping failsafe */
+        XFrac=(int) SpriteWidth-1;
     }
     do {
         Word Offset;
@@ -1380,7 +1380,26 @@ static Fixed determineTexelStep(const uint32_t textureSize, const uint32_t rende
 // onscreen clipping needed or if the only clipping is to the screen bounds.
 //-------------------------------------------------------------------------------------------------
 void DrawSpriteNoClip(const vissprite_t* const pVisSprite) {
-    // Get the width and height of the sprite and also the size that it will be rendered at
+    // Get the left, right, top and bottom screen edges for the sprite to be rendered.
+    // Also check if the sprite is completely offscreen, because the input is not clipped.
+    // 3DO Doom originally relied on the hardware to clip in this routine...
+    int x1 = pVisSprite->x1;
+    int x2 = pVisSprite->x2;
+    int y1 = pVisSprite->y1;
+    int y2 = pVisSprite->y2;
+
+    const bool bCompletelyOffscreen = (
+        (x1 >= (int) ScreenWidth) ||
+        (x2 < 0) ||
+        (y1 >= (int) ScreenHeight) ||
+        (y2 < 0)
+    );
+
+    if (bCompletelyOffscreen)
+        return;
+    
+    // Get the width and height of the sprite and also the size that it will be rendered at.
+    // Note that we expect no zero sizes here!
     const SpriteFrameAngle* const pSpriteFrame = pVisSprite->pSprite;
     
     const int32_t spriteW = pSpriteFrame->width;
@@ -1392,27 +1411,28 @@ void DrawSpriteNoClip(const vissprite_t* const pVisSprite) {
     ASSERT(renderW > 0 && renderH > 0);
 
     // Figure out the step in texels we want per x and y pixel in 16.16 format
-    const Fixed texXStepNoFlip = determineTexelStep(spriteW, renderW);
-    const Fixed texYStep = determineTexelStep(spriteH, renderH);
+    const Fixed texelStepX_NoFlip = determineTexelStep(spriteW, renderW);
+    const Fixed texelStepY = determineTexelStep(spriteH, renderH);
 
-    // Computing start texel x coord and step due to sprite flipping
-    Fixed texXStep;
-    Fixed texXStart;
+    // Computing start texel x coord (y is '0' for now) and step due to sprite flipping
+    Fixed texelStepX;
+    Fixed startTexelX;
+    Fixed startTexelY = 0;
 
     if (pSpriteFrame->flipped != 0) {
-        texXStep = -texXStepNoFlip;
-        texXStart = int32ToSFixed16_16(spriteW) - 1;    // Start from the furthest reaches of the end pixel, only want texel to change if nearly 1 unit has been passed!
+        texelStepX = -texelStepX_NoFlip;
+        startTexelX = int32ToSFixed16_16(spriteW) - 1;    // Start from the furthest reaches of the end pixel, only want texel to change if nearly 1 unit has been passed!
     }
     else {
-        texXStep = texXStepNoFlip;
-        texXStart = 0;
+        texelStepX = texelStepX_NoFlip;
+        startTexelX = 0;
     }
 
     // Sanity check in debug that we won't go out of bounds of the texture (shouldn't)
     #if ASSERTS_ENABLED == 1
     {
-        const Fixed endXFrac = texXStart + sfixedMul16_16(texXStep, int32ToSFixed16_16(renderW - 1));
-        const Fixed endYFrac = sfixedMul16_16(texYStep, int32ToSFixed16_16(renderH - 1));
+        const Fixed endXFrac = startTexelX + sfixedMul16_16(texelStepX, int32ToSFixed16_16(renderW - 1));
+        const Fixed endYFrac = sfixedMul16_16(texelStepY, int32ToSFixed16_16(renderH - 1));
         const int32_t endX = sfixed16_16ToInt32(endXFrac);
         const int32_t endY = sfixed16_16ToInt32(endYFrac);
 
@@ -1420,66 +1440,67 @@ void DrawSpriteNoClip(const vissprite_t* const pVisSprite) {
         ASSERT(endY >= 0 && endY < spriteH);
     }
     #endif
+
+    // Clip the sprite render bounds to the screen (left, right, top, bottom, in that order).
+    // Skip over rows and columns that are out of bounds:
+    if (x1 < 0) {
+        const int pixelsOffscreen = -x1;
+        startTexelX += pixelsOffscreen * texelStepX;
+        x1 = 0;
+    }
+
+    if (x2 >= (int) ScreenWidth) {
+        x2 = ScreenWidth - 1;
+    }
+    
+    if (y1 < 0) {
+        const int pixelsOffscreen = -y1;
+        startTexelY += pixelsOffscreen * texelStepY;
+        y1 = 0;
+    }
+
+    if (y2 >= (int) ScreenHeight) {
+        y2 = ScreenHeight - 1;
+    }
     
     // Render all the columns of the sprite
     const uint16_t* const pImage = pSpriteFrame->pTexture;
+    Fixed texelXFrac = startTexelX;
 
-    {
-        Fixed texYFrac = 0;
+    for (int x = x1; x <= x2; ++x) {
+        const int texelXInt = sfixed16_16ToInt32(texelXFrac);
+        Fixed texelYFrac = startTexelY;
+        
+        const uint16_t* const pImageCol = pImage + texelXInt * spriteH;
+        uint16_t* pDstPixel = &gFrameBuffer[x + y1 * ScreenWidth];
 
-        for (int dstY = pVisSprite->y1; dstY <= pVisSprite->y2; ++dstY) {
-            const int texelY = sfixed16_16ToInt32(texYFrac);
-            Fixed texXFrac = texXStart;
+        for (int y = y1; y <= y2; ++y) {
+            // Grab this pixels color from the sprite image and skip if alpha 0
+            const int texelYInt = sfixed16_16ToInt32(texelYFrac);
 
-            for (int dstX = pVisSprite->x1; dstX <= pVisSprite->x2; ++dstX) {
-                // Grab this pixels color
-                const int texelX = sfixed16_16ToInt32(texXFrac);
+            const uint16_t color = pImageCol[texelYInt];
+            const uint16_t texA = (color & 0b1000000000000000) >> 15;
+            const uint16_t texR = (color & 0b0111110000000000) >> 10;
+            const uint16_t texG = (color & 0b0000001111100000) >> 5;
+            const uint16_t texB = (color & 0b0000000000011111) >> 0;
 
-                const uint16_t color = pImage[texelX * spriteH + texelY];   // N.B: Data is in column major format!
-                const uint16_t texA = (color & 0b1000000000000000) >> 15;
-                const uint16_t texR = (color & 0b0111110000000000) >> 10;
-                const uint16_t texG = (color & 0b0000001111100000) >> 5;
-                const uint16_t texB = (color & 0b0000000000011111) >> 0;
-
-                // FIXME:
-                /*
-                const uint16_t lightComponentValue = 32;
-
-                const uint16_t diminishedR = (texR * (1 + lightComponentValue)) >> 4;
-                const uint16_t diminishedG = (texG * (1 + lightComponentValue)) >> 4;
-                const uint16_t diminishedB = (texB * (1 + lightComponentValue)) >> 4;
-
-                const uint16_t diminishedRC = diminishedR > 0x1F ? 0x1F : diminishedR;
-                const uint16_t diminishedGC = diminishedG > 0x1F ? 0x1F : diminishedG;
-                const uint16_t diminishedBC = diminishedB > 0x1F ? 0x1F : diminishedB;
-
+            if (texA != 0) {
+                // Save the final output color
                 const uint16_t fixedColor = (
-                    (diminishedRC << 11) |
-                    (diminishedGC << 6) |
-                    (diminishedBC << 1)
-                );
-               */
-
-               const uint16_t fixedColor = (
                     (texR << 11) |
                     (texG << 6) |
                     (texB << 1)
                 );
 
-                // TODO: optimize this
-                if (texA != 0) {
-                    if (dstX >= 0 && dstX < SCREEN_WIDTH) {
-                        if (dstY >= 0 && dstY < SCREEN_HEIGHT) {
-                            gFrameBuffer[dstY * SCREEN_WIDTH + dstX] = fixedColor;
-                        }
-                    }
-                }
-
-                texXFrac += texXStep;
+                *pDstPixel = fixedColor;
             }
 
-            texYFrac += texYStep;
+            // Onto the next pixel in the column
+            texelYFrac += texelStepY;
+            pDstPixel += ScreenWidth;
         }
+
+        texelXFrac += texelStepX;   // Next column
     }
 
     /*
