@@ -23,7 +23,7 @@
 
 SDL_Window*     gWindow;
 SDL_Renderer*   gRenderer;
-Uint16          gFrameBuffer[SCREEN_WIDTH * SCREEN_HEIGHT];
+uint32_t        gFrameBuffer[SCREEN_WIDTH * SCREEN_HEIGHT];
 SDL_Texture*    gFramebufferTexture;
 
 static void createDisplay() {
@@ -46,7 +46,7 @@ static void createDisplay() {
 
     gFramebufferTexture = SDL_CreateTexture(
         gRenderer,
-        SDL_PIXELFORMAT_RGBA5551,
+        SDL_PIXELFORMAT_RGBA8888,
         SDL_TEXTUREACCESS_STREAMING,
         SCREEN_WIDTH,
         SCREEN_HEIGHT
@@ -642,24 +642,18 @@ static void FlushCCBs(void)
 
 void UpdateAndPageFlip(void)
 {
-    SDL_UpdateTexture(gFramebufferTexture, NULL, gFrameBuffer, SCREEN_WIDTH * 2);
+    SDL_UpdateTexture(gFramebufferTexture, NULL, gFrameBuffer, SCREEN_WIDTH * sizeof(uint32_t));
     SDL_RenderCopy(gRenderer, gFramebufferTexture, NULL, NULL);    
 
     // TODO: TEMP
     // Clear the framebuffer to pink to spot rendering gaps.
     {
-        const uint16_t pinkU16 = (
-            (0x1F << 11) |  // R
-            (0x00 << 6) |   // G
-            (0x1F << 1) |   // B
-            (0x1)           // A
-        );
-
-        uint16_t* pPixel = gFrameBuffer;
-        uint16_t* const pEndPixel = gFrameBuffer + SCREEN_WIDTH * SCREEN_HEIGHT;
+        const uint32_t pinkU32 = 0xFF00FFFF;
+        uint32_t* pPixel = gFrameBuffer;
+        uint32_t* const pEndPixel = gFrameBuffer + SCREEN_WIDTH * SCREEN_HEIGHT;
 
         while (pPixel < pEndPixel) {
-            *pPixel = pinkU16;
+            *pPixel = pinkU32;
             ++pPixel;
         }
     }
@@ -1018,11 +1012,14 @@ void DrawSkyLine(void)
 // Makes a framebuffer color from the given RGB values.
 // Saturates/clamps the values if they are out of range.
 //---------------------------------------------------------------------------------------------------------------------
-static int16_t makeFramebufferColor(const uint16_t r, const uint16_t g, const uint16_t b) {
-    const uint16_t rClamp = (r > 0x1F) ? 0x1F : r;
-    const uint16_t gClamp = (g > 0x1F) ? 0x1F : g;
-    const uint16_t bClamp = (b > 0x1F) ? 0x1F : b;
-    return ((rClamp << 11) | (gClamp << 6) | (bClamp << 1) | 1);
+static uint32_t makeFramebufferColor(const Fixed rFrac, const Fixed gFrac, const Fixed bFrac) {
+    const uint16_t rInt = rFrac >> (FRACBITS - 3);
+    const uint16_t gInt = gFrac >> (FRACBITS - 3);
+    const uint16_t bInt = bFrac >> (FRACBITS - 3);
+    const uint32_t rClamp = (rInt > 0xFF) ? 0xFF : rInt;
+    const uint32_t gClamp = (gInt > 0xFF) ? 0xFF : gInt;
+    const uint32_t bClamp = (bInt > 0xFF) ? 0xFF : bInt;
+    return ((rClamp << 24) | (gClamp << 16) | (bClamp << 8) | 0xFF);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -1088,12 +1085,11 @@ void DrawWallColumn(
             const Fixed texRFrac = int32ToSFixed16_16(texR);
             const Fixed texGFrac = int32ToSFixed16_16(texG);
             const Fixed texBFrac = int32ToSFixed16_16(texB);
+            const Fixed darkenedR = sfixedMul16_16(texRFrac, lightMultiplier);
+            const Fixed darkenedG = sfixedMul16_16(texGFrac, lightMultiplier);
+            const Fixed darkenedB = sfixedMul16_16(texBFrac, lightMultiplier);
 
-            const uint16_t darkenedR = sfixed16_16ToInt32(sfixedMul16_16(texRFrac, lightMultiplier));
-            const uint16_t darkenedG = sfixed16_16ToInt32(sfixedMul16_16(texGFrac, lightMultiplier));
-            const uint16_t darkenedB = sfixed16_16ToInt32(sfixedMul16_16(texBFrac, lightMultiplier));
-
-            const uint16_t finalColor = makeFramebufferColor(darkenedR, darkenedG, darkenedB);
+            const uint32_t finalColor = makeFramebufferColor(darkenedR, darkenedG, darkenedB);
             gFrameBuffer[dstY * SCREEN_WIDTH + tx_x] = finalColor;
         }
     }
@@ -1177,11 +1173,11 @@ void DrawFloorColumn(Word ds_y,Word ds_x1,Word Count,LongWord xfrac,
         const Fixed texGFrac = int32ToSFixed16_16(texG);
         const Fixed texBFrac = int32ToSFixed16_16(texB);
 
-        const uint16_t darkenedR = sfixed16_16ToInt32(sfixedMul16_16(texRFrac, lightMultiplier));
-        const uint16_t darkenedG = sfixed16_16ToInt32(sfixedMul16_16(texGFrac, lightMultiplier));
-        const uint16_t darkenedB = sfixed16_16ToInt32(sfixedMul16_16(texBFrac, lightMultiplier));
+        const Fixed darkenedR = sfixedMul16_16(texRFrac, lightMultiplier);
+        const Fixed darkenedG = sfixedMul16_16(texGFrac, lightMultiplier);
+        const Fixed darkenedB = sfixedMul16_16(texBFrac, lightMultiplier);
 
-        const uint16_t finalColor = makeFramebufferColor(darkenedR, darkenedG, darkenedB);
+        const uint32_t finalColor = makeFramebufferColor(darkenedR, darkenedG, darkenedB);
         gFrameBuffer[ds_y * SCREEN_WIDTH + ds_x1 + pixelNum] = finalColor;
     }
 
@@ -1484,7 +1480,7 @@ void DrawSpriteNoClip(const vissprite_t* const pVisSprite) {
         Fixed texelYFrac = startTexelY;
         
         const uint16_t* const pImageCol = pImage + texelXInt * spriteH;
-        uint16_t* pDstPixel = &gFrameBuffer[x + y1 * ScreenWidth];
+        uint32_t* pDstPixel = &gFrameBuffer[x + y1 * ScreenWidth];
 
         for (int y = y1; y <= y2; ++y) {
             // Grab this pixels color from the sprite image and skip if alpha 0
@@ -1502,12 +1498,12 @@ void DrawSpriteNoClip(const vissprite_t* const pVisSprite) {
                 const Fixed texGFrac = int32ToSFixed16_16(texG);
                 const Fixed texBFrac = int32ToSFixed16_16(texB);
 
-                const uint16_t darkenedR = sfixed16_16ToInt32(sfixedMul16_16(texRFrac, lightMultiplier));
-                const uint16_t darkenedG = sfixed16_16ToInt32(sfixedMul16_16(texGFrac, lightMultiplier));
-                const uint16_t darkenedB = sfixed16_16ToInt32(sfixedMul16_16(texBFrac, lightMultiplier));
+                const Fixed darkenedR = sfixedMul16_16(texRFrac, lightMultiplier);
+                const Fixed darkenedG = sfixedMul16_16(texGFrac, lightMultiplier);
+                const Fixed darkenedB = sfixedMul16_16(texBFrac, lightMultiplier);
 
                 // Save the final output color
-                const uint16_t finalColor = makeFramebufferColor(darkenedR, darkenedG, darkenedB);
+                const uint32_t finalColor = makeFramebufferColor(darkenedR, darkenedG, darkenedB);
                 *pDstPixel = finalColor;
             }
 
