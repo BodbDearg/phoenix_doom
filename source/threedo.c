@@ -1380,37 +1380,60 @@ static Fixed determineTexelStep(const uint32_t textureSize, const uint32_t rende
 // onscreen clipping needed or if the only clipping is to the screen bounds.
 //-------------------------------------------------------------------------------------------------
 void DrawSpriteNoClip(const vissprite_t* const pVisSprite) {
-    // Get the width and height of the sprite and convert to 16.16 fixed point
+    // Get the width and height of the sprite and also the size that it will be rendered at
     const SpriteFrameAngle* const pSpriteFrame = pVisSprite->pSprite;
-
+    
     const int32_t spriteW = pSpriteFrame->width;
     const int32_t spriteH = pSpriteFrame->height;
-    const int32_t spriteW16_16 = int32ToSFixed16_16(spriteW);
-    const int32_t spriteH16_16 = int32ToSFixed16_16(spriteH);
+    ASSERT(spriteW > 0 && spriteH > 0);
 
-    // Figure out the number of pixels being rendered in width and height
     const uint32_t renderW = (pVisSprite->x2 - pVisSprite->x1) + 1;
     const uint32_t renderH = (pVisSprite->y2 - pVisSprite->y1) + 1;
+    ASSERT(renderW > 0 && renderH > 0);
 
     // Figure out the step in texels we want per x and y pixel in 16.16 format
-    const Fixed texelStepX = determineTexelStep(spriteW, renderW);
-    const Fixed texelStepY = determineTexelStep(spriteH, renderH);
+    const Fixed texXStepNoFlip = determineTexelStep(spriteW, renderW);
+    const Fixed texYStep = determineTexelStep(spriteH, renderH);
+
+    // Computing start texel x coord and step due to sprite flipping
+    Fixed texXStep;
+    Fixed texXStart;
+
+    if (pSpriteFrame->flipped != 0) {
+        texXStep = -texXStepNoFlip;
+        texXStart = int32ToSFixed16_16(spriteW) - 1;    // Start from the furthest reaches of the end pixel, only want texel to change if nearly 1 unit has been passed!
+    }
+    else {
+        texXStep = texXStepNoFlip;
+        texXStart = 0;
+    }
+
+    // Sanity check in debug that we won't go out of bounds of the texture (shouldn't)
+    #if ASSERTS_ENABLED == 1
+    {
+        const Fixed endXFrac = texXStart + sfixedMul16_16(texXStep, int32ToSFixed16_16(renderW - 1));
+        const Fixed endYFrac = sfixedMul16_16(texYStep, int32ToSFixed16_16(renderH - 1));
+        const int32_t endX = sfixed16_16ToInt32(endXFrac);
+        const int32_t endY = sfixed16_16ToInt32(endYFrac);
+
+        ASSERT(endX >= 0 && endX < spriteW);
+        ASSERT(endY >= 0 && endY < spriteH);
+    }
+    #endif
     
     // Render all the columns of the sprite
     const uint16_t* const pImage = pSpriteFrame->pTexture;
 
     {
-        Fixed texelYFrac = 0;
+        Fixed texYFrac = 0;
 
         for (int dstY = pVisSprite->y1; dstY <= pVisSprite->y2; ++dstY) {
-            const int texelY = sfixed16_16ToInt32(texelYFrac);
-            ASSERT(texelY < spriteH);
-            Fixed texelXFrac = 0;
+            const int texelY = sfixed16_16ToInt32(texYFrac);
+            Fixed texXFrac = texXStart;
 
             for (int dstX = pVisSprite->x1; dstX <= pVisSprite->x2; ++dstX) {
                 // Grab this pixels color
-                const int texelX = sfixed16_16ToInt32(texelXFrac);
-                ASSERT(texelX < spriteW);
+                const int texelX = sfixed16_16ToInt32(texXFrac);
 
                 const uint16_t color = pImage[texelX * spriteH + texelY];   // N.B: Data is in column major format!
                 const uint16_t texA = (color & 0b1000000000000000) >> 15;
@@ -1452,10 +1475,10 @@ void DrawSpriteNoClip(const vissprite_t* const pVisSprite) {
                     }
                 }
 
-                texelXFrac += texelStepX;
+                texXFrac += texXStep;
             }
 
-            texelYFrac += texelStepY;
+            texYFrac += texYStep;
         }
     }
 
