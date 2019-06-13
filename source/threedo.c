@@ -1010,6 +1010,32 @@ void DrawSkyLine(void)
     #endif
 }
 
+#define MAX_WALL_LIGHT_VALUE 15
+#define MAX_FLOOR_LIGHT_VALUE 15
+#define MAX_SPRITE_LIGHT_VALUE 31
+
+//---------------------------------------------------------------------------------------------------------------------
+// Makes a framebuffer color from the given RGB values.
+// Saturates/clamps the values if they are out of range.
+//---------------------------------------------------------------------------------------------------------------------
+static int16_t makeFramebufferColor(const uint16_t r, const uint16_t g, const uint16_t b) {
+    const uint16_t rClamp = (r > 0x1F) ? 0x1F : r;
+    const uint16_t gClamp = (g > 0x1F) ? 0x1F : g;
+    const uint16_t bClamp = (b > 0x1F) ? 0x1F : b;
+    return ((rClamp << 11) | (gClamp << 6) | (bClamp << 1) | 1);
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+// Returns a fixed point multipler for the given texture light value (which is in 4.3 format)
+// This can be used to scale RGB values due to lighting.
+//---------------------------------------------------------------------------------------------------------------------
+static Fixed getLightMultiplier(const uint32_t lightValue, const uint32_t maxLightValue) {
+    const Fixed maxLightValueFrac = int32ToSFixed16_16(maxLightValue);
+    const Fixed textureLightFrac = lightValue << (FRACBITS - LIGHTSCALESHIFT);
+    const Fixed lightMultiplier = sfixedDiv16_16(textureLightFrac, maxLightValueFrac);
+    return (lightMultiplier > FRACUNIT) ? FRACUNIT : lightMultiplier;
+}
+
 /**********************************
 
     Drawing the wall columns are a little trickier, so I'll do this next.
@@ -1037,12 +1063,8 @@ void DrawWallColumn(
 {
     // TODO: TEMP
     const Word numPixels = (Run * tx_scale) >> SCALEBITS;
-    const Word numPixelsRounded = ((Run * tx_scale) & 0x1F0) != 0 ? numPixels + 1 : numPixels;
-    
-    const uint32_t lightComponentValue2 = (tx_texturelight >> LIGHTSCALESHIFT);
-    const uint32_t lightComponentValue = lightComponentValue2 > 15 ? 15 : lightComponentValue2;
-
-    const uint32_t lightGreyValue = 1 | (lightComponentValue << 1) | (lightComponentValue << 6) | (lightComponentValue << 11);
+    const Word numPixelsRounded = ((Run * tx_scale) & 0x1F0) != 0 ? numPixels + 1 : numPixels;    
+    const Fixed lightMultiplier = getLightMultiplier(tx_texturelight, MAX_WALL_LIGHT_VALUE);
 
     const uint16_t* const pPLUT = (const uint16_t*) Source;
 
@@ -1057,28 +1079,22 @@ void DrawWallColumn(
 
             const uint8_t colorByte = Source[32 + texOffset / 2];
             const uint8_t colorIdx = (texOffset & 1) != 0 ? (colorByte & 0x0F) : (colorByte & 0xF0) >> 4;
-            const uint16_t color = byteSwappedU16(pPLUT[colorIdx]);
 
+            const uint16_t color = byteSwappedU16(pPLUT[colorIdx]);
             const uint16_t texR = (color & 0b0111110000000000) >> 10;
             const uint16_t texG = (color & 0b0000001111100000) >> 5;
             const uint16_t texB = (color & 0b0000000000011111) >> 0;
             
-            const uint16_t diminishedR = (texR * (1 + lightComponentValue)) >> 4;
-            const uint16_t diminishedG = (texG * (1 + lightComponentValue)) >> 4;
-            const uint16_t diminishedB = (texB * (1 + lightComponentValue)) >> 4;
+            const Fixed texRFrac = int32ToSFixed16_16(texR);
+            const Fixed texGFrac = int32ToSFixed16_16(texG);
+            const Fixed texBFrac = int32ToSFixed16_16(texB);
 
-            const uint16_t diminishedRC = diminishedR > 0x1F ? 0x1F : diminishedR;
-            const uint16_t diminishedGC = diminishedG > 0x1F ? 0x1F : diminishedG;
-            const uint16_t diminishedBC = diminishedB > 0x1F ? 0x1F : diminishedB;
+            const uint16_t darkenedR = sfixed16_16ToInt32(sfixedMul16_16(texRFrac, lightMultiplier));
+            const uint16_t darkenedG = sfixed16_16ToInt32(sfixedMul16_16(texGFrac, lightMultiplier));
+            const uint16_t darkenedB = sfixed16_16ToInt32(sfixedMul16_16(texBFrac, lightMultiplier));
 
-            const uint16_t fixedColor = (
-                (diminishedRC << 11) |
-                (diminishedGC << 6) |
-                (diminishedBC << 1)
-            );
-
-            gFrameBuffer[dstY * SCREEN_WIDTH + tx_x] = fixedColor;
-            // gFrameBuffer[dstY * SCREEN_WIDTH + tx_x] = lightGreyValue;
+            const uint16_t finalColor = makeFramebufferColor(darkenedR, darkenedG, darkenedB);
+            gFrameBuffer[dstY * SCREEN_WIDTH + tx_x] = finalColor;
         }
     }
     
@@ -1141,11 +1157,8 @@ void DrawFloorColumn(Word ds_y,Word ds_x1,Word Count,LongWord xfrac,
     LongWord yfrac,Fixed ds_xstep,Fixed ds_ystep)
 {
     const uint16_t* const pPLUT = (const uint16_t*) PlaneSource;
+    const Fixed lightMultiplier = getLightMultiplier(tx_texturelight, MAX_FLOOR_LIGHT_VALUE);
 
-    const uint32_t lightComponentValue2 = (tx_texturelight >> LIGHTSCALESHIFT);
-    const uint32_t lightComponentValue = lightComponentValue2 > 15 ? 15 : lightComponentValue2;
-    
-    const uint16_t pixelColor = 0x1 | (0x1F << 11);
     for (uint32_t pixelNum = 0; pixelNum < Count; ++pixelNum) {
         Fixed tx = ((xfrac + ds_xstep * pixelNum) >> FRACBITS) & 63;    // assumes 64x64
         Fixed ty = ((yfrac + ds_ystep * pixelNum) >> FRACBITS) & 63;    // assumes 64x64
@@ -1154,26 +1167,22 @@ void DrawFloorColumn(Word ds_y,Word ds_x1,Word Count,LongWord xfrac,
         const Byte lutByte = PlaneSource[64 + offset] & 31;
         ASSERT(lutByte < 32);
         uint8_t colorIdx = lutByte;
+
         const uint16_t color = byteSwappedU16(pPLUT[colorIdx]);
         const uint16_t texR = (color & 0b0111110000000000) >> 10;
         const uint16_t texG = (color & 0b0000001111100000) >> 5;
         const uint16_t texB = (color & 0b0000000000011111) >> 0;
-            
-        const uint16_t diminishedR = (texR * (1 + lightComponentValue)) >> 4;
-        const uint16_t diminishedG = (texG * (1 + lightComponentValue)) >> 4;
-        const uint16_t diminishedB = (texB * (1 + lightComponentValue)) >> 4;
 
-        const uint16_t diminishedRC = diminishedR > 0x1F ? 0x1F : diminishedR;
-        const uint16_t diminishedGC = diminishedG > 0x1F ? 0x1F : diminishedG;
-        const uint16_t diminishedBC = diminishedB > 0x1F ? 0x1F : diminishedB;
+        const Fixed texRFrac = int32ToSFixed16_16(texR);
+        const Fixed texGFrac = int32ToSFixed16_16(texG);
+        const Fixed texBFrac = int32ToSFixed16_16(texB);
 
-        const uint16_t fixedColor = (
-            (diminishedRC << 11) |
-            (diminishedGC << 6) |
-            (diminishedBC << 1)
-        );
+        const uint16_t darkenedR = sfixed16_16ToInt32(sfixedMul16_16(texRFrac, lightMultiplier));
+        const uint16_t darkenedG = sfixed16_16ToInt32(sfixedMul16_16(texGFrac, lightMultiplier));
+        const uint16_t darkenedB = sfixed16_16ToInt32(sfixedMul16_16(texBFrac, lightMultiplier));
 
-        gFrameBuffer[ds_y * SCREEN_WIDTH + ds_x1 + pixelNum] = fixedColor;
+        const uint16_t finalColor = makeFramebufferColor(darkenedR, darkenedG, darkenedB);
+        gFrameBuffer[ds_y * SCREEN_WIDTH + ds_x1 + pixelNum] = finalColor;
     }
 
     // DC: FIXME: implement/replace
@@ -1397,6 +1406,9 @@ void DrawSpriteNoClip(const vissprite_t* const pVisSprite) {
 
     if (bCompletelyOffscreen)
         return;
+
+    // Get the light multiplier to use for lighting the sprite
+    const Fixed lightMultiplier = getLightMultiplier(pVisSprite->colormap & 0xFF, MAX_SPRITE_LIGHT_VALUE);
     
     // Get the width and height of the sprite and also the size that it will be rendered at.
     // Note that we expect no zero sizes here!
@@ -1485,14 +1497,18 @@ void DrawSpriteNoClip(const vissprite_t* const pVisSprite) {
             const uint16_t texB = (color & 0b0000000000011111) >> 0;
 
             if (texA != 0) {
-                // Save the final output color
-                const uint16_t fixedColor = (
-                    (texR << 11) |
-                    (texG << 6) |
-                    (texB << 1)
-                );
+                // Do light diminishing
+                const Fixed texRFrac = int32ToSFixed16_16(texR);
+                const Fixed texGFrac = int32ToSFixed16_16(texG);
+                const Fixed texBFrac = int32ToSFixed16_16(texB);
 
-                *pDstPixel = fixedColor;
+                const uint16_t darkenedR = sfixed16_16ToInt32(sfixedMul16_16(texRFrac, lightMultiplier));
+                const uint16_t darkenedG = sfixed16_16ToInt32(sfixedMul16_16(texGFrac, lightMultiplier));
+                const uint16_t darkenedB = sfixed16_16ToInt32(sfixedMul16_16(texBFrac, lightMultiplier));
+
+                // Save the final output color
+                const uint16_t finalColor = makeFramebufferColor(darkenedR, darkenedG, darkenedB);
+                *pDstPixel = finalColor;
             }
 
             // Onto the next pixel in the column
