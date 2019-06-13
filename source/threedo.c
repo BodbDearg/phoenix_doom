@@ -1355,6 +1355,27 @@ static Byte *CalcLine(Fixed XFrac)
 }
 
 //-------------------------------------------------------------------------------------------------
+// Utility that determines how much to step (in texels) per pixel to render the entire of the given
+// sprite dimension in the given render area dimension (both in pixels).
+//-------------------------------------------------------------------------------------------------
+static Fixed determineTexelStep(const uint32_t textureSize, const uint32_t renderSize) {
+    if (textureSize <= 1 || renderSize <= 1) {
+        return 0;
+    }
+    
+    // The way the math works here helps ensure the last pixel drawn is pretty much always the last pixel
+    // of the texture. This ensures that edges/borders around sprites etc. don't seem to vanish... 
+    // I used to have issues with the bottom rows of the explosive barrels cutting out before adopting this method.
+    const int32_t numPixelSteps = (int32_t) renderSize - 1;
+    const Fixed step = sfixedDiv16_16(
+        int32ToSFixed16_16(textureSize) - 1,    // N.B: never let it reach 'textureSize' - keep below, as that is an out of bounds index!
+        int32ToSFixed16_16(numPixelSteps)
+    );
+
+    return step;
+}
+
+//-------------------------------------------------------------------------------------------------
 // This routine will draw a scaled sprite during the game. It is called when there is no 
 // onscreen clipping needed or if the only clipping is to the screen bounds.
 //-------------------------------------------------------------------------------------------------
@@ -1372,13 +1393,8 @@ void DrawSpriteNoClip(const vissprite_t* const pVisSprite) {
     const uint32_t renderH = (pVisSprite->y2 - pVisSprite->y1) + 1;
 
     // Figure out the step in texels we want per x and y pixel in 16.16 format
-    const Fixed texelStepX = (renderW >= 2) ?
-        sfixedDiv16_16(spriteW16_16, int32ToSFixed16_16(renderW)) :
-        int32ToSFixed16_16(spriteW16_16);
-    
-    const Fixed texelStepY = (renderH >= 2) ?
-        sfixedDiv16_16(spriteH16_16, int32ToSFixed16_16(renderH)) :
-        int32ToSFixed16_16(spriteH16_16);
+    const Fixed texelStepX = determineTexelStep(spriteW, renderW);
+    const Fixed texelStepY = determineTexelStep(spriteH, renderH);
     
     // Render all the columns of the sprite
     const uint16_t* const pImage = pSpriteFrame->pTexture;
