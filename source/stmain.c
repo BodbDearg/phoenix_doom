@@ -253,7 +253,7 @@ void ST_Drawer (void)
     do {
         if (p->cards[ind] || FlashPtr->doDraw) {    /* Flashing? */
             DrawMShape(
-                card_x[ind],card_y[ind],GetShapeIndexPtr(*SBObj,sb_card_b+ind));
+                card_x[ind],card_y[ind],GetShapeIndexPtr(SBObj,sb_card_b+ind));
         }
         ++FlashPtr;
     } while (++ind<NUMCARDS);
@@ -263,7 +263,7 @@ void ST_Drawer (void)
     ind = 0;
     do {
         if (p->weaponowned[ind+1]) {
-            DrawMShape(micronums_x[ind],micronums_y[ind],GetShapeIndexPtr(*SBObj,sb_micro+ind));
+            DrawMShape(micronums_x[ind],micronums_y[ind],GetShapeIndexPtr(SBObj,sb_micro+ind));
         }
     } while (++ind<NUMMICROS);
     
@@ -300,5 +300,5 @@ void ST_Drawer (void)
         }
         i = i+newface;  /* Get shape requested */
     }
-    DrawMShape(FACEX,FACEY,GetShapeIndexPtr(*Faces,i)); /* Dead man */
+    DrawMShape(FACEX,FACEY,GetShapeIndexPtr(Faces,i)); /* Dead man */
 }

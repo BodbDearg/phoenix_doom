@@ -141,7 +141,23 @@ static uint16_t* decodeCelImageData(
     const bool bImageIsPacked
 ) noexcept {
     if (!bImageIsPacked) {
-        FATAL_ERROR("Unable to decode non packed cels at the moment!");
+        // FIXME: implement non packed decoding - making red and magenta for now
+        uint16_t* const pImageOut = (uint16_t*) MemAlloc(imageW * imageH * sizeof(uint16_t));
+        const uint16_t* const pEndImageOut = pImageOut + (imageW * imageH);
+        
+        const uint16_t red = 0b1111100000000001;
+        const uint16_t green = 0b0000011111000001;
+        
+        uint16_t* pCurPixel = pImageOut;
+        bool useRed = true;
+
+        while (pCurPixel < pEndImageOut) {
+            *pCurPixel = (useRed) ? red : green;
+            useRed = (!useRed);
+            ++pCurPixel;
+        }
+
+        return pImageOut;
     }
 
     // Alloc output image and start decoding each row

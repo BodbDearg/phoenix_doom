@@ -235,34 +235,25 @@ Word P_Ticker(void)
                         /* or ga_secretexit */
 }
 
-/**********************************
-
-    Draw current display
-
-**********************************/
-
-void P_Drawer(void)
-{
+//--------------------------------------------------------------------------------------------------
+// Draw current display
+//--------------------------------------------------------------------------------------------------
+void P_Drawer() {
     if (gamepaused && refreshdrawn) {
-        DrawPlaque(rPAUSED);        /* Draw paused */
+        DrawPlaque(rPAUSED);    // Draw paused
     } else if (players.AutomapFlags & AF_OPTIONSACTIVE) {
-        R_RenderPlayerView();   /* Render the 3D view */
-        ST_Drawer();            /* Draw the status bar */
-        O_Drawer();         /* Draw the console handler */
+        R_RenderPlayerView();   // Render the 3D view
+        ST_Drawer();            // Draw the status bar
+        O_Drawer();             // Draw the console handler
         refreshdrawn = false;
     } else if (players.AutomapFlags & AF_ACTIVE) {
-        AM_Drawer();        /* Draw the automap */
-        ST_Drawer();        /* Draw the status bar */
-        UpdateAndPageFlip();    /* Update and page flip */
+        AM_Drawer();            // Draw the automap
+        ST_Drawer();            // Draw the status bar
+        UpdateAndPageFlip();    // Update and page flip
         refreshdrawn = true;
     } else {
-        R_RenderPlayerView();   /* Render the 3D view */
-
-        // DC: FIXME: this is broken - skipping for now
-        #if 0
-        ST_Drawer();            /* Draw the status bar */
-        #endif
-
+        R_RenderPlayerView();   // Render the 3D view
+        ST_Drawer();            // Draw the status bar
         UpdateAndPageFlip();
         refreshdrawn = true;
     }
