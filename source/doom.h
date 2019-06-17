@@ -12,8 +12,8 @@ extern "C" {
 #endif
 
 // DC: FIXME: DO NOT HARDCODE LIKE THIS!
-#define SCREEN_WIDTH 280
-#define SCREEN_HEIGHT 160
+#define SCREEN_WIDTH 320
+#define SCREEN_HEIGHT 200   // Note: 3DO vertical res was 240 but 240 px was unused (black border)
 
 extern SDL_Window*     gWindow;
 extern SDL_Renderer*   gRenderer;

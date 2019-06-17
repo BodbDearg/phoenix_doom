@@ -1100,7 +1100,7 @@ void DrawWallColumn(
 
     for (uint32_t pixNum = 0; pixNum < numPixelsRounded; ++pixNum) {
         const uint32_t dstY = y + pixNum;
-        if (dstY >= 0 && dstY < SCREEN_HEIGHT) {
+        if (dstY >= 0 && dstY < ScreenHeight) {
             const uint32_t pixTexYOffsetFixed = (pixNum << (SCALEBITS + 1)) / tx_scale;
             const uint32_t pixTexYOffset = pixTexYOffsetFixed & 1 ? (pixTexYOffsetFixed / 2) + 1 : pixTexYOffsetFixed / 2;
             
@@ -1123,7 +1123,10 @@ void DrawWallColumn(
             const Fixed darkenedB = sfixedMul16_16(texBFrac, lightMultiplier);
 
             const uint32_t finalColor = makeFramebufferColor(darkenedR, darkenedG, darkenedB);
-            gFrameBuffer[dstY * SCREEN_WIDTH + tx_x] = finalColor;
+            const uint32_t screenX = tx_x + ScreenXOffset;
+            const uint32_t screenY = dstY + ScreenYOffset;
+
+            gFrameBuffer[screenY * SCREEN_WIDTH + screenX] = finalColor;
         }
     }
     
@@ -1211,8 +1214,11 @@ void DrawFloorColumn(Word ds_y,Word ds_x1,Word Count,LongWord xfrac,
         const Fixed darkenedG = sfixedMul16_16(texGFrac, lightMultiplier);
         const Fixed darkenedB = sfixedMul16_16(texBFrac, lightMultiplier);
 
-        const uint32_t finalColor = makeFramebufferColor(darkenedR, darkenedG, darkenedB);
-        gFrameBuffer[ds_y * SCREEN_WIDTH + ds_x1 + pixelNum] = finalColor;
+        const uint32_t finalColor = makeFramebufferColor(darkenedR, darkenedG, darkenedB);        
+        const uint32_t screenX = ds_x1 + pixelNum + ScreenXOffset;
+        const uint32_t screenY = ds_y + ScreenYOffset;
+
+        gFrameBuffer[screenY * SCREEN_WIDTH + screenX] = finalColor;
     }
 
     // DC: FIXME: implement/replace
@@ -1525,7 +1531,7 @@ void DrawSpriteNoClip(const vissprite_t* const pVisSprite) {
         Fixed texelYFrac = startTexelY;
         
         const uint16_t* const pImageCol = pImage + texelXInt * spriteH;
-        uint32_t* pDstPixel = &gFrameBuffer[x + y1 * ScreenWidth];
+        uint32_t* pDstPixel = &gFrameBuffer[x + ScreenXOffset + (y1 + ScreenYOffset) * SCREEN_WIDTH];
 
         for (int y = y1; y <= y2; ++y) {
             // Grab this pixels color from the sprite image and skip if alpha 0
@@ -1554,7 +1560,7 @@ void DrawSpriteNoClip(const vissprite_t* const pVisSprite) {
 
             // Onto the next pixel in the column
             texelYFrac += texelStepY;
-            pDstPixel += ScreenWidth;
+            pDstPixel += SCREEN_WIDTH;
         }
 
         texelXFrac += texelStepX;   // Next column
@@ -1662,7 +1668,7 @@ static void OneSpriteLine(
     // Render the sprite column
     const uint16_t* const pImageCol = getSpriteColumn(pVisSprite, spriteX);
     Fixed texelYFrac = startTexelY;
-    uint32_t* pDstPixel = &gFrameBuffer[screenX + y1 * ScreenWidth];
+    uint32_t* pDstPixel = &gFrameBuffer[screenX + ScreenXOffset + (y1 + ScreenYOffset) * SCREEN_WIDTH];
 
     for (int y = y1; y <= y2; ++y) {
         // Grab this pixels color from the sprite image and skip if alpha 0
@@ -1691,7 +1697,7 @@ static void OneSpriteLine(
         
         // Onto the next pixel in the column
         texelYFrac += texelStepY;
-        pDstPixel += ScreenWidth;
+        pDstPixel += SCREEN_WIDTH;
     }
 
     // DC: FIXME: implement/replace
