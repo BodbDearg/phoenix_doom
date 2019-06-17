@@ -822,29 +822,32 @@ void DrawMShape(const uint32_t x1, const uint32_t y1, const CelControlBlock* con
 
     const uint32_t xEnd = x1 + imageW;
     const uint32_t yEnd = y1 + imageH;
-
-    uint16_t* pCurImagePixel = pImage;
+    const uint16_t* pCurImagePixel = pImage;
 
     for (uint32_t y = y1; y < yEnd; ++y) {
         for (uint32_t x = x1; x < xEnd; ++x) {        
             const uint16_t color = *pCurImagePixel;
 
-            const uint16_t colorA = (color & 0b1000000000000000) >> 10;
-            const uint16_t colorR = (color & 0b0111110000000000) >> 10;
-            const uint16_t colorG = (color & 0b0000001111100000) >> 5;
-            const uint16_t colorB = (color & 0b0000000000011111) >> 0;
+            if (x >= 0 && x < SCREEN_WIDTH) {
+                if (y >= 0 && y < SCREEN_HEIGHT) {
+                    const uint16_t colorA = (color & 0b1000000000000000) >> 10;
+                    const uint16_t colorR = (color & 0b0111110000000000) >> 10;
+                    const uint16_t colorG = (color & 0b0000001111100000) >> 5;
+                    const uint16_t colorB = (color & 0b0000000000011111) >> 0;
 
-            if (colorA != 0) {
-                const uint32_t finalColor = (
-                    (colorR << 27) |
-                    (colorG << 19) |
-                    (colorB << 11) |
-                    255
-                );
+                    if (colorA != 0) {
+                        const uint32_t finalColor = (
+                            (colorR << 27) |
+                            (colorG << 19) |
+                            (colorB << 11) |
+                            255
+                        );
 
-                gFrameBuffer[y * SCREEN_WIDTH + x] = finalColor;
+                        gFrameBuffer[y * SCREEN_WIDTH + x] = finalColor;
+                    }
+                }
             }
-            
+
             ++pCurImagePixel;
         }
     }

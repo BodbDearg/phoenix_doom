@@ -44,18 +44,17 @@ void R_Setup(void)
     mobj_t *mo;                 /* Object record of the player */
     Word i;
 
-/* set up globals for new frame */
-
-    player = &players;  /* Which player is the camera attached? */
+    /* set up globals for new frame */
+    player = &players;          /* Which player is the camera attached? */
     mo = player->mo;
-    viewx = mo->x;                  /* Get the position of the player */
+    viewx = mo->x;              /* Get the position of the player */
     viewy = mo->y;
-    viewz = player->viewz;          /* Get the height of the player */
-    viewangle = mo->angle;  /* Get the angle of the player */
+    viewz = player->viewz;      /* Get the height of the player */
+    viewangle = mo->angle;      /* Get the angle of the player */
 
     i = viewangle>>ANGLETOFINESHIFT;    /* Precalc angle index */
-    viewsin = finesine[i];      /* Get the base sine value */
-    viewcos = finecosine[i];        /* Get the base cosine value */
+    viewsin = finesine[i];              /* Get the base sine value */
+    viewcos = finecosine[i];            /* Get the base cosine value */
 
     extralight = player->extralight << 6;   /* Init the extra lighting value */
 
@@ -71,15 +70,10 @@ void R_Setup(void)
 
 **********************************/
 
-void R_RenderPlayerView (void)
-{
-    R_Setup();      /* Init variables based on camera angle */
-    BSP();          /* Traverse the BSP tree for possible walls to render */
-    SegCommands();  /* Draw all everything Z Sorted */
-    DrawColors();   /* Draw color overlay if needed */
-
-    // DC: FIXME: this is broken - skipping for now
-    #if 0
-    DrawWeapons();      /* Draw the weapons on top of the screen */
-    #endif
+void R_RenderPlayerView() {
+    R_Setup();          // Init variables based on camera angle
+    BSP();              // Traverse the BSP tree for possible walls to render
+    SegCommands();      // Draw all everything Z Sorted
+    DrawColors();       // Draw color overlay if needed
+    DrawWeapons();      // Draw the weapons on top of the screen
 }
