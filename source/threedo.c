@@ -52,9 +52,9 @@ static void createDisplay() {
     }
 
     gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-    gFrameBuffer = MemAlloc(ScreenWidth * ScreenHeight * sizeof(uint32_t));
-    memset(gFrameBuffer, 0x00, sizeof(gFrameBuffer));
-        
+    const uint32_t framebufferSize = SCREEN_WIDTH * SCREEN_WIDTH * sizeof(uint32_t);
+    gFrameBuffer = MemAlloc(framebufferSize);
+    
     if (!gRenderer) {
         FATAL_ERROR("Failed to create renderer!");
     }
@@ -662,15 +662,15 @@ static void FlushCCBs(void)
 
 void UpdateAndPageFlip(void)
 {
-    SDL_UpdateTexture(gFramebufferTexture, NULL, gFrameBuffer, SCREEN_WIDTH * sizeof(uint32_t));
-    SDL_RenderCopy(gRenderer, gFramebufferTexture, NULL, NULL);    
+    SDL_UpdateTexture(gFramebufferTexture, NULL, gFrameBuffer, SCREEN_WIDTH * sizeof(uint32_t));    
+    SDL_RenderCopy(gRenderer, gFramebufferTexture, NULL, NULL);
 
     // TODO: TEMP
     // Clear the framebuffer to pink to spot rendering gaps.
     {
         const uint32_t pinkU32 = 0xFF00FFFF;
         uint32_t* pPixel = gFrameBuffer;
-        uint32_t* const pEndPixel = gFrameBuffer + SCREEN_WIDTH * SCREEN_HEIGHT;
+        uint32_t* const pEndPixel = gFrameBuffer + (SCREEN_WIDTH * SCREEN_HEIGHT);
 
         while (pPixel < pEndPixel) {
             *pPixel = pinkU32;
@@ -751,8 +751,8 @@ void DrawPlaque(Word RezNum)
 //---------------------------------------------------------------------------------------------------------------------
 void ThreeDOMain() {
     InitTools();            // Init the 3DO tool system
-    createDisplay();
-    UpdateAndPageFlip();    // Init the video display's vars
+    createDisplay();    
+    UpdateAndPageFlip();    // Init the video display's vars    
     ReadPrefsFile();        // Load defaults
     D_DoomMain();           // Start doom
     shutdownDisplay();
