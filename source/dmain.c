@@ -117,7 +117,18 @@ Word MiniLoop(void(*start)(void),void(*stop)(void),
         // FIXME: DC: Put this somewhere better
         SDL_PumpEvents();
 
-        
+        // FIXME: DC: TEMP
+        static clock_t lastClock;
+        clock_t curClock = clock();
+
+        if ((curClock - lastClock) / (double) CLOCKS_PER_SEC > 1.0 / 60.0) {
+            ElapsedTime = 1;
+            lastClock = curClock;
+        }
+        else {
+            ElapsedTime = 0;
+            continue;
+        }        
 
         /* Run the tic immediately */
         TotalGameTicks += ElapsedTime;      /* Add to the VBL count */
@@ -134,20 +145,7 @@ Word MiniLoop(void(*start)(void),void(*stop)(void),
             }
         }
 
-        // FIXME: DC: TEMP
-        static clock_t lastClock;
-        clock_t curClock = clock();
-
-        if ((curClock - lastClock) / (double) CLOCKS_PER_SEC > 1.0 / 30.0) {
-            ElapsedTime = 1;
-            lastClock = curClock;
-        }
-        else {
-            ElapsedTime = 0;
-        }
-
-/* Get buttons for next tic */
-
+        /* Get buttons for next tic */
         PrevJoyPadButtons = JoyPadButtons;      /* Pass through the latest keypad info */
 
         buttons = ReadJoyButtons(0);            /* Read the controller */
