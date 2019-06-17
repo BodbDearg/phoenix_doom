@@ -213,7 +213,7 @@ void ST_Drawer (void)
     player_t *p;
     sbflash_t *FlashPtr;
 
-    DrawShape(0,160,*StatusBarShape);           /* Draw the status bar */
+    DrawShape(0,160, StatusBarShape);           /* Draw the status bar */
 
 #if VBLTIMER
     ++Frames;

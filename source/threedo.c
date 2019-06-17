@@ -866,6 +866,9 @@ void DrawMShape(const uint32_t x1, const uint32_t y1, const CelControlBlock* con
 
 void DrawShape(Word x,Word y,const void* ShapePtr)
 {
+    // TODO: DC - Is this correct?
+    DrawMShape(x, y, ShapePtr);
+
     // DC: FIXME: implement/replace
     #if 0
         ((MyCCB*)ShapePtr)->ccb_Flags |= CCB_BGND;      /* Disable masking */

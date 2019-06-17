@@ -71,6 +71,16 @@ public:
         return out;
     }
 
+    // Aligns the current stream pointer to the start of the next uint32_t
+    void u32Align() noexcept {
+        if (mCurBitIdx < 7) {
+            mCurBitIdx = 7;
+            ++mCurByteIdx;
+        }
+
+        mCurByteIdx = (mCurByteIdx + uint32_t(3)) & ~uint32_t(3);
+    }
+
 private:
     const std::byte* const  mpData;
     uint32_t                mCurByteIdx;
@@ -129,39 +139,48 @@ static uint8_t getCCBBitsPerPixel(const CelControlBlock& ccb) {
 }
 
 //-------------------------------------------------------------------------------------------------
+// Decodes unpacked (raw) CEL image data.
+// The pointer to the image data must point to the start data for the first row.
+//-------------------------------------------------------------------------------------------------
+static void decodeUnpackedCelImageData(
+    const std::byte* const pImageData,    
+    const uint16_t* const pPLUT,
+    const uint16_t imageW,
+    const uint16_t imageH,
+    const uint8_t imageBPP,
+    uint16_t* const pImageOut
+) noexcept {
+    // Setup for reading
+    BitStream bitStream(pImageData);    
+    const uint32_t numPixels = uint32_t(imageW) * uint32_t(imageH);
+    uint16_t* pCurOutputPixel = pImageOut;
+    
+    // Read the entire image
+    for (uint16_t y = 0; y < imageH; ++y) {
+        for (uint16_t x = 0; x < imageW; ++x) {
+            const uint8_t colorIdx = bitStream.readBitsAsUInt<uint8_t>(imageBPP);
+            const uint16_t color = byteSwappedU16(pPLUT[colorIdx]) | OPAQUE_PIXEL_BITS;
+            *pCurOutputPixel = color;
+            ++pCurOutputPixel;
+        }
+
+        bitStream.u32Align();
+    }
+}
+
+//-------------------------------------------------------------------------------------------------
 // Decodes the actual CEL image data.
 // The pointer to the image data must point to the start data for the first row.
 //-------------------------------------------------------------------------------------------------
-static uint16_t* decodeCelImageData(
+static void decodePackedCelImageData(
     const std::byte* const pImageData,
     const uint16_t* const pPLUT,
     const uint16_t imageW,
     const uint16_t imageH,
     const uint8_t imageBPP,
-    const bool bImageIsPacked
+    uint16_t* const pImageOut
 ) noexcept {
-    if (!bImageIsPacked) {
-        // FIXME: implement non packed decoding - making red and magenta for now
-        uint16_t* const pImageOut = (uint16_t*) MemAlloc(imageW * imageH * sizeof(uint16_t));
-        const uint16_t* const pEndImageOut = pImageOut + (imageW * imageH);
-        
-        const uint16_t red = 0b1111100000000001;
-        const uint16_t green = 0b0000011111000001;
-        
-        uint16_t* pCurPixel = pImageOut;
-        bool useRed = true;
-
-        while (pCurPixel < pEndImageOut) {
-            *pCurPixel = (useRed) ? red : green;
-            useRed = (!useRed);
-            ++pCurPixel;
-        }
-
-        return pImageOut;
-    }
-
     // Alloc output image and start decoding each row
-    uint16_t* const pImageOut = (uint16_t*) MemAlloc(imageW * imageH * sizeof(uint16_t));
     const std::byte* pCurRowData = pImageData;
     const std::byte* pNextRowData = nullptr;
 
@@ -243,6 +262,28 @@ static uint16_t* decodeCelImageData(
 
         // Move onto the next row
         pCurRowData = pNextRowData;
+    }
+}
+
+//-------------------------------------------------------------------------------------------------
+// Decodes CEL image data.
+// The pointer to the image data must point to the start data for the first row.
+//-------------------------------------------------------------------------------------------------
+static uint16_t* decodeCelImageData(
+    const std::byte* const pImageData,
+    const uint16_t* const pPLUT,
+    const uint16_t imageW,
+    const uint16_t imageH,
+    const uint8_t imageBPP,
+    const bool bImageIsPacked
+) noexcept {    
+    uint16_t* const pImageOut = (uint16_t*) MemAlloc(imageW * imageH * sizeof(uint16_t));
+    
+    if (bImageIsPacked) {
+        decodePackedCelImageData(pImageData, pPLUT, imageW, imageH, imageBPP, pImageOut);
+    }
+    else {
+        decodeUnpackedCelImageData(pImageData, pPLUT, imageW, imageH, imageBPP, pImageOut);
     }
 
     return pImageOut;

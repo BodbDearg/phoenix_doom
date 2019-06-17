@@ -188,9 +188,6 @@ Word GetBigStringWidth(Byte *string)
 
 void PrintNumber(Word x,Word y,Word value,Word Flags)
 {
-    // FIXME: Need to fix this up!
-    return;
-
     Byte v[16];     /* Buffer for text string */
 
     LongWordToAscii(value,v);       /* Convert to string */
