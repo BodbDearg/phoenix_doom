@@ -4,6 +4,7 @@
 #include "MathUtils.h"
 #include "Mem.h"
 #include "Resources.h"
+#include "Textures.h"
 #include <intmath.h>
 #include <memory.h>
 #include <SDL.h>
@@ -23,31 +24,52 @@
 
 SDL_Window*     gWindow;
 SDL_Renderer*   gRenderer;
-uint32_t        gFrameBuffer[SCREEN_WIDTH * SCREEN_HEIGHT];
+uint32_t*       gFrameBuffer;
 SDL_Texture*    gFramebufferTexture;
 
 static void createDisplay() {
     if (SDL_InitSubSystem(SDL_INIT_VIDEO) != 0) {
         FATAL_ERROR("Unable to initialize SDL!");
     }
+    
+    Uint32 windowCreateFlags = 0;
+    
+    #ifndef __MACOSX__
+        windowCreateFlags |= SDL_WINDOW_OPENGL;
+    #endif
 
-    gWindow = SDL_CreateWindow("PhoenixDoom", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH * 4, SCREEN_HEIGHT * 4, SDL_WINDOW_OPENGL);
+    gWindow = SDL_CreateWindow(
+        "PhoenixDoom",
+        SDL_WINDOWPOS_CENTERED,
+        SDL_WINDOWPOS_CENTERED,
+        SCREEN_WIDTH * 4,
+        SCREEN_HEIGHT * 4,
+        windowCreateFlags
+    );
     
     if (!gWindow) {
         FATAL_ERROR("Unable to create a window!");
     }
 
     gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    gFrameBuffer = MemAlloc(ScreenWidth * ScreenHeight * sizeof(uint32_t));
     memset(gFrameBuffer, 0x00, sizeof(gFrameBuffer));
-
+        
     if (!gRenderer) {
         FATAL_ERROR("Failed to create renderer!");
     }
+    
+    int textureAccessMode = SDL_TEXTUREACCESS_STREAMING;
+    
+    #ifdef __MACOSX__
+        // Streaming doesn't work for the Metal backend currently!
+        textureAccessMode = SDL_TEXTUREACCESS_STATIC;
+    #endif
 
     gFramebufferTexture = SDL_CreateTexture(
         gRenderer,
         SDL_PIXELFORMAT_RGBA8888,
-        SDL_TEXTUREACCESS_STREAMING,
+        textureAccessMode,
         SCREEN_WIDTH,
         SCREEN_HEIGHT
     );
@@ -58,6 +80,8 @@ static void createDisplay() {
 }
 
 static void shutdownDisplay() {
+    MemFree(gFrameBuffer);
+    gFrameBuffer = 0;
     SDL_DestroyRenderer(gRenderer);
     gRenderer = 0;
     SDL_DestroyWindow(gWindow);
@@ -539,23 +563,19 @@ void WritePrefsFile(void)
     SaveAFile((Byte *)PrefsName,&PrefFile,sizeof(PrefFile));    /* Save the game file */
 }
 
-/**********************************
-
-    Clear out the prefs file
-
-**********************************/
-
-void ClearPrefsFile(void)
-{
-    StartSkill = sk_medium;     /* Init the basic skill level */
-    StartMap = 1;               /* Only allow playing from map #1 */
-    SfxVolume = 15;             /* Init the sound effects volume */
-    MusicVolume = 15;           /* Init the music volume */
-    ControlType = 3;            /* Use basic joypad controls */
-    MaxLevel = 1;               /* Only allow level 1 to select from */
-    ScreenSize = 0;             /* Default screen size */
-    LowDetail = false;          /* Detail mode */
-    WritePrefsFile();           /* Output the new prefs */
+//-------------------------------------------------------------------------------------------------
+// Clear out the prefs file
+//-------------------------------------------------------------------------------------------------
+void ClearPrefsFile() {
+    StartSkill = sk_medium;     // Init the basic skill level
+    StartMap = 1;               // Only allow playing from map #1
+    SfxVolume = 15;             // Init the sound effects volume
+    MusicVolume = 15;           // Init the music volume
+    ControlType = 3;            // Use basic joypad controls
+    MaxLevel = 1;               // Only allow level 1 to select from
+    ScreenSize = 0;             // Default screen size
+    LowDetail = false;          // Detail mode
+    WritePrefsFile();           // Output the new prefs
 }
 
 /**********************************
@@ -953,6 +973,10 @@ void DrawARect(Word x1,Word y1,Word Width,Word Height,Word color)
 
 **********************************/
 
+#define MAX_WALL_LIGHT_VALUE 15
+#define MAX_FLOOR_LIGHT_VALUE 15
+#define MAX_SPRITE_LIGHT_VALUE 31
+
 /**********************************
 
     Drawing the sky is the easiest, so I'll do this first.
@@ -969,8 +993,21 @@ void DrawARect(Word x1,Word y1,Word Width,Word Height,Word color)
 extern Word tx_x;
 extern int tx_scale;
 
-void DrawSkyLine(void)
+void DrawSkyLine()
 {
+    // Note: sky textures are 256 pixels wide so this wraps around
+    const uint32_t colNum = (((xtoviewangle[tx_x] + viewangle) >> ANGLETOSKYSHIFT) & 0xFF);
+    
+    // Sky is always rendered at max light and 1.0 scale
+    tx_texturelight = MAX_WALL_LIGHT_VALUE << LIGHTSCALESHIFT;
+    tx_scale = 1 << SCALEBITS;
+    
+    // Set source texture details
+    // TODO: don't keep doing this for each column
+    const Texture* const pTexture = (const Texture*) getWallTexture(getCurrentSkyTexNum());
+    const uint32_t texHeight = pTexture->height;
+    DrawWallColumn(0, colNum * texHeight, 0, texHeight, (Byte*) pTexture->pData, texHeight);
+    
     // DC: FIXME: implement/replace
     #if 0
         Byte *Source;
@@ -1003,10 +1040,6 @@ void DrawSkyLine(void)
         CurrentCCB = DestCCB;   /* Save the CCB pointer */
     #endif
 }
-
-#define MAX_WALL_LIGHT_VALUE 15
-#define MAX_FLOOR_LIGHT_VALUE 15
-#define MAX_SPRITE_LIGHT_VALUE 31
 
 //---------------------------------------------------------------------------------------------------------------------
 // Makes a framebuffer color from the given RGB values.
@@ -1058,7 +1091,7 @@ void DrawWallColumn(
     const Word Run
 )
 {
-    // TODO: TEMP
+    // TODO: TEMP - CLEANUP
     const Word numPixels = (Run * tx_scale) >> SCALEBITS;
     const Word numPixelsRounded = ((Run * tx_scale) & 0x1F0) != 0 ? numPixels + 1 : numPixels;    
     const Fixed lightMultiplier = getLightMultiplier(tx_texturelight, MAX_WALL_LIGHT_VALUE);
@@ -1070,13 +1103,13 @@ void DrawWallColumn(
         if (dstY >= 0 && dstY < SCREEN_HEIGHT) {
             const uint32_t pixTexYOffsetFixed = (pixNum << (SCALEBITS + 1)) / tx_scale;
             const uint32_t pixTexYOffset = pixTexYOffsetFixed & 1 ? (pixTexYOffsetFixed / 2) + 1 : pixTexYOffsetFixed / 2;
-
+            
             const uint32_t texYOffset = (ColY + pixTexYOffset) % (TexHeight);
             const uint32_t texOffset = Colnum + texYOffset;
-
+            
             const uint8_t colorByte = Source[32 + texOffset / 2];
             const uint8_t colorIdx = (texOffset & 1) != 0 ? (colorByte & 0x0F) : (colorByte & 0xF0) >> 4;
-
+            
             const uint16_t color = byteSwappedU16(pPLUT[colorIdx]);
             const uint16_t texR = (color & 0b0111110000000000) >> 10;
             const uint16_t texG = (color & 0b0000001111100000) >> 5;
@@ -1152,6 +1185,7 @@ void DrawWallColumn(
 void DrawFloorColumn(Word ds_y,Word ds_x1,Word Count,LongWord xfrac,
     LongWord yfrac,Fixed ds_xstep,Fixed ds_ystep)
 {
+    // TODO: TEMP - CLEANUP
     const uint16_t* const pPLUT = (const uint16_t*) PlaneSource;
     const Fixed lightMultiplier = getLightMultiplier(tx_texturelight, MAX_FLOOR_LIGHT_VALUE);
 
@@ -1339,7 +1373,7 @@ static Word SpritePRE1;
 static Byte *StartLinePtr;
 static Word SpriteWidth;
 
-static Byte *CalcLine(Fixed XFrac)
+static Byte* CalcLine(Fixed XFrac)
 {
     Byte *DataPtr;
     
@@ -1357,6 +1391,17 @@ static Byte *CalcLine(Fixed XFrac)
         DataPtr = &DataPtr[Offset*4];
     } while (--XFrac);
     return DataPtr;
+}
+
+//-------------------------------------------------------------------------------------------------
+// Get the pointer to the first pixel in a particular column of a sprite.
+// The input x coordinate is in 16.16 fixed point format and the output is clamped to sprite bounds.
+//-------------------------------------------------------------------------------------------------
+static const uint16_t* getSpriteColumn(const vissprite_t* const pVisSprite, const Fixed xFrac) {
+    const int32_t x = sfixed16_16ToInt32(xFrac);
+    const SpriteFrameAngle* const pSprite = pVisSprite->pSprite;
+    const int32_t xClamped = (x < 0) ? 0 : ((x >= pSprite->width) ? pSprite->width - 1 : x);
+    return &pSprite->pTexture[pSprite->height * xClamped];
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -1544,19 +1589,111 @@ void DrawSpriteNoClip(const vissprite_t* const pVisSprite) {
     */
 }
 
-/**********************************
-
-    This routine will draw a scaled sprite during the game.
-    It is called when there is onscreen clipping needed so I
-    use the global table spropening to get the top and bottom clip
-    bounds.
-    
-    I am passed the screen clipped x1 and x2 coords.
-
-**********************************/
-
-static void OneSpriteLine(Word x1,Byte *SpriteLinePtr)
+//-------------------------------------------------------------------------------------------------
+// Draws a column of a sprite that is clipped to the given top and bottom bounds
+//-------------------------------------------------------------------------------------------------
+static void OneSpriteLine(
+    const uint32_t screenX,
+    const Fixed spriteX,
+    const uint32_t topClipY,
+    const uint32_t bottomClipY,
+    const vissprite_t* const pVisSprite
+)
 {
+    // Sanity checks
+    ASSERT(topClipY >= 0 && topClipY <= ScreenHeight);
+    ASSERT(bottomClipY >= 0 && bottomClipY <= ScreenHeight);
+    ASSERT(pVisSprite);
+
+    // Get the top and bottom screen edges for the sprite columnn to be rendered.
+    // Also check if the column is completely offscreen, because the input is not clipped.
+    // 3DO Doom originally relied on the hardware to clip in this routine...
+    if (screenX < 0 || screenX >= (int) ScreenWidth)
+        return;
+    
+    int y1 = pVisSprite->y1;
+    int y2 = pVisSprite->y2;
+    
+    if (y1 >= (int) ScreenHeight || y2 < 0)
+        return;
+    
+    // If the clip bounds are meeting (or past each other?!) then ignore
+    if (topClipY >= bottomClipY)
+        return;
+    
+    // Get the light multiplier to use for lighting the sprite
+    const Fixed lightMultiplier = getLightMultiplier(pVisSprite->colormap & 0xFF, MAX_SPRITE_LIGHT_VALUE);
+    
+    // Get the height of the sprite and also the height that it will be rendered at.
+    // Note that we expect no zero sizes here!
+    const SpriteFrameAngle* const pSpriteFrame = pVisSprite->pSprite;
+    
+    const int32_t spriteH = pSpriteFrame->height;
+    const uint32_t renderH = (pVisSprite->y2 - pVisSprite->y1) + 1;
+    ASSERT(spriteH > 0);
+    ASSERT(renderH > 0);
+    
+    // Figure out the step in texels we want per y pixel in 16.16 format
+    const Fixed texelStepY = determineTexelStep(spriteH, renderH);
+
+    // Sanity check in debug that we won't go out of bounds of the texture (shouldn't)
+    #if ASSERTS_ENABLED == 1
+    {
+        const Fixed endYFrac = sfixedMul16_16(texelStepY, int32ToSFixed16_16(renderH - 1));
+        const int32_t endY = sfixed16_16ToInt32(endYFrac);
+        ASSERT(endY >= 0 && endY < spriteH);
+    }
+    #endif
+    
+    // Clip the sprite render bounds to the screen (top, bottom, in that order).
+    // Skip over rows that are out of bounds:
+    Fixed startTexelY = 0;
+    
+    if (y1 < (int) topClipY) {
+        const int pixelsOffscreen = topClipY - y1;
+        startTexelY += pixelsOffscreen * texelStepY;
+        y1 = topClipY;
+    }
+    
+    if (y2 >= (int) bottomClipY) {
+        y2 = bottomClipY - 1;
+    }
+    
+    // Render the sprite column
+    const uint16_t* const pImageCol = getSpriteColumn(pVisSprite, spriteX);
+    Fixed texelYFrac = startTexelY;
+    uint32_t* pDstPixel = &gFrameBuffer[screenX + y1 * ScreenWidth];
+
+    for (int y = y1; y <= y2; ++y) {
+        // Grab this pixels color from the sprite image and skip if alpha 0
+        const int texelYInt = sfixed16_16ToInt32(texelYFrac);
+        
+        const uint16_t color = pImageCol[texelYInt];
+        const uint16_t texA = (color & 0b1000000000000000) >> 15;
+        const uint16_t texR = (color & 0b0111110000000000) >> 10;
+        const uint16_t texG = (color & 0b0000001111100000) >> 5;
+        const uint16_t texB = (color & 0b0000000000011111) >> 0;
+
+        if (texA != 0) {
+            // Do light diminishing
+            const Fixed texRFrac = int32ToSFixed16_16(texR);
+            const Fixed texGFrac = int32ToSFixed16_16(texG);
+            const Fixed texBFrac = int32ToSFixed16_16(texB);
+
+            const Fixed darkenedR = sfixedMul16_16(texRFrac, lightMultiplier);
+            const Fixed darkenedG = sfixedMul16_16(texGFrac, lightMultiplier);
+            const Fixed darkenedB = sfixedMul16_16(texBFrac, lightMultiplier);
+            
+            // Save the final output color
+            const uint32_t finalColor = makeFramebufferColor(darkenedR, darkenedG, darkenedB);
+            *pDstPixel = finalColor;
+        }
+        
+        // Onto the next pixel in the column
+        texelYFrac += texelStepY;
+        pDstPixel += ScreenWidth;
+    }
+
     // DC: FIXME: implement/replace
     #if 0
         MyCCB *DestCCB;
@@ -1586,61 +1723,134 @@ static void OneSpriteLine(Word x1,Byte *SpriteLinePtr)
     #endif
 }
 
+
+// DC: FIXME: implement/replace
+#if 0
+/**********************************
+
+    This routine will draw a scaled sprite during the game.
+    It is called when there is onscreen clipping needed so I
+    use the global table spropening to get the top and bottom clip
+    bounds.
+ 
+    I am passed the screen clipped x1 and x2 coords.
+
+**********************************/
 static void OneSpriteClipLine(Word x1,Byte *SpriteLinePtr,int Clip,int Run)
 {
-    // DC: FIXME: implement/replace
-    #if 0
-        MyCCB *DestCCB;
+    MyCCB *DestCCB;
 
-        DrawARect(0,191,Run,1,BLACK);
-        DestCCB = CurrentCCB;       /* Copy pointer to local */
-        if (DestCCB>=&CCBArray[CCBTotal-1]) {       /* Am I full already? */
-            FlushCCBs();                /* Draw all the CCBs/Lines */
-            DestCCB=CCBArray;
-        }
-        DestCCB->ccb_Flags = CCB_SPABS|CCB_LDSIZE|CCB_LDPRS|CCB_PACKED|
-        CCB_LDPPMP|CCB_CCBPRE|CCB_YOXY|CCB_ACW|CCB_ACCW|
-        CCB_ACE|CCB_BGND|CCB_PPABS|CCB_LDPLUT;  /* ccb_flags */
+    DrawARect(0,191,Run,1,BLACK);
+    DestCCB = CurrentCCB;       /* Copy pointer to local */
+    if (DestCCB>=&CCBArray[CCBTotal-1]) {       /* Am I full already? */
+        FlushCCBs();                /* Draw all the CCBs/Lines */
+        DestCCB=CCBArray;
+    }
+    DestCCB->ccb_Flags = CCB_SPABS|CCB_LDSIZE|CCB_LDPRS|CCB_PACKED|
+    CCB_LDPPMP|CCB_CCBPRE|CCB_YOXY|CCB_ACW|CCB_ACCW|
+    CCB_ACE|CCB_BGND|CCB_PPABS|CCB_LDPLUT;  /* ccb_flags */
 
-        DestCCB->ccb_PIXC = 0x1F00;         /* PIXC control */
-        DestCCB->ccb_PRE0 = SpritePRE0;     /* Preamble (Coded 8 bit) */
-        DestCCB->ccb_PRE1 = SpritePRE1;     /* Second preamble */
-        DestCCB->ccb_SourcePtr = (CelData *)SpriteLinePtr;  /* Save the source ptr */
-        DestCCB->ccb_PLUTPtr = SpritePLUT;      /* Get the palette ptr */
-        DestCCB->ccb_XPos = -(Clip<<16);        /* Set the x and y coord for start */
-        DestCCB->ccb_YPos = 191<<16;
-        DestCCB->ccb_HDX = SpriteYScale;        /* OK */
-        DestCCB->ccb_HDY = 0<<20;
-        DestCCB->ccb_VDX = 0<<16;
-        DestCCB->ccb_VDY = 1<<16;
-        ++DestCCB;          /* Next CCB */
-    
-        DestCCB->ccb_Flags = CCB_SPABS|CCB_LDSIZE|CCB_LDPRS|
-        CCB_LDPPMP|CCB_CCBPRE|CCB_YOXY|CCB_ACW|CCB_ACCW|
-        CCB_ACE|CCB_NOBLK|CCB_PPABS;    /* ccb_flags */
+    DestCCB->ccb_PIXC = 0x1F00;         /* PIXC control */
+    DestCCB->ccb_PRE0 = SpritePRE0;     /* Preamble (Coded 8 bit) */
+    DestCCB->ccb_PRE1 = SpritePRE1;     /* Second preamble */
+    DestCCB->ccb_SourcePtr = (CelData *)SpriteLinePtr;  /* Save the source ptr */
+    DestCCB->ccb_PLUTPtr = SpritePLUT;      /* Get the palette ptr */
+    DestCCB->ccb_XPos = -(Clip<<16);        /* Set the x and y coord for start */
+    DestCCB->ccb_YPos = 191<<16;
+    DestCCB->ccb_HDX = SpriteYScale;        /* OK */
+    DestCCB->ccb_HDY = 0<<20;
+    DestCCB->ccb_VDX = 0<<16;
+    DestCCB->ccb_VDY = 1<<16;
+    ++DestCCB;          /* Next CCB */
 
-        DestCCB->ccb_PIXC = SpritePIXC;         /* PIXC control */
-        DestCCB->ccb_PRE0 = 0x00000016;     /* Preamble (Uncoded 16) */
-        DestCCB->ccb_PRE1 = 0x9E001800+(Run-1);     /* Second preamble */
-        DestCCB->ccb_SourcePtr = (CelData *)CelLine190; /* Save the source ptr */
-        DestCCB->ccb_XPos = (x1+ScreenXOffset)<<16;     /* Set the x and y coord for start */
-        DestCCB->ccb_YPos = SpriteY+(Clip<<16);
-        DestCCB->ccb_HDX = 0<<20;       /* OK */
-        DestCCB->ccb_HDY = 1<<20;
-        DestCCB->ccb_VDX = 1<<15;       /* Need 15 to fix the LFORM bug */
-        DestCCB->ccb_VDY = 0<<16;
-        ++DestCCB;          /* Next CCB */
-    
-        CurrentCCB = DestCCB;   /* Save the CCB pointer */
-    #endif
+    DestCCB->ccb_Flags = CCB_SPABS|CCB_LDSIZE|CCB_LDPRS|
+    CCB_LDPPMP|CCB_CCBPRE|CCB_YOXY|CCB_ACW|CCB_ACCW|
+    CCB_ACE|CCB_NOBLK|CCB_PPABS;    /* ccb_flags */
+
+    DestCCB->ccb_PIXC = SpritePIXC;         /* PIXC control */
+    DestCCB->ccb_PRE0 = 0x00000016;     /* Preamble (Uncoded 16) */
+    DestCCB->ccb_PRE1 = 0x9E001800+(Run-1);     /* Second preamble */
+    DestCCB->ccb_SourcePtr = (CelData *)CelLine190; /* Save the source ptr */
+    DestCCB->ccb_XPos = (x1+ScreenXOffset)<<16;     /* Set the x and y coord for start */
+    DestCCB->ccb_YPos = SpriteY+(Clip<<16);
+    DestCCB->ccb_HDX = 0<<20;       /* OK */
+    DestCCB->ccb_HDY = 1<<20;
+    DestCCB->ccb_VDX = 1<<15;       /* Need 15 to fix the LFORM bug */
+    DestCCB->ccb_VDY = 0<<16;
+    ++DestCCB;          /* Next CCB */
+
+    CurrentCCB = DestCCB;   /* Save the CCB pointer */
 }
+#endif
 
-void DrawSpriteClip(Word x1,Word x2, const vissprite_t* pVisSprite)
-{
-    // FIXME: DC IMPLEMENT!
-    #if 1
-        return;
-    #endif
+//-------------------------------------------------------------------------------------------------
+// Draws a clipped sprite to the screen
+//-------------------------------------------------------------------------------------------------
+void DrawSpriteClip(const Word x1, const Word x2, const vissprite_t* const pVisSprite) {
+    SpriteYScale = pVisSprite->yscale << 4;                 // Get scale Y factor
+    StartLinePtr = (Byte*) pVisSprite->pSprite->pTexture;   // Get pointer to first line of data
+    SpriteWidth = pVisSprite->pSprite->width;
+    SpritePIXC = (pVisSprite->colormap & 0x8000) ? 0x9C81 : LightTable[(pVisSprite->colormap & 0xFF) >> LIGHTSCALESHIFT];
+    Word y = pVisSprite->y1;
+    SpriteY = (y + ScreenYOffset) << 16;    // Unmolested Y coord
+    Word y2 = pVisSprite->y2;
+    Word MaxRun = y2 - y;
+    
+    if ((int) y < 0) {
+        y = 0;
+    }
+    
+    if ((int) y2 >= (int) ScreenHeight) {
+        y2 = ScreenHeight;
+    }
+    
+    Fixed XFrac = 0;
+    Fixed XStep = 0xFFFFFFFFUL / (LongWord) pVisSprite->xscale;   // Get the recipocal for the X scale
+    
+    if (pVisSprite->colormap & 0x4000) {
+        XStep = -XStep; // Step in the opposite direction
+        XFrac = (SpriteWidth << FRACBITS) - 1;
+    }
+    
+    if (pVisSprite->x1 != x1) { // How far should I skip?
+        XFrac += XStep * (x1 - pVisSprite->x1);
+    }
+    
+    uint32_t x = x1;
+    
+    do {
+        Word top = spropening[x];   // Get the opening to the screen
+        
+        if (top == ScreenHeight) {  // Not clipped?
+            OneSpriteLine(x, XFrac, 0, ScreenHeight, pVisSprite);
+        } else {
+            Word bottom = top & 0xff;
+            top >>= 8;
+            
+            if (top < bottom) { // Valid run?
+                if (y >= top && y2 < bottom) {
+                    OneSpriteLine(x, XFrac, 0, ScreenHeight, pVisSprite);
+                } else {
+                    int Clip = top - pVisSprite->y1;    // Number of pixels to clip
+                    int Run = bottom - top;             // Allowable run
+                    
+                    if (Clip < 0) {     // Overrun?
+                        Run += Clip;    // Remove from run
+                        Clip = 0;
+                    }
+                    
+                    if (Run > 0) {              // Still visible?
+                        if (Run > MaxRun) {     // Too big?
+                            Run = MaxRun;       // Force largest...
+                        }
+                        
+                        OneSpriteLine(x, XFrac, top, bottom, pVisSprite);
+                    }
+                }
+            }
+        }
+        XFrac += XStep;
+    } while (++x <= x2);
 
     #if 0
     Word y,MaxRun;

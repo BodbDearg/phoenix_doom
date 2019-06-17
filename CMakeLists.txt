@@ -10,10 +10,31 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_BUILD_TYPE Debug)
 
+# Compiler detection
+if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+    set(COMPILER_CLANG TRUE)
+endif()
+
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+    set(COMPILER_GCC TRUE)
+endif()
+
+if (MSVC)
+    set(COMPILER_MSVC TRUE)
+endif()
+
+# OS/Platform detection
+if (WIN32)
+    set(PLATFORM_WINDOWS TRUE)
+endif()
+
+if (APPLE)
+    # Could also be iOS etc. but not targetting that so just assume Mac
+    set(PLATFORM_MAC TRUE)
+endif()
+
 # Clang, Apple Clang, or GCC - enable debugging
-if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang" OR 
-    "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"
-)
+if (COMPILER_CLANG OR COMPILER_GCC)
     set(CMAKE_C_FLAGS -g)
     set(CMAKE_CXX_FLAGS -g)
 endif()
@@ -31,11 +52,127 @@ set(LIBSDL_INCLUDE_DIR "${LIBSDL_DIR}/include")
 set(LIBSDL_INCLUDE_PATHS
 )
 
-# TODO: Handle other platforms here
-set(LIBSDL_LINK_LIBRARIES
+set(LIBSDL_LINK_LIBRARIES_WINDOWS
     Imm32.lib
     Mincore.lib
     User32.lib
+    Winmm.lib
+)
+
+set(LIBSDL_SOURCES_WINDOWS
+    #${LIBSDL_SRC_DIR}/thread/generic/SDL_sysmutex.c
+    #${LIBSDL_SRC_DIR}/thread/generic/SDL_sysmutex_c.h
+    #${LIBSDL_SRC_DIR}/thread/generic/SDL_syssem.c
+    #${LIBSDL_SRC_DIR}/thread/generic/SDL_systhread.c
+    #${LIBSDL_SRC_DIR}/thread/generic/SDL_systhread_c.h
+    #${LIBSDL_SRC_DIR}/thread/generic/SDL_systls.c
+    ${LIBSDL_INCLUDE_DIR}/SDL_config_windows.h
+    ${LIBSDL_SRC_DIR}/core/windows/SDL_directx.h
+    ${LIBSDL_SRC_DIR}/core/windows/SDL_windows.c
+    ${LIBSDL_SRC_DIR}/core/windows/SDL_windows.h
+    ${LIBSDL_SRC_DIR}/core/windows/SDL_xinput.c
+    ${LIBSDL_SRC_DIR}/core/windows/SDL_xinput.h    
+    ${LIBSDL_SRC_DIR}/events/scancodes_windows.h
+    ${LIBSDL_SRC_DIR}/filesystem/windows/SDL_sysfilesystem.c    
+    ${LIBSDL_SRC_DIR}/haptic/windows/SDL_dinputhaptic.c
+    ${LIBSDL_SRC_DIR}/haptic/windows/SDL_dinputhaptic_c.h
+    ${LIBSDL_SRC_DIR}/haptic/windows/SDL_windowshaptic.c
+    ${LIBSDL_SRC_DIR}/haptic/windows/SDL_windowshaptic_c.h
+    ${LIBSDL_SRC_DIR}/haptic/windows/SDL_xinputhaptic.c
+    ${LIBSDL_SRC_DIR}/haptic/windows/SDL_xinputhaptic_c.h
+    ${LIBSDL_SRC_DIR}/joystick/windows/SDL_dinputjoystick.c
+    ${LIBSDL_SRC_DIR}/joystick/windows/SDL_dinputjoystick_c.h
+    ${LIBSDL_SRC_DIR}/joystick/windows/SDL_mmjoystick.c
+    ${LIBSDL_SRC_DIR}/joystick/windows/SDL_windowsjoystick.c
+    ${LIBSDL_SRC_DIR}/joystick/windows/SDL_windowsjoystick_c.h
+    ${LIBSDL_SRC_DIR}/joystick/windows/SDL_xinputjoystick.c
+    ${LIBSDL_SRC_DIR}/joystick/windows/SDL_xinputjoystick_c.h
+    ${LIBSDL_SRC_DIR}/loadso/windows/SDL_sysloadso.c    
+    ${LIBSDL_SRC_DIR}/main/windows/SDL_windows_main.c
+    ${LIBSDL_SRC_DIR}/main/windows/version.rc  
+    ${LIBSDL_SRC_DIR}/thread/generic/SDL_syscond.c
+    ${LIBSDL_SRC_DIR}/thread/windows/SDL_sysmutex.c
+    ${LIBSDL_SRC_DIR}/thread/windows/SDL_syssem.c
+    ${LIBSDL_SRC_DIR}/thread/windows/SDL_systhread.c
+    ${LIBSDL_SRC_DIR}/thread/windows/SDL_systhread_c.h
+    ${LIBSDL_SRC_DIR}/thread/windows/SDL_systls.c
+    ${LIBSDL_SRC_DIR}/timer/windows/SDL_systimer.c
+    ${LIBSDL_SRC_DIR}/video/windows/SDL_msctf.h
+    ${LIBSDL_SRC_DIR}/video/windows/SDL_vkeys.h
+    ${LIBSDL_SRC_DIR}/video/windows/SDL_windowsclipboard.c
+    ${LIBSDL_SRC_DIR}/video/windows/SDL_windowsclipboard.h
+    ${LIBSDL_SRC_DIR}/video/windows/SDL_windowsevents.c
+    ${LIBSDL_SRC_DIR}/video/windows/SDL_windowsevents.h
+    ${LIBSDL_SRC_DIR}/video/windows/SDL_windowsframebuffer.c
+    ${LIBSDL_SRC_DIR}/video/windows/SDL_windowsframebuffer.h
+    ${LIBSDL_SRC_DIR}/video/windows/SDL_windowskeyboard.c
+    ${LIBSDL_SRC_DIR}/video/windows/SDL_windowskeyboard.h
+    ${LIBSDL_SRC_DIR}/video/windows/SDL_windowsmessagebox.c
+    ${LIBSDL_SRC_DIR}/video/windows/SDL_windowsmessagebox.h
+    ${LIBSDL_SRC_DIR}/video/windows/SDL_windowsmodes.c
+    ${LIBSDL_SRC_DIR}/video/windows/SDL_windowsmodes.h
+    ${LIBSDL_SRC_DIR}/video/windows/SDL_windowsmouse.c
+    ${LIBSDL_SRC_DIR}/video/windows/SDL_windowsmouse.h
+    ${LIBSDL_SRC_DIR}/video/windows/SDL_windowsopengl.c
+    ${LIBSDL_SRC_DIR}/video/windows/SDL_windowsopengl.h
+    ${LIBSDL_SRC_DIR}/video/windows/SDL_windowsshape.c
+    ${LIBSDL_SRC_DIR}/video/windows/SDL_windowsshape.h
+    ${LIBSDL_SRC_DIR}/video/windows/SDL_windowstaskdialog.h
+    ${LIBSDL_SRC_DIR}/video/windows/SDL_windowsvideo.c
+    ${LIBSDL_SRC_DIR}/video/windows/SDL_windowsvideo.h
+    ${LIBSDL_SRC_DIR}/video/windows/SDL_windowswindow.c
+    ${LIBSDL_SRC_DIR}/video/windows/SDL_windowswindow.h
+    ${LIBSDL_SRC_DIR}/video/windows/wmmsg.h
+)
+
+set(LIBSDL_SOURCES_MAC
+    ${LIBSDL_INCLUDE_DIR}/SDL_config_macosx.h
+    ${LIBSDL_SRC_DIR}/events/scancodes_darwin.h
+    ${LIBSDL_SRC_DIR}/file/cocoa/SDL_rwopsbundlesupport.h
+    ${LIBSDL_SRC_DIR}/file/cocoa/SDL_rwopsbundlesupport.m    
+    ${LIBSDL_SRC_DIR}/haptic/darwin/SDL_syshaptic.c
+    ${LIBSDL_SRC_DIR}/haptic/darwin/SDL_syshaptic_c.h
+    ${LIBSDL_SRC_DIR}/joystick/darwin/SDL_sysjoystick.c
+    ${LIBSDL_SRC_DIR}/joystick/darwin/SDL_sysjoystick_c.h
+    ${LIBSDL_SRC_DIR}/render/metal/SDL_render_metal.m
+    ${LIBSDL_SRC_DIR}/render/metal/SDL_shaders_metal.metal
+    ${LIBSDL_SRC_DIR}/render/metal/SDL_shaders_metal_osx.h
+    ${LIBSDL_SRC_DIR}/thread/pthread/SDL_syscond.c
+    ${LIBSDL_SRC_DIR}/thread/pthread/SDL_sysmutex.c
+    ${LIBSDL_SRC_DIR}/thread/pthread/SDL_sysmutex_c.h
+    ${LIBSDL_SRC_DIR}/thread/pthread/SDL_syssem.c
+    ${LIBSDL_SRC_DIR}/thread/pthread/SDL_systhread.c
+    ${LIBSDL_SRC_DIR}/thread/pthread/SDL_systhread_c.h
+    ${LIBSDL_SRC_DIR}/thread/pthread/SDL_systls.c
+    ${LIBSDL_SRC_DIR}/timer/unix/SDL_systimer.c
+    ${LIBSDL_SRC_DIR}/video/cocoa/SDL_cocoaclipboard.h
+    ${LIBSDL_SRC_DIR}/video/cocoa/SDL_cocoaclipboard.m
+    ${LIBSDL_SRC_DIR}/video/cocoa/SDL_cocoaevents.h
+    ${LIBSDL_SRC_DIR}/video/cocoa/SDL_cocoaevents.m
+    ${LIBSDL_SRC_DIR}/video/cocoa/SDL_cocoakeyboard.h
+    ${LIBSDL_SRC_DIR}/video/cocoa/SDL_cocoakeyboard.m
+    ${LIBSDL_SRC_DIR}/video/cocoa/SDL_cocoamessagebox.h
+    ${LIBSDL_SRC_DIR}/video/cocoa/SDL_cocoamessagebox.m
+    ${LIBSDL_SRC_DIR}/video/cocoa/SDL_cocoametalview.h
+    ${LIBSDL_SRC_DIR}/video/cocoa/SDL_cocoametalview.m
+    ${LIBSDL_SRC_DIR}/video/cocoa/SDL_cocoamodes.h
+    ${LIBSDL_SRC_DIR}/video/cocoa/SDL_cocoamodes.m
+    ${LIBSDL_SRC_DIR}/video/cocoa/SDL_cocoamouse.h
+    ${LIBSDL_SRC_DIR}/video/cocoa/SDL_cocoamouse.m
+    ${LIBSDL_SRC_DIR}/video/cocoa/SDL_cocoamousetap.h
+    ${LIBSDL_SRC_DIR}/video/cocoa/SDL_cocoamousetap.m
+    ${LIBSDL_SRC_DIR}/video/cocoa/SDL_cocoaopengl.h
+    ${LIBSDL_SRC_DIR}/video/cocoa/SDL_cocoaopengl.m
+    ${LIBSDL_SRC_DIR}/video/cocoa/SDL_cocoaopengles.h
+    ${LIBSDL_SRC_DIR}/video/cocoa/SDL_cocoaopengles.m
+    ${LIBSDL_SRC_DIR}/video/cocoa/SDL_cocoashape.h
+    ${LIBSDL_SRC_DIR}/video/cocoa/SDL_cocoashape.m
+    ${LIBSDL_SRC_DIR}/video/cocoa/SDL_cocoavideo.h
+    ${LIBSDL_SRC_DIR}/video/cocoa/SDL_cocoavideo.m
+    ${LIBSDL_SRC_DIR}/video/cocoa/SDL_cocoavulkan.h
+    ${LIBSDL_SRC_DIR}/video/cocoa/SDL_cocoavulkan.m
+    ${LIBSDL_SRC_DIR}/video/cocoa/SDL_cocoawindow.h
+    ${LIBSDL_SRC_DIR}/video/cocoa/SDL_cocoawindow.m
 )
 
 set(LIBSDL_SOURCES
@@ -52,7 +189,6 @@ set(LIBSDL_SOURCES
     ${LIBSDL_INCLUDE_DIR}/SDL_config.h.cmake
     ${LIBSDL_INCLUDE_DIR}/SDL_config.h.in
     ${LIBSDL_INCLUDE_DIR}/SDL_config_minimal.h
-    ${LIBSDL_INCLUDE_DIR}/SDL_config_windows.h
     ${LIBSDL_INCLUDE_DIR}/SDL_config_wiz.h
     ${LIBSDL_INCLUDE_DIR}/SDL_copying.h
     ${LIBSDL_INCLUDE_DIR}/SDL_cpuinfo.h
@@ -112,11 +248,6 @@ set(LIBSDL_SOURCES
     ${LIBSDL_SRC_DIR}/audio/SDL_sysaudio.h
     ${LIBSDL_SRC_DIR}/audio/SDL_wave.c
     ${LIBSDL_SRC_DIR}/audio/SDL_wave.h
-    ${LIBSDL_SRC_DIR}/core/windows/SDL_directx.h
-    ${LIBSDL_SRC_DIR}/core/windows/SDL_windows.c
-    ${LIBSDL_SRC_DIR}/core/windows/SDL_windows.h
-    ${LIBSDL_SRC_DIR}/core/windows/SDL_xinput.c
-    ${LIBSDL_SRC_DIR}/core/windows/SDL_xinput.h
     ${LIBSDL_SRC_DIR}/cpuinfo/SDL_cpuinfo.c
     ${LIBSDL_SRC_DIR}/cpuinfo/SDL_simd.h
     ${LIBSDL_SRC_DIR}/dynapi/SDL_dynapi.c
@@ -125,7 +256,6 @@ set(LIBSDL_SOURCES
     ${LIBSDL_SRC_DIR}/dynapi/SDL_dynapi_procs.h
     ${LIBSDL_SRC_DIR}/events/blank_cursor.h
     ${LIBSDL_SRC_DIR}/events/default_cursor.h
-    ${LIBSDL_SRC_DIR}/events/scancodes_windows.h
     ${LIBSDL_SRC_DIR}/events/SDL_clipboardevents.c
     ${LIBSDL_SRC_DIR}/events/SDL_clipboardevents_c.h
     ${LIBSDL_SRC_DIR}/events/SDL_displayevents.c
@@ -147,24 +277,12 @@ set(LIBSDL_SOURCES
     ${LIBSDL_SRC_DIR}/events/SDL_windowevents.c
     ${LIBSDL_SRC_DIR}/events/SDL_windowevents_c.h
     ${LIBSDL_SRC_DIR}/file/SDL_rwops.c
-    ${LIBSDL_SRC_DIR}/filesystem/dummy
     ${LIBSDL_SRC_DIR}/filesystem/dummy/SDL_sysfilesystem.c
-    ${LIBSDL_SRC_DIR}/filesystem/windows
-    ${LIBSDL_SRC_DIR}/filesystem/windows/SDL_sysfilesystem.c    
-    ${LIBSDL_SRC_DIR}/haptic/dummy
     ${LIBSDL_SRC_DIR}/haptic/dummy/SDL_syshaptic.c
     ${LIBSDL_SRC_DIR}/haptic/SDL_haptic.c
     ${LIBSDL_SRC_DIR}/haptic/SDL_haptic_c.h
     ${LIBSDL_SRC_DIR}/haptic/SDL_syshaptic.h
-    ${LIBSDL_SRC_DIR}/haptic/windows
-    ${LIBSDL_SRC_DIR}/haptic/windows/SDL_dinputhaptic.c
-    ${LIBSDL_SRC_DIR}/haptic/windows/SDL_dinputhaptic_c.h
-    ${LIBSDL_SRC_DIR}/haptic/windows/SDL_windowshaptic.c
-    ${LIBSDL_SRC_DIR}/haptic/windows/SDL_windowshaptic_c.h
-    ${LIBSDL_SRC_DIR}/haptic/windows/SDL_xinputhaptic.c
-    ${LIBSDL_SRC_DIR}/haptic/windows/SDL_xinputhaptic_c.h
     ${LIBSDL_SRC_DIR}/joystick/controller_type.h
-    ${LIBSDL_SRC_DIR}/joystick/dummy
     ${LIBSDL_SRC_DIR}/joystick/dummy/SDL_sysjoystick.c
     ${LIBSDL_SRC_DIR}/joystick/SDL_gamecontroller.c
     ${LIBSDL_SRC_DIR}/joystick/SDL_gamecontrollerdb.h
@@ -172,18 +290,8 @@ set(LIBSDL_SOURCES
     ${LIBSDL_SRC_DIR}/joystick/SDL_joystick_c.h
     ${LIBSDL_SRC_DIR}/joystick/SDL_sysjoystick.h
     ${LIBSDL_SRC_DIR}/joystick/sort_controllers.py
-    ${LIBSDL_SRC_DIR}/joystick/steam
     ${LIBSDL_SRC_DIR}/joystick/steam/SDL_steamcontroller.c
     ${LIBSDL_SRC_DIR}/joystick/steam/SDL_steamcontroller.h
-    ${LIBSDL_SRC_DIR}/joystick/windows
-    ${LIBSDL_SRC_DIR}/joystick/windows/SDL_dinputjoystick.c
-    ${LIBSDL_SRC_DIR}/joystick/windows/SDL_dinputjoystick_c.h
-    ${LIBSDL_SRC_DIR}/joystick/windows/SDL_mmjoystick.c
-    ${LIBSDL_SRC_DIR}/joystick/windows/SDL_windowsjoystick.c
-    ${LIBSDL_SRC_DIR}/joystick/windows/SDL_windowsjoystick_c.h
-    ${LIBSDL_SRC_DIR}/joystick/windows/SDL_xinputjoystick.c
-    ${LIBSDL_SRC_DIR}/joystick/windows/SDL_xinputjoystick_c.h
-    ${LIBSDL_SRC_DIR}/libm
     ${LIBSDL_SRC_DIR}/libm/e_atan2.c
     ${LIBSDL_SRC_DIR}/libm/e_exp.c
     ${LIBSDL_SRC_DIR}/libm/e_fmod.c
@@ -206,19 +314,9 @@ set(LIBSDL_SOURCES
     ${LIBSDL_SRC_DIR}/libm/s_scalbn.c
     ${LIBSDL_SRC_DIR}/libm/s_sin.c
     ${LIBSDL_SRC_DIR}/libm/s_tan.c
-    ${LIBSDL_SRC_DIR}/loadso
-    ${LIBSDL_SRC_DIR}/loadso/dlopen
     ${LIBSDL_SRC_DIR}/loadso/dlopen/SDL_sysloadso.c
-    ${LIBSDL_SRC_DIR}/loadso/dummy
     ${LIBSDL_SRC_DIR}/loadso/dummy/SDL_sysloadso.c
-    ${LIBSDL_SRC_DIR}/loadso/windows
-    ${LIBSDL_SRC_DIR}/loadso/windows/SDL_sysloadso.c
-    ${LIBSDL_SRC_DIR}/main/dummy
     ${LIBSDL_SRC_DIR}/main/dummy/SDL_dummy_main.c
-    ${LIBSDL_SRC_DIR}/main/windows
-    ${LIBSDL_SRC_DIR}/main/windows/SDL_windows_main.c
-    ${LIBSDL_SRC_DIR}/main/windows/version.rc
-    ${LIBSDL_SRC_DIR}/render/opengl
     ${LIBSDL_SRC_DIR}/render/opengl/SDL_glfuncs.h
     ${LIBSDL_SRC_DIR}/render/opengl/SDL_render_gl.c
     ${LIBSDL_SRC_DIR}/render/opengl/SDL_shaders_gl.c
@@ -229,7 +327,6 @@ set(LIBSDL_SOURCES
     ${LIBSDL_SRC_DIR}/render/SDL_sysrender.h
     ${LIBSDL_SRC_DIR}/render/SDL_yuv_sw.c
     ${LIBSDL_SRC_DIR}/render/SDL_yuv_sw_c.h
-    ${LIBSDL_SRC_DIR}/render/software
     ${LIBSDL_SRC_DIR}/render/software/SDL_blendfillrect.c
     ${LIBSDL_SRC_DIR}/render/software/SDL_blendfillrect.h
     ${LIBSDL_SRC_DIR}/render/software/SDL_blendline.c
@@ -255,37 +352,20 @@ set(LIBSDL_SOURCES
     ${LIBSDL_SRC_DIR}/SDL_hints.c
     ${LIBSDL_SRC_DIR}/SDL_internal.h
     ${LIBSDL_SRC_DIR}/SDL_log.c
-    ${LIBSDL_SRC_DIR}/sensor/dummy
     ${LIBSDL_SRC_DIR}/sensor/dummy/SDL_dummysensor.c
     ${LIBSDL_SRC_DIR}/sensor/dummy/SDL_dummysensor.h
     ${LIBSDL_SRC_DIR}/sensor/SDL_sensor.c
     ${LIBSDL_SRC_DIR}/sensor/SDL_sensor_c.h
     ${LIBSDL_SRC_DIR}/sensor/SDL_syssensor.h
-    ${LIBSDL_SRC_DIR}/stdlib
     ${LIBSDL_SRC_DIR}/stdlib/SDL_getenv.c
     ${LIBSDL_SRC_DIR}/stdlib/SDL_iconv.c
     ${LIBSDL_SRC_DIR}/stdlib/SDL_malloc.c
     ${LIBSDL_SRC_DIR}/stdlib/SDL_qsort.c
     ${LIBSDL_SRC_DIR}/stdlib/SDL_stdlib.c
     ${LIBSDL_SRC_DIR}/stdlib/SDL_string.c
-    ${LIBSDL_SRC_DIR}/thread
-    ${LIBSDL_SRC_DIR}/thread/generic
-    ${LIBSDL_SRC_DIR}/thread/generic/SDL_syscond.c
-    ${LIBSDL_SRC_DIR}/thread/generic/SDL_sysmutex.c
-    ${LIBSDL_SRC_DIR}/thread/generic/SDL_sysmutex_c.h
-    ${LIBSDL_SRC_DIR}/thread/generic/SDL_syssem.c
-    ${LIBSDL_SRC_DIR}/thread/generic/SDL_systhread.c
-    ${LIBSDL_SRC_DIR}/thread/generic/SDL_systhread_c.h
-    ${LIBSDL_SRC_DIR}/thread/generic/SDL_systls.c    
     ${LIBSDL_SRC_DIR}/thread/SDL_systhread.h
     ${LIBSDL_SRC_DIR}/thread/SDL_thread.c
     ${LIBSDL_SRC_DIR}/thread/SDL_thread_c.h
-    ${LIBSDL_SRC_DIR}/thread/windows/SDL_sysmutex.c
-    ${LIBSDL_SRC_DIR}/thread/windows/SDL_syssem.c
-    ${LIBSDL_SRC_DIR}/thread/windows/SDL_systhread.c
-    ${LIBSDL_SRC_DIR}/thread/windows/SDL_systhread_c.h
-    ${LIBSDL_SRC_DIR}/thread/windows/SDL_systls.c
-    ${LIBSDL_SRC_DIR}/timer/dummy/SDL_systimer.c
     ${LIBSDL_SRC_DIR}/timer/SDL_timer.c
     ${LIBSDL_SRC_DIR}/timer/SDL_timer_c.h
     ${LIBSDL_SRC_DIR}/video/SDL_blit.c
@@ -302,8 +382,6 @@ set(LIBSDL_SOURCES
     ${LIBSDL_SRC_DIR}/video/SDL_blit_slow.h
     ${LIBSDL_SRC_DIR}/video/SDL_bmp.c
     ${LIBSDL_SRC_DIR}/video/SDL_clipboard.c
-    ${LIBSDL_SRC_DIR}/video/SDL_egl.c
-    ${LIBSDL_SRC_DIR}/video/SDL_egl_c.h
     ${LIBSDL_SRC_DIR}/video/SDL_fillrect.c
     ${LIBSDL_SRC_DIR}/video/SDL_pixels.c
     ${LIBSDL_SRC_DIR}/video/SDL_pixels_c.h
@@ -320,33 +398,6 @@ set(LIBSDL_SOURCES
     ${LIBSDL_SRC_DIR}/video/SDL_yuv.c
     ${LIBSDL_SRC_DIR}/video/SDL_yuv_c.h
     ${LIBSDL_SRC_DIR}/video/sdlgenblit.pl
-    ${LIBSDL_SRC_DIR}/video/windows/SDL_msctf.h
-    ${LIBSDL_SRC_DIR}/video/windows/SDL_vkeys.h
-    ${LIBSDL_SRC_DIR}/video/windows/SDL_windowsclipboard.c
-    ${LIBSDL_SRC_DIR}/video/windows/SDL_windowsclipboard.h
-    ${LIBSDL_SRC_DIR}/video/windows/SDL_windowsevents.c
-    ${LIBSDL_SRC_DIR}/video/windows/SDL_windowsevents.h
-    ${LIBSDL_SRC_DIR}/video/windows/SDL_windowsframebuffer.c
-    ${LIBSDL_SRC_DIR}/video/windows/SDL_windowsframebuffer.h
-    ${LIBSDL_SRC_DIR}/video/windows/SDL_windowskeyboard.c
-    ${LIBSDL_SRC_DIR}/video/windows/SDL_windowskeyboard.h
-    ${LIBSDL_SRC_DIR}/video/windows/SDL_windowsmessagebox.c
-    ${LIBSDL_SRC_DIR}/video/windows/SDL_windowsmessagebox.h
-    ${LIBSDL_SRC_DIR}/video/windows/SDL_windowsmodes.c
-    ${LIBSDL_SRC_DIR}/video/windows/SDL_windowsmodes.h
-    ${LIBSDL_SRC_DIR}/video/windows/SDL_windowsmouse.c
-    ${LIBSDL_SRC_DIR}/video/windows/SDL_windowsmouse.h
-    ${LIBSDL_SRC_DIR}/video/windows/SDL_windowsopengl.c
-    ${LIBSDL_SRC_DIR}/video/windows/SDL_windowsopengl.h
-    ${LIBSDL_SRC_DIR}/video/windows/SDL_windowsshape.c
-    ${LIBSDL_SRC_DIR}/video/windows/SDL_windowsshape.h
-    ${LIBSDL_SRC_DIR}/video/windows/SDL_windowstaskdialog.h
-    ${LIBSDL_SRC_DIR}/video/windows/SDL_windowsvideo.c
-    ${LIBSDL_SRC_DIR}/video/windows/SDL_windowsvideo.h
-    ${LIBSDL_SRC_DIR}/video/windows/SDL_windowswindow.c
-    ${LIBSDL_SRC_DIR}/video/windows/SDL_windowswindow.h
-    ${LIBSDL_SRC_DIR}/video/windows/wmmsg.h
-    ${LIBSDL_SRC_DIR}/video/yuv2rgb
     ${LIBSDL_SRC_DIR}/video/yuv2rgb/LICENSE
     ${LIBSDL_SRC_DIR}/video/yuv2rgb/README.md
     ${LIBSDL_SRC_DIR}/video/yuv2rgb/yuv_rgb.c
@@ -355,10 +406,44 @@ set(LIBSDL_SOURCES
     ${LIBSDL_SRC_DIR}/video/yuv2rgb/yuv_rgb_std_func.h
 )
 
+if (PLATFORM_WINDOWS)
+    list(APPEND LIBSDL_SOURCES ${LIBSDL_SOURCES_WINDOWS})
+endif()
+
+if (PLATFORM_MAC)
+    list(APPEND LIBSDL_SOURCES ${LIBSDL_SOURCES_MAC})
+endif()
+
 add_library(${LIBSDL_NAME} ${LIBSDL_SOURCES})
-add_definitions(-DSDL_DISABLE_WINDOWS_IME)
 include_directories(${LIBSDL_INCLUDE_PATHS})
-target_link_libraries(${LIBSDL_NAME} ${LIBSDL_LINK_LIBRARIES})
+
+if (PLATFORM_WINDOWS)
+    add_definitions(-DSDL_DISABLE_WINDOWS_IME)
+    target_link_libraries(${LIBSDL_NAME} ${LIBSDL_LINK_LIBRARIES_WINDOWS})
+endif()
+
+if (PLATFORM_MAC)
+    FIND_LIBRARY(APP_KIT_FRAMEWORK AppKit)
+    FIND_LIBRARY(CARBON_FRAMEWORK Carbon)
+    FIND_LIBRARY(COCOA_FRAMEWORK Cocoa)
+    FIND_LIBRARY(CORE_FOUNDATION_FRAMEWORK CoreFoundation)
+    FIND_LIBRARY(CORE_VIDEO_FRAMEWORK CoreVideo)
+    FIND_LIBRARY(FORCE_FEEDBACK_FRAMEWORK ForceFeedback)
+    FIND_LIBRARY(IO_KIT_FRAMEWORK IOKit)
+    FIND_LIBRARY(METAL_FRAMEWORK Metal)
+
+    target_link_libraries(
+        ${LIBSDL_NAME}
+        ${APP_KIT_FRAMEWORK}
+        ${CARBON_FRAMEWORK}
+        ${COCOA_FRAMEWORK}
+        ${CORE_FOUNDATION_FRAMEWORK}
+        ${CORE_VIDEO_FRAMEWORK}
+        ${FORCE_FEEDBACK_FRAMEWORK}
+        ${IO_KIT_FRAMEWORK}
+        ${METAL_FRAMEWORK}
+    )
+endif()
 
 ###################################################################################################
 # Burger lib
@@ -486,7 +571,6 @@ set(GAME_SOURCES
     ${GAME_SRC_DIR}/lights.c
     ${GAME_SRC_DIR}/mac.c
     ${GAME_SRC_DIR}/Macros.h
-    ${GAME_SRC_DIR}/Main.cpp
     ${GAME_SRC_DIR}/map.c
     ${GAME_SRC_DIR}/MapData.cpp
     ${GAME_SRC_DIR}/MapData.h
@@ -532,6 +616,14 @@ set(GAME_SOURCES
     ${GAME_SRC_DIR}/tick.c
     ${GAME_SRC_DIR}/user.c
 )
+
+if (PLATFORM_WINDOWS)
+    list(APPEND GAME_SOURCES ${GAME_SRC_DIR}/Main_Windows.cpp)
+endif()
+
+if (PLATFORM_MAC)
+    list(APPEND GAME_SOURCES ${GAME_SRC_DIR}/Main_Mac.mm)
+endif()
 
 add_executable(${GAME_NAME} ${GAME_SOURCES})
 include_directories(${GAME_INCLUDE_PATHS})

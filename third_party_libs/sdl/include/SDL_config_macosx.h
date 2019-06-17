@@ -131,13 +131,13 @@
 #define HAVE_SYSCTLBYNAME 1
 
 /* Enable various audio drivers */
-#define SDL_AUDIO_DRIVER_COREAUDIO  1
-#define SDL_AUDIO_DRIVER_DISK   1
+#define SDL_AUDIO_DRIVER_COREAUDIO  0
+#define SDL_AUDIO_DRIVER_DISK   0
 #define SDL_AUDIO_DRIVER_DUMMY  1
 
 /* Enable various input drivers */
 #define SDL_JOYSTICK_IOKIT  1
-#define SDL_JOYSTICK_HIDAPI  1
+// -- #define SDL_JOYSTICK_HIDAPI  0
 #define SDL_HAPTIC_IOKIT    1
 
 /* Enable the dummy sensor driver */
@@ -155,7 +155,7 @@
 
 /* Enable various video drivers */
 #define SDL_VIDEO_DRIVER_COCOA  1
-#define SDL_VIDEO_DRIVER_DUMMY  1
+#define SDL_VIDEO_DRIVER_DUMMY  0
 #undef SDL_VIDEO_DRIVER_X11
 #define SDL_VIDEO_DRIVER_X11_DYNAMIC "/usr/X11R6/lib/libX11.6.dylib"
 #define SDL_VIDEO_DRIVER_X11_DYNAMIC_XEXT "/usr/X11R6/lib/libXext.6.dylib"
@@ -184,11 +184,11 @@
 #endif
 
 #ifndef SDL_VIDEO_RENDER_OGL
-#define SDL_VIDEO_RENDER_OGL    1
+#define SDL_VIDEO_RENDER_OGL    0
 #endif
 
 #ifndef SDL_VIDEO_RENDER_OGL_ES2
-#define SDL_VIDEO_RENDER_OGL_ES2 1
+#define SDL_VIDEO_RENDER_OGL_ES2 0
 #endif
 
 #ifndef SDL_VIDEO_RENDER_METAL
@@ -202,37 +202,39 @@
 
 /* Enable OpenGL support */
 #ifndef SDL_VIDEO_OPENGL
-#define SDL_VIDEO_OPENGL    1
+#define SDL_VIDEO_OPENGL    0
 #endif
 #ifndef SDL_VIDEO_OPENGL_ES2
-#define SDL_VIDEO_OPENGL_ES2    1
+#define SDL_VIDEO_OPENGL_ES2    0
 #endif
 #ifndef SDL_VIDEO_OPENGL_EGL
-#define SDL_VIDEO_OPENGL_EGL    1
+#define SDL_VIDEO_OPENGL_EGL    0
 #endif
 #ifndef SDL_VIDEO_OPENGL_CGL
-#define SDL_VIDEO_OPENGL_CGL    1
+#define SDL_VIDEO_OPENGL_CGL    0
 #endif
 #ifndef SDL_VIDEO_OPENGL_GLX
-#define SDL_VIDEO_OPENGL_GLX    1
+#define SDL_VIDEO_OPENGL_GLX    0
 #endif
 
 /* Enable Vulkan support */
 /* Metal/MoltenVK/Vulkan only supported on 64-bit architectures with 10.11+ */
-#if TARGET_CPU_X86_64 && (MAC_OS_X_VERSION_MAX_ALLOWED >= 101100)
-#define SDL_VIDEO_VULKAN 1
-#else
-#define SDL_VIDEO_VULKAN 0
+#if 0
+    #if TARGET_CPU_X86_64 && (MAC_OS_X_VERSION_MAX_ALLOWED >= 101100)
+    #define SDL_VIDEO_VULKAN 1
+    #else
+    #define SDL_VIDEO_VULKAN 0
+    #endif
 #endif
 
 /* Enable system power support */
-#define SDL_POWER_MACOSX 1
+#define SDL_POWER_MACOSX 0
 
 /* enable filesystem support */
-#define SDL_FILESYSTEM_COCOA   1
+#define SDL_FILESYSTEM_COCOA   0
 
 /* Enable assembly routines */
-#define SDL_ASSEMBLY_ROUTINES   1
+#define SDL_ASSEMBLY_ROUTINES   0
 #ifdef __ppc__
 #define SDL_ALTIVEC_BLITTERS    1
 #endif

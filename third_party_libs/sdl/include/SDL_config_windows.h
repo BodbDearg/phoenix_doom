@@ -208,7 +208,7 @@ typedef unsigned int uintptr_t;
 
 /* Enable various timer systems */
 #define SDL_TIMER_WINDOWS 0
-#define SDL_TIMER_DUMMY 0
+#define SDL_TIMER_DUMMY 1
 
 /* Enable various video drivers */
 #define SDL_VIDEO_DRIVER_DUMMY 0
