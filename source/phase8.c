@@ -394,7 +394,6 @@ void DrawWeapons(void)
     
     i = ScreenSize+rBACKGROUNDMASK;         /* Get the resource needed */
 
-    // DC: TODO: FIXME/REIMPLEMENT
-    //DrawMShape(0,0,loadResourceData(i));    /* Draw the border */
+    DrawMShape(0,0,loadResourceData(i));    /* Draw the border */
     releaseResource(i);                     /* Release the resource */
 }
