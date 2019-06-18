@@ -280,5 +280,5 @@ void F_Drawer(void)
         PrintBigFontCenter(160,20,CastNames[CastNum]);  /* Print the name */
         DrawSpriteCenter(CastState->SpriteFrame);       /* Draw the sprite */
     }
-    UpdateAndPageFlip();        /* Show the frame */
+    UpdateAndPageFlip(true);        /* Show the frame */
 }

@@ -165,45 +165,33 @@ Word M_Ticker(void)
     return ga_nothing;      /* Don't quit! */
 }
 
-/**********************************
-
-    Draw the main menu
-
-**********************************/
-
-void M_Drawer(void)
-{
-    const void* Shapes;       /* Pointer to shape array */
-    
-/* Draw background */
-
-    DrawRezShape(0,0,rMAINDOOM);
+//--------------------------------------------------------------------------------------------------
+// Draw the main menu
+//--------------------------------------------------------------------------------------------------
+void M_Drawer() {    
+    DrawRezShape(0, 0, rMAINDOOM);
     
     if (OptionActive) {
         O_Drawer();
-    } else {
-    
-        Shapes = loadResourceData(rMAINMENU);  /* Load shape group */
+    } 
+    else {    
+        const void* const pShapes = loadResourceData(rMAINMENU);   // Load shape group
 
-/* Draw new skull */
-
-        DrawMShape(CURSORX,CursorYs[cursorpos],GetShapeIndexPtr(loadResourceData(rSKULLS),cursorframe));
+        // Draw new skull
+        DrawMShape(CURSORX, CursorYs[cursorpos], GetShapeIndexPtr(loadResourceData(rSKULLS), cursorframe));
         releaseResource(rSKULLS);
 
-/* Draw start level information */
+        // Draw start level information
+        PrintBigFont(CURSORX + 24, AREAY, (Byte*) "Level");
+        PrintNumber(CURSORX + 40, AREAY + 20, playermap, 0);
 
-        PrintBigFont(CURSORX+24,AREAY,(Byte *)"Level");
-        PrintNumber(CURSORX+40,AREAY+20,playermap,0);
+        // Draw difficulty information
+        DrawMShape(CURSORX + 24, DIFFICULTYY, GetShapeIndexPtr(pShapes, DIFFSHAPE));
+        DrawMShape(CURSORX + 40, DIFFICULTYY + 20, GetShapeIndexPtr(pShapes, playerskill));
 
-/* Draw difficulty information */
-
-        DrawMShape(CURSORX+24,DIFFICULTYY,GetShapeIndexPtr(Shapes,DIFFSHAPE));
-        DrawMShape(CURSORX+40,DIFFICULTYY+20,GetShapeIndexPtr(Shapes,playerskill));
-
-/* Draw the options screen */
-
-        PrintBigFont(CURSORX+24,OPTIONSY,(Byte *)"Options Menu");
+        // Draw the options screen
+        PrintBigFont(CURSORX + 24, OPTIONSY, (Byte*) "Options Menu");
         releaseResource(rMAINMENU);
-        UpdateAndPageFlip();            /* Update and exit */
+        UpdateAndPageFlip(true);
     }
 }

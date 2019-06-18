@@ -1056,7 +1056,7 @@ extern LongWord LastTics;       /* Time elapsed since last page flip */
 extern void WritePrefsFile(void);
 extern void ClearPrefsFile(void);
 extern void ReadPrefsFile(void);
-extern void UpdateAndPageFlip(void);
+extern void UpdateAndPageFlip(const bool bAllowDebugClear);
 extern void DrawPlaque(Word RezNum);
 extern void DrawSkyLine(void);
 

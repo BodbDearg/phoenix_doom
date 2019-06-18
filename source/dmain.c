@@ -232,16 +232,12 @@ static void STOP_Title(void)
 //  S_StopSong();           /* Stop the music */
 }
 
-/**********************************
-
-    Draw the title page
-
-**********************************/
-
-static void DRAW_Title(void)
-{
-    DrawRezShape(0,0,rTITLE);       /* Draw the doom logo */
-    UpdateAndPageFlip();                    /* Page flip */
+//--------------------------------------------------------------------------------------------------
+// Draws the title page
+//--------------------------------------------------------------------------------------------------
+static void DRAW_Title() {
+    DrawRezShape(0, 0, rTITLE);     // Draw the doom logo
+    UpdateAndPageFlip(true);
 }
 
 /**********************************
@@ -284,29 +280,27 @@ static Word TIC_Credits(void)
     return ga_nothing;      /* Don't stop! */
 }
 
-/**********************************
-
-    Draw the credits page
-
-**********************************/
-
-static void DRAW_Credits(void)
-{
+//--------------------------------------------------------------------------------------------------
+// Draw the credits page
+//--------------------------------------------------------------------------------------------------
+static void DRAW_Credits() {
     switch (CreditRezNum) {
-    case rIDCREDITS:
-        if (TotalGameTicks>=(10*TICKSPERSEC)) {
-            CreditRezNum = rCREDITS;
-            DoWipe = true;
-        }
-        break;
-    case rCREDITS:
-        if (TotalGameTicks>=(20*TICKSPERSEC)) {
-            CreditRezNum = rLOGCREDITS;
-            DoWipe = true;
-        }
+        case rIDCREDITS:
+            if (TotalGameTicks >= ( 10 * TICKSPERSEC)) {
+                CreditRezNum = rCREDITS;
+                DoWipe = true;
+            }
+            break;
+        
+        case rCREDITS:
+            if (TotalGameTicks >= (20 * TICKSPERSEC)) {
+                CreditRezNum = rLOGCREDITS;
+                DoWipe = true;
+            }
     }
-    DrawRezShape(0,0,CreditRezNum); /* Draw the credits */
-    UpdateAndPageFlip();                /* Page flip */
+
+    DrawRezShape(0,0,CreditRezNum);     // Draw the credits
+    UpdateAndPageFlip(true);            // Page flip
 }
 
 /**********************************
@@ -317,17 +311,11 @@ static void DRAW_Credits(void)
 
 static void RunMenu(void)
 {
-    // DC: FIXME: temp - skipping past the title into the game
-    #if 1
-    #else
     if (MiniLoop(M_Start,M_Stop,M_Ticker,M_Drawer)==ga_completed) {     /* Process the menu */
-    #endif
         S_StopSong();
         G_InitNew(StartSkill,StartMap);     /* Init the new game */
         G_RunGame();                    /* Play the game */
-    #if 0
     }
-    #endif
 }
 
 
@@ -339,14 +327,9 @@ static void RunMenu(void)
 
 static void RunTitle(void)
 {
-    // DC: FIXME: temp - skipping past the title into the game
-    #if 1
-        RunMenu();
-    #else
     if (MiniLoop(START_Title,STOP_Title,TIC_Abortable,DRAW_Title)==ga_exitdemo) {
         RunMenu();          /* Process the main menu */
     }
-    #endif
 }
 
 /**********************************

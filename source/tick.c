@@ -239,22 +239,25 @@ Word P_Ticker(void)
 // Draw current display
 //--------------------------------------------------------------------------------------------------
 void P_Drawer() {
+    bool bAllowDebugClear = (!gamepaused);
+
     if (gamepaused && refreshdrawn) {
-        DrawPlaque(rPAUSED);    // Draw paused
+        DrawPlaque(rPAUSED);                    // Draw 'Paused' plaque
+        UpdateAndPageFlip(bAllowDebugClear);
     } else if (players.AutomapFlags & AF_OPTIONSACTIVE) {
-        R_RenderPlayerView();   // Render the 3D view
-        ST_Drawer();            // Draw the status bar
-        O_Drawer();             // Draw the console handler
+        R_RenderPlayerView();                   // Render the 3D view
+        ST_Drawer();                            // Draw the status bar
+        O_Drawer();                             // Draw the console handler
         refreshdrawn = false;
     } else if (players.AutomapFlags & AF_ACTIVE) {
-        AM_Drawer();            // Draw the automap
-        ST_Drawer();            // Draw the status bar
-        UpdateAndPageFlip();    // Update and page flip
+        AM_Drawer();                            // Draw the automap
+        ST_Drawer();                            // Draw the status bar
+        UpdateAndPageFlip(bAllowDebugClear);    // Update and page flip
         refreshdrawn = true;
     } else {
-        R_RenderPlayerView();   // Render the 3D view
-        ST_Drawer();            // Draw the status bar
-        UpdateAndPageFlip();
+        R_RenderPlayerView();                   // Render the 3D view
+        ST_Drawer();                            // Draw the status bar
+        UpdateAndPageFlip(!bAllowDebugClear);   // Only allow debug clear if we are not going into pause mode
         refreshdrawn = true;
     }
 }

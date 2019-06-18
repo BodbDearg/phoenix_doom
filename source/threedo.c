@@ -660,25 +660,24 @@ static void FlushCCBs(void)
 
 **********************************/
 
-void UpdateAndPageFlip(void)
-{
+void UpdateAndPageFlip(const bool bAllowDebugClear) {
     SDL_UpdateTexture(gFramebufferTexture, NULL, gFrameBuffer, SCREEN_WIDTH * sizeof(uint32_t));    
     SDL_RenderCopy(gRenderer, gFramebufferTexture, NULL, NULL);
 
-    // TODO: TEMP
-    // Clear the framebuffer to pink to spot rendering gaps.
-    {
-        const uint32_t pinkU32 = 0xFF00FFFF;
-        uint32_t* pPixel = gFrameBuffer;
-        uint32_t* const pEndPixel = gFrameBuffer + (SCREEN_WIDTH * SCREEN_HEIGHT);
+    // Clear the framebuffer to pink to spot rendering gaps
+    #if ASSERTS_ENABLED
+        if (bAllowDebugClear) {
+            const uint32_t pinkU32 = 0xFF00FFFF;
+            uint32_t* pPixel = gFrameBuffer;
+            uint32_t* const pEndPixel = gFrameBuffer + (SCREEN_WIDTH * SCREEN_HEIGHT);
 
-        while (pPixel < pEndPixel) {
-            *pPixel = pinkU32;
-            ++pPixel;
+            while (pPixel < pEndPixel) {
+                *pPixel = pinkU32;
+                ++pPixel;
+            }
         }
-    }
-    
-    // memset(gFrameBuffer, 0, sizeof(gFrameBuffer));
+    #endif
+
     SDL_RenderPresent(gRenderer);
 
     // DC: FIXME: implement/replace
@@ -750,11 +749,11 @@ void DrawPlaque(Word RezNum)
 // Main entry point for 3DO
 //---------------------------------------------------------------------------------------------------------------------
 void ThreeDOMain() {
-    InitTools();            // Init the 3DO tool system
+    InitTools();                // Init the 3DO tool system
     createDisplay();    
-    UpdateAndPageFlip();    // Init the video display's vars    
-    ReadPrefsFile();        // Load defaults
-    D_DoomMain();           // Start doom
+    UpdateAndPageFlip(true);    // Init the video display's vars    
+    ReadPrefsFile();            // Load defaults
+    D_DoomMain();               // Start doom
     shutdownDisplay();
 }
 

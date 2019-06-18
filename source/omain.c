@@ -283,5 +283,5 @@ void O_Drawer(void)
         DrawMShape(SLIDERX+5+offset,SIZEY+20,GetShapeIndexPtr(Shapes,HANDLE));
     }
     releaseResource(rSLIDER);
-    UpdateAndPageFlip();
+    UpdateAndPageFlip(true);
 }

@@ -308,9 +308,6 @@ Word IN_Ticker(void)
 
 void IN_Drawer(void)
 {
-    // FIXME: DC
-    return;
-
     const void* IntermisShapes;         /* Cached pointer */
     DrawRezShape(0,0,rBACKGRNDBROWN);   /* Load and draw the skulls */
     
@@ -331,5 +328,5 @@ void IN_Drawer(void)
     PrintNumber(IVALX,IVALY,itemvalue,PNPercent|PNRight);
     PrintNumber(SVALX,SVALY,secretvalue,PNPercent|PNRight);
     releaseResource(rINTERMIS);
-    UpdateAndPageFlip();                /* Show the screen */
+    UpdateAndPageFlip(true);                /* Show the screen */
 }
