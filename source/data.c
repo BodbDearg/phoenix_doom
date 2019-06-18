@@ -47,7 +47,6 @@ skill_t gameskill;      /* Current skill level */
 Word gamemap;           /* Current game map # */
 Word nextmap;           /* The map to go to after the stats */
 Word ScreenSize;        /* Screen size to use */
-bool LowDetail;         /* Use low detail mode */
 bool DemoRecording;     /* True if demo is being recorded */
 bool DemoPlayback;      /* True if demo is being played */
 bool DoWipe;            /* True if I should do the DOOM wipe */

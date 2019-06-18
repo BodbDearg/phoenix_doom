@@ -29,7 +29,6 @@ typedef enum {      /* Cheat enum */
     ch_godmode,
     ch_idkfa,
     ch_levelaccess,
-    ch_largescreen,
     ch_maxcheats
 } cheat_e;
 
@@ -39,7 +38,6 @@ static Byte CheatStrings[ch_maxcheats][9] = { /* order should mirror cheat_e */
     {"URABADASS"},  /* God mode */
     {"ALABARACA"},  /* All weapons */
     {"SUCCEDALL"},  /* Level access */
-    {"URSURREAL"}   /* Large screens */
 };
 
 #define CHEATLETTERS 9
@@ -310,9 +308,6 @@ void AM_Control(player_t *player)
         MaxLevel = 23;
         WritePrefsFile();
         break;
-    case ch_largescreen:
-        LowDetail = true;
-        WritePrefsFile();
     case ch_maxcheats:
         break;
     }

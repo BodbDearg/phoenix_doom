@@ -212,12 +212,10 @@ void O_Control(player_t *player)
                     }
                 }
                 if (buttons & PadRight) {
-                    if (ScreenSize) {       /* Can it grow? */
-                        if (LowDetail || (ScreenSize>=3)) {     /* Only 2-5? */
-                            --ScreenSize;
-                            if (player) {
-                                InitMathTables();               /* Handle the math tables */
-                            }
+                    if (ScreenSize > 0) {       /* Can it grow? */
+                        --ScreenSize;
+                        if (player) {
+                            InitMathTables();               /* Handle the math tables */
                         }
                     }
                 }
@@ -272,14 +270,8 @@ void O_Drawer(void)
         PrintBigFont(JOYPADX+40,JOYPADY+60,buttonc[ControlType]);
         PrintBigFontCenter(160,SIZEY,(Byte *)"Screen Size");
         DrawMShape(SLIDERX,SIZEY+20,GetShapeIndexPtr(Shapes,BAR));
-        if (ScreenSize<2) {
-            LowDetail = true;
-        }
-        if (LowDetail) {
-            offset = (5-ScreenSize) * 18;
-        } else {
-            offset = (5-ScreenSize) * 30;
-        }
+        
+        offset = (5-ScreenSize) * 18;
         DrawMShape(SLIDERX+5+offset,SIZEY+20,GetShapeIndexPtr(Shapes,HANDLE));
     }
     releaseResource(rSLIDER);

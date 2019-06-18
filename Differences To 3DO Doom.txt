@@ -1,0 +1,7 @@
+Below is a list of some of the main changes from the original 3DO version:
+
+[] Framebuffer is now 32-bit instead of 16-bit.
+This allows for smoother light gradients and less color banding.
+
+[] Removed the maximum screen size restriction.
+No longer have to use a cheat to access this!

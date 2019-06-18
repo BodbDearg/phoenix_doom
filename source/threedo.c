@@ -552,7 +552,7 @@ void WritePrefsFile(void)
     PrefFile[5] = ControlType;
     PrefFile[6] = MaxLevel;
     PrefFile[7] = ScreenSize;
-    PrefFile[8] = LowDetail;
+    PrefFile[8] = 0;            // Was 'LowDetail' - now unused
     PrefFile[9] = 12345;        /* Init the checksum */
     i = 0;
     CheckSum = 0;
@@ -574,7 +574,6 @@ void ClearPrefsFile() {
     ControlType = 3;            // Use basic joypad controls
     MaxLevel = 1;               // Only allow level 1 to select from
     ScreenSize = 0;             // Default screen size
-    LowDetail = false;          // Detail mode
     WritePrefsFile();           // Output the new prefs
 }
 
@@ -613,7 +612,6 @@ void ReadPrefsFile(void)
     ControlType = PrefFile[5];
     MaxLevel = PrefFile[6];
     ScreenSize = PrefFile[7];
-    LowDetail = PrefFile[8];
     
     if ((StartSkill >= (sk_nightmare+1)) ||
         (StartMap >= 27) ||
@@ -621,8 +619,7 @@ void ReadPrefsFile(void)
         (MusicVolume >= 16) ||
         (ControlType >= 6) ||
         (MaxLevel >= 26) ||
-        (ScreenSize >= 6) ||
-        ((int) LowDetail >= 2)
+        (ScreenSize >= 6)
     ) {
         ClearPrefsFile();
     }
