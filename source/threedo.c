@@ -806,45 +806,46 @@ void AddCCB(Word x,Word y,MyCCB* NewCCB)
     #endif
 }
 
-/**********************************
-
-    Draw a masked shape on the screen
-
-**********************************/
-
-void DrawMShape(const uint32_t x1, const uint32_t y1, const CelControlBlock* const pShape) {
+static void DrawShapeImpl(const uint32_t x1, const uint32_t y1, const CelControlBlock* const pShape, bool bIsMasked) {
     // TODO: DC - This is temp!
     uint16_t* pImage;
     uint16_t imageW;
     uint16_t imageH;
     decodeDoomCelSprite(pShape, &pImage, &imageW, &imageH);
-
+    
     const uint32_t xEnd = x1 + imageW;
     const uint32_t yEnd = y1 + imageH;
     const uint16_t* pCurImagePixel = pImage;
 
     for (uint32_t y = y1; y < yEnd; ++y) {
-        for (uint32_t x = x1; x < xEnd; ++x) {        
-            const uint16_t color = *pCurImagePixel;
+        for (uint32_t x = x1; x < xEnd; ++x) {
+            if (x >= 0 && x < SCREEN_WIDTH) {
+                if (y >= 0 && y < SCREEN_HEIGHT) {
+                    const uint16_t color = *pCurImagePixel;
+                    const uint16_t colorA = (color & 0b1000000000000000) >> 10;
+                    const uint16_t colorR = (color & 0b0111110000000000) >> 10;
+                    const uint16_t colorG = (color & 0b0000001111100000) >> 5;
+                    const uint16_t colorB = (color & 0b0000000000011111) >> 0;
 
-            if ((color & 0x7FFF) != 0) {
-                if (x >= 0 && x < SCREEN_WIDTH) {
-                    if (y >= 0 && y < SCREEN_HEIGHT) {
-                        const uint16_t colorA = (color & 0b1000000000000000) >> 10;
-                        const uint16_t colorR = (color & 0b0111110000000000) >> 10;
-                        const uint16_t colorG = (color & 0b0000001111100000) >> 5;
-                        const uint16_t colorB = (color & 0b0000000000011111) >> 0;
+                    bool bTransparentPixel = false;
 
-                        if (colorA != 0) {
-                            const uint32_t finalColor = (
-                                (colorR << 27) |
-                                (colorG << 19) |
-                                (colorB << 11) |
-                                255
-                            );
+                    if (bIsMasked) {
+                        bTransparentPixel = ((color & 0x7FFF) == 0);
+                    }
 
-                            gFrameBuffer[y * SCREEN_WIDTH + x] = finalColor;
-                        }
+                    if (colorA == 0) {
+                        bTransparentPixel = true;
+                    }
+
+                    if (!bTransparentPixel) {
+                        const uint32_t finalColor = (
+                            (colorR << 27) |
+                            (colorG << 19) |
+                            (colorB << 11) |
+                            255
+                        );
+
+                        gFrameBuffer[y * SCREEN_WIDTH + x] = finalColor;
                     }
                 }
             }
@@ -854,6 +855,17 @@ void DrawMShape(const uint32_t x1, const uint32_t y1, const CelControlBlock* con
     }
 
     MemFree(pImage);
+}
+
+/**********************************
+
+    Draw a masked shape on the screen
+
+**********************************/
+
+void DrawMShape(const uint32_t x1, const uint32_t y1, const CelControlBlock* const pShape) {
+    // TODO: DC - This is temp!
+    DrawShapeImpl(x1, y1, pShape, true);
 
     // DC: FIXME: implement/replace
     #if 0
@@ -868,10 +880,9 @@ void DrawMShape(const uint32_t x1, const uint32_t y1, const CelControlBlock* con
 
 **********************************/
 
-void DrawShape(Word x,Word y,const void* ShapePtr)
-{
-    // TODO: DC - Is this correct?
-    DrawMShape(x, y, ShapePtr);
+void DrawShape(const uint32_t x1, const uint32_t y1, const CelControlBlock* const pShape) {
+    // TODO: DC - This is temp!
+    DrawShapeImpl(x1, y1, pShape, false);
 
     // DC: FIXME: implement/replace
     #if 0
