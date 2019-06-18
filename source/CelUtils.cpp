@@ -71,14 +71,14 @@ public:
         return out;
     }
 
-    // Aligns the current stream pointer to the start of the next uint32_t
-    void u32Align() noexcept {
+    // Aligns the current stream pointer to the start of the next uint64_t
+    void u64Align() noexcept {
         if (mCurBitIdx < 7) {
             mCurBitIdx = 7;
             ++mCurByteIdx;
         }
 
-        mCurByteIdx = (mCurByteIdx + uint32_t(3)) & ~uint32_t(3);
+        mCurByteIdx = (mCurByteIdx + uint32_t(7)) & ~uint32_t(7);
     }
 
 private:
@@ -164,7 +164,7 @@ static void decodeUnpackedCelImageData(
             ++pCurOutputPixel;
         }
 
-        bitStream.u32Align();
+        bitStream.u64Align();
     }
 }
 
