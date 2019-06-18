@@ -49,6 +49,22 @@ Word ReadJoyButtons(Word PadNum)
         buttons |= PadC;
     }
 
+    if (state[SDL_SCANCODE_Z]) {
+        buttons |= PadX;
+    }
+
+    if (state[SDL_SCANCODE_X]) {
+        buttons |= PadStart;
+    }
+
+    if (state[SDL_SCANCODE_Q]) {
+        buttons |= PadLeftShift;
+    }
+
+    if (state[SDL_SCANCODE_E]) {
+        buttons |= PadRightShift;
+    }
+
     return buttons;
     
     /*
