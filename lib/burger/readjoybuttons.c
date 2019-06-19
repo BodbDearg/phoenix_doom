@@ -65,28 +65,7 @@ Word ReadJoyButtons(Word PadNum)
         buttons |= PadRightShift;
     }
 
-    return buttons;
-    
-    /*
-#define PadDown         0x80000000
-#define PadUp           0x40000000
-#define PadRight        0x20000000
-#define PadLeft         0x10000000
-#define PadA            0x08000000
-#define PadB            0x04000000
-#define PadC            0x02000000
-#define PadD            0x00000000
-#define PadStart        0x01000000
-#define PadX            0x00800000
-#define PadRightShift   0x00400000
-#define PadLeftShift    0x00200000
-#define PadXLeft        0x00100000
-#define PadXRight       0x00080000
-
-#define RatLeft         0x80000000
-#define RatMiddle       0x40000000
-#define RatRight        0x20000000    
-    */
+    return buttons;    
 
     // DC: FIXME: reimplement or replace
     #if 0

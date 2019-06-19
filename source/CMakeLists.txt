@@ -19,7 +19,6 @@ set(SOURCES
     "inmain.c"
     "inter.c"
     "lights.c"
-    "mac.c"
     "Macros.h"
     "map.c"
     "MapData.cpp"

@@ -42,17 +42,7 @@ typedef struct {
 typedef int32_t Item;
 
 #define __3DO__
-#define __BIGENDIAN__
-#define __MOUSE__
-#define __JOYPAD__
 #define TICKSPERSEC 60
-
-#define LoadIntelLong(x) SwapULong(x)
-#define LoadMotoLong(x) x
-#define LoadIntelShort(x) SwapShort(x)
-#define LoadMotoShort(x) x
-#define LoadIntelUShort(x) SwapUShort(x)
-#define LoadMotoUShort(x) x
 
 #define BLACK 0x0000
 #define DARKGREY 0x39CE
@@ -72,32 +62,17 @@ typedef int32_t Item;
 #define WHITE 0x7FFF
 #define SfxActive 1
 #define MusicActive 2
-#define PauseActive 4
-
-#define SetAuxType(x,y)
-#define SetFileType(x,y)
 
 /* In Graphics */
-extern Word YTable[240];
 extern Byte *VideoPointer;
-extern Word VideoWidth;
 extern Word ScreenWidth;
 extern Word ScreenHeight;
-extern void InitYTable(void);
-extern Word GetAPixel(Word x,Word y);
 extern void SetAPixel(Word x,Word y,Word Color);
 extern void DrawShape(const uint32_t x1, const uint32_t y1, const struct CelControlBlock* const pShape);
 extern void DrawMShape(const uint32_t x1, const uint32_t y1, const struct CelControlBlock* const pShape);
-extern void EraseShape(Word x, Word y, void* ShapePtr);
-extern void EraseMBShape(Word x, Word y,void *ShapePtr,void *BackPtr);
 extern void DrawARect(Word x,Word y,Word Width,Word Height,Word Color);
 extern const void* GetShapeIndexPtr(const void* ShapeArrayPtr, Word Index);
-extern void DrawXMShape(Word x,Word y,void *ShapePtr);
-extern Word TestMShape(Word x,Word y,void *ShapePtr);
-extern Word TestMBShape(Word x,Word y,void *ShapePtr,void *BackPtr);
-extern void ClearTheScreen(Word Color);
 extern void DrawRezShape(Word x,Word y,Word RezNum);
-extern void DrawRezCenterShape(Word RezNum);
 
 /* Input handlers */
 #define PadDown         0x80000000
@@ -115,49 +90,18 @@ extern void DrawRezCenterShape(Word RezNum);
 #define PadXLeft        0x00100000
 #define PadXRight       0x00080000
 
-#define RatLeft         0x80000000
-#define RatMiddle       0x40000000
-#define RatRight        0x20000000
-
 extern Word LastJoyButtons[4];      /* Save the previous joypad bits */
-extern Word LastMouseButton;        /* Save the previous mouse hit */
-
-extern void (*MyKbhitCallBack)(void);
-extern Word (*MyGetchCallBack)(Word);
 extern void InterceptKey(void);
-extern volatile Byte KeyArray[128];
-extern Word KeyModifiers;
-extern Word MyGetch(void);
-extern Word MyKbhit(void);
-extern void FlushKeys(void);
-extern Word GetAKey(void);
-extern Word WaitAKey(void);
 extern Word ReadJoyButtons(Word Which);
-extern Word ReadMouseButtons(void);
-extern void ReadMouseAbs(Word *x,Word *y);
-extern void ReadMouseDelta(int *x,int *y);
-extern bool DetectMouse(void);
-extern bool MousePresent;
 
 /* Misc routines */
 extern void Randomize(void);
 extern Word GetRandom(Word MaxVal);
-extern Short SwapUShort(Short Val);
-extern short SwapShort(short Val);
-extern long SwapLong(long Val);
-extern LongWord SwapULong(LongWord Val);
-extern char *ErrorMsg;
 extern void LongWordToAscii(LongWord Input,Byte *AsciiPtr);
-extern void longToAscii(long Input,Byte *AsciiPtr);
 extern Word SaveAFile(Byte *FileName,void *data,LongWord Length);
-extern void *LoadAFile(Byte *FileName);
 
 /* Time and Events */
 extern LongWord LastTick;
-extern void WaitTick(void);
-extern void WaitTicks(Word TickCount);
-extern Word WaitTicksEvent(Word TickCount);
-extern Word WaitEvent(void);
 extern LongWord ReadTick(void);
 
 /* Sound effects */
@@ -186,15 +130,8 @@ extern void SetSfxVolume(Word NewVolume);
 extern void SetMusicVolume(Word NewVolume);
 extern Word KilledSong;
 
-/* Misc funcs */
-extern void Halt(void);
-extern void ShowMCGA(Byte *VideoPtr,Byte *SourcePtr,Word *ColorPtr);
-extern void DLZSS(unsigned char *Dest,unsigned char *Src, unsigned long Length);
+/* Misc */
 extern Word SystemState;
-
-extern void *AllocSomeMem(LongWord Size);
-extern void FreeSomeMem(void *MemPtr);
-
 extern Item VideoItem;          /* 3DO Specific! */
 extern Item VideoScreen;        /* 3DO Specific! */
 
