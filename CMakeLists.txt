@@ -37,14 +37,17 @@ endif()
 # Global identifiers for each project/target
 set(GAME_NAME           PhoenixDoom)
 set(BURGERLIB_NAME      BurgerLib)
+set(OPENAL_LIB_NAME     OpenAL)
 set(LIBSDL_NAME         SDL)
 
 # Adding individual projects and libraries
 set(GAME_SRC_DIR            "${PROJECT_SOURCE_DIR}/source")
 set(BURGERLIB_SRC_DIR       "${PROJECT_SOURCE_DIR}/lib")
 set(THIRD_PARTY_LIBS_DIR    "${PROJECT_SOURCE_DIR}/third_party_libs")
+set(OPENAL_LIB_DIR          "${THIRD_PARTY_LIBS_DIR}/openal")
 set(LIBSDL_DIR              "${THIRD_PARTY_LIBS_DIR}/libsdl")
 
 add_subdirectory("${LIBSDL_DIR}")
+add_subdirectory("${OPENAL_LIB_DIR}")
 add_subdirectory("${BURGERLIB_SRC_DIR}")
 add_subdirectory("${GAME_SRC_DIR}")
