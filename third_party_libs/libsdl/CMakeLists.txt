@@ -10,7 +10,7 @@ set(EXPORTED_INCLUDE_PATHS
     ${INCLUDE_DIR}
 )
 
-set(SOURCE_FILES
+set(SOURCE_FILES    
     "${SRC_DIR}/atomic/SDL_atomic.c"
     "${SRC_DIR}/atomic/SDL_spinlock.c"
     "${SRC_DIR}/audio/dummy/SDL_dummyaudio.c"
@@ -113,7 +113,7 @@ set(SOURCE_FILES
     "${SRC_DIR}/video/yuv2rgb/yuv_rgb.c"
 )
 
-set(HEADER_FILES
+set(HEADER_FILES    
     "${INCLUDE_DIR}/begin_code.h"
     "${INCLUDE_DIR}/close_code.h"
     "${INCLUDE_DIR}/SDL.h"
@@ -249,6 +249,9 @@ set(OTHER_FILES
 
 if (PLATFORM_WINDOWS)
     list(APPEND SOURCE_FILES
+        "${SRC_DIR}/audio/wasapi/SDL_wasapi.c"
+        "${SRC_DIR}/audio/wasapi/SDL_wasapi_win32.c"
+        "${SRC_DIR}/audio/wasapi/SDL_wasapi_winrt.cpp"
         "${SRC_DIR}/core/windows/SDL_windows.c"
         "${SRC_DIR}/core/windows/SDL_xinput.c"
         "${SRC_DIR}/filesystem/windows/SDL_sysfilesystem.c"
@@ -283,6 +286,7 @@ if (PLATFORM_WINDOWS)
 
     list(APPEND HEADER_FILES
         "${INCLUDE_DIR}/SDL_config_windows.h"
+        "${SRC_DIR}/audio/wasapi/SDL_wasapi.h"
         "${SRC_DIR}/core/windows/SDL_directx.h"
         "${SRC_DIR}/core/windows/SDL_windows.h"
         "${SRC_DIR}/core/windows/SDL_xinput.h"

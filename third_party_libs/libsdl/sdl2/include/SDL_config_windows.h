@@ -184,7 +184,7 @@ typedef unsigned int uintptr_t;
 #endif
 
 /* Enable various audio drivers */
-#define SDL_AUDIO_DRIVER_WASAPI 0
+#define SDL_AUDIO_DRIVER_WASAPI 1
 #define SDL_AUDIO_DRIVER_DSOUND 0
 #define SDL_AUDIO_DRIVER_WINMM  0
 #define SDL_AUDIO_DRIVER_DISK   0
