@@ -1,38 +1,17 @@
-cmake_minimum_required (VERSION 3.14)
-
+cmake_minimum_required(VERSION 3.14)
 project(PhoenixDoom)
 
-set(CMAKE_C_STANDARD    11)
-set(CMAKE_CXX_STANDARD  17)
-set(CMAKE_BUILD_TYPE    Debug)
+# Where CMake will search for .cmake module files
+set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-# Compiler detection
-if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-    set(COMPILER_CLANG TRUE)
-endif()
+# Causes CMake projects to go into their own folders
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    set(COMPILER_GCC TRUE)
-endif()
+# Include common build scripts and do basic build setup
+include(HelperFunctions)
+include(BuildSetup)
 
-if (MSVC)
-    set(COMPILER_MSVC TRUE)
-endif()
-
-# OS/Platform detection
-if (WIN32)
-    set(PLATFORM_WINDOWS TRUE)
-endif()
-
-if (APPLE)    
-    set(PLATFORM_MAC TRUE)  # Note: could also be iOS etc. but not targetting those - can just assume Mac...
-endif()
-
-# Clang, Apple Clang, or GCC - enable debugging
-if (COMPILER_CLANG OR COMPILER_GCC)
-    set(CMAKE_C_FLAGS -g)
-    set(CMAKE_CXX_FLAGS -g)
-endif()
+build_setup()
 
 # Global identifiers for each project/target
 set(GAME_NAME           PhoenixDoom)
