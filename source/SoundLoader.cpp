@@ -98,7 +98,11 @@ public:
     }
 
     // Aligns the memory stream to the given byte boundary (2, 4, 8 etc.)
+    // Note: call is ignored if at the end of the stream!
     inline void align(const uint32_t numBytes) THROWS {
+        if (mCurByteIdx >= mSize)
+            return;
+        
         if (numBytes >= 2) {
             const uint32_t modulus = mCurByteIdx % numBytes;
 
