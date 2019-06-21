@@ -1,10 +1,14 @@
 #pragma once
 
-#include <stdlib.h>
-
 // Whether or not asserts are enabled
 #ifndef NDEBUG
     #define ASSERTS_ENABLED 1
+#endif
+
+// Required includes for error handling
+#if ASSERTS_ENABLED == 1
+    #include <stdio.h>
+    #include <stdlib.h>
 #endif
 
 // Regular assert without a message
@@ -61,3 +65,6 @@
         printf(MessageFormat "\n", __VA_ARGS__);\
         abort();\
     } while (0)
+
+// Used to decorate exception throwing C++ functions
+#define THROWS noexcept(false)

@@ -39,6 +39,7 @@ set(SOURCE_FILES
     "sight.c"
     "slide.c"
     "sound.c"
+    "SoundLoader.cpp"
     "spec.c"
     "Sprites.cpp"
     "stmain.c"
@@ -57,6 +58,7 @@ set(HEADER_FILES
     "doom.h"
     "doomrez.h"
     "Endian.h"
+    "Finally.h"
     "Macros.h"
     "MapData.h"
     "MathUtils.h"
@@ -64,6 +66,8 @@ set(HEADER_FILES
     "Resource.h"
     "ResourceMgr.h"
     "Resources.h"
+    "SoundData.h"
+    "SoundLoader.h"
     "sounds.h"
     "Sprites.h"
     "states.h"
@@ -79,6 +83,11 @@ endif()
 
 if (PLATFORM_MAC)
     list(APPEND SOURCE_FILES "Main_Mac.mm")
+endif()
+
+if (COMPILER_MSVC)
+    # MSVC: Don't complain about using regular 'std::fopen()' etc.
+    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 endif()
 
 add_executable(${GAME_NAME} ${SOURCE_FILES} ${HEADER_FILES} ${OTHER_FILES})
