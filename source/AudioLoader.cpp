@@ -1,8 +1,8 @@
-#include "SoundLoader.h"
+#include "AudioLoader.h"
 
+#include "AudioData.h"
 #include "Endian.h"
 #include "Finally.h"
-#include "SoundData.h"
 #include <cstdio>
 #include <cstring>
 #include <memory>
@@ -260,14 +260,14 @@ static double readBigEndianExtendedFloat(MemStream& stream) THROWS {
 // Read RAW encoded sound data in 8 or 16 bit format.
 // The sound is assumed to be at the bit rate specified in the given sound data object.
 //--------------------------------------------------------------------------------------------------
-static bool readRawSoundData(MemStream& stream, SoundData& soundData) THROWS {
-    ASSERT(soundData.bitDepth == 8 || soundData.bitDepth == 16);
+static bool readRawSoundData(MemStream& stream, AudioData& audioData) THROWS {
+    ASSERT(audioData.bitDepth == 8 || audioData.bitDepth == 16);
 
-    const uint32_t bytesPerSample = (soundData.bitDepth == 8) ? 1 : 2;
-    const uint32_t soundDataSize = bytesPerSample * soundData.numSamples * soundData.numChannels;
+    const uint32_t bytesPerSample = (audioData.bitDepth == 8) ? 1 : 2;
+    const uint32_t soundDataSize = bytesPerSample * audioData.numSamples * audioData.numChannels;
     
-    soundData.allocBuffer(soundDataSize);
-    stream.readBytes(soundData.pBuffer, soundDataSize);
+    audioData.allocBuffer(soundDataSize);
+    stream.readBytes(audioData.pBuffer, soundDataSize);
     return true;
 }
 
@@ -276,25 +276,25 @@ static bool readRawSoundData(MemStream& stream, SoundData& soundData) THROWS {
 // This format is a little obscure and hard to find information about, however I did manage to find
 // some decoding code on the internet and could 
 //--------------------------------------------------------------------------------------------------
-static bool readSdx2CompressedSoundData(MemStream& stream, SoundData& soundData) THROWS {    
+static bool readSdx2CompressedSoundData(MemStream& stream, AudioData& audioData) THROWS {    
     // For SDX2 the bit rate MUST be 16-bit!
-    if (soundData.bitDepth != 16)
+    if (audioData.bitDepth != 16)
         return false;
 
     // Only allowing up to 2 channel sound for now
-    if (soundData.numChannels != 1 && soundData.numChannels != 2)
+    if (audioData.numChannels != 1 && audioData.numChannels != 2)
         return false;
     
     // Allocate room for the buffer
-    const uint32_t bufferSize = soundData.numSamples * soundData.numChannels * sizeof(uint16_t);
-    soundData.allocBuffer(bufferSize);
+    const uint32_t bufferSize = audioData.numSamples * audioData.numChannels * sizeof(uint16_t);
+    audioData.allocBuffer(bufferSize);
 
     // Setup before we decode each sample
-    const uint32_t numSamples = soundData.numSamples;
-    const uint16_t numChannels = soundData.numChannels;
+    const uint32_t numSamples = audioData.numSamples;
+    const uint16_t numChannels = audioData.numChannels;
     const uint32_t numChannelSamples = numSamples * numChannels;
     
-    uint16_t* pOutput = reinterpret_cast<uint16_t*>(soundData.pBuffer);
+    uint16_t* pOutput = reinterpret_cast<uint16_t*>(audioData.pBuffer);
     uint16_t* const pEndOutput = pOutput + numChannelSamples;
 
     const uint8_t* pInput = reinterpret_cast<const uint8_t*>(stream.getCurData());
@@ -356,7 +356,7 @@ static bool readSdx2CompressedSoundData(MemStream& stream, SoundData& soundData)
 //--------------------------------------------------------------------------------------------------
 // Reads the contents of the FORM chunk
 //--------------------------------------------------------------------------------------------------
-static bool readFormChunk(const IffChunk& formChunk, SoundData& soundData) THROWS {
+static bool readFormChunk(const IffChunk& formChunk, AudioData& audioData) THROWS {
     // Validate and read form type firstly
     MemStream formStream = formChunk.toStream();
     const IffId formType = formStream.read<IffId>();
@@ -417,23 +417,23 @@ static bool readFormChunk(const IffChunk& formChunk, SoundData& soundData) THROW
         return false;
 
     // Save sound properties
-    soundData.numSamples = numSamples;
-    soundData.sampleRate = sampleRate;
-    soundData.numChannels = numChannels;
-    soundData.bitDepth = bitDepth;
+    audioData.numSamples = numSamples;
+    audioData.sampleRate = sampleRate;
+    audioData.numChannels = numChannels;
+    audioData.bitDepth = bitDepth;
     
     if (compressionType == ID_NONE) {
-        return readRawSoundData(pSoundChunk->toStream(), soundData);
+        return readRawSoundData(pSoundChunk->toStream(), audioData);
     }
     else if (compressionType == ID_SDX2) {
-        return readSdx2CompressedSoundData(pSoundChunk->toStream(), soundData);
+        return readSdx2CompressedSoundData(pSoundChunk->toStream(), audioData);
     }
     else {
         return false;   // Unknown compression type!
     }
 }
 
-bool SoundLoader::loadFromFile(const char* const filePath, SoundData& soundData) noexcept {
+bool AudioLoader::loadFromFile(const char* const filePath, AudioData& audioData) noexcept {
     // Open the file firstly
     ASSERT(filePath);
     FILE* pFile = std::fopen(filePath, "rb");
@@ -463,11 +463,11 @@ bool SoundLoader::loadFromFile(const char* const filePath, SoundData& soundData)
     if (std::fread(fileBytes.get(), (uint32_t) fileSize, 1, pFile) != 1)
         return false;
 
-    // Now load the sound from the file's buffer
-    return loadFromBuffer(fileBytes.get(), (uint32_t) fileSize, soundData);
+    // Now load the audio from the file's buffer
+    return loadFromBuffer(fileBytes.get(), (uint32_t) fileSize, audioData);
 }
 
-bool SoundLoader::loadFromBuffer(const std::byte* const pBuffer, const uint32_t bufferSize, SoundData& soundData) noexcept {
+bool AudioLoader::loadFromBuffer(const std::byte* const pBuffer, const uint32_t bufferSize, AudioData& audioData) noexcept {
     bool bLoadedSuccessfully = false;
     MemStream stream(pBuffer, bufferSize);
 
@@ -480,11 +480,11 @@ bool SoundLoader::loadFromBuffer(const std::byte* const pBuffer, const uint32_t 
             readIffChunk(chunk, stream);
         }
 
-        // Find the 'FORM' chunk that contains sound data
+        // Find the 'FORM' chunk that contains audio data
         const IffChunk* const formChunk = findAiffFormChunk(rootChunks);
 
         if (formChunk) {
-            if (readFormChunk(*formChunk, soundData)) {
+            if (readFormChunk(*formChunk, audioData)) {
                 bLoadedSuccessfully = true;
             }
         }
@@ -494,7 +494,7 @@ bool SoundLoader::loadFromBuffer(const std::byte* const pBuffer, const uint32_t 
     }
 
     if (!bLoadedSuccessfully) {
-        soundData.clear();
+        audioData.clear();
     }
 
     return bLoadedSuccessfully;

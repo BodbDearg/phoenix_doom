@@ -3,19 +3,19 @@
 #include <cstddef>
 #include <cstdint>
 
-struct SoundData;
+struct AudioData;
 
-namespace SoundLoader {
+namespace AudioLoader {
     //----------------------------------------------------------------------------------------------
-    // Loads a sound from the specified file path and saves the loaded data to the given object.
+    // Loads an audio file from the specified file path and saves the loaded data to the given object.
     // Supported sound file formats are:
     //      (1) AIFF
     //      (2) AIFF-C
     //----------------------------------------------------------------------------------------------
-    bool loadFromFile(const char* const filePath, SoundData& soundData) noexcept;
+    bool loadFromFile(const char* const filePath, AudioData& audioData) noexcept;
 
     //----------------------------------------------------------------------------------------------
-    // Same as 'loadFromFile' but loads the sound from a buffer instead
+    // Same as 'loadFromFile' but loads the audio from a buffer instead
     //----------------------------------------------------------------------------------------------
-    bool loadFromBuffer(const std::byte* const pBuffer, const uint32_t bufferSize, SoundData& soundData) noexcept;
+    bool loadFromBuffer(const std::byte* const pBuffer, const uint32_t bufferSize, AudioData& audioData) noexcept;
 };

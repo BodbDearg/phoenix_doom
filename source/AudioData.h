@@ -5,17 +5,17 @@
 #include <cstdint>
 
 //--------------------------------------------------------------------------------------------------
-// Structure holding data and information about that data for a sound
+// Structure holding data and information about that data for a piece of audio
 //--------------------------------------------------------------------------------------------------
-struct SoundData {
-    std::byte*  pBuffer;        // Contains all the samples for the sound. Note: each sample should be byte aligned!
-    uint32_t    bufferSize;     // Actual size in bytes of the sound byte buffer
-    uint32_t    numSamples;     // Number of samples in the data
+struct AudioData {
+    std::byte*  pBuffer;        // Contains all the samples for the audio piece. Note: each sample should be byte aligned!
+    uint32_t    bufferSize;     // Actual size in bytes of the audio data byte buffer
+    uint32_t    numSamples;     // Number of samples in the audio data
     uint32_t    sampleRate;     // 44,100 etc.
     uint16_t    numChannels;    // Should be: '1' or '2', note that the data for each channel is interleaved for each sample.
     uint16_t    bitDepth;       // Should be: '8' or '16' only.
 
-    inline SoundData() noexcept
+    inline AudioData() noexcept
         : pBuffer(nullptr)
         , bufferSize(0)
         , numSamples(0)
@@ -26,7 +26,7 @@ struct SoundData {
     }
 
     //----------------------------------------------------------------------------------------------
-    // Allocates the buffer for the sound
+    // Allocates the buffer for the audio data
     //----------------------------------------------------------------------------------------------
     void allocBuffer(const uint32_t size) noexcept {
         ASSERT(!pBuffer);
@@ -37,7 +37,7 @@ struct SoundData {
     }
     
     //----------------------------------------------------------------------------------------------
-    // Frees the buffer for the sound
+    // Frees the buffer for the audio data
     //----------------------------------------------------------------------------------------------
     void freeBuffer() noexcept {
         delete[] pBuffer;
@@ -46,7 +46,7 @@ struct SoundData {
     }
 
     //----------------------------------------------------------------------------------------------
-    // Frees the sound buffer and resets all fields
+    // Frees the audio data buffer and resets all fields
     //----------------------------------------------------------------------------------------------
     void clear() noexcept {
         freeBuffer();

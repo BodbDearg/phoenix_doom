@@ -1,5 +1,7 @@
 set(SOURCE_FILES
     "ammain.c"
+    "AudioLoader.cpp"
+    "AudioLoader.h"
     "base.c"
     "ceilng.c"
     "CelUtils.cpp"
@@ -52,8 +54,6 @@ set(SOURCE_FILES
     "slide.c"
     "sound.c"
     "SoundData.h"
-    "SoundLoader.cpp"
-    "SoundLoader.h"
     "sounds.h"
     "spec.c"
     "Sprites.cpp"
