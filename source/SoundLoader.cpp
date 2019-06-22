@@ -285,66 +285,67 @@ static bool readSdx2CompressedSoundData(MemStream& stream, SoundData& soundData)
     if (soundData.numChannels != 1 && soundData.numChannels != 2)
         return false;
     
-    // Store the previous value of the samples for each channel here.
-    // This is required for the 'delta' portion of the algorithm:
-    int16_t prevSamples[2] = {};
-
     // Allocate room for the buffer
     const uint32_t bufferSize = soundData.numSamples * soundData.numChannels * sizeof(uint16_t);
     soundData.allocBuffer(bufferSize);
 
-    // Decode each sample
+    // Setup before we decode each sample
     const uint32_t numSamples = soundData.numSamples;
     const uint16_t numChannels = soundData.numChannels;
-
-    /*
-  memset(last, 0, sizeof(short) * nb_chans);
-
-  while (nb_frames > 0) {
-    signed char src;
-    unsigned short dst;
-    int i;
-
-    nb_frames--;
-
-    for (i=0; i<nb_chans; i++) {
-      if (fread(&src, 1, 1, fin) != 1) {
-        perror(input_file);
-        free(last);
-        goto bad_file;
-      }
-
-      if (src & 1)
-        dst = last[i] + ((src * abs(src)) << 1);
-      else
-        dst = (src * abs(src)) << 1;
-
-      last[i] = dst;
-
-      // out is 256 bytes, so we're fine
-      out[0] = dst&255;
-      out[1] = (dst>>8)&255;
-
-      if (fwrite(out, 1, 2, fout) != 2) {
-        free(last);
-        goto out_error;
-      }
-    }    
-    */
-
+    const uint32_t numChannelSamples = numSamples * numChannels;
+    
     uint16_t* pOutput = reinterpret_cast<uint16_t*>(soundData.pBuffer);
+    uint16_t* const pEndOutput = pOutput + numChannelSamples;
 
-    for (uint32_t sampleIdx = 0; sampleIdx < numSamples; ++sampleIdx) {
-        for (uint16_t channelIdx = 0; channelIdx < numChannels; ++channelIdx) {
-            const int8_t sample8 = stream.read<int8_t>();
-            int16_t sample16 = (int16_t(sample8) * int16_t(std::abs(sample8))) << int16_t(1);
+    const uint8_t* pInput = reinterpret_cast<const uint8_t*>(stream.getCurData());
+    stream.consume(numChannelSamples);
 
-            if ((sample8 & int8_t(0x01)) != int8_t(0)) {
-                sample16 += prevSamples[channelIdx];
-            }
+    // Hardcode the loop for both 1 and 2 channel cases to help speed up decoding.
+    // Removing loops, conditionals and allowing for more pipelining helps...
+    if (numChannels == 2) {
+        int16_t prevSampleL = 0;
+        int16_t prevSampleR = 0;
+
+        while (pOutput < pEndOutput) {
+            // Get both the left and right compressed samples (read both at the same time, then separate)
+            const int8_t sampleL8 = pInput[0];
+            const int8_t sampleR8 = pInput[1];
             
-            *pOutput = sample16;
-            prevSamples[channelIdx] = sample16;
+            // Compute this sample's actual value via the SDX2 encoding mechanism
+            int16_t sampleL16 = (int16_t(sampleL8) * int16_t(std::abs(sampleL8))) << int16_t(1);
+            int16_t sampleR16 = (int16_t(sampleR8) * int16_t(std::abs(sampleR8))) << int16_t(1);
+            sampleL16 += prevSampleL * int16_t(sampleL8 & int8_t(0x01));
+            sampleR16 += prevSampleR * int16_t(sampleR8 & int8_t(0x01));
+
+            // Save output and move on.
+            // Note: looks strange but increment input before output as it will be needed again sooner... (pipelining considerations)
+            pOutput[0] = sampleL16;
+            pOutput[1] = sampleR16;
+            pInput += 2;
+
+            prevSampleL = sampleL16;
+            prevSampleR = sampleR16;
+            pOutput += 2;
+        }
+    }
+    else {
+        ASSERT(numChannels == 1);
+        int16_t prevSample = 0;
+
+        while (pOutput < pEndOutput) {
+            // Get the compressed sample
+            const int8_t sample8 = pInput[0];
+            
+            // Compute this sample's actual value via the SDX2 encoding mechanism
+            int16_t sample16 = (int16_t(sample8) * int16_t(std::abs(sample8))) << int16_t(1);
+            sample16 += prevSample * int16_t(sample8 & int8_t(0x01));
+
+            // Save output and move on.
+            // Note: looks strange but increment input before output as it will be needed again sooner... (pipelining considerations)
+            pOutput[0] = sample16;
+            ++pInput;
+
+            prevSample = sample16;
             ++pOutput;
         }
     }
