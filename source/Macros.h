@@ -35,7 +35,7 @@
             }\
         } while (0)
 #else
-    #define ASSERT(Condition)
+    #define ASSERT_LOG(Condition)
 #endif
 
 // Assert with a formatted message on failure
