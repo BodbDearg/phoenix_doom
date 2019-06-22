@@ -9,6 +9,8 @@ set(SOURCE_FILES
     "Audio/AudioDataMgr.h"
     "Audio/AudioLoader.cpp"
     "Audio/AudioLoader.h"
+    "Audio/AudioOutputDevice.cpp"
+    "Audio/AudioOutputDevice.h"
     "base.c"
     "ceilng.c"
     "CelUtils.cpp"
