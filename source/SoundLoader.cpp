@@ -97,6 +97,12 @@ public:
         return output;
     }
 
+    inline void readBytes(std::byte* const pDst, const uint32_t numBytes) THROWS {
+        ensureBytesLeft(numBytes);
+        std::memcpy(pDst, mpData + mCurByteIdx, numBytes);
+        mCurByteIdx += numBytes;
+    }
+
     // Aligns the memory stream to the given byte boundary (2, 4, 8 etc.)
     // Note: call is ignored if at the end of the stream!
     inline void align(const uint32_t numBytes) THROWS {
@@ -183,45 +189,6 @@ static const IffChunk* findAiffFormChunk(const std::vector<IffChunk>& chunks) no
     return nullptr;
 }
 
-//----------
-
-# define UnsignedToFloat(u)         (((double)((long)(u - 2147483647L - 1))) + 2147483648.0)
-double ConvertFromIeeeExtended(unsigned char* bytes /* LCN */)
-{
-    double    f;
-    int    expon;
-    unsigned long hiMant, loMant;
-    
-    expon = ((bytes[0] & 0x7F) << 8) | (bytes[1] & 0xFF);
-    hiMant    =    ((unsigned long)(bytes[2] & 0xFF) << 24)
-            |    ((unsigned long)(bytes[3] & 0xFF) << 16)
-            |    ((unsigned long)(bytes[4] & 0xFF) << 8)
-            |    ((unsigned long)(bytes[5] & 0xFF));
-    loMant    =    ((unsigned long)(bytes[6] & 0xFF) << 24)
-            |    ((unsigned long)(bytes[7] & 0xFF) << 16)
-            |    ((unsigned long)(bytes[8] & 0xFF) << 8)
-            |    ((unsigned long)(bytes[9] & 0xFF));
-
-    if (expon == 0 && hiMant == 0 && loMant == 0) {
-        f = 0;
-    }
-    else {
-        if (expon == 0x7FFF) {    /* Infinity or NaN */
-            f = HUGE_VAL;
-        }
-        else {
-            expon -= 16383;
-            f  = ldexp(UnsignedToFloat(hiMant), expon-=31);
-            f += ldexp(UnsignedToFloat(loMant), expon-=32);
-        }
-    }
-
-    if (bytes[0] & 0x80)
-        return -f;
-    else
-        return f;
-}
-
 //--------------------------------------------------------------------------------------------------
 // Reads an 80-bit float in big endian format.
 // Need to do things this way since MSVC no longer treats 'long double' as 80-bit extended.
@@ -229,7 +196,6 @@ double ConvertFromIeeeExtended(unsigned char* bytes /* LCN */)
 static double readBigEndianExtendedFloat(MemStream& stream) THROWS {
     // Read in reverse order to correct endianness
     uint8_t bytes[10];
-    const double double2 = ConvertFromIeeeExtended((unsigned char*)stream.getCurData());
     bytes[9] = stream.read<uint8_t>();
     bytes[8] = stream.read<uint8_t>();
     bytes[7] = stream.read<uint8_t>();
@@ -288,6 +254,102 @@ static double readBigEndianExtendedFloat(MemStream& stream) THROWS {
 
     const double doubleVal = reinterpret_cast<const double&>(doubleBits);    
     return doubleVal;
+}
+
+//--------------------------------------------------------------------------------------------------
+// Read RAW encoded sound data in 8 or 16 bit format.
+// The sound is assumed to be at the bit rate specified in the given sound data object.
+//--------------------------------------------------------------------------------------------------
+static bool readRawSoundData(MemStream& stream, SoundData& soundData) THROWS {
+    ASSERT(soundData.bitDepth == 8 || soundData.bitDepth == 16);
+
+    const uint32_t bytesPerSample = (soundData.bitDepth == 8) ? 1 : 2;
+    const uint32_t soundDataSize = bytesPerSample * soundData.numSamples * soundData.numChannels;
+    
+    soundData.allocBuffer(soundDataSize);
+    stream.readBytes(soundData.pBuffer, soundDataSize);
+    return true;
+}
+
+//--------------------------------------------------------------------------------------------------
+// Reads sound data in the compressed 'SDX2' (Square-Root-Delta) format that the 3DO used.
+// This format is a little obscure and hard to find information about, however I did manage to find
+// some decoding code on the internet and could 
+//--------------------------------------------------------------------------------------------------
+static bool readSdx2CompressedSoundData(MemStream& stream, SoundData& soundData) THROWS {    
+    // For SDX2 the bit rate MUST be 16-bit!
+    if (soundData.bitDepth != 16)
+        return false;
+
+    // Only allowing up to 2 channel sound for now
+    if (soundData.numChannels != 1 && soundData.numChannels != 2)
+        return false;
+    
+    // Store the previous value of the samples for each channel here.
+    // This is required for the 'delta' portion of the algorithm:
+    int16_t prevSamples[2] = {};
+
+    // Allocate room for the buffer
+    const uint32_t bufferSize = soundData.numSamples * soundData.numChannels * sizeof(uint16_t);
+    soundData.allocBuffer(bufferSize);
+
+    // Decode each sample
+    const uint32_t numSamples = soundData.numSamples;
+    const uint16_t numChannels = soundData.numChannels;
+
+    /*
+  memset(last, 0, sizeof(short) * nb_chans);
+
+  while (nb_frames > 0) {
+    signed char src;
+    unsigned short dst;
+    int i;
+
+    nb_frames--;
+
+    for (i=0; i<nb_chans; i++) {
+      if (fread(&src, 1, 1, fin) != 1) {
+        perror(input_file);
+        free(last);
+        goto bad_file;
+      }
+
+      if (src & 1)
+        dst = last[i] + ((src * abs(src)) << 1);
+      else
+        dst = (src * abs(src)) << 1;
+
+      last[i] = dst;
+
+      // out is 256 bytes, so we're fine
+      out[0] = dst&255;
+      out[1] = (dst>>8)&255;
+
+      if (fwrite(out, 1, 2, fout) != 2) {
+        free(last);
+        goto out_error;
+      }
+    }    
+    */
+
+    uint16_t* pOutput = reinterpret_cast<uint16_t*>(soundData.pBuffer);
+
+    for (uint32_t sampleIdx = 0; sampleIdx < numSamples; ++sampleIdx) {
+        for (uint16_t channelIdx = 0; channelIdx < numChannels; ++channelIdx) {
+            const int8_t sample8 = stream.read<int8_t>();
+            int16_t sample16 = (int16_t(sample8) * int16_t(std::abs(sample8))) << int16_t(1);
+
+            if ((sample8 & int8_t(0x01)) != int8_t(0)) {
+                sample16 += prevSamples[channelIdx];
+            }
+            
+            *pOutput = sample16;
+            prevSamples[channelIdx] = sample16;
+            ++pOutput;
+        }
+    }
+
+    return true;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -353,31 +415,21 @@ static bool readFormChunk(const IffChunk& formChunk, SoundData& soundData) THROW
     if (sampleRate <= 0)
         return false;
 
-    // FIXME: Support the 3DO's SDX2 compression (required for music)
-    if (compressionType != ID_NONE)
-        return false;
-
-    // Read the sound data
-    {
-        // Ensure all the data is there
-        MemStream soundStream = pSoundChunk->toStream();
-        const uint32_t bytesPerSample = (bitDepth == 8) ? 1 : 2;
-        const uint32_t soundDataSize = bytesPerSample * numSamples * numChannels;
-        soundStream.ensureBytesLeft(soundDataSize);
-
-        // Alloc the sound buffer and save it in there
-        soundData.allocBuffer(soundDataSize);
-        std::memcpy(soundData.pBuffer, soundStream.getCurData(), soundDataSize);
-
-        // Save other sound properties
-        soundData.numSamples = numSamples;
-        soundData.sampleRate = sampleRate;
-        soundData.numChannels = numChannels;
-        soundData.bitDepth = bitDepth;
+    // Save sound properties
+    soundData.numSamples = numSamples;
+    soundData.sampleRate = sampleRate;
+    soundData.numChannels = numChannels;
+    soundData.bitDepth = bitDepth;
+    
+    if (compressionType == ID_NONE) {
+        return readRawSoundData(pSoundChunk->toStream(), soundData);
     }
-
-    // All good if we reach here ok
-    return true;
+    else if (compressionType == ID_SDX2) {
+        return readSdx2CompressedSoundData(pSoundChunk->toStream(), soundData);
+    }
+    else {
+        return false;   // Unknown compression type!
+    }
 }
 
 bool SoundLoader::loadFromFile(const char* const filePath, SoundData& soundData) noexcept {
@@ -415,6 +467,7 @@ bool SoundLoader::loadFromFile(const char* const filePath, SoundData& soundData)
 }
 
 bool SoundLoader::loadFromBuffer(const std::byte* const pBuffer, const uint32_t bufferSize, SoundData& soundData) noexcept {
+    bool bLoadedSuccessfully = false;
     MemStream stream(pBuffer, bufferSize);
 
     try {
@@ -429,14 +482,19 @@ bool SoundLoader::loadFromBuffer(const std::byte* const pBuffer, const uint32_t 
         // Find the 'FORM' chunk that contains sound data
         const IffChunk* const formChunk = findAiffFormChunk(rootChunks);
 
-        if (!formChunk) {
-            return false;
+        if (formChunk) {
+            if (readFormChunk(*formChunk, soundData)) {
+                bLoadedSuccessfully = true;
+            }
         }
-
-        return readFormChunk(*formChunk, soundData);
     }
     catch (MemStreamException) {
-        soundData.clear();
-        return false;
+        // Ignore...
     }
+
+    if (!bLoadedSuccessfully) {
+        soundData.clear();
+    }
+
+    return bLoadedSuccessfully;
 }
