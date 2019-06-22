@@ -1,10 +1,14 @@
+set(INCLUDE_PATHS
+    "."
+)
+
 set(SOURCE_FILES
     "ammain.c"
-    "AudioData.h"
-    "AudioDataMgr.cpp"
-    "AudioDataMgr.h"
-    "AudioLoader.cpp"
-    "AudioLoader.h"
+    "Audio/AudioData.h"
+    "Audio/AudioDataMgr.cpp"
+    "Audio/AudioDataMgr.h"
+    "Audio/AudioLoader.cpp"
+    "Audio/AudioLoader.h"
     "base.c"
     "ceilng.c"
     "CelUtils.cpp"
@@ -92,4 +96,5 @@ endif()
 add_executable(${GAME_NAME} ${SOURCE_FILES} ${HEADER_FILES} ${OTHER_FILES})
 setup_source_groups("${SOURCE_FILES}" "${HEADER_FILES}" "${OTHER_FILES}")
 
+include_directories(${INCLUDE_PATHS})
 target_link_libraries(${GAME_NAME} ${BURGERLIB_NAME} ${LIBSDL_NAME})
