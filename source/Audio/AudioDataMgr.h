@@ -30,6 +30,7 @@ public:
     // If the handle is not loaded then a null pointer is returned.
     //----------------------------------------------------------------------------------------------
     const AudioData* getHandleData(const Handle handle) const noexcept;
+    inline bool isHandleLoaded(const Handle handle) const noexcept { return (getHandleData(handle) != nullptr); }
 
     //----------------------------------------------------------------------------------------------
     // Load the specified audio file and return its handle.
