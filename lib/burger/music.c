@@ -1,4 +1,5 @@
 #include "burger.h"
+#include "Audio/Audio.h"
 
 // DC: 3DO specific headers - remove
 #if 0
@@ -284,6 +285,11 @@ void InitSoundPlayer(char *SoundDSP,Word Rate)
 
 void PlaySound(Word SoundNum)
 {
+    float lVol = (float) LeftVolume / 255.0f;
+    float rVol = (float) RightVolume / 255.0f;
+
+    audioPlaySound(SoundNum, lVol, rVol);
+
     // DC: FIXME: reimplement/replace
     #if 0
         Word Number;

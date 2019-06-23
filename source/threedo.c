@@ -431,6 +431,8 @@ void InitTools(void)
         InitEventUtility(1, 1, false);    /* I want 1 joypad, 1 mouse, and passive listening */
     #endif
 
+    audioInit();
+
     InitSoundPlayer("system/audio/dsp/varmono8.dsp",0); /* Init memory for the sound player */
     InitMusicPlayer("system/audio/dsp/dcsqxdstereo.dsp");   /* Init memory for the music player */
 //  InitMusicPlayer("system/audio/dsp/fixedstereosample.dsp");  /* Init memory for the music player */
@@ -441,6 +443,8 @@ void InitTools(void)
         VRAMIOReq = GetVRAMIOReq();
         SetMyScreen(0);                                     /* Init the video display */
     #endif
+
+    audioLoadAllSounds();
     
     i = 0;
     do {
@@ -458,7 +462,7 @@ void InitTools(void)
         #endif
     } while (++i<(NUMSFX-1));
 
-    resourcesInit();
+    resourcesInit();   
     InterceptKey();         // Init events
     
     {

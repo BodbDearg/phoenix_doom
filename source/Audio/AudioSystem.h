@@ -14,6 +14,9 @@ struct AudioData;
 //--------------------------------------------------------------------------------------------------
 class AudioSystem {
 public:
+    // Default master volume
+    static constexpr float DEFAULT_MASTER_VOLUME = 1.0f;
+
     // Voice index type and voice index returned to indicate an invalid voice
     typedef uint32_t VoiceIdx;
     static constexpr VoiceIdx INVALID_VOICE_IDX = UINT32_MAX;
@@ -59,8 +62,8 @@ public:
     VoiceIdx play(
         const uint32_t audioDataHandle,
         const bool bLooped = false,
-        const float volume = 1.0f,
-        const float pan = 0.0f
+        const float lVolume = 1.0f,
+        const float rVolume = 1.0f
     ) noexcept;
 
     //----------------------------------------------------------------------------------------------

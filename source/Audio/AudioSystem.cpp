@@ -9,7 +9,7 @@ AudioSystem::AudioSystem() noexcept
     , mbIsPaused(false)
     , mpAudioOutputDevice(nullptr)
     , mpAudioDataMgr(nullptr)
-    , mMasterVolume(1.0f)
+    , mMasterVolume(DEFAULT_MASTER_VOLUME)
     , mVoices()
     , mFreeVoices()
 {
@@ -23,13 +23,16 @@ void AudioSystem::init(AudioOutputDevice& device, AudioDataMgr& dataMgr, const u
     // Sanity check expected state
     ASSERT(!mbIsInitialized);
     ASSERT(!mbIsPaused);
-    ASSERT(mMasterVolume == 0.0f);
+    ASSERT(mMasterVolume == DEFAULT_MASTER_VOLUME);
     ASSERT(mVoices.empty());
     ASSERT(mFreeVoices.empty());
 
     // Sanity check input
     ASSERT(device.isInitialized());
     ASSERT(maxVoices >= 1);
+
+    // Lock the device
+    AudioDeviceLock lockAudioDevice(device);
     
     // Initialize: note that we add the first voice indexes to the free list LAST so they are used FIRST
     mbIsInitialized = true;
@@ -42,16 +45,29 @@ void AudioSystem::init(AudioOutputDevice& device, AudioDataMgr& dataMgr, const u
         --voiceIdx;
         mFreeVoices.push_back(voiceIdx);
     }
+
+    // Register with the output device as an audio system
+    device.registerAudioSystem(*this);
 }
 
 void AudioSystem::shutdown() noexcept {
+    if (mpAudioOutputDevice) {
+        mpAudioOutputDevice->unregisterAudioSystem(*this);
+        mpAudioOutputDevice->lockAudioDevice();
+    }
+
     mFreeVoices.clear();
     mVoices.clear();
     mMasterVolume = 1.0f;
-    mpAudioDataMgr = nullptr;
-    mpAudioOutputDevice = nullptr;
+    mpAudioDataMgr = nullptr;    
     mbIsPaused = false;
     mbIsInitialized = false;
+
+    if (mpAudioOutputDevice) {
+        mpAudioOutputDevice->unlockAudioDevice();
+    }
+
+    mpAudioOutputDevice = nullptr;
 }
 
 AudioVoice AudioSystem::getVoiceState(const VoiceIdx voiceIdx) const noexcept {
@@ -103,8 +119,8 @@ void AudioSystem::pause(const bool pause) noexcept {
 AudioSystem::VoiceIdx AudioSystem::play(
     const uint32_t audioDataHandle,
     const bool bLooped,
-    const float volume,
-    const float pan
+    const float lVolume,
+    const float rVolume
 ) noexcept {
     ASSERT(mbIsInitialized);
 
@@ -132,8 +148,8 @@ AudioSystem::VoiceIdx AudioSystem::play(
     voice.curSampleFrac = 0;
     voice.curSample = 0;
     voice.audioDataHandle = audioDataHandle;
-    voice.volume = volume;
-    voice.pan = pan;
+    voice.lVolume = lVolume;
+    voice.rVolume = rVolume;
 
     // Return the voice playing
     return voiceIdx;
@@ -185,8 +201,7 @@ void AudioSystem::mixAudio(float* const pSamples, const uint32_t numSamples) noe
         // Skip and stop the sound if the audio data is not valid
         const AudioData* const pAudioData = mpAudioDataMgr->getHandleData(voice.audioDataHandle);
 
-        if (!pAudioData)
-        {
+        if (!pAudioData) {
             voice.state = AudioVoice::State::STOPPED;
             mFreeVoices.push_back(voiceIdx);
             continue;
@@ -194,6 +209,11 @@ void AudioSystem::mixAudio(float* const pSamples, const uint32_t numSamples) noe
 
         // Mix in the voice audio
         mixVoiceAudio(voice, *pAudioData, pSamples, numSamples);
+
+        // If the voice is done playing now then add it to the free list
+        if (voice.state == AudioVoice::State::STOPPED) {
+            mFreeVoices.push_back(voiceIdx);
+        }
     }
 }
 
@@ -231,13 +251,13 @@ void AudioSystem::mixVoiceAudio(
     uint64_t sampleStepFrac;
 
     {
-        uint64_t inSampleRate32_16 = inSampleRate << 16;
-        uint64_t outSampleRate32_16 = outSampleRate << 16;
-        sampleStepFrac = (outSampleRate32_16 << 16) / inSampleRate32_16;
+        uint64_t inSampleRate32_16 = uint64_t(inSampleRate) << 16;
+        uint64_t outSampleRate32_16 = uint64_t(outSampleRate) << 16;
+        sampleStepFrac = (inSampleRate32_16 << 16) / outSampleRate32_16;
     }
 
     // Figure out the current sample location in the audio in 32.16 format
-    uint64_t curSampleFrac = (voice.curSample << 16) | voice.curSampleFrac;
+    uint64_t curSampleFrac = (uint64_t(voice.curSample) << 16) | uint64_t(voice.curSampleFrac);
 
     // Now, continue to sample audio
     float* pCurOutSample = pSamples;
@@ -246,10 +266,10 @@ void AudioSystem::mixVoiceAudio(
     while (pCurOutSample < pEndOutSample) {
         // See if we are over the end of the input.
         // If the sound is not looped then we are done playback, otherwise we wraparound.
-        uint32_t curSample = (uint32_t)(curSampleFrac >> 16);
+        uint32_t curSample = uint32_t(curSampleFrac >> 16);
 
         if (curSample >= totalInSamples) {
-            if (voice.bIsLooped) {
+            if (!voice.bIsLooped) {
                 voice.state = AudioVoice::State::STOPPED;
                 voice.curSample = audioData.numSamples;
                 voice.curSampleFrac = 0;
@@ -326,16 +346,15 @@ void AudioSystem::mixVoiceAudio(
         // Interpolate and save the samples, modulating by volume and panning
         const float sampleL = (1.0f - sampleLerp) * sample1L + sampleLerp * sample2L;
         const float sampleR = (1.0f - sampleLerp) * sample1R + sampleLerp * sample2R;
-        const float panMultL = (voice.pan > 0) ? std::fmaxf(1.0f - voice.pan, 0.0f) : 1.0f;
-        const float panMultR = (voice.pan < 0) ? std::fmaxf(1.0f + voice.pan, 0.0f) : 1.0f;
-        const float finalSampleL = sampleL * panMultL * voice.volume;
-        const float finalSampleR = sampleR * panMultR * voice.volume;
+        const float finalSampleL = sampleL * voice.lVolume;
+        const float finalSampleR = sampleR * voice.rVolume;
 
-        pCurOutSample[0] = finalSampleL;
-        pCurOutSample[1] = finalSampleL;
+        pCurOutSample[0] = finalSampleL * mMasterVolume;
+        pCurOutSample[1] = finalSampleR * mMasterVolume;
 
-        // Move along in the source sound
+        // Move along in the input and output sound
         curSampleFrac += sampleStepFrac;
+        pCurOutSample += 2;
     }
 
     // At the end of this bout of playback check if we are stopped.
@@ -344,10 +363,15 @@ void AudioSystem::mixVoiceAudio(
         uint32_t curSample = (uint32_t)(curSampleFrac >> 16);
 
         if (curSample >= totalInSamples) {
-            if (voice.bIsLooped) {
+            if (!voice.bIsLooped) {
                 voice.state = AudioVoice::State::STOPPED;
                 voice.curSample = audioData.numSamples;
                 voice.curSampleFrac = 0;
+            }
+            else {
+                curSample = curSample % totalInSamples;
+                voice.curSample = curSample;
+                voice.curSampleFrac = (uint16_t) curSampleFrac;
             }
         }
         else {

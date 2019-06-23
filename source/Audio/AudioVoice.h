@@ -17,6 +17,6 @@ struct AudioVoice {
     uint16_t    curSampleFrac;      // Fractional position in between samples (up to 65535/65536)
     uint32_t    curSample;          // Whole sample position in the source audio
     uint32_t    audioDataHandle;    // Handle to audio data from the data manager
-    float       volume;
-    float       pan;                // 0 = center, -1 left, +1 right
+    float       lVolume;            // Left channel volume
+    float       rVolume;            // Right channel volume
 };

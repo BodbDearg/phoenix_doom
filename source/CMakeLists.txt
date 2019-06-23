@@ -4,6 +4,8 @@ set(INCLUDE_PATHS
 
 set(SOURCE_FILES
     "ammain.c"
+    "Audio/Audio.cpp"
+    "Audio/Audio.h"
     "Audio/AudioData.h"
     "Audio/AudioDataMgr.cpp"
     "Audio/AudioDataMgr.h"
