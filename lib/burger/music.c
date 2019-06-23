@@ -188,6 +188,8 @@ void InitMusicPlayer(char *MusicDSP)
 
 void PlaySong(Word NewSong)
 {
+    audioPlayMusic(NewSong);
+
     // DC: FIXME: reimplement/replace
     #if 0
         LoopSong = NewSong;

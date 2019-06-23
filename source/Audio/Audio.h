@@ -15,6 +15,7 @@ void audioLoadAllSounds();
 void audioShutdown();
 
 void audioPlaySound(const uint32_t num, float lVolume, float rVolume);
+void audioPlayMusic(const uint32_t trackNum);
 
 #ifdef __cplusplus
 }

@@ -349,8 +349,8 @@ void AudioSystem::mixVoiceAudio(
         const float finalSampleL = sampleL * voice.lVolume;
         const float finalSampleR = sampleR * voice.rVolume;
 
-        pCurOutSample[0] = finalSampleL * mMasterVolume;
-        pCurOutSample[1] = finalSampleR * mMasterVolume;
+        pCurOutSample[0] += finalSampleL * mMasterVolume;
+        pCurOutSample[1] += finalSampleR * mMasterVolume;
 
         // Move along in the input and output sound
         curSampleFrac += sampleStepFrac;
