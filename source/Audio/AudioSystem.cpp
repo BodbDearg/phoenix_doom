@@ -281,10 +281,10 @@ void AudioSystem::mixVoiceAudio(
 
         // Get the next sample to interpolate with.
         // Will interpolate between the two sample values depending on fraction between samples.
-        uint32_t nextSample = ((curSampleFrac & 0xFFFF) != 0) ? curSample + 1 : curSample;
+        uint32_t nextSample = (uint16_t(curSampleFrac) != 0) ? curSample + 1 : curSample;
 
-        if (nextSample >= numSamples) {
-            nextSample = (voice.bIsLooped) ? 0 : numSamples - 1;
+        if (nextSample >= totalInSamples) {
+            nextSample = (voice.bIsLooped) ? 0 : totalInSamples - 1;
         }
 
         // Figure out interpolation value between samples
@@ -298,20 +298,20 @@ void AudioSystem::mixVoiceAudio(
 
         if (audioData.numChannels == 1) {            
             if (audioData.bitDepth == 8) {
-                const uint8_t rawSample1 = ((const uint8_t*) audioData.pBuffer)[curSample];
-                const uint8_t rawSample2 = ((const uint8_t*) audioData.pBuffer)[nextSample];
-                sample1L = float(rawSample1) / 255.0f;
-                sample2L = float(rawSample2) / 255.0f;
+                const int8_t rawSample1 = ((const int8_t*) audioData.pBuffer)[curSample];
+                const int8_t rawSample2 = ((const int8_t*) audioData.pBuffer)[nextSample];
+                sample1L = float(rawSample1) / float(INT8_MAX);
+                sample2L = float(rawSample2) / float(INT8_MAX);
                 sample1R = sample1L;
                 sample2R = sample2L;
             }
             else {
                 ASSERT(audioData.bitDepth == 16);
 
-                const uint16_t rawSample1 = ((const uint16_t*) audioData.pBuffer)[curSample];
-                const uint16_t rawSample2 = ((const uint16_t*) audioData.pBuffer)[nextSample];
-                sample1L = float(rawSample1) / 65535.0f;
-                sample2L = float(rawSample2) / 65535.0f;
+                const int16_t rawSample1 = ((const int16_t*) audioData.pBuffer)[curSample];
+                const int16_t rawSample2 = ((const int16_t*) audioData.pBuffer)[nextSample];
+                sample1L = float(rawSample1) / float(INT16_MAX);
+                sample2L = float(rawSample2) / float(INT16_MAX);
                 sample1R = sample1L;
                 sample2R = sample2L;
             }
@@ -320,26 +320,26 @@ void AudioSystem::mixVoiceAudio(
             ASSERT(audioData.numChannels == 2);
 
             if (audioData.bitDepth == 8) {
-                const uint8_t rawSample1L = ((const uint8_t*) audioData.pBuffer)[curSample * 2 + 0];
-                const uint8_t rawSample1R = ((const uint8_t*) audioData.pBuffer)[curSample * 2 + 1];
-                const uint8_t rawSample2L = ((const uint8_t*) audioData.pBuffer)[nextSample * 2 + 0];
-                const uint8_t rawSample2R = ((const uint8_t*) audioData.pBuffer)[nextSample * 2 + 1];
-                sample1L = float(rawSample1L) / 255.0f;
-                sample1R = float(rawSample1R) / 255.0f;
-                sample2L = float(rawSample2L) / 255.0f;
-                sample2R = float(rawSample2R) / 255.0f;
+                const int8_t rawSample1L = ((const int8_t*) audioData.pBuffer)[curSample * 2 + 0];
+                const int8_t rawSample1R = ((const int8_t*) audioData.pBuffer)[curSample * 2 + 1];
+                const int8_t rawSample2L = ((const int8_t*) audioData.pBuffer)[nextSample * 2 + 0];
+                const int8_t rawSample2R = ((const int8_t*) audioData.pBuffer)[nextSample * 2 + 1];
+                sample1L = float(rawSample1L) / float(INT8_MAX);
+                sample1R = float(rawSample1R) / float(INT8_MAX);
+                sample2L = float(rawSample2L) / float(INT8_MAX);
+                sample2R = float(rawSample2R) / float(INT8_MAX);
             }
             else {
                 ASSERT(audioData.bitDepth == 16);
 
-                const uint16_t rawSample1L = ((const uint16_t*) audioData.pBuffer)[curSample * 2 + 0];
-                const uint16_t rawSample1R = ((const uint16_t*) audioData.pBuffer)[curSample * 2 + 1];
-                const uint16_t rawSample2L = ((const uint16_t*) audioData.pBuffer)[nextSample * 2 + 0];
-                const uint16_t rawSample2R = ((const uint16_t*) audioData.pBuffer)[nextSample * 2 + 1];
-                sample1L = float(rawSample1L) / 65535.0f;
-                sample1R = float(rawSample1R) / 65535.0f;
-                sample2L = float(rawSample2L) / 65535.0f;
-                sample2R = float(rawSample2R) / 65535.0f;
+                const int16_t rawSample1L = ((const int16_t*) audioData.pBuffer)[curSample * 2 + 0];
+                const int16_t rawSample1R = ((const int16_t*) audioData.pBuffer)[curSample * 2 + 1];
+                const int16_t rawSample2L = ((const int16_t*) audioData.pBuffer)[nextSample * 2 + 0];
+                const int16_t rawSample2R = ((const int16_t*) audioData.pBuffer)[nextSample * 2 + 1];
+                sample1L = float(rawSample1L) / float(INT16_MAX);
+                sample1R = float(rawSample1R) / float(INT16_MAX);
+                sample2L = float(rawSample2L) / float(INT16_MAX);
+                sample2R = float(rawSample2R) / float(INT16_MAX);
             }
         }
 
