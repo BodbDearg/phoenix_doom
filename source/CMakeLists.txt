@@ -17,6 +17,8 @@ set(SOURCE_FILES
     "Audio/AudioSystem.h"
     "Audio/AudioVoice.h"
     "base.c"
+    "Burger.cpp"
+    "Burger.h"
     "ceilng.c"
     "CelUtils.cpp"
     "CelUtils.h"
@@ -80,7 +82,6 @@ set(SOURCE_FILES
     "threedo.c"
     "tick.c"
     "user.c"
-    #"blitasm.s"
 )
 
 set(OTHER_FILES
@@ -104,4 +105,4 @@ add_executable(${GAME_NAME} ${SOURCE_FILES} ${HEADER_FILES} ${OTHER_FILES})
 setup_source_groups("${SOURCE_FILES}" "${HEADER_FILES}" "${OTHER_FILES}")
 
 include_directories(${INCLUDE_PATHS})
-target_link_libraries(${GAME_NAME} ${BURGERLIB_NAME} ${LIBSDL_NAME})
+target_link_libraries(${GAME_NAME} ${LIBSDL_NAME})
