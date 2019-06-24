@@ -161,7 +161,7 @@ void AudioSystem::stopAllVoices() noexcept {
     const uint32_t numVoices = (uint32_t) mVoices.size();
     AudioDeviceLock lockAudioDevice(*mpAudioOutputDevice);
     
-    for (uint32_t voiceIdx = 0; voiceIdx < numVoices; ++voiceIdx) {        
+    for (uint32_t voiceIdx = 0; voiceIdx < numVoices; ++voiceIdx) {
         AudioVoice& voice = mVoices[voiceIdx];
 
         if (voice.state != AudioVoice::State::STOPPED) {
@@ -181,6 +181,24 @@ void AudioSystem::stopVoice(const VoiceIdx voiceIdx) noexcept {
     if (voice.state != AudioVoice::State::STOPPED) {
         voice.state = AudioVoice::State::STOPPED;
         mFreeVoices.push_back(voiceIdx);
+    }
+}
+
+void AudioSystem::stopVoicesWithAudioData(const uint32_t audioDataHandle) noexcept {
+    ASSERT(mbIsInitialized);
+
+    const uint32_t numVoices = (uint32_t) mVoices.size();
+    AudioDeviceLock lockAudioDevice(*mpAudioOutputDevice);
+    
+    for (uint32_t voiceIdx = 0; voiceIdx < numVoices; ++voiceIdx) {
+        AudioVoice& voice = mVoices[voiceIdx];
+
+        if (voice.audioDataHandle == audioDataHandle) {
+            if (voice.state != AudioVoice::State::STOPPED) {
+                voice.state = AudioVoice::State::STOPPED;
+                mFreeVoices.push_back(voiceIdx);
+            }
+        }
     }
 }
 

@@ -16,7 +16,6 @@ set(SOURCE_FILES
     "burger/getshapeindexptr.c"
     "burger/lasttick.c"
     "burger/longwordtoasc.c"
-    "burger/music.c"
     "burger/readjoybuttons.c"
     "burger/readtick.c"
     "burger/saveafile.c"

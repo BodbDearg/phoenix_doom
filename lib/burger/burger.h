@@ -103,10 +103,6 @@ extern Word SaveAFile(Byte *FileName,void *data,LongWord Length);
 extern LongWord LastTick;
 extern LongWord ReadTick(void);
 
-/* Sound effects */
-extern void StopSound(Word SoundNum);
-extern void PlaySound(Word SoundNum, Word LeftVolume, Word RightVolume);
-
 /* Misc */
 extern Word SystemState;
 extern Item VideoItem;          /* 3DO Specific! */

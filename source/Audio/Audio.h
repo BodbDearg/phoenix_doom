@@ -17,6 +17,7 @@ void audioShutdown();
 
 // Sounds
 void audioPlaySound(const uint32_t num, float lVolume, float rVolume);
+void audioStopAllSounds();
 void audioPauseSound();
 void audioResumeSound();
 

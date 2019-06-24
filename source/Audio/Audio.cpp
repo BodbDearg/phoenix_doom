@@ -68,6 +68,10 @@ void audioPlaySound(const uint32_t num, float lVolume, float rVolume) {
     gSoundAudioSystem.play(soundHandle, false, lVolume, rVolume);
 }
 
+void audioStopAllSounds() {
+    gSoundAudioSystem.stopAllVoices();
+}
+
 void audioPauseSound() {
     gSoundAudioSystem.pause(true);
 }

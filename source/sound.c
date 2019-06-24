@@ -1,5 +1,6 @@
-#include "doom.h"
 #include "Audio/Audio.h"
+#include "doom.h"
+#include "MathUtils.h"
 
 #define S_CLIPPING_DIST (3600 * 0x10000)    // Clip sounds beyond this distance
 #define S_CLOSE_DIST (200 * 0x10000)        // Sounds at this distance or closer are full volume sounds
@@ -11,10 +12,7 @@
 // Clear the sound buffers and stop all sound
 //--------------------------------------------------------------------------------------------------
 void S_Clear() {
-    Word i = 1;
-    do {
-        StopSound(i);
-    } while (++i < NUMSFX);
+    audioStopAllSounds();
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -25,6 +23,7 @@ void S_StartSound(const Fixed* const pOriginXY, const uint32_t soundId) {
     if (soundId <= 0 || soundId >= NUMSFX)
         return;
     
+    // Figure out the volume of the sound to play
     uint32_t leftVolume = 255;
     uint32_t rightVolume = 255;
     
@@ -49,14 +48,24 @@ void S_StartSound(const Fixed* const pOriginXY, const uint32_t soundId) {
                     return;
                 }
 
-                const int sep = 128 - (IMFixMul(S_STEREO_SWING, finesine[angle]) >> FRACBITS);
+                const int sep = 128 - (sfixedMul16_16(S_STEREO_SWING, finesine[angle]) >> FRACBITS);
                 rightVolume = (sep * vol) >> 8;
                 leftVolume = ((256 - sep) * vol) >> 8;
             }
         }
     }
 
-    PlaySound(soundId, leftVolume, rightVolume);
+    // Convert audio volume to 0.0-1.0 range
+    const float leftVolumeF = (float) leftVolume / 255.0f;
+    const float rightVolumeF = (float) rightVolume / 255.0f;
+
+    // If the mysterious '0x8000U' flag is set then all previous instances of the sound are to be stopped
+    if (soundId & (uint32_t) 0x8000U) {
+        audioPlaySound(soundId & (uint32_t) 0x7FFFU, leftVolumeF, rightVolumeF);
+    }
+    else {
+        audioPlaySound(soundId, leftVolumeF, rightVolumeF);
+    }
 }
 
 //--------------------------------------------------------------------------------------------------

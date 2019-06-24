@@ -67,10 +67,11 @@ public:
     ) noexcept;
 
     //----------------------------------------------------------------------------------------------
-    // Stop all voices in the system or a particular sound
+    // Stop all voices in the system, a particular voice or voices with a particular sound
     //----------------------------------------------------------------------------------------------
     void stopAllVoices() noexcept;
     void stopVoice(const VoiceIdx voiceIdx) noexcept;
+    void stopVoicesWithAudioData(const uint32_t audioDataHandle) noexcept;
 
     //----------------------------------------------------------------------------------------------
     // Called by the audio output device on the audio thread.
