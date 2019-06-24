@@ -65,8 +65,8 @@ set(SOURCE_FILES
     "shoot.c"
     "sight.c"
     "slide.c"
-    "sound.c"
-    "sounds.h"
+    "Sound.cpp"
+    "Sounds.h"
     "spec.c"
     "Sprites.cpp"
     "Sprites.h"
@@ -84,6 +84,7 @@ set(SOURCE_FILES
 )
 
 set(OTHER_FILES
+    "../TODO.txt"
 )
 
 if (PLATFORM_WINDOWS)

@@ -14,7 +14,6 @@
 - Fix pig demon not really moving
 - Fix weird chainsaw sound
 - Implement transparent demons
-- Do we need to implement 'SoundNum&0x8000' flag in music.c:PlaySound()? (stops previous sound instance of same sound type)
 - Higher resolution + fullscreen support
 - WASD + Mouse support
 - Gamepad support

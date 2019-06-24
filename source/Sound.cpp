@@ -8,6 +8,8 @@
 #define S_ATTENUATOR ((S_CLIPPING_DIST - S_CLOSE_DIST) >> FRACBITS)
 #define S_STEREO_SWING (96 * 0x10000)
 
+extern "C" {
+
 //--------------------------------------------------------------------------------------------------
 // Clear the sound buffers and stop all sound
 //--------------------------------------------------------------------------------------------------
@@ -117,4 +119,6 @@ void S_StartSong(const musicnum_t musicId) {
 
 void S_StopSong() {
     audioStopMusic();
+}
+
 }
