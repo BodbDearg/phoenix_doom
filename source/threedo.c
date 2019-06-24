@@ -522,8 +522,8 @@ void WritePrefsFile(void)
     PrefFile[0] = PREFWORD;
     PrefFile[1] = StartSkill;
     PrefFile[2] = StartMap;
-    PrefFile[3] = SfxVolume;
-    PrefFile[4] = MusicVolume;
+    PrefFile[3] = audioGetSoundVolume();
+    PrefFile[4] = audioGetMusicVolume();
     PrefFile[5] = ControlType;
     PrefFile[6] = MaxLevel;
     PrefFile[7] = ScreenSize;
@@ -542,14 +542,14 @@ void WritePrefsFile(void)
 // Clear out the prefs file
 //-------------------------------------------------------------------------------------------------
 void ClearPrefsFile() {
-    StartSkill = sk_medium;     // Init the basic skill level
-    StartMap = 1;               // Only allow playing from map #1
-    SfxVolume = 15;             // Init the sound effects volume
-    MusicVolume = 15;           // Init the music volume
-    ControlType = 3;            // Use basic joypad controls
-    MaxLevel = 1;               // Only allow level 1 to select from
-    ScreenSize = 0;             // Default screen size
-    WritePrefsFile();           // Output the new prefs
+    StartSkill = sk_medium;                     // Init the basic skill level
+    StartMap = 1;                               // Only allow playing from map #1
+    audioSetSoundVolume(MAX_AUDIO_VOLUME);      // Init the sound effects volume
+    audioSetMusicVolume(MAX_AUDIO_VOLUME);      // Init the music volume
+    ControlType = 3;                            // Use basic joypad controls
+    MaxLevel = 1;                               // Only allow level 1 to select from
+    ScreenSize = 0;                             // Default screen size
+    WritePrefsFile();                           // Output the new prefs
 }
 
 /**********************************
@@ -582,16 +582,14 @@ void ReadPrefsFile(void)
     
     StartSkill = (skill_t)PrefFile[1];
     StartMap = PrefFile[2];
-    SfxVolume = PrefFile[3];
-    MusicVolume = PrefFile[4];
+    audioSetSoundVolume(PrefFile[3]);
+    audioSetMusicVolume(PrefFile[4]);
     ControlType = PrefFile[5];
     MaxLevel = PrefFile[6];
     ScreenSize = PrefFile[7];
     
     if ((StartSkill >= (sk_nightmare+1)) ||
         (StartMap >= 27) ||
-        (SfxVolume >= 16) ||
-        (MusicVolume >= 16) ||
         (ControlType >= 6) ||
         (MaxLevel >= 26) ||
         (ScreenSize >= 6)

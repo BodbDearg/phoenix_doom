@@ -1,3 +1,4 @@
+#include "Audio/Audio.h"
 #include "doom.h"
 #include "Resources.h"
 #include <string.h>
@@ -70,8 +71,6 @@ static void SetButtonsFromControltype(void)
     PadSpeed = TablePtr[0];     /* Init the joypad settings */
     PadAttack = TablePtr[1];
     PadUse = TablePtr[2];
-    SetSfxVolume(SfxVolume);        /* Set the system volumes */
-    SetMusicVolume(MusicVolume);    /* Set the music volume */
     InitMathTables();               /* Handle the math tables */
 }
 
@@ -174,34 +173,47 @@ void O_Control(player_t *player)
                     }
                 }
                 break;
-            case soundvol:          /* Sound volume? */
+            
+            // Sound volume?
+            case soundvol: {
                 if (buttons & PadRight) {
-                    if (SfxVolume<15) {
-                        ++SfxVolume;
-                        S_StartSound(0,sfx_pistol);
+                    const uint32_t soundVolume = audioGetSoundVolume();
+
+                    if (soundVolume < MAX_AUDIO_VOLUME) {
+                        audioSetSoundVolume(soundVolume + 1);
+                        S_StartSound(0, sfx_pistol);
                     }
                 }
+
                 if (buttons & PadLeft) {
-                    if (SfxVolume) {
-                        --SfxVolume;
-                        S_StartSound(0,sfx_pistol);
+                    const uint32_t soundVolume = audioGetSoundVolume();
+
+                    if (soundVolume > 0) {
+                        audioSetSoundVolume(soundVolume - 1);
+                        S_StartSound(0, sfx_pistol);
                     }
                 }
-                SetSfxVolume(SfxVolume);        /* Set the system volumes */
-                break;
-            case musicvol:          /* Music volume? */
+            }   break;
+
+            // Music volume?
+            case musicvol: {
                 if (buttons & PadRight) {
-                    if (MusicVolume<15) {
-                        ++MusicVolume;
+                    const uint32_t musicVolume = audioGetMusicVolume();
+
+                    if (musicVolume < MAX_AUDIO_VOLUME) {
+                        audioSetMusicVolume(musicVolume + 1);
                     }
                 }
+
                 if (buttons & PadLeft) {
-                    if (MusicVolume) {
-                        --MusicVolume;
+                    const uint32_t musicVolume = audioGetMusicVolume();
+
+                    if (musicVolume > 0) {
+                        audioSetMusicVolume(musicVolume - 1);
                     }
                 }
-                SetMusicVolume(MusicVolume);
-                break;
+            }   break;
+            
             case size:          /* Screen size */
                 if (buttons & PadLeft)  {
                     if (ScreenSize<(6-1)) {
@@ -232,48 +244,48 @@ void O_Control(player_t *player)
 
 void O_Drawer(void)
 {
-    Word offset;
-    const void* Shapes;
-    
-/* Erase old and Draw new cursor frame */
-
-    DrawMShape(CURSORX,CursorYs[cursorpos],GetShapeIndexPtr(loadResourceData(rSKULLS),cursorframe));
+    // Erase old and Draw new cursor frame
+    DrawMShape(CURSORX, CursorYs[cursorpos], GetShapeIndexPtr(loadResourceData(rSKULLS), cursorframe));
     releaseResource(rSKULLS);
-    Shapes = loadResourceData(rSLIDER);
+    const void* const pShapes = loadResourceData(rSLIDER);
 
-/* Draw menu text */
+    // Draw menu text
+    PrintBigFontCenter(160, 10, (Byte*) "Options");
 
-    PrintBigFontCenter(160,10,(Byte *)"Options");
+    if (cursorpos < controls) {
+        PrintBigFontCenter(160, SFXVOLY, (Byte*) "Sound Volume");
+        PrintBigFontCenter(160, MUSICVOLY, (Byte*) "Music Volume");
 
-    if (cursorpos<controls) {
-        PrintBigFontCenter(160,SFXVOLY,(Byte *)"Sound Volume");
-        PrintBigFontCenter(160,MUSICVOLY,(Byte *)"Music Volume");
+        // Draw scroll bars
+        DrawMShape(SLIDERX, SFXVOLY + 20, GetShapeIndexPtr(pShapes, BAR));
+        DrawMShape(SLIDERX, MUSICVOLY + 20, GetShapeIndexPtr(pShapes, BAR));
+        
+        {
+            const Word offset = audioGetSoundVolume() * SLIDESTEP;
+            DrawMShape(SLIDERX + 5 + offset, SFXVOLY + 20, GetShapeIndexPtr(pShapes, HANDLE));
+        }
 
-/* Draw scroll bars */
-
-        DrawMShape(SLIDERX,SFXVOLY+20,GetShapeIndexPtr(Shapes,BAR));
-        DrawMShape(SLIDERX,MUSICVOLY+20,GetShapeIndexPtr(Shapes,BAR));
-        offset = SfxVolume * SLIDESTEP;
-        DrawMShape(SLIDERX+5+offset,SFXVOLY+20,GetShapeIndexPtr(Shapes,HANDLE));
-        offset = MusicVolume * SLIDESTEP;
-        DrawMShape(SLIDERX+5+offset,MUSICVOLY+20,GetShapeIndexPtr(Shapes,HANDLE));
-    
-/* Draw joypad info */
+        {
+            const Word offset = audioGetMusicVolume() * SLIDESTEP;
+            DrawMShape(SLIDERX + 5 + offset, MUSICVOLY + 20, GetShapeIndexPtr(pShapes, HANDLE));
+        }
 
     } else {
-        PrintBigFontCenter(160,JOYPADY,(Byte *)"Controls");
-        PrintBigFont(JOYPADX+10,JOYPADY+20,(Byte *)"A");
-        PrintBigFont(JOYPADX+10,JOYPADY+40,(Byte *)"B");
-        PrintBigFont(JOYPADX+10,JOYPADY+60,(Byte *)"C");
-        PrintBigFont(JOYPADX+40,JOYPADY+20,buttona[ControlType]);
-        PrintBigFont(JOYPADX+40,JOYPADY+40,buttonb[ControlType]);
-        PrintBigFont(JOYPADX+40,JOYPADY+60,buttonc[ControlType]);
-        PrintBigFontCenter(160,SIZEY,(Byte *)"Screen Size");
-        DrawMShape(SLIDERX,SIZEY+20,GetShapeIndexPtr(Shapes,BAR));
+        // Draw joypad info
+        PrintBigFontCenter(160, JOYPADY, (Byte*) "Controls");
+        PrintBigFont(JOYPADX + 10, JOYPADY + 20, (Byte*) "A");
+        PrintBigFont(JOYPADX + 10, JOYPADY + 40, (Byte*) "B");
+        PrintBigFont(JOYPADX + 10, JOYPADY + 60, (Byte*) "C");
+        PrintBigFont(JOYPADX + 40, JOYPADY + 20, buttona[ControlType]);
+        PrintBigFont(JOYPADX + 40, JOYPADY + 40, buttonb[ControlType]);
+        PrintBigFont(JOYPADX + 40, JOYPADY + 60, buttonc[ControlType]);
+        PrintBigFontCenter(160, SIZEY, (Byte*) "Screen Size");
+        DrawMShape(SLIDERX, SIZEY + 20, GetShapeIndexPtr(pShapes, BAR));
         
-        offset = (5-ScreenSize) * 18;
-        DrawMShape(SLIDERX+5+offset,SIZEY+20,GetShapeIndexPtr(Shapes,HANDLE));
+        const Word offset = (5 - ScreenSize) * 18;
+        DrawMShape(SLIDERX + 5 + offset, SIZEY + 20, GetShapeIndexPtr(pShapes, HANDLE));
     }
+
     releaseResource(rSLIDER);
     UpdateAndPageFlip(true);
 }

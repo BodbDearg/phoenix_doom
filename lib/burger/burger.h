@@ -104,12 +104,8 @@ extern LongWord LastTick;
 extern LongWord ReadTick(void);
 
 /* Sound effects */
-extern Word MusicVolume;                    /* Volume for music */
-extern Word SfxVolume;                      /* Volume for SFX */
 extern void StopSound(Word SoundNum);
 extern void PlaySound(Word SoundNum, Word LeftVolume, Word RightVolume);
-extern void SetSfxVolume(Word NewVolume);
-extern void SetMusicVolume(Word NewVolume);
 
 /* Misc */
 extern Word SystemState;

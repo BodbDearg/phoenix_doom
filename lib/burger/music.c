@@ -1,9 +1,6 @@
 #include "burger.h"
 #include "Audio/Audio.h"
 
-Word MusicVolume = 15;  // Maximum volume
-Word SfxVolume = 15;
-
 void PlaySound(Word SoundNum, Word LeftVolume, Word RightVolume) {
     const float leftVol = (float) LeftVolume / 255.0f;
     const float rightVol = (float) RightVolume / 255.0f;
@@ -82,39 +79,5 @@ void StopSound(Word SoundNum) {
                 }
             } while (++i<VOICECOUNT);       /* All channels checked? */
         }
-    #endif
-}
-
-void SetSfxVolume(Word NewVolume) {
-    // DC: FIXME: reimplement/replace
-    #if 0
-        Word i;
-        Item MyKnob;
-        if (NewVolume>=16) {
-            NewVolume=15;
-        }
-        SfxVolume=NewVolume;
-        NewVolume = NewVolume*0x888;    /* Convert 0-15 -> 0-0x7FF8 */
-        i = 0;
-        do {
-            MyKnob = GrabKnob(SamplerIns[i],"Amplitude");
-            TweakKnob(MyKnob,NewVolume);        /* Set to 11 Khz fixed */
-            ReleaseKnob(MyKnob);
-        } while (++i<VOICECOUNT);
-    #endif
-}
-
-void SetMusicVolume(Word NewVolume) {
-    // DC: FIXME: reimplement/replace
-    #if 0
-        Item MyKnob;
-        if (NewVolume>=16) {
-            NewVolume=15;
-        }
-        MusicVolume=NewVolume;
-        NewVolume = NewVolume*0x888;    /* Convert 0-15 -> 0-0x7FF8 */
-        MyKnob = GrabKnob(MusicIns,"Amplitude");
-        TweakKnob(MyKnob,NewVolume);        /* Set to 11 Khz fixed */
-        ReleaseKnob(MyKnob);
     #endif
 }
