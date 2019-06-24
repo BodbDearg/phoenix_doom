@@ -737,15 +737,13 @@ extern void R_Init(void);
 extern void R_Setup(void);
 extern void R_RenderPlayerView(void);
 
-/* In Sound.c */
-
+// In Sound.c
 extern void S_Clear();
 extern void S_StartSound(const Fixed* const pOriginXY, const uint32_t soundId);
-extern void S_StartSong(const uint32_t musicId, const bool bLoop);
+extern void S_StartSong(const musicnum_t musicId);
 extern void S_StopSong();
 
-/* In MObj.c */
-
+// In MObj.c
 extern void P_RemoveMobj(mobj_t *th);
 extern Word SetMObjState(mobj_t *mobj,state_t *StatePtr);
 extern void Sub1RandomTick(mobj_t *mobj);
@@ -758,7 +756,7 @@ extern void P_SpawnBlood(Fixed x,Fixed y,Fixed z,Word damage);
 extern void P_SpawnMissile(mobj_t *source,mobj_t *dest,mobjinfo_t *InfoPtr);
 extern void SpawnPlayerMissile(mobj_t *source,mobjinfo_t *InfoPtr);
 
-/* In DMain.c */
+// In DMain.c
 extern void AddToBox(Fixed *box,Fixed x,Fixed y);
 
 extern Word MiniLoop(

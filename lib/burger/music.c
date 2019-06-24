@@ -4,10 +4,6 @@
 Word MusicVolume = 15;  // Maximum volume
 Word SfxVolume = 15;
 
-void PlaySong(Word NewSong) {
-    audioPlayMusic(NewSong);
-}
-
 void PlaySound(Word SoundNum, Word LeftVolume, Word RightVolume) {
     const float leftVol = (float) LeftVolume / 255.0f;
     const float rightVol = (float) RightVolume / 255.0f;
@@ -86,53 +82,6 @@ void StopSound(Word SoundNum) {
                 }
             } while (++i<VOICECOUNT);       /* All channels checked? */
         }
-    #endif
-}
-
-static bool Paused;
-
-void PauseSound() {    
-    if (Paused) {
-        return;
-    }
-
-    Paused = true;
-    Word i = 0;
-    
-    // DC: FIXME: reimplement/replace
-    #if 0
-        do {
-            PauseInstrument(SamplerIns[i]);
-        } while (++i<VOICECOUNT);
-    #endif
-}
-
-void ResumeSound() {
-    Word i;
-    if (Paused) {
-        Paused = false;
-        i = 0;
-        
-        // DC: FIXME: reimplement/replace
-        #if 0
-            do {
-                ResumeInstrument(SamplerIns[i]);
-            } while (++i<VOICECOUNT);
-        #endif
-    }
-}
-
-void PauseMusic() {
-    // DC: FIXME: reimplement/replace
-    #if 0
-        PauseInstrument(MusicIns);
-    #endif
-}
-
-void ResumeMusic() {
-    // DC: FIXME: reimplement/replace
-    #if 0
-        ResumeInstrument(MusicIns);
     #endif
 }
 

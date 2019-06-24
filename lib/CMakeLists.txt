@@ -16,7 +16,6 @@ set(SOURCE_FILES
     "burger/drawshape.c"
     "burger/getrandom.c"
     "burger/getshapeindexptr.c"
-    "burger/interceptkey.c"
     "burger/lasttick.c"
     "burger/longwordtoasc.c"
     "burger/music.c"

@@ -91,7 +91,6 @@ extern void DrawRezShape(Word x,Word y,Word RezNum);
 #define PadXRight       0x00080000
 
 extern Word LastJoyButtons[4];      /* Save the previous joypad bits */
-extern void InterceptKey(void);
 extern Word ReadJoyButtons(Word Which);
 
 /* Misc routines */
@@ -107,13 +106,8 @@ extern LongWord ReadTick(void);
 /* Sound effects */
 extern Word MusicVolume;                    /* Volume for music */
 extern Word SfxVolume;                      /* Volume for SFX */
-extern void PauseSound(void);
-extern void ResumeSound(void);
-extern void PauseMusic(void);
-extern void ResumeMusic(void);
 extern void StopSound(Word SoundNum);
 extern void PlaySound(Word SoundNum, Word LeftVolume, Word RightVolume);
-extern void PlaySong(Word SongNum);
 extern void SetSfxVolume(Word NewVolume);
 extern void SetMusicVolume(Word NewVolume);
 

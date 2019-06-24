@@ -1,16 +1,18 @@
 #pragma once
 
-typedef enum {      /* All the sounds in the game */
+// All the songs in the game
+typedef enum { 
     Song_None,
     Song_intro,
     Song_final,
     Song_bunny,
     Song_intermission,
     Song_e1m1,
-    NUMMUSIC=Song_e1m1+24       /* Song count */
+    NUMMUSIC = Song_e1m1 + 24   // Song count
 } musicnum_t;
 
-typedef enum {      /* All the sound effects in the game */
+// All the sound effects in the game
+typedef enum {
     sfx_None,
     sfx_pistol,
     sfx_shotgn,
@@ -76,6 +78,5 @@ typedef enum {      /* All the sound effects in the game */
     sfx_hoof,
     sfx_metal,
     sfx_itmbk,
-    NUMSFX
+    NUMSFX      // SFX count
 } sfxenum_t;
-

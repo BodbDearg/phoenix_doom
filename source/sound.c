@@ -1,4 +1,5 @@
 #include "doom.h"
+#include "Audio/Audio.h"
 
 #define S_CLIPPING_DIST (3600 * 0x10000)    // Clip sounds beyond this distance
 #define S_CLOSE_DIST (200 * 0x10000)        // Sounds at this distance or closer are full volume sounds
@@ -100,13 +101,14 @@ static const uint8_t SONG_LOOKUP[] = {
     1       // .. ?
 };
 
-void S_StartSong(const uint32_t musicId, const bool bLoop) {
-    PlaySong(SONG_LOOKUP[musicId]);
+void S_StartSong(const musicnum_t musicId) {
+    const uint32_t trackNum = SONG_LOOKUP[musicId];    
+    audioPlayMusic(trackNum);
 }
 
 //--------------------------------------------------------------------------------------------------
 // Stop music
 //--------------------------------------------------------------------------------------------------
 void S_StopSong() {
-    PlaySong(0);
+    audioStopMusic();
 }

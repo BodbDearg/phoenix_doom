@@ -13,6 +13,7 @@ static AudioSystem              gSoundAudioSystem;
 static AudioSystem              gMusicAudioSystem;
 static AudioDataMgr::Handle     gSoundAudioDataHandles[NUMSFX];
 static AudioDataMgr::Handle     gMusicAudioDataHandle = AudioDataMgr::INVALID_HANDLE;
+static uint32_t                 gPlayingMusicTrackNum = UINT32_MAX;
 
 extern "C" {
 
@@ -56,7 +57,19 @@ void audioPlaySound(const uint32_t num, float lVolume, float rVolume) {
     gSoundAudioSystem.play(soundHandle, false, lVolume, rVolume);
 }
 
+void audioPauseSound() {
+    gSoundAudioSystem.pause(true);
+}
+
+void audioResumeSound() {
+    gSoundAudioSystem.pause(false);
+}
+
 void audioPlayMusic(const uint32_t trackNum) {
+    // If we are already playing this then don't need to do anything
+    if (gPlayingMusicTrackNum == trackNum)
+        return;
+
     // Load the song
     char fileName[128];
     std::snprintf(fileName, sizeof(fileName), "Music/Song%d", int(trackNum));
@@ -64,7 +77,7 @@ void audioPlayMusic(const uint32_t trackNum) {
 
     // Stop the old one and play the new one
     gMusicAudioSystem.stopAllVoices();
-    gMusicAudioSystem.play(songAudioDataHandle, true);
+    gMusicAudioSystem.play(songAudioDataHandle, true);  // N.B: assuming it will play successfully always!
 
     // Unload the old song and make a note of the new one
     if (gMusicAudioDataHandle != AudioDataMgr::INVALID_HANDLE) {
@@ -72,6 +85,20 @@ void audioPlayMusic(const uint32_t trackNum) {
     }
 
     gMusicAudioDataHandle = songAudioDataHandle;
+    gPlayingMusicTrackNum = trackNum;
+}
+
+void audioStopMusic() {
+    gMusicAudioSystem.stopAllVoices();
+    gPlayingMusicTrackNum = UINT32_MAX;
+}
+
+void audioPauseMusic() {
+    gMusicAudioSystem.pause(true);
+}
+
+void audioResumeMusic() {
+    gMusicAudioSystem.pause(false);
 }
 
 }

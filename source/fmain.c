@@ -98,7 +98,7 @@ static void F_PrintString(Word text_x,Word text_y,Byte *string)
 
 void F_Start(void)
 {
-    S_StartSong(Song_final,true);       /* Play the end game music */
+    S_StartSong(Song_final);    // Play the end game music
 
     status = fin_endtext;       /* END TEXT PRINTS FIRST */
     TextIndex = 0;              /* At the beginning */

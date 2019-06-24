@@ -240,7 +240,7 @@ void IN_Start(void)
     if (SecretsFoundInLevel) {
         secretpercent = (players.secretcount * 100) / SecretsFoundInLevel;
     }
-    S_StartSong(Song_intermission, true);       /* Begin the music */
+    S_StartSong(Song_intermission);     // Begin the music
 }
 
 /**********************************

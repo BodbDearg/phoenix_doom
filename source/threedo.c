@@ -1,3 +1,4 @@
+#include "Audio/Audio.h"
 #include "CelUtils.h"
 #include "doom.h"
 #include "Endian.h"
@@ -433,8 +434,7 @@ void InitTools(void)
     #endif
 
     audioLoadAllSounds();
-    resourcesInit();   
-    InterceptKey();         // Init events
+    resourcesInit();
     
     {
         MyCCB *CCBPtr;

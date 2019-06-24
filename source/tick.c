@@ -1,7 +1,7 @@
+#include "Audio/Audio.h"
 #include "doom.h"
-
-#include <string.h>
 #include "Mem.h"
+#include <string.h>
 
 typedef struct thinker_s {
     struct thinker_s *next,*prev;
@@ -162,10 +162,13 @@ static void CheckCheats(void)
     if ((NewJoyPadButtons & PadStart) && !(players.AutomapFlags & AF_OPTIONSACTIVE)) {      /* Pressed pause? */
         if (gamepaused || !(JoyPadButtons&PadUse)) {
             gamepaused ^= 1;        /* Toggle the pause flag */
+
             if (gamepaused) {
-                PauseMusic();
+                audioPauseSound();
+                audioPauseMusic();
             } else {
-                ResumeMusic();
+                audioResumeSound();
+                audioResumeMusic();
             }
         }
     }
@@ -262,35 +265,29 @@ void P_Drawer() {
     }
 }
 
-/**********************************
-
-    Start a game
-
-**********************************/
-
-void P_Start(void)
-{
-    TimeMark1 = 0;      /* Init the static timers */
+//--------------------------------------------------------------------------------------------------
+// Start a game
+//--------------------------------------------------------------------------------------------------
+void P_Start() {
+    TimeMark1 = 0;  // Init the static timers
     TimeMark2 = 0;
     TimeMark4 = 0;
-    players.AutomapFlags &= AF_GODMODE;     /* No automapping specials (but allow godmode) */
-    AM_Start();         /* Start the automap system */
-    ST_Start();         /* Init the status bar this level */
-    G_DoLoadLevel();    /* Load a level into memory */
-    Randomize();        /* Reset the random number generator */
-    S_StartSong(Song_e1m1-1+gamemap, true);
+    players.AutomapFlags &= AF_GODMODE;     // No automapping specials (but allow godmode)
+
+    AM_Start();         // Start the automap system
+    ST_Start();         // Init the status bar this level
+    G_DoLoadLevel();    // Load a level into memory
+    Randomize();        // Reset the random number generator
+
+    S_StartSong(Song_e1m1 - 1 + gamemap);
 }
 
-/**********************************
-
-    Shut down a game
-
-**********************************/
-
-void P_Stop(void)
-{
+//--------------------------------------------------------------------------------------------------
+// Shut down a game
+//--------------------------------------------------------------------------------------------------
+void P_Stop() {
     S_StopSong();
-    ST_Stop();              /* Release the status bar memory */
-    ReleaseMapMemory();     /* Release all the map's memory */
-    PurgeLineSpecials();    /* Release the memory for line specials */
+    ST_Stop();              // Release the status bar memory
+    ReleaseMapMemory();     // Release all the map's memory
+    PurgeLineSpecials();    // Release the memory for line specials
 }

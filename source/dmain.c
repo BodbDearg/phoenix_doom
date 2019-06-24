@@ -200,14 +200,14 @@ static void START_Title() {
         DoWipe = false;     // On power up, don't wipe the screen
     }
 
-    S_StartSong(Song_intro, true);  // Intro music, no looping
+    S_StartSong(Song_intro);
 }
 
 //--------------------------------------------------------------------------------------------------
 // Release the memory for the title picture
 //--------------------------------------------------------------------------------------------------
 static void STOP_Title() {
-    //  S_StopSong();           /* Stop the music */
+    // Nothing to do...
 }
 
 //--------------------------------------------------------------------------------------------------
