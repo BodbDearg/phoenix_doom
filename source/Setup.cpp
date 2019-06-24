@@ -8,7 +8,7 @@
 
 static line_t **LineArrayBuffer;    /* Pointer to array of line_t pointers used by sectors */
 
-static Word PreLoadTable[] = {
+static uint32_t PreLoadTable[] = {
     rSPR_ZOMBIE,            /* Zombiemen */
     rSPR_SHOTGUY,           /* Shotgun guys */
     rSPR_IMP,               /* Imps */
@@ -29,7 +29,7 @@ static Word PreLoadTable[] = {
     rSPR_ARMORBONUS,        /* Armor bonus */
     rSPR_BLUD,              /* Blood from bullet hit */
     rSPR_PUFF,              /* Gun sparks on wall */
-    -1
+    UINT32_MAX
 };
 
 mapthing_t deathmatchstarts[10],*deathmatch_p;  /* Deathmatch starts */
@@ -164,7 +164,7 @@ static void PreloadWalls() {
     const uint32_t numLoadTexFlags = (numWallTex > numFlatTex) ? numWallTex : numFlatTex;
     
     // This array holds which textures (and flats, later) to load
-    bool* const bLoadTexFlags = MemAlloc(numLoadTexFlags * sizeof(bool));
+    bool* const bLoadTexFlags = reinterpret_cast<bool*>(MemAlloc(numLoadTexFlags * sizeof(bool)));
     memset(bLoadTexFlags, 0, numLoadTexFlags * sizeof(bool));
     
     // Scan all textures used by sidedefs and mark them for loading

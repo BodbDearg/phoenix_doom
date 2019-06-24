@@ -3,9 +3,11 @@
 #include "Mem.h"
 #include <string.h>
 
-typedef struct thinker_s {
-    struct thinker_s *next,*prev;
-    void (*function)();
+extern "C" {
+
+typedef struct thinker_t {
+    thinker_t *next,*prev;
+    void (*function)(thinker_t*);
 } thinker_t;
 
 mobj_t mobjhead;    /* Head and tail of mobj list */
@@ -86,7 +88,7 @@ void InitThinkers(void)
     finishes.
 
 **********************************/
-void *AddThinker(void (*FuncProc)(),Word MemSize)
+void *AddThinker(void (*FuncProc)(thinker_t*),Word MemSize)
 {
     thinker_t *Prev;
     thinker_t *thinker;
@@ -121,7 +123,7 @@ void RemoveThinker(void *thinker)
     
 **********************************/
 
-void ChangeThinkCode(void *thinker,void (*FuncProc)())
+void ChangeThinkCode(void *thinker,void (*FuncProc)(thinker_t*))
 {
     thinker = ((thinker_t *)thinker)-1;
     ((thinker_t *)thinker)->function = FuncProc;
@@ -279,7 +281,7 @@ void P_Start() {
     G_DoLoadLevel();    // Load a level into memory
     Randomize();        // Reset the random number generator
 
-    S_StartSong(Song_e1m1 - 1 + gamemap);
+    S_StartSong(musicnum_t(Song_e1m1 - 1 + gamemap));
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -290,4 +292,6 @@ void P_Stop() {
     ST_Stop();              // Release the status bar memory
     ReleaseMapMemory();     // Release all the map's memory
     PurgeLineSpecials();    // Release the memory for line specials
+}
+
 }

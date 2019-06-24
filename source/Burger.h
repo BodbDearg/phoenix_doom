@@ -65,8 +65,8 @@ typedef int32_t Item;
 
 /* In Graphics */
 extern Byte *VideoPointer;
-extern Word ScreenWidth;
-extern Word ScreenHeight;
+extern Word FramebufferWidth;
+extern Word FramebufferHeight;
 extern void SetAPixel(Word x,Word y,Word Color);
 extern void DrawShape(const uint32_t x1, const uint32_t y1, const struct CelControlBlock* const pShape);
 extern void DrawMShape(const uint32_t x1, const uint32_t y1, const struct CelControlBlock* const pShape);

@@ -777,9 +777,9 @@ extern bool gamepaused;     /* True if the game is currently paused */
 extern mobj_t mobjhead;     /* Head and tail of mobj list */
 
 extern void InitThinkers(void);
-extern void *AddThinker(void (*FuncProc)(),Word MemSize);
+extern void *AddThinker(void (*FuncProc)(struct thinker_t*),Word MemSize);
 extern void RemoveThinker(void *thinker);
-extern void ChangeThinkCode(void *thinker,void (*FuncProc)());
+extern void ChangeThinkCode(void *thinker,void (*FuncProc)(struct thinker_t*));
 extern void RunThinkers(void);
 extern Word P_Ticker(void);
 extern void P_Drawer(void);

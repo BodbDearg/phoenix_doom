@@ -1,5 +1,7 @@
 #include "doom.h"
 
+extern "C" {
+
 /**********************************
 
     Local structures
@@ -87,7 +89,7 @@ static void P_StartButton(line_t *line,bwhere_e w,Word texture,Word time)
 {
     button_t *button;
 
-    button = (button_t *)AddThinker(T_Button,sizeof(button_t));
+    button = (button_t*) AddThinker(reinterpret_cast<void (*)(thinker_t*)>(T_Button), sizeof(button_t));
     button->line = line;
     button->where = w;
     button->btexture = texture;
@@ -372,4 +374,6 @@ bool P_UseSpecialLine(mobj_t *thing,line_t *line)
         break;
     }
     return true;
+}
+
 }

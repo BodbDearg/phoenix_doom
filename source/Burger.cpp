@@ -21,8 +21,8 @@ extern "C" {
 #endif
 
 /* Width of the screen in pixels */
-Word ScreenWidth = 320;     
-Word ScreenHeight = 200;
+Word FramebufferWidth = 320;
+Word FramebufferHeight = 200;
 
 /**********************************
 
