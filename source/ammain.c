@@ -1,6 +1,6 @@
 #include "doom.h"
 #include "MapData.h"
-#include <intmath.h>
+#include "MathUtils.h"
 #include <string.h>
 
 #define STEPVALUE (2<<FRACBITS) /* Speed to move around in the map (Fixed) For non-follow mode */
@@ -71,7 +71,7 @@ static int MulByMapScale(Fixed MapCoord)
 
 static int IMFixMulGetInt(Fixed a,Fixed b)
 {
-    return IMFixMul(a,b)>>FRACBITS; /* Multiply and return the integer */
+    return sfixedMul16_16(a,b) >> FRACBITS; /* Multiply and return the integer */
 }
 
 /**********************************
@@ -331,8 +331,8 @@ void AM_Control(player_t *player)
 
     if (!FollowMode) {      /* Not being followed? */
         Fixed step;         /* Multiplier for joypad motion */
-        step = STEPVALUE*ElapsedTime;   /* Mul by integer */
-        step = IMFixDiv(step,MapScale); /* Adjust for scale factor */
+        step = STEPVALUE*ElapsedTime;           /* Mul by integer */
+        step = sfixedDiv16_16(step, MapScale);  /* Adjust for scale factor */
         if (buttons & PadRight) {
             player->automapx+=step;     /* Step to the right */
         }
@@ -353,7 +353,7 @@ void AM_Control(player_t *player)
         if (buttons & PadRightShift) {
             NewButtons = 0;         /* Init the count */
             do {
-                MapScale=IMFixMul(MapScale,ZOOMOUT);        /* Perform the scale */
+                MapScale=sfixedMul16_16(MapScale, ZOOMOUT);     /* Perform the scale */
                 if (MapScale<MINSCALES) {       /* Too small? */
                     MapScale = MINSCALES;       /* Set to smallest allowable */
                     break;      /* Leave now! */
@@ -363,7 +363,7 @@ void AM_Control(player_t *player)
         if (buttons & PadLeftShift) {
             NewButtons = 0;         /* Init the count */
             do {
-                MapScale=IMFixMul(MapScale,ZOOMIN);     /* Perform the scale */
+                MapScale=sfixedMul16_16(MapScale, ZOOMIN);      /* Perform the scale */
                 if (MapScale>=MAXSCALES) {          /* Too large? */
                     MapScale = MAXSCALES;           /* Set to maximum */
                     break;
@@ -452,7 +452,7 @@ Skip:
         int nx3,ny3;            /* Other points for the triangle */
         
         /* Get the size of the triangle into a cached local */
-        NoseScale = IMFixMul(NOSELENGTH,MapScale);
+        NoseScale = sfixedMul16_16(NOSELENGTH, MapScale);
         mo = players.mo;
 
         x1 = MulByMapScale(mo->x-ox);                           /* Get the screen */

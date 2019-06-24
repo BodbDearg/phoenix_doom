@@ -1,5 +1,5 @@
 #include "doom.h"
-#include <intmath.h>
+#include "MathUtils.h"
 
 #define MAXBOB (16<<FRACBITS)   /* 16 pixels of bobbing up and down */
 #define SLOWTURNTICS 10         /* Time before fast turning */
@@ -96,8 +96,8 @@ static void P_PlayerXYMovement(mobj_t *mo)
             mo->momx = 0;       /* Kill momentum */
             mo->momy = 0;
         } else {
-            mo->momx = IMFixMul(mo->momx,FRICTION);     /* Slow down */
-            mo->momy = IMFixMul(mo->momy,FRICTION);
+            mo->momx = sfixedMul16_16(mo->momx, FRICTION);   /* Slow down */
+            mo->momy = sfixedMul16_16(mo->momy, FRICTION);
         }
     }
 }
@@ -310,10 +310,12 @@ static void PlayerCalcHeight(player_t *player)
 
     bob = player->mo->momx;     /* Get the momentum constant */
     top = player->mo->momy;
-    bob = (IMFixMul(bob,bob)+IMFixMul(top,top))>>4;
+    bob = (sfixedMul16_16(bob, bob) + sfixedMul16_16(top, top)) >> 4;
+
     if (bob>MAXBOB) {
         bob = MAXBOB;       /* Use the maximum */
     }
+
     player->bob = bob;      /* Save the new vertical adjustment */
 
     if (!onground) {        /* Don't bob the view if in the air! */

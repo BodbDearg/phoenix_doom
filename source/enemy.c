@@ -1,5 +1,5 @@
 #include "doom.h"
-#include <intmath.h>
+#include "MathUtils.h"
 #include <stdlib.h>
 
 /**********************************
@@ -654,8 +654,8 @@ void A_SkullAttack(mobj_t *actor)
         S_StartSound(&actor->x,actor->InfoPtr->attacksound);
         A_FaceTarget(actor);        /* Face the target */
         an = actor->angle >> ANGLETOFINESHIFT;      /* Speed for distance */
-        actor->momx = IMFixMul(SKULLSPEED,finecosine[an]);
-        actor->momy = IMFixMul(SKULLSPEED,finesine[an]);
+        actor->momx = sfixedMul16_16(SKULLSPEED, finecosine[an]);
+        actor->momy = sfixedMul16_16(SKULLSPEED, finesine[an]);
         dist = GetApproxDistance(dest->x-actor->x,dest->y-actor->y);
         dist = dist / SKULLSPEED;       /* Speed to hit target */
         if (!dist) {        /* Prevent divide by 0 */

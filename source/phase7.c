@@ -1,6 +1,5 @@
 #include "doom.h"
 #include "Textures.h"
-#include <intmath.h>
 
 #define OPENMARK ((MAXSCREENHEIGHT-1)<<8)
 

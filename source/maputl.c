@@ -1,5 +1,4 @@
 #include "doom.h"
-#include <intmath.h>
 #include "MapData.h"
 
 /**********************************

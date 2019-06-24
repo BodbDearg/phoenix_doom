@@ -1,7 +1,6 @@
 #include "doom.h"
 #include "Endian.h"
 #include "Resources.h"
-#include <intmath.h>
 
 #define SCREENGUNY -40      /* Y offset to center the player's weapon properly */
 

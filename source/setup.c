@@ -4,7 +4,6 @@
 #include "Mem.h"
 #include "Resources.h"
 #include "Textures.h"
-#include <intmath.h>
 #include <string.h>
 
 static line_t **LineArrayBuffer;    /* Pointer to array of line_t pointers used by sectors */

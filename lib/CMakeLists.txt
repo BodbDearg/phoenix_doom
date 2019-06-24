@@ -5,7 +5,6 @@ set(INCLUDE_PATHS
 
 set(EXPORTED_INCLUDE_PATHS
     "burger"
-    "intmath"
 )
 
 set(SOURCE_FILES
@@ -23,7 +22,6 @@ set(SOURCE_FILES
     "burger/screenwidth.c"
     "burger/systemstate.c"
     "burger/videopointer.c"
-    "intmath/intmath.h"
     #"mvelib/mvelib.h"
     #"mvelib/nfadvance.s"
     #"mvelib/nfhicolordecomp.c"

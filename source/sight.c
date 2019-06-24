@@ -1,6 +1,6 @@
 #include "doom.h"
-#include <intmath.h>
 #include "MapData.h"
+#include "MathUtils.h"
 
 static Fixed sightzstart;           // eye z of looker
 static Fixed topslope, bottomslope; // slopes to top and bottom of target
@@ -68,7 +68,7 @@ static Fixed PS_SightCrossLine (line_t *line)
 
     s2 = ndx*dx + ndy*dy;   // distance projected onto normal
 
-    s2 = IMFixDiv (s1,(s1+s2));
+    s2 = sfixedDiv16_16(s1, s1 + s2);
 
     return s2;
 }

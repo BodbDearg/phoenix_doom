@@ -41,7 +41,6 @@ set(SOURCE_FILES
     "MapData.cpp"
     "MapData.h"
     "maputl.c"
-    "MathUtils.c"
     "MathUtils.h"
     "Mem.h"
     "mmain.c"

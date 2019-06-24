@@ -1,6 +1,6 @@
 #include "doom.h"
-#include <intmath.h>
 #include "MapData.h"
+#include "MathUtils.h"
 
 //===================
 //
@@ -84,11 +84,11 @@ void P_Shoot2(void)
 
     shootdiv.x = t1->x;
     shootdiv.y = t1->y;
-    shootx2 = t1->x + (attackrange>>FRACBITS)*finecosine[angle];
-    shooty2 = t1->y + (attackrange>>FRACBITS)*finesine[angle];
+    shootx2 = t1->x + (attackrange >> FRACBITS) * finecosine[angle];
+    shooty2 = t1->y + (attackrange >> FRACBITS) * finesine[angle];
     shootdiv.dx = shootx2 - shootdiv.x;
     shootdiv.dy = shooty2 - shootdiv.y;
-    shootz = t1->z + (t1->height>>1) + 8*FRACUNIT;
+    shootz = t1->z + (t1->height>>1) + 8 * FRACUNIT;
 
     shootdivpositive = (shootdiv.dx ^ shootdiv.dy)>0;
 
@@ -114,16 +114,15 @@ void P_Shoot2(void)
 
     if (!shootline)
         return;
-
+    
     // Calculate the intercept point for the first line hit
     //
     // position a bit closer
-    firstlinefrac -= IMFixDiv(4*FRACUNIT,attackrange);
+    firstlinefrac -= sfixedDiv16_16(4 * FRACUNIT, attackrange);
 
-    shootx = shootdiv.x + IMFixMul(shootdiv.dx, firstlinefrac);
-    shooty = shootdiv.y + IMFixMul(shootdiv.dy, firstlinefrac);
-    shootz = shootz + IMFixMul(aimmidslope,IMFixMul(firstlinefrac,attackrange));
-
+    shootx = shootdiv.x + sfixedMul16_16(shootdiv.dx, firstlinefrac);
+    shooty = shootdiv.y + sfixedMul16_16(shootdiv.dy, firstlinefrac);
+    shootz = shootz + sfixedMul16_16(aimmidslope, sfixedMul16_16(firstlinefrac, attackrange));
 }
 
 
@@ -205,11 +204,11 @@ bool PA_ShootLine (line_t *li, Fixed interceptfrac)
     else
         openbottom = back->floorheight;
 
-    dist = IMFixMul(attackrange,interceptfrac);
+    dist = sfixedMul16_16(attackrange, interceptfrac);
 
     if (li->frontsector->floorheight != li->backsector->floorheight)
     {
-        slope = IMFixDiv(openbottom - shootz , dist);
+        slope = sfixedDiv16_16(openbottom - shootz, dist);
         if (slope >= aimmidslope && !shootline)
         {
             shootline = li;
@@ -221,7 +220,7 @@ bool PA_ShootLine (line_t *li, Fixed interceptfrac)
 
     if (li->frontsector->ceilingheight != li->backsector->ceilingheight)
     {
-        slope = IMFixDiv(opentop - shootz , dist);
+        slope = sfixedDiv16_16(opentop - shootz, dist);
         if (slope <= aimmidslope && !shootline)
         {
             shootline = li;
@@ -257,11 +256,14 @@ bool PA_ShootThing (mobj_t *th, Fixed interceptfrac)
         return true;        // corpse or something
 
 // check angles to see if the thing can be aimed at
-    dist = IMFixMul (attackrange, interceptfrac);
-    thingaimtopslope = IMFixDiv(th->z+th->height - shootz , dist);
+    dist = sfixedMul16_16(attackrange, interceptfrac);
+    thingaimtopslope = sfixedDiv16_16(th->z + th->height - shootz, dist);
+
     if (thingaimtopslope < aimbottomslope)
         return true;        // shot over the thing
-    thingaimbottomslope = IMFixDiv(th->z - shootz, dist);
+
+    thingaimbottomslope = sfixedDiv16_16(th->z - shootz, dist);
+
     if (thingaimbottomslope > aimtopslope)
         return true;        // shot under the thing
 
@@ -279,12 +281,12 @@ bool PA_ShootThing (mobj_t *th, Fixed interceptfrac)
     shootmobj = th;
 
     // position a bit closer
-    frac = interceptfrac - IMFixDiv(10*FRACUNIT,attackrange);
-    shootx = shootdiv.x + IMFixMul(shootdiv.dx, frac);
-    shooty = shootdiv.y + IMFixMul(shootdiv.dy, frac);
-    shootz = shootz + IMFixMul(shootslope,IMFixMul(frac,attackrange));
+    frac = interceptfrac - sfixedDiv16_16(10 * FRACUNIT, attackrange);
+    shootx = shootdiv.x + sfixedMul16_16(shootdiv.dx, frac);
+    shooty = shootdiv.y + sfixedMul16_16(shootdiv.dy, frac);
+    shootz = shootz + sfixedMul16_16(shootslope, sfixedMul16_16(frac, attackrange));
 
-    return false;           // don't go any farther
+    return false;   // Don't go any farther
 }
 
 
@@ -345,7 +347,7 @@ Fixed PA_SightCrossLine (line_t *line)
 
     s2 = ndx*dx + ndy*dy;   // distance projected onto normal
 
-    s2 = IMFixDiv(s1,(s1+s2));
+    s2 = sfixedDiv16_16(s1, s1 + s2);
 
     return s2;
 }

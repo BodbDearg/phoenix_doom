@@ -1,9 +1,9 @@
 #include "doom.h"
+#include "MathUtils.h"
 #include "Mem.h"
 #include "Resources.h"
 #include "Sprites.h"
 #include "Textures.h"
-#include <intmath.h>
 #include <string.h>
 
 #define STRETCH(WIDTH,HEIGHT) (Fixed)((160.0/(float)WIDTH)*((float)HEIGHT/180.0)*2.2*65536)     
@@ -40,7 +40,7 @@ void R_InitData(void) {
         uint32_t i = 1;
     
         do {
-            IDivTable[i] = IMFixDiv(512 << FRACBITS, i << FRACBITS);    // 512.0 / i
+            IDivTable[i] = sfixedDiv16_16(512 << FRACBITS, i << FRACBITS);    // 512.0 / i
         } while (++i < (sizeof(IDivTable) / sizeof(Word)));
     }
     
@@ -70,9 +70,8 @@ void InitMathTables(void)
     Stretch = Stretchs[ScreenSize];
     StretchWidth = Stretch*((int)ScreenWidth/2);
 
-    /* Create the viewangletox table */
-    
-    j = IMFixDiv(CenterX<<FRACBITS,finetangent[FINEANGLES/4+FIELDOFVIEW/2]);
+    /* Create the viewangletox table */    
+    j = sfixedDiv16_16(CenterX << FRACBITS, finetangent[FINEANGLES / 4 + FIELDOFVIEW / 2]);
     i = 0;
     do {
         Fixed t;
@@ -81,7 +80,7 @@ void InitMathTables(void)
         } else if (finetangent[i]< -FRACUNIT*2) {
             t = ScreenWidth+1;
         } else {
-            t = IMFixMul(finetangent[i],j);
+            t = sfixedMul16_16(finetangent[i] , j);
             t = ((CenterX<<FRACBITS)-t+FRACUNIT-1)>>FRACBITS;
             if (t<-1) {
                 t = -1;
@@ -120,7 +119,7 @@ void InitMathTables(void)
     i = 0;
     do {
         j = (((int)i-(int)ScreenHeight/2)*FRACUNIT)+FRACUNIT/2;
-        j = IMFixDiv(StretchWidth,abs(j));
+        j = sfixedDiv16_16(StretchWidth, abs(j));
         j >>= 6;
         if (j>0xFFFF) {
             j = 0xFFFF;
@@ -133,7 +132,7 @@ void InitMathTables(void)
     i = 0;
     do {
         j = abs(finecosine[xtoviewangle[i]>>ANGLETOFINESHIFT]);
-        distscale[i] = IMFixDiv(FRACUNIT,j)>>1;
+        distscale[i] = sfixedDiv16_16(FRACUNIT, j) >> 1;
     } while (++i<ScreenWidth);
 
     /* Create the lighting tables */

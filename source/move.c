@@ -156,7 +156,7 @@ void PM_CheckPosition() {
     }
     
     if (yh >= gBlockMapHeight) {
-        yh = gBlockMapHeight-1;
+        yh = gBlockMapHeight - 1;
     }
 
     for (int bx = xl; bx <= xh; bx++) {

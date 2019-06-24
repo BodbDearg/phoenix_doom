@@ -6,7 +6,6 @@
 #include "Mem.h"
 #include "Resources.h"
 #include "Textures.h"
-#include <intmath.h>
 #include <memory.h>
 #include <SDL.h>
 #include <stdio.h>

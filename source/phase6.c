@@ -1,5 +1,5 @@
 #include "doom.h"
-#include <intmath.h>
+#include "MathUtils.h"
 #include "Textures.h"
 
 #define OPENMARK ((MAXSCREENHEIGHT-1)<<8)
@@ -134,7 +134,7 @@ static void DrawSeg(viswall_t *segl)
 
             // Calculate texture offset into shape
             tx_texturecolumn = (
-                segl->offset - IMFixMul(
+                segl->offset - sfixedMul16_16(
                     finetangent[(segl->CenterAngle + xtoviewangle[x]) >> ANGLETOFINESHIFT],
                     segl->distance
                 )
