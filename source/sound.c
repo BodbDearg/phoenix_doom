@@ -57,8 +57,17 @@ void S_StartSound(Fixed *OriginXY,Word sound_id)
                     RightVolume = (sep*vol)>>8;
                     LeftVolume = ((256-sep)*vol)>>8;
                 }
+                else {
+                    LeftVolume = 255;
+                    RightVolume = 255;
+                }
+            }
+            else {
+                LeftVolume = 255;
+                RightVolume = 255;
             }
         }
+
         PlaySound(sound_id);
     }
 }
