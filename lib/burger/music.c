@@ -1,296 +1,17 @@
 #include "burger.h"
 #include "Audio/Audio.h"
 
-// DC: 3DO specific headers - remove
-#if 0
-    #include <Portfolio.h>
-    #include <SoundFile.h>
-    #include <TimerUtils.h>
-#endif
-
-extern uint32_t MainTask;                 /* My own task item */
-
-/**********************************
-
-    This big chunk of code handles all 3DO music and sound
-    for generic drivers
-
-**********************************/
-
-#define NUMBLOCKS 6     /* Size of memory needed for player */
-#define BLOCKSIZE 2048
-#define BUFSIZE (NUMBLOCKS*BLOCKSIZE)
-
-// DC: TODO: currently unused
-#if 0
-static Item MusicIns;                       /* Instrument for music so I can pause it */
-static char *MusicName;
-static Item MixerIns;                       /* Main Mixer */
-static Item SamplerIns[VOICECOUNT];         /* 3DO Instruments for sound voices */
-static Item SamplerRateKnob[VOICECOUNT];    /* 3DO Sample rate knob */
-static Item SampleAtt[VOICECOUNT];          /* 3DO Attachment items */
-static bool LockHit;
-#endif
-
-Word SampleSound[VOICECOUNT];                   /* Sound number being playing in this channel */
-Word SamplePriority[VOICECOUNT] = {0,1,2,3};    /* Priority chain */
-Item LeftKnobs[VOICECOUNT];                     /* Left and right output volumes */
-Item RightKnobs[VOICECOUNT];
-Word LeftVolume;
-Word RightVolume;
-
-// DC: TODO: currently unused
-#if 0
-static volatile Word SongPtr;       /* Current song script */
-static Item iSoundHandler;          /* Item for music thread */
-static uint32_t SongIsDeadSignal;   /* Signals for the music driver */
-static uint32_t NewSongIsLoaded;    /* A new song is present */
-static uint32_t AbortSongSignal;    /* Stop a song */
-static Item DiskLocker;             /* So I can lock the multitasking */
-static volatile Word OhShit;        /* Flag for aborting the tool */
-static char SongFileName[40];       /* Filename of the song */
-static char SongNum[10];            /* Number for song name */
-#endif
-
-Word MusicVolume = 15;              /* Maximum volume */
+Word MusicVolume = 15;  // Maximum volume
 Word SfxVolume = 15;
-Word LoopSong;
-Word SongNumber;
 
-/**********************************
-
-    This thread will play the music
-
-**********************************/
-
-// DC: TODO: currently unused
-#if 0
-static void MusicPlayer(void)
-{
-    // DC: FIXME: reimplement/replace
-    #if 0
-        SoundFilePlayer *SongItem;  /* Pointer to data */
-        int32 Result;
-        int32 SignalIn;
-        int32 SignalsNeeded;
-
-        NewSongIsLoaded = AllocSignal(0);
-        AbortSongSignal = AllocSignal(0);
-        OpenAudioFolio();           /* Start up the sound tools */
-        SongItem = CreateSoundFilePlayer(8,BUFSIZE,0);  /* Create my song thread */
-        SongItem->sfp_Flags |= (SFP_NO_SAMPLER);
-        SongItem->sfp_SamplerIns = LoadInstrument(MusicName,0,100);
-        MusicIns = SongItem->sfp_SamplerIns;
-
-    /* Wait until a song is ready! */
-    Again:
-        while (!SongPtr) {      /* No song to play? */
-            WaitSignal(NewSongIsLoaded|AbortSongSignal);    /* Go to sleep */
-        }
-        strcpy(SongFileName,"Music/Song");  /* Open the sound file */
-        LongWordToAscii(SongNumber,(Byte *)SongNum);
-        strcat(SongFileName,SongNum);
-        LockItem(DiskLocker,SEM_WAIT);  /* Wait for the lock to happen */
-        Result = LoadSoundFile(SongItem,SongFileName);  /* Open up the sound stream */
-        UnlockItem(DiskLocker);
-        if (Result < 0) {   /* Open up the sound stream */
-            goto Abort;     /* Fatal!! */
-        }
-    Repeat:
-        StartSoundFile(SongItem,MusicVolume*0x888); /* Play the music */
-        SignalIn = 0;       /* No signals pending */
-        SignalsNeeded = 0;
-        do {
-            if (!SignalIn || (SignalIn & SignalsNeeded)) {
-                LockItem(DiskLocker,SEM_WAIT);  /* Wait for the lock to happen */
-                if (LockHit) {      /* Was a disk load started? */
-                    LongWord TimeMark;
-                    TimeMark = ReadTick();  /* Log the time */
-                    do {
-                        LockHit = FALSE;        /* Ack the disk load */
-                        UnlockItem(DiskLocker); /* Release the disk */
-                        SleepMSec(0,80);        /* Sleep a little */
-                        LockItem(DiskLocker,SEM_WAIT);  /* Try again... */
-                        if ((ReadTick()-TimeMark)>=40) {    /* Am I getting hungry? */
-                            LockHit = FALSE;    /* Forget it!! */
-                            break;
-                        }
-                    } while (LockHit);  /* Still hitting the CD ROM? */
-                }
-                Result = ServiceSoundFile(SongItem,SignalIn, &SignalsNeeded);
-                UnlockItem(DiskLocker);
-            }
-            if (Result<0 || OhShit) {       /* Sound error?!? */
-                goto BadNews;       /* Forget it! */
-            }
-            if (SignalsNeeded) {    /* Do I need to wait? */
-                SignalIn = WaitSignal(SignalsNeeded | AbortSongSignal);
-            }
-            if (OhShit) {       /* Time to abort? */
-    BadNews:
-                StopSoundFile(SongItem);        /* Stop the current song */
-                UnloadSoundFile(SongItem);  /* Release the memory!! IMPORTANT! */
-                Result = GetCurrentSignals() & SignalsNeeded;
-                if (Result) {
-                    WaitSignal(Result);
-                }
-                goto Abort;
-            }
-        } while (SignalsNeeded);        /* Do I still have data pending? */
-
-        StopSoundFile(SongItem);        /* Stop the current song */
-        if (LoopSong) {     /* End of list? */
-            RewindSoundFile(SongItem);  /* Rewind the song */
-            goto Repeat;            /* Repeat the song */
-        }
-        SongPtr = 0;                /* Index to the next song */
-        UnloadSoundFile(SongItem);  /* Release the memory!! IMPORTANT! */
-        Result = GetCurrentSignals() & SignalsNeeded;
-        if (Result) {
-            WaitSignal(Result);
-        }
-        if (SongPtr) {          /* Are there any more songs? */
-            goto Again;
-        }
-    Abort:;
-        SongPtr = 0;
-        SendSignal(MainTask,SongIsDeadSignal);  /* Tell the main task that I am dead */
-        goto Again;
-    #endif
-}   /* Exit the task */
-#endif
-
-/**********************************
-
-    Allocate resources for the music player for 3DO
-
-**********************************/
-
-void InitMusicPlayer(char *MusicDSP)
-{
-    // DC: FIXME: reimplement/replace
-    #if 0
-        MusicName = MusicDSP;
-        DiskLocker = CreateSemaphore("DiskLocker",KernelBase->kb_CurrentTask->t.n_Priority);
-        SongIsDeadSignal = AllocSignal(0);
-        NewSongIsLoaded = AllocSignal(0);
-        AbortSongSignal = AllocSignal(0);
-        iSoundHandler = CreateThread("MusicPlayer",KernelBase->kb_CurrentTask->t.n_Priority+1,MusicPlayer,4000);
-        SetMusicVolume(15);
-    #endif
-}
-
-/**********************************
-
-    Play a song
-
-**********************************/
-
-void PlaySong(Word NewSong)
-{
+void PlaySong(Word NewSong) {
     audioPlayMusic(NewSong);
-
-    // DC: FIXME: reimplement/replace
-    #if 0
-        LoopSong = NewSong;
-        if (NewSong==SongNumber) {  /* Same as before? */
-            return;         /* Bye */
-        }
-        if (SongPtr && NewSong==SongPtr) {
-            return;
-        }
-
-        if (SongNumber) {           /* Was a song playing? */
-            OhShit = 1;
-            SendSignal(iSoundHandler,AbortSongSignal);
-
-            /* Wait until song is aborted */
-
-            while (SongPtr) {   /* No result */
-                WaitSignal(SongIsDeadSignal);
-            }
-            SongNumber = 0;     /* No song anymore */
-            OhShit = 0;
-            ScavengeMem();      /* Release memory */
-        }
-
-        if (NewSong) {      /* Shall I play a song? */
-            SongNumber = NewSong;   /* Set the song */
-            if (!(SystemState&MusicActive)) {
-                return;
-            }
-            SongPtr = NewSong;  /* Get the real song file # */
-            if (iSoundHandler) {
-                SendSignal(iSoundHandler,NewSongIsLoaded);
-            }
-        }
-    #endif
 }
 
-/**********************************
-
-    Prepare the sound player for the threedo
-    Audio requirements
-    Total memory (512 words)
-    Total clocks (565 ticks)
-    Head.dsp 29/32
-    Tail.dsp 16/16
-    Adpcm 91/51 (364/204)
-    dcsqxstereo.dsp 66/64
-    mixer4x2.dsp 32/32
-    directout.dsp 8/8
-
-
-**********************************/
-
-// DC: TODO: currently unused
-#if 0
-static char LeftG[] = "LeftGain0";
-static char RightG[] = "RightGain0";
-static char Inp[] = "Input0";
-#endif
-
-void InitSoundPlayer(char *SoundDSP,Word Rate)
-{
-    // DC: FIXME: reimplement/replace
-    #if 0
-        Word i;
-
-        MixerIns = LoadInstrument("system/audio/dsp/mixer4x2.dsp",0,0);
-        i = 0;
-        do {
-            LeftG[8] = i+'0';       /* Set the left gain text */
-            RightG[9] = i+'0';      /* Set the right gain text */
-            LeftKnobs[i] = GrabKnob(MixerIns,LeftG);    /* Grab the knobs */
-            RightKnobs[i] = GrabKnob(MixerIns,RightG);
-        } while (++i<VOICECOUNT);           /* All 4 channels */
-        StartInstrument(MixerIns,0);        /* Begin execution of the mixer */
-
-        i = 0;
-        do {
-            SamplerIns[i] = LoadInstrument(SoundDSP,0,100);
-            SamplerRateKnob[i] = GrabKnob(SamplerIns[i],"Frequency");
-            Inp[5] = i+'0';
-            ConnectInstruments(SamplerIns[i],"Output",MixerIns,Inp);    /* Allow mono out on both speakers */
-        } while (++i<VOICECOUNT);
-        SetSfxVolume(15);
-        LeftVolume = 255;
-        RightVolume = 255;
-    #endif
-}
-
-/**********************************
-
-    Play a sound effect
-
-**********************************/
-
-void PlaySound(Word SoundNum)
-{
-    float lVol = (float) LeftVolume / 255.0f;
-    float rVol = (float) RightVolume / 255.0f;
-
-    audioPlaySound(SoundNum, lVol, rVol);
+void PlaySound(Word SoundNum, Word LeftVolume, Word RightVolume) {
+    const float leftVol = (float) LeftVolume / 255.0f;
+    const float rightVol = (float) RightVolume / 255.0f;
+    audioPlaySound(SoundNum, leftVol, rightVol);
 
     // DC: FIXME: reimplement/replace
     #if 0
@@ -348,14 +69,7 @@ void PlaySound(Word SoundNum)
     #endif
 }
 
-/**********************************
-
-    Stop a sound effect (If playing)
-
-**********************************/
-
-void StopSound(Word SoundNum)
-{
+void StopSound(Word SoundNum) {
     // DC: FIXME: reimplement/replace
     #if 0
         Word i;
@@ -375,22 +89,15 @@ void StopSound(Word SoundNum)
     #endif
 }
 
-/**********************************
-
-    Pause the sound effects
-
-**********************************/
-
 static bool Paused;
 
-void PauseSound(void)
-{
-    Word i;
+void PauseSound() {    
     if (Paused) {
         return;
     }
+
     Paused = true;
-    i = 0;
+    Word i = 0;
     
     // DC: FIXME: reimplement/replace
     #if 0
@@ -400,14 +107,7 @@ void PauseSound(void)
     #endif
 }
 
-/**********************************
-
-    Resume paused sound
-
-**********************************/
-
-void ResumeSound(void)
-{
+void ResumeSound() {
     Word i;
     if (Paused) {
         Paused = false;
@@ -422,24 +122,21 @@ void ResumeSound(void)
     }
 }
 
-void PauseMusic(void)
-{
+void PauseMusic() {
     // DC: FIXME: reimplement/replace
     #if 0
         PauseInstrument(MusicIns);
     #endif
 }
 
-void ResumeMusic(void)
-{
+void ResumeMusic() {
     // DC: FIXME: reimplement/replace
     #if 0
         ResumeInstrument(MusicIns);
     #endif
 }
 
-void SetSfxVolume(Word NewVolume)
-{
+void SetSfxVolume(Word NewVolume) {
     // DC: FIXME: reimplement/replace
     #if 0
         Word i;
@@ -458,8 +155,7 @@ void SetSfxVolume(Word NewVolume)
     #endif
 }
 
-void SetMusicVolume(Word NewVolume)
-{
+void SetMusicVolume(Word NewVolume) {
     // DC: FIXME: reimplement/replace
     #if 0
         Item MyKnob;
@@ -471,26 +167,5 @@ void SetMusicVolume(Word NewVolume)
         MyKnob = GrabKnob(MusicIns,"Amplitude");
         TweakKnob(MyKnob,NewVolume);        /* Set to 11 Khz fixed */
         ReleaseKnob(MyKnob);
-    #endif
-}
-
-void LockMusic(void)
-{
-    // DC: FIXME: reimplement/replace
-    #if 0
-        if (DiskLocker) {
-            LockItem(DiskLocker,SEM_WAIT);  /* Lock me down */
-        }
-    #endif
-}
-
-void UnlockMusic(void)
-{
-    // DC: FIXME: reimplement/replace
-    #if 0
-        if (DiskLocker) {
-            LockHit = true;
-            UnlockItem(DiskLocker);     /* Release the disk */
-        }
     #endif
 }

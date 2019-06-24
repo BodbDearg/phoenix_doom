@@ -105,30 +105,17 @@ extern LongWord LastTick;
 extern LongWord ReadTick(void);
 
 /* Sound effects */
-#define VOICECOUNT 4                        /* Number of voices for sound effects */
-extern Word SampleSound[VOICECOUNT];        /* Sound number being playing in this channel */
-extern Word SamplePriority[VOICECOUNT];     /* Priority chain */
-extern Item AllSamples[];                   /* Array of sound effect items to play */
-extern Word AllRates[];
 extern Word MusicVolume;                    /* Volume for music */
 extern Word SfxVolume;                      /* Volume for SFX */
-extern Word LeftVolume;
-extern Word RightVolume;
-
-extern void InitMusicPlayer(char *MusicDSP);
-extern void InitSoundPlayer(char *SoundDSP,Word Rate);
-extern void LockMusic(void);
-extern void UnlockMusic(void);
 extern void PauseSound(void);
 extern void ResumeSound(void);
 extern void PauseMusic(void);
 extern void ResumeMusic(void);
 extern void StopSound(Word SoundNum);
-extern void PlaySound(Word SoundNum);
-extern void PlaySong(Word SongNum);     /* Play a song */
+extern void PlaySound(Word SoundNum, Word LeftVolume, Word RightVolume);
+extern void PlaySong(Word SongNum);
 extern void SetSfxVolume(Word NewVolume);
 extern void SetMusicVolume(Word NewVolume);
-extern Word KilledSong;
 
 /* Misc */
 extern Word SystemState;

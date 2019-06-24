@@ -2,6 +2,7 @@
 - Automap drawing
 - Screen wipes
 - Finale drawing
+- S_StartSong should support non looping music
 - Intro logos
 - Intro videos? (maybe)
 - Fake contrast on walls
@@ -36,3 +37,4 @@
 - Level 15: strange bug where wall in room beyond visible through sky after opening door.
 Bug happens in courtyard area beyond the yellow door (courtyard with red key).
 - Ensure last map accessible via menu (wasn't on 3DO version?)
+- Change endian macros to be 'big endian to host' (more portable)

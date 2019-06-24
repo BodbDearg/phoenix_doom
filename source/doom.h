@@ -739,10 +739,10 @@ extern void R_RenderPlayerView(void);
 
 /* In Sound.c */
 
-extern void S_Clear(void);
-extern void S_StartSound(Fixed *OriginXY,Word sound_id);
-extern void S_StartSong(Word music_id,bool looping);
-extern void S_StopSong(void);
+extern void S_Clear();
+extern void S_StartSound(const Fixed* const pOriginXY, const uint32_t soundId);
+extern void S_StartSong(const uint32_t musicId, const bool bLoop);
+extern void S_StopSong();
 
 /* In MObj.c */
 

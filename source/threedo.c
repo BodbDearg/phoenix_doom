@@ -193,9 +193,6 @@ static Byte *ScreenMaps[SCREENS];   /* Pointer to the bitmap screens */
 static Item VRAMIOReq;              /* I/O Request for screen copy */
 #endif
 
-Item AllSamples[NUMSFX];            /* Items to sound samples */
-Word AllRates[NUMSFX];
-
 /**********************************
 
     Run an external program and wait for compleation
@@ -335,11 +332,6 @@ static Word HeightArray[1] = { 200 };   /* I want 200 lines for display memory *
         CSG_TAG_BITMAPHEIGHT_ARRAY,(void *)&HeightArray[0],
         CSG_TAG_DONE, 0         /* End of list */
     };
-
-    static TagArg SoundRateArgs[] = {
-        AF_TAG_SAMPLE_RATE,(void*)0,    /* Get the sample rate */
-        TAG_END,0       /* End of the list */
-    };
 #endif
 
 // DC: TODO: unused currently
@@ -433,10 +425,6 @@ void InitTools(void)
 
     audioInit();
 
-    InitSoundPlayer("system/audio/dsp/varmono8.dsp",0); /* Init memory for the sound player */
-    InitMusicPlayer("system/audio/dsp/dcsqxdstereo.dsp");   /* Init memory for the music player */
-//  InitMusicPlayer("system/audio/dsp/fixedstereosample.dsp");  /* Init memory for the music player */
-
     // DC: 3DO specific code - disabling
     #if 0
         MainTask = KernelBase->kb_CurrentTask->t.n_Item;    /* My task Item */
@@ -445,23 +433,6 @@ void InitTools(void)
     #endif
 
     audioLoadAllSounds();
-    
-    i = 0;
-    do {
-        // DC: FIXME - loading sounds
-        #if 0
-            sprintf(FileName,"Sounds/Sound%02d.aiff",i+1);
-            AllSamples[i] = LoadSample(FileName);
-            if (AllSamples[i]<0) {
-                AllSamples[i] = 0;
-            }
-            if (AllSamples[i]) {
-                GetAudioItemInfo(AllSamples[i],SoundRateArgs);
-                AllRates[i] = (Word)(((LongWord)SoundRateArgs[0].ta_Arg)/(44100UL*2UL));    /* Get the DSP rate for the sound */
-            }
-        #endif
-    } while (++i<(NUMSFX-1));
-
     resourcesInit();   
     InterceptKey();         // Init events
     
