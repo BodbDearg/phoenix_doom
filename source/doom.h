@@ -759,10 +759,15 @@ extern void P_SpawnMissile(mobj_t *source,mobj_t *dest,mobjinfo_t *InfoPtr);
 extern void SpawnPlayerMissile(mobj_t *source,mobjinfo_t *InfoPtr);
 
 /* In DMain.c */
-
 extern void AddToBox(Fixed *box,Fixed x,Fixed y);
-extern Word MiniLoop(void(*start)(void),void(*stop)(void),
-    Word(*ticker)(void),void(*drawer)(void));
+
+extern Word MiniLoop(
+    void (*start)(),
+    void (*stop)(),
+    Word (*ticker)(),
+    void (*drawer)()
+);
+
 extern void D_DoomMain(void);
 
 /* In Tick.c */
