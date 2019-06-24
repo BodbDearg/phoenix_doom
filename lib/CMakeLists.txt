@@ -11,9 +11,7 @@ set(EXPORTED_INCLUDE_PATHS
 set(SOURCE_FILES
     "burger/burger.h"
     "burger/drawarect.c"
-    "burger/drawmshape.c"
     "burger/drawrezshape.c"
-    "burger/drawshape.c"
     "burger/getrandom.c"
     "burger/getshapeindexptr.c"
     "burger/lasttick.c"
