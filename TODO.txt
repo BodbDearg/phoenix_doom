@@ -2,6 +2,9 @@
 - Automap drawing
 - Screen wipes
 - Finale drawing
+- Cache raw shape/cels that are being drawn
+    - Need shape + animated shape manager
+- Cleanup and optimize render code
 - Intro logos
 - Intro videos? (maybe)
 - Fake contrast on walls
