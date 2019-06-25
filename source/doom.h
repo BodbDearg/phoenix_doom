@@ -776,10 +776,12 @@ extern bool Tick1;          /* True 1 time a second */
 extern bool gamepaused;     /* True if the game is currently paused */
 extern mobj_t mobjhead;     /* Head and tail of mobj list */
 
+typedef void (*ThinkerFunc)(struct thinker_t*);
+
 extern void InitThinkers(void);
-extern void *AddThinker(void (*FuncProc)(struct thinker_t*),Word MemSize);
+extern void *AddThinker(ThinkerFunc FuncProc, Word MemSize);
 extern void RemoveThinker(void *thinker);
-extern void ChangeThinkCode(void *thinker,void (*FuncProc)(struct thinker_t*));
+extern void ChangeThinkCode(void *thinker, ThinkerFunc FuncProc);
 extern void RunThinkers(void);
 extern Word P_Ticker(void);
 extern void P_Drawer(void);

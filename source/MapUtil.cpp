@@ -1,6 +1,8 @@
 #include "doom.h"
 #include "MapData.h"
 
+extern "C" {
+
 /**********************************
 
     Given the numerator and the denominator of a fraction for a slope, 
@@ -429,4 +431,6 @@ Word BlockThingsIterator(Word x, Word y, Word(*func)(mobj_t*)) {
     }
     
     return true;    // Not found
+}
+
 }

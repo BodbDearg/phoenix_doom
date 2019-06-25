@@ -88,7 +88,7 @@ void InitThinkers(void)
     finishes.
 
 **********************************/
-void *AddThinker(void (*FuncProc)(thinker_t*),Word MemSize)
+void *AddThinker(ThinkerFunc FuncProc, Word MemSize)
 {
     thinker_t *Prev;
     thinker_t *thinker;
@@ -123,7 +123,7 @@ void RemoveThinker(void *thinker)
     
 **********************************/
 
-void ChangeThinkCode(void *thinker,void (*FuncProc)(thinker_t*))
+void ChangeThinkCode(void *thinker, ThinkerFunc FuncProc)
 {
     thinker = ((thinker_t *)thinker)-1;
     ((thinker_t *)thinker)->function = FuncProc;

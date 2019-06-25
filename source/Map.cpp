@@ -2,6 +2,8 @@
 #include "MapData.h"
 #include <stdlib.h>
 
+extern "C" {
+
 mobj_t *linetarget;         /* Object that was targeted */
 mobj_t *tmthing;            /* mobj_t to be checked */
 Fixed tmx,tmy;          /* Temp x,y for a position to be checked */
@@ -342,4 +344,6 @@ void LineAttack(mobj_t *t1,angle_t angle,Fixed distance,Fixed slope,Word damage)
         }
         P_SpawnPuff(shootx2,shooty2,shootz2);       /* Make a puff of smoke */
     }
+}
+
 }

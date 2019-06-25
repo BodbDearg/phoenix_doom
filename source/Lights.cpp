@@ -1,6 +1,8 @@
 #include "doom.h"
 #include "MapData.h"
 
+extern "C" {
+
 typedef struct {        /* Struct for light flashers */
     sector_t *sector;   /* Sector to affect */
     Word count;         /* Timer */
@@ -61,7 +63,7 @@ void P_SpawnLightFlash (sector_t *sector)
 
     sector->special = 0;    /* Nothing special about it during gameplay */
 
-    flash = (lightflash_t *)AddThinker(T_LightFlash,sizeof(lightflash_t));
+    flash = (lightflash_t*) AddThinker((ThinkerFunc) T_LightFlash, sizeof(lightflash_t));
     flash->sector = sector;         /* Sector to affect */
     flash->maxlight = sector->lightlevel;   /* Use existing light as max */
     flash->minlight = P_FindMinSurroundingLight(sector,sector->lightlevel);
@@ -101,7 +103,7 @@ void P_SpawnStrobeFlash(sector_t *sector, Word fastOrSlow, bool inSync)
 {
     strobe_t *flash;
 
-    flash = (strobe_t *)AddThinker(T_StrobeFlash,sizeof(strobe_t));
+    flash = (strobe_t*) AddThinker((ThinkerFunc) T_StrobeFlash,sizeof(strobe_t));
     flash->sector = sector;     /* Set the thinker */
     flash->darktime = fastOrSlow;       /* Save the time delay */
     flash->brighttime = STROBEBRIGHT;   /* Time for bright light */
@@ -247,10 +249,12 @@ void P_SpawnGlowingLight(sector_t *sector)
 {
     glow_t *g;
 
-    g = (glow_t *)AddThinker(T_Glow,sizeof(glow_t));
+    g = (glow_t*) AddThinker((ThinkerFunc) T_Glow,sizeof(glow_t));
     g->sector = sector;
     g->minlight = P_FindMinSurroundingLight(sector,sector->lightlevel);
     g->maxlight = sector->lightlevel;
     g->direction = -1;      /* Darken */
     sector->special = 0;    /* Nothing special here */
+}
+
 }
