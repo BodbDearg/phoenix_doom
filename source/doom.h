@@ -267,14 +267,55 @@ typedef struct {    /* Struct describing an object on the map */
 #define FF_FRAMEMASK    0x000000FF  /* Use the rest */
 #define FF_SPRITESHIFT  16          /* Bits to shift for group */
 
-typedef struct state_s {        /* An actor's state */
-    Word SpriteFrame;   /* Which sprite to display? */
-    Word Time;          /* Time before next action */
-    void (*action)();   /* Logic to execute for next state */
-    struct state_s *nextstate;  /* Index to state table for next state */
+typedef void (*PspActionFunc)(struct player_t*, struct pspdef_t*);
+typedef void (*MObjActionFunc)(struct mobj_t*);
+
+// An actor's state
+typedef struct state_t {    
+    uint32_t SpriteFrame;   // Which sprite to display?
+    uint32_t Time;          // Time before next action
+
+    // Logic to execute for next state
+    union {
+        const MObjActionFunc  mobjAction;   // Used for map object actions
+        const PspActionFunc   pspAction;    // Used for player sprite actions
+    };
+    
+    struct state_t* nextstate;  // Index to state table for next state
+
+#ifdef __cplusplus
+    // Constructor for player sprite state
+    constexpr inline state_t(
+        uint32_t SpriteFrame,
+        uint32_t Time,
+        PspActionFunc pspAction,
+        state_t* nextstate
+    ) noexcept
+        : SpriteFrame(SpriteFrame)
+        , Time(Time)
+        , pspAction(pspAction)
+        , nextstate(nextstate)
+    {
+    }
+
+    // Constructor for map object state
+    constexpr inline state_t(
+        uint32_t SpriteFrame,
+        uint32_t Time,
+        MObjActionFunc mobjAction,
+        state_t* nextstate
+    ) noexcept
+        : SpriteFrame(SpriteFrame)
+        , Time(Time)
+        , mobjAction(mobjAction)
+        , nextstate(nextstate)
+    {
+    }
+#endif
+
 } state_t;
 
-typedef struct {    /* Describe a 2d object's placement in the 3d world */
+typedef struct pspdef_t {    /* Describe a 2d object's placement in the 3d world */
     state_t *StatePtr;  /* a NULL state means not active */
     Word Time;          /* Time to elapse before next state */
     int WeaponX,WeaponY; /* X and Y in pixels */
@@ -295,14 +336,14 @@ typedef struct {        /* Describe an actor's basic variables */
     Word painchance;        /* % chance of pain when hit */
     Word mass;          /* Mass for impact recoil */
     Word flags;         /* Generic state flags */
-    bool Speed;     /* Rate of speed for normal chase or walk */
-    bool reactiontime;  /* Time before first action */
-    bool damage;        /* Damage done for attack */
-    bool seesound;      /* Sound effect after first action */
-    bool attacksound;   /* Sound when attacking */
-    bool painsound;     /* Pain sound */
-    bool deathsound;    /* Sound for normal death */
-    bool activesound;   /* Sound to play at random times for mood */
+    uint8_t Speed;     /* Rate of speed for normal chase or walk */
+    uint8_t reactiontime;  /* Time before first action */
+    uint8_t damage;        /* Damage done for attack */
+    uint8_t seesound;      /* Sound effect after first action */
+    uint8_t attacksound;   /* Sound when attacking */
+    uint8_t painsound;     /* Pain sound */
+    uint8_t deathsound;    /* Sound for normal death */
+    uint8_t activesound;   /* Sound to play at random times for mood */
 } mobjinfo_t;
 
 // Describes a 2D shape rendered to the screen
@@ -312,7 +353,7 @@ typedef struct {
     Fixed yscale;                   // Y Scale factor
     SpriteFrameAngle* pSprite;      // What sprite frame to actually render
     Word colormap;                  // 0x8000 = shadow draw,0x4000 flip, 0x3FFF color map
-    const struct mobj_s *thing;     // Used for clipping...
+    const struct mobj_t *thing;     // Used for clipping...
 } vissprite_t;
 
 // Describes a floor texture
@@ -355,19 +396,19 @@ typedef struct {
 #define MF_NOTDMATCH    0x2000000   // don't spawn in death match (key cards)
 #define MF_SEETARGET    0x4000000   // is target visible?
 
-typedef struct mobj_s { 
-    struct mobj_s *prev,*next;  /* Linked list entries */
+typedef struct mobj_t { 
+    struct mobj_t *prev,*next;  /* Linked list entries */
     Fixed x,y,z;        /* Location in 3Space */
 
 /* info for drawing */
 
-    struct mobj_s *snext,*sprev;    /* links in sector (if needed) */
+    struct mobj_t *snext,*sprev;    /* links in sector (if needed) */
     angle_t angle;      /* Angle of view */
 
 /* interaction info */
 
-    struct mobj_s *bnext,*bprev;    /* links in blocks (if needed) */
-    struct subsector_s *subsector;  /* Subsector currently standing on */
+    struct mobj_t *bnext,*bprev;    /* links in blocks (if needed) */
+    struct subsector_t *subsector;  /* Subsector currently standing on */
     Fixed floorz,ceilingz;      // closest together of contacted secs
     Fixed radius,height;        // for movement checking
     Fixed momx,momy,momz;       // momentums
@@ -379,13 +420,13 @@ typedef struct mobj_s {
     Word MObjHealth;    /* Object's health */
     Word movedir;   /* 0-7 */
     Word movecount; /* when 0, select a new dir */
-    struct mobj_s *target;  /* thing being chased/attacked (or NULL) */
+    struct mobj_t *target;  /* thing being chased/attacked (or NULL) */
                             /* also the originator for missiles */
     Word reactiontime;  /* if non 0, don't attack yet */
                         /* used by player to freeze a bit after teleporting */
     Word threshold;     /* if >0, the target will be chased */
                         /* no matter what (even if shot) */
-    struct player_s *player;    /* only valid if type == MT_PLAYER */
+    struct player_t *player;    /* only valid if type == MT_PLAYER */
 } mobj_t;
 
 #define AF_ACTIVE 1     /* Automap active */
@@ -396,7 +437,7 @@ typedef struct mobj_s {
 #define AF_GODMODE 0x20 /* No one can hurt me! */
 #define AF_OPTIONSACTIVE 0x80 /* options screen running */
 
-typedef struct player_s {   /* Player's current game state */
+typedef struct player_t {   /* Player's current game state */
     mobj_t *mo;             /* Pointer to sprite object */
 
     Word health;            /* only used between levels, mo->health */ 
@@ -414,7 +455,7 @@ typedef struct player_s {   /* Player's current game state */
     Word fixedcolormap; /* can be set to REDCOLORMAP, etc */
     Word colormap;      /* 0-3 for which color to draw player */
     pspdef_t psprites[NUMPSPRITES]; /* view sprites (gun, etc) */
-    struct sector_s *lastsoundsector;   /* Pointer to sector where I last made a sound */
+    struct sector_t *lastsoundsector;   /* Pointer to sector where I last made a sound */
     Fixed forwardmove;      /* Motion ahead (- for reverse) */
     Fixed sidemove;         /* Motion to the side (- for left) */
     Fixed viewz;            /* focal origin above r.z */
@@ -439,7 +480,7 @@ typedef struct player_s {   /* Player's current game state */
     bool    refire;         /* refired shots are less accurate */
 } player_t;
 
-typedef struct sector_s {       /* Describe a playfield sector (Polygon) */
+typedef struct sector_t {       /* Describe a playfield sector (Polygon) */
     Fixed floorheight;  /* Floor height */
     Fixed ceilingheight;    /* Top and bottom height */
     Word FloorPic;      /* Floor texture # */
@@ -456,7 +497,7 @@ typedef struct sector_s {       /* Describe a playfield sector (Polygon) */
     mobj_t *thinglist;  /* list of mobjs in sector */
     void *specialdata;  /* Thinker struct for reversable actions */
     Word linecount;     /* Number of lines in polygon */
-    struct line_s **lines;  /* [linecount] size */
+    struct line_t **lines;  /* [linecount] size */
 } sector_t;
 
 typedef struct {        /* Vector struct */
@@ -485,7 +526,7 @@ typedef struct {    /* Data for a line side */
 #define ML_DONTDRAW     128 /* don't draw on the automap */
 #define ML_MAPPED       256 /* set if allready drawn in automap */
 
-typedef struct line_s {
+typedef struct line_t {
     vertex_t v1,v2;     /* X,Ys for the line ends */
     Word flags;         /* Bit flags (ML_) for states */
     Word special;       /* Event number */
@@ -499,7 +540,7 @@ typedef struct line_s {
     Word fineangle;         /* Index to get sine / cosine for sliding */
 } line_t;
 
-typedef struct seg_s {      /* Structure for a line segment */
+typedef struct seg_t {      /* Structure for a line segment */
     vertex_t v1,v2;         /* Source and dest points */
     angle_t angle;          /* Angle of the vector */
     Fixed offset;           /* Extra shape offset */
@@ -509,7 +550,7 @@ typedef struct seg_s {      /* Structure for a line segment */
     sector_t *backsector;   /* NULL for one sided lines */
 } seg_t;
 
-typedef struct subsector_s {    /* Subsector structure */
+typedef struct subsector_t {    /* Subsector structure */
     sector_t *sector;           /* Pointer to parent sector */
     Word numsublines;           /* Number of subsector lines */
     seg_t *firstline;           /* Pointer to the first line */

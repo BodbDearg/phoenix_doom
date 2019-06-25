@@ -34,7 +34,7 @@ set(SOURCE_FILES
     "floor.c"
     "fmain.c"
     "game.c"
-    "info.c"
+    "Info.cpp"
     "inmain.c"
     "Inter.cpp"
     "Lights.cpp"

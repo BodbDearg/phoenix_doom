@@ -155,9 +155,10 @@ static void SetPlayerSprite(player_t *player,psprnum_t position,state_t *state)
             break;          /* Leave now */
         }
         psp->Time = state->Time;    /* Set the time delay, Could be 0... */
-        if (state->action) {        /* Is there an action procedure? */
-            state->action(player,psp);  /* Call the think logic (May call myself) */
-            state = psp->StatePtr;      /* Get the new state pointer */
+        if (state->pspAction) {             /* Is there an action procedure? */
+            state->pspAction(player,psp);   /* Call the think logic (May call myself) */
+            state = psp->StatePtr;          /* Get the new state pointer */
+
             if (!state) {       /* No state? */
                 break;
             }

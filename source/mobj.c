@@ -103,8 +103,8 @@ Word SetMObjState(mobj_t *mobj,state_t *StatePtr)
     mobj->state = StatePtr;         /* Save the state index */
     mobj->tics = StatePtr->Time;    /* Reset the tic count */
 
-    if (StatePtr->action) {         /* Call action functions when the state is set */
-        StatePtr->action(mobj);     /* Call the procedure */
+    if (StatePtr->mobjAction) {         /* Call action functions when the state is set */
+        StatePtr->mobjAction(mobj);     /* Call the procedure */
     }
     
     return true;

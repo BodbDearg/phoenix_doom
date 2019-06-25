@@ -11,7 +11,6 @@
 - Tweak light diminishing (longer falloff + darker)
 - Tweak wall column rendering, looks a bit 'fuzzy' right now.
 - Fix gameplay logic speed issues (imp fireball very slow etc., monsters slow to react)
-- Fix pig demon not really moving
 - Fix weird chainsaw sound
 - Implement transparent demons
 - Higher resolution + fullscreen support
