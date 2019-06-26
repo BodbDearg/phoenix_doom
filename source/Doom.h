@@ -348,12 +348,12 @@ typedef struct {        /* Describe an actor's basic variables */
 
 // Describes a 2D shape rendered to the screen
 typedef struct {
-    int x1,x2,y1,y2;                // Clipped to screen edges column range
-    Fixed xscale;                   // Scale factor
-    Fixed yscale;                   // Y Scale factor
-    SpriteFrameAngle* pSprite;      // What sprite frame to actually render
-    Word colormap;                  // 0x8000 = shadow draw,0x4000 flip, 0x3FFF color map
-    const struct mobj_t *thing;     // Used for clipping...
+    int x1,x2,y1,y2;                    // Clipped to screen edges column range
+    Fixed xscale;                       // Scale factor
+    Fixed yscale;                       // Y Scale factor
+    const SpriteFrameAngle* pSprite;    // What sprite frame to actually render
+    Word colormap;                      // 0x8000 = shadow draw,0x4000 flip, 0x3FFF color map
+    const struct mobj_t *thing;         // Used for clipping...
 } vissprite_t;
 
 // Describes a floor texture

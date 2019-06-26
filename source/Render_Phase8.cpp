@@ -2,6 +2,8 @@
 #include "Endian.h"
 #include "Resources.h"
 
+extern "C" {
+
 #define SCREENGUNY -40      /* Y offset to center the player's weapon properly */
 
 Word spropening[MAXSCREENWIDTH];        /* clipped range */
@@ -359,7 +361,7 @@ static void DrawAWeapon(pspdef_t *psp,Word Shadow)
     y = ((psp->WeaponY + SCREENGUNY + y) * (int) GunYScale) >> 16;
     x += ScreenXOffset;
     y += ScreenYOffset + 2;         // Add 2 pixels to cover up the hole in the bottom
-    DrawMShape(x, y, &Input[2]);    // Draw the weapon's shape
+    DrawMShape(x, y, (const CelControlBlock*) &Input[2]);    // Draw the weapon's shape
     releaseResource(RezNum);
 }
 
@@ -393,6 +395,8 @@ void DrawWeapons(void)
     
     i = ScreenSize+rBACKGROUNDMASK;         /* Get the resource needed */
 
-    DrawMShape(0,0,loadResourceData(i));    /* Draw the border */
-    releaseResource(i);                     /* Release the resource */
+    DrawMShape(0,0, (const CelControlBlock*) loadResourceData(i));      /* Draw the border */
+    releaseResource(i);                                                 /* Release the resource */
+}
+
 }

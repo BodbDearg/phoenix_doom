@@ -5,6 +5,8 @@
 #include "MathUtils.h"
 #include "Resources.h"
 
+extern "C" {
+
 #define MAXSEGS 32      /* Maximum number of segs to scan */
 
 /**********************************
@@ -593,4 +595,6 @@ void BSP() {
     newend = solidsegs+2;               // Init the free memory pointer
     RenderBSPNode(gpBSPTreeRoot);       // Begin traversing the BSP tree for all walls in render range
     SortAllSprites();                   // Sort the sprites from front to back
+}
+
 }

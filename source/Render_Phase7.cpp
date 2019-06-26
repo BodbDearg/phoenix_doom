@@ -1,6 +1,8 @@
 #include "doom.h"
 #include "Textures.h"
 
+extern "C" {
+
 #define OPENMARK ((MAXSCREENHEIGHT-1)<<8)
 
 Byte *PlaneSource;          /* Pointer to image of floor/ceiling texture */
@@ -74,7 +76,7 @@ void DrawVisPlane(visplane_t *p)
     register Word *open;
 
     const Texture* const pTex = getFlatAnimTexture((Word) p->PicHandle);
-    PlaneSource = pTex->pData;
+    PlaneSource = (Byte*) pTex->pData;
     x = p->height;
     if ((int)x<0) {
         x = -x;
@@ -153,3 +155,4 @@ void DrawVisPlane(visplane_t *p)
     } while (++x<=stop);
 }
 
+}

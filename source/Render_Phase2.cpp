@@ -2,6 +2,8 @@
 #include "MathUtils.h"
 #include "Textures.h"
 
+extern "C" {
+
 /**********************************
 
     Check all the visible walls and fill in all the "Blanks" such
@@ -307,4 +309,6 @@ void WallPrep(Word LeftX, Word RightX, seg_t* LineSeg, angle_t LeftAngle)
     CurWallPtr->seglightlevel = f_lightlevel;                       // Save the light level
     CurWallPtr->offset = SidePtr->textureoffset + LineSeg->offset;  // Texture anchor X
     LatePrep(CurWallPtr, LineSeg, LeftAngle);
+}
+
 }
