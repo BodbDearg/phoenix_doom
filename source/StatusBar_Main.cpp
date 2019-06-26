@@ -2,6 +2,8 @@
 #include "Resources.h"
 #include <string.h>
 
+extern "C" {
+
 /**********************************
 
     Local enums and data
@@ -66,9 +68,9 @@ typedef struct {
 
 stbar_t stbar;      /* Current state of the status bar */
 
-static void **StatusBarShape;   /* Handle to current status bar shape */
-static void **SBObj;    /* Cached handle to the status bar sub shapes */
-static void **Faces;    /* Cached handle to the faces */
+static void *StatusBarShape;   /* Handle to current status bar shape */
+static void *SBObj;    /* Cached handle to the status bar sub shapes */
+static void *Faces;    /* Cached handle to the faces */
 static Word micronums_x[NUMMICROS] = {237,249,261,237,249,261}; /* X's */
 static Word micronums_y[NUMMICROS] = {175,175,175,185,185,185}; /* Y's */
 static Word card_x[NUMCARDS] = {KEYX,KEYX,KEYX,KEYX+3,KEYX+3,KEYX+3};
@@ -213,7 +215,7 @@ void ST_Drawer (void)
     player_t *p;
     sbflash_t *FlashPtr;
 
-    DrawShape(0,160, StatusBarShape);           /* Draw the status bar */
+    DrawShape(0,160, (const CelControlBlock*) StatusBarShape);           /* Draw the status bar */
 
 #if VBLTIMER
     ++Frames;
@@ -301,4 +303,6 @@ void ST_Drawer (void)
         i = i+newface;  /* Get shape requested */
     }
     DrawMShape(FACEX,FACEY,GetShapeIndexPtr(Faces,i)); /* Dead man */
+}
+
 }

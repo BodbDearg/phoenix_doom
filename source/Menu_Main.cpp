@@ -1,6 +1,8 @@
 #include "doom.h"
 #include "Resources.h"
 
+extern "C" {
+
 #define CURSORX 50      /* X coord of skull cursor */
 #define AREAY 66
 #define DIFFICULTYY 116
@@ -194,4 +196,6 @@ void M_Drawer() {
         releaseResource(rMAINMENU);
         UpdateAndPageFlip(true);
     }
+}
+
 }

@@ -3,6 +3,8 @@
 #include <string.h>
 #include "Mem.h"
 
+extern "C" {
+
 typedef struct {        /* Respawn think logic */
     Fixed x,y;          /* X and Y to spawn at */
     Word angle;         /* Angle facing */
@@ -483,4 +485,6 @@ void SpawnPlayerMissile(mobj_t *source,mobjinfo_t *InfoPtr)
     th->momz = (Fixed)speed * slope;
 
     P_CheckMissileSpawn(th);        /* Move the missile a little */
+}
+
 }

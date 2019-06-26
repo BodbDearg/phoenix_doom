@@ -2,6 +2,8 @@
 #include "MapData.h"
 #include "MathUtils.h"
 
+extern "C" {
+
 //===================
 //
 // IN
@@ -42,7 +44,7 @@ static int ssx1,ssy1,ssx2,ssy2;
 static bool PA_CrossBSPNode(const node_t* pNode) {
     if (isNodeChildASubSector(pNode)) {
         // N.B: pointer has to be fixed up due to prescence of a flag in the lowest bit!
-        const subsector_t* const pSubSector = getActualNodeChildPtr(pNode);
+        const subsector_t* const pSubSector = reinterpret_cast<const subsector_t*>(getActualNodeChildPtr(pNode));
         return PA_CrossSubsector(pSubSector);
     }
     
@@ -435,4 +437,6 @@ bool PA_CrossSubsector(const subsector_t* sub)
 
 
     return true;            // passed the subsector ok
+}
+
 }

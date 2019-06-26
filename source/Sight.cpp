@@ -2,6 +2,8 @@
 #include "MapData.h"
 #include "MathUtils.h"
 
+extern "C" {
+
 static Fixed sightzstart;           // eye z of looker
 static Fixed topslope, bottomslope; // slopes to top and bottom of target
 
@@ -225,4 +227,6 @@ Word CheckSight(mobj_t *t1,mobj_t *t2)
     bottomslope = (t2->z) - sightzstart;
 
     return PS_CrossBSPNode(gpBSPTreeRoot);
+}
+
 }

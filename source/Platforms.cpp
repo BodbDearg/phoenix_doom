@@ -1,6 +1,8 @@
 #include "doom.h"
 #include "MapData.h"
 
+extern "C" {
+
 /**********************************
 
     Local structures
@@ -163,7 +165,7 @@ static void ActivateInStasis(Word tag)
     while (PlatPtr) {       /* Scan all entries in the thinker list */
         if (PlatPtr->tag == tag && PlatPtr->status == in_stasis) {  /* Match? */
             PlatPtr->status = PlatPtr->oldstatus;   /* Restart the platform */
-            ChangeThinkCode(PlatPtr,T_PlatRaise);   /* Reset code */
+            ChangeThinkCode(PlatPtr, (ThinkerFunc) T_PlatRaise);   /* Reset code */
         }
         PlatPtr = PlatPtr->next;    /* Get the next link */
     }
@@ -200,7 +202,7 @@ bool EV_DoPlat(line_t *line,plattype_e type,Word amount)
 
         /* Find lowest & highest floors around sector */
         rtn = true;                                                 /* I created a sector */
-        plat = (plat_t*) AddThinker(T_PlatRaise,sizeof(plat_t));    /* Add to the thinker list */
+        plat = (plat_t*) AddThinker((ThinkerFunc) T_PlatRaise,sizeof(plat_t));    /* Add to the thinker list */
         plat->type = type;                                          /* Save the platform type */
         plat->sector = sec;                                         /* Save the sector pointer */
         plat->sector->specialdata = plat;                           /* Point back to me... */
@@ -288,4 +290,6 @@ void EV_StopPlat(line_t *line)
 void ResetPlats(void)
 {
     MainPlatPtr = 0;        /* Forget about the linked list */
+}
+
 }

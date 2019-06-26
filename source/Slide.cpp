@@ -2,6 +2,8 @@
 #include "MapData.h"
 #include "MathUtils.h"
 
+extern "C" {
+
 #define CLIPRADIUS  23
 #define SIDE_ON 0
 #define SIDE_FRONT  1
@@ -496,4 +498,6 @@ void SL_CheckSpecialLines(int x1, int y1, int x2, int y2) {
             }
         }
     }
+}
+
 }

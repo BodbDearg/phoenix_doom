@@ -1,5 +1,7 @@
 #include "doom.h"
 
+extern "C" {
+
 #define LOWERSPEED 18       /* Speed to lower the player's weapon */
 #define RAISESPEED 18       /* Speed to raise the player's weapon */
 #define WEAPONBOTTOM 128    /* Bottommost Y for hiding weapon */
@@ -718,4 +720,6 @@ void MovePSprites(player_t *player)
     psp = player->psprites;
     psp[ps_flash].WeaponX = psp[ps_weapon].WeaponX; /* Attach the flash to the weapon */    
     psp[ps_flash].WeaponY = psp[ps_weapon].WeaponY;
+}
+
 }

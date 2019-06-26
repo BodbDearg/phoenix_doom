@@ -4,6 +4,8 @@
 #include "Textures.h"
 #include <string.h>
 
+extern "C" {
+
 Word NumFlatAnims;      /* Number of flat anims */
 anim_t FlatAnims[] = {
     {rNUKAGE3-rF_START,rNUKAGE1-rF_START,rNUKAGE1-rF_START},
@@ -734,4 +736,6 @@ void PurgeLineSpecials(void)
         MEM_FREE_AND_NULL(linespeciallist);     /* Release it */
         numlinespecials = 0;                    /* No lines */
     }
+}
+
 }

@@ -1,6 +1,8 @@
 #include "doom.h"
 #include "MapData.h"
 
+extern "C" {
+
 bool        trymove2;       // Result from P_TryMove2
 bool        floatok;        // If true, move would be ok if within tmfloorz - tmceilingz
 Fixed       tmfloorz;       // Current floor z for P_TryMove2
@@ -405,4 +407,6 @@ Word PIT_CheckThing (mobj_t *thing)
     }
 
     return !(thing->flags & MF_SOLID);
+}
+
 }
