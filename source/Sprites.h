@@ -2,10 +2,6 @@
 
 #include <stdint.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 //---------------------------------------------------------------------------------------------------------------------
 // Constants
 //---------------------------------------------------------------------------------------------------------------------
@@ -56,7 +52,3 @@ uint32_t getEndSpriteResourceNum();     // N.B: 1 past the end index!
 const Sprite* getSprite(const uint32_t resourceNum);
 const Sprite* loadSprite(const uint32_t resourceNum);
 void freeSprite(const uint32_t resourceNum);
-
-#ifdef __cplusplus
-}
-#endif

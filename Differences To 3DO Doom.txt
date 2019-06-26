@@ -5,3 +5,6 @@ This allows for smoother light gradients and less color banding.
 
 [] Removed the maximum screen size restriction.
 No longer have to use a cheat to access this!
+
+[] Sprites no longer appear unnaturally bright.
+3DO Doom seemed to light all sprites much brighter than the environment surrounding them. This may have been due to the lookup values that it used to light the sprites - perhaps they were too high? The darkness of sprites in this version much more closely mimicks the environment lighting and sprites hopefully blend in much better.

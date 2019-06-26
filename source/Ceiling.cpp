@@ -1,8 +1,6 @@
 #include "doom.h"
 #include "MapData.h"
 
-extern "C" {
-
 /**********************************
 
     Local structures for moving ceilings
@@ -270,6 +268,4 @@ bool EV_CeilingCrushStop(line_t *line)
 void ResetCeilings(void)
 {
     MainCeilingPtr = 0;     /* Discard the links */
-}
-
 }

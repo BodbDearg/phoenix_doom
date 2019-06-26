@@ -1,8 +1,6 @@
 #include "doom.h"
 #include "MapData.h"
 
-extern "C" {
-
 /**********************************
 
     Local structures
@@ -290,6 +288,4 @@ void EV_StopPlat(line_t *line)
 void ResetPlats(void)
 {
     MainPlatPtr = 0;        /* Forget about the linked list */
-}
-
 }

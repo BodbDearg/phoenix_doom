@@ -5,8 +5,6 @@
 static const char* const RESOURCE_FILE_PATH = "REZFILE";
 static ResourceMgr gResourceMgr;
 
-extern "C" {
-
 void resourcesInit() {
     gResourceMgr.init(RESOURCE_FILE_PATH);
 }
@@ -48,6 +46,4 @@ void releaseResource(const uint32_t num) {
     // Should make level transitions faster - not that they would be slow anyway...
     //
     // If you're using this code to do something a little more demanding however then you may want to revisit this.
-}
-
 }

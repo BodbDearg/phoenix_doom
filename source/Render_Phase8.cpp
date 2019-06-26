@@ -2,8 +2,6 @@
 #include "Endian.h"
 #include "Resources.h"
 
-extern "C" {
-
 #define SCREENGUNY -40      /* Y offset to center the player's weapon properly */
 
 Word spropening[MAXSCREENWIDTH];        /* clipped range */
@@ -397,6 +395,4 @@ void DrawWeapons(void)
 
     DrawMShape(0,0, (const CelControlBlock*) loadResourceData(i));      /* Draw the border */
     releaseResource(i);                                                 /* Release the resource */
-}
-
 }

@@ -42,8 +42,8 @@ static void createDisplay() {
         "PhoenixDoom",
         SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED,
-        SCREEN_WIDTH * 4,
-        SCREEN_HEIGHT * 4,
+        SCREEN_WIDTH * 5,
+        SCREEN_HEIGHT * 5,
         windowCreateFlags
     );
     
@@ -53,7 +53,7 @@ static void createDisplay() {
 
     gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     const uint32_t framebufferSize = SCREEN_WIDTH * SCREEN_WIDTH * sizeof(uint32_t);
-    gFrameBuffer = MemAlloc(framebufferSize);
+    gFrameBuffer = (uint32_t*) MemAlloc(framebufferSize);
     
     if (!gRenderer) {
         FATAL_ERROR("Failed to create renderer!");
@@ -699,16 +699,14 @@ void UpdateAndPageFlip(const bool bAllowDebugClear) {
 void DrawPlaque(Word RezNum)
 {
     Word PrevPage;
-    void *PicPtr;
-    
     PrevPage = WorkPage-1;
     if (PrevPage==-1) {
         PrevPage = SCREENS-1;
     }
     FlushCCBs();        /* Flush pending draws */
     SetMyScreen(PrevPage);      /* Draw to the active screen */
-    PicPtr = loadResourceData(RezNum);
-    DrawShape(160-(getCCBWidth(PicPtr)/2),80,PicPtr);
+    const CelControlBlock* const pPic = (const CelControlBlock*) loadResourceData(RezNum);
+    DrawShape(160 - (getCCBWidth(pPic) / 2), 80, pPic);
     FlushCCBs();        /* Make sure it's drawn */
     releaseResource(RezNum);
     SetMyScreen(WorkPage);      /* Reset to normal */

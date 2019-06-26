@@ -2,8 +2,6 @@
 #include "MathUtils.h"
 #include "Textures.h"
 
-extern "C" {
-
 #define OPENMARK ((MAXSCREENHEIGHT-1)<<8)
 
 /**********************************
@@ -448,6 +446,4 @@ void SegCommands(void)
 }
     DisableHardwareClipping();      /* Sprites require full screen management */
     DrawSprites();                  /* Draw all the sprites (ZSorted and clipped) */
-}
-
 }

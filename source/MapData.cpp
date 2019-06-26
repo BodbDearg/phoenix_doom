@@ -498,10 +498,6 @@ static void loadBlockMap(const uint32_t lumpResourceNum) noexcept {
     freeResource(lumpResourceNum);
 }
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 // External data pointers and information
 const vertex_t*     gpVertexes;
 uint32_t            gNumVertexes;
@@ -585,7 +581,3 @@ void mapDataShutdown() {
     gBlockMapOriginX = 0;
     gBlockMapOriginY = 0;
 }
-
-#ifdef __cplusplus
-}
-#endif

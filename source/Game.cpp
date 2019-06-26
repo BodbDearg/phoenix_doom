@@ -4,8 +4,6 @@
 #include "Textures.h"
 #include <string.h>
 
-extern "C" {
-
 static void loadSkyTexture() {
     const uint32_t skyTexNum = getCurrentSkyTexNum();
     loadWallTexture(skyTexNum);
@@ -251,6 +249,4 @@ void G_RecordDemo (void)
     for (;;) {                  /* Stay forever */
         G_PlayDemoPtr(DemoBuffer);  /* Play the demo */
     }
-}
-
 }

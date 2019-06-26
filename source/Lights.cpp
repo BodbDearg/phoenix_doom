@@ -1,8 +1,6 @@
 #include "doom.h"
 #include "MapData.h"
 
-extern "C" {
-
 typedef struct {        /* Struct for light flashers */
     sector_t *sector;   /* Sector to affect */
     Word count;         /* Timer */
@@ -255,6 +253,4 @@ void P_SpawnGlowingLight(sector_t *sector)
     g->maxlight = sector->lightlevel;
     g->direction = -1;      /* Darken */
     sector->special = 0;    /* Nothing special here */
-}
-
 }

@@ -1,8 +1,6 @@
 #include "doom.h"
 #include "Textures.h"
 
-extern "C" {
-
 #define OPENMARK ((MAXSCREENHEIGHT-1)<<8)
 
 Byte *PlaneSource;          /* Pointer to image of floor/ceiling texture */
@@ -153,6 +151,4 @@ void DrawVisPlane(visplane_t *p)
             oldtop=newtop;
         }
     } while (++x<=stop);
-}
-
 }

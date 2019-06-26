@@ -2,8 +2,6 @@
 #include "MapData.h"
 #include "Textures.h"
 
-extern "C" {
-
 /**********************************
 
     Local structs
@@ -413,6 +411,4 @@ bool EV_DoDonut(line_t *line)
         } while (++i<s2->linecount);
     }
     return rtn;
-}
-
 }

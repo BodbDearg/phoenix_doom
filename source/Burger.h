@@ -22,10 +22,6 @@
 #endif
 */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef uint32_t    Word;       // DC: was 'unsigned int' in original 3DO source
 typedef uint8_t     Byte;       // DC: was 'unsigned char' in original 3DO source
 typedef uint32_t    LongWord;   // DC: was 'unsigned long' in original 3DO source
@@ -107,9 +103,5 @@ extern LongWord ReadTick(void);
 extern Word SystemState;
 extern Item VideoItem;          /* 3DO Specific! */
 extern Item VideoScreen;        /* 3DO Specific! */
-
-#ifdef __cplusplus
-};
-#endif
 
 #endif

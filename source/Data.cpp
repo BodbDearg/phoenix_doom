@@ -1,7 +1,5 @@
 #include "doom.h"
 
-extern "C" {
-
 /**********************************
 
     Machine independent data for DOOM!
@@ -52,5 +50,3 @@ Word ScreenSize;        /* Screen size to use */
 bool DemoRecording;     /* True if demo is being recorded */
 bool DemoPlayback;      /* True if demo is being played */
 bool DoWipe;            /* True if I should do the DOOM wipe */
-
-}

@@ -61,8 +61,6 @@ static void clearTextures(std::vector<Texture>& textures) noexcept {
     textures.clear();
 }
 
-extern "C" {
-
 void texturesInit() {
     // Read the header for all the texture info.
     // Note that we do NOT byte swap the original resources the may be cached and reused multiple times.
@@ -205,6 +203,4 @@ const Texture* getWallAnimTexture(const uint32_t num) {
 const Texture* getFlatAnimTexture(const uint32_t num) {
     const Texture* const pOrigTexture = getFlatTexture(num);
     return getFlatTexture(pOrigTexture->animTexNum);
-}
-
 }

@@ -328,8 +328,6 @@ static uint16_t* decodeCelImageData(
     return pImageOut;
 }
 
-extern "C" {
-
 uint16_t getCCBWidth(const CelControlBlock* const pCCB) {
     ASSERT(pCCB);
 
@@ -408,6 +406,4 @@ void decodeDoomCelSprite(
         ((imageCCBFlags & CCB_FLAG_PACKED) != 0),
         bIsColorIndexed
     );
-}
-
 }

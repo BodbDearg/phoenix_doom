@@ -3,8 +3,6 @@
 #include "Resources.h"
 #include <string.h>
 
-extern "C" {
-
 #define KVALX   232
 #define KVALY   70
 #define IVALX   232
@@ -331,6 +329,4 @@ void IN_Drawer(void)
     PrintNumber(SVALX,SVALY,secretvalue,PNPercent|PNRight);
     releaseResource(rINTERMIS);
     UpdateAndPageFlip(true);                /* Show the screen */
-}
-
 }

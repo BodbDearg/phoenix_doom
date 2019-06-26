@@ -18,10 +18,6 @@
 //          https://github.com/ewhac/gimp-plugin-3docel
 //--------------------------------------------------------------------------------------------------
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 //--------------------------------------------------------------------------------------------------
 // Definition for a 3DO Cel Control Block (CCB).
 // This is used for draw operations with the 3DO hardware, and within CEL files on disk.
@@ -65,7 +61,3 @@ void decodeDoomCelSprite(
     uint16_t* pImageWidthOut,
     uint16_t* pImageHeightOut
 );
-
-#ifdef __cplusplus
-}
-#endif

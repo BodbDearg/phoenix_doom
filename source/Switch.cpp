@@ -1,7 +1,5 @@
 #include "doom.h"
 
-extern "C" {
-
 /**********************************
 
     Local structures
@@ -374,6 +372,4 @@ bool P_UseSpecialLine(mobj_t *thing,line_t *line)
         break;
     }
     return true;
-}
-
 }

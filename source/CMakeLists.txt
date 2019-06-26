@@ -79,7 +79,7 @@ set(SOURCE_FILES
     "Teleport.cpp"
     "Textures.cpp"
     "Textures.h"
-    "threedo.c"
+    "ThreeDO.cpp"
     "Tick.cpp"
     "User.cpp"
 )

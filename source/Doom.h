@@ -7,10 +7,6 @@
 #include <burger.h>
 #include <SDL.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 // DC: FIXME: DO NOT HARDCODE LIKE THIS!
 #define SCREEN_WIDTH 320
 #define SCREEN_HEIGHT 200   // Note: 3DO vertical res was 240 but 240 px was unused (black border)
@@ -1123,7 +1119,3 @@ extern void DrawSpriteCenter(Word SpriteNum);
 extern void EnableHardwareClipping(void);
 extern void DisableHardwareClipping(void);
 extern void DrawColors(void);
-
-#ifdef __cplusplus
-}
-#endif

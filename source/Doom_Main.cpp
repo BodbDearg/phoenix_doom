@@ -1,8 +1,6 @@
 #include "doom.h"
 #include "Resources.h"
 
-extern "C" {
-
 // FIXME: DC: TEMP - REMOVE
 #include <time.h>
 
@@ -337,6 +335,4 @@ void D_DoomMain() {
         RunCredits();       // Show the credits page
         RunDemo(rDEMO2);    // Run the second demo
     }
-}
-
 }

@@ -1,4 +1,4 @@
-extern "C" void ThreeDOMain();
+void ThreeDOMain();
 
 int main(int argc, char* argv[]) noexcept {
     ThreeDOMain();

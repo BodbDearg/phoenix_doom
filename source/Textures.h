@@ -13,10 +13,6 @@ typedef struct Texture {
     void*       pData;
 } Texture;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 void texturesInit();
 void texturesShutdown();
 void texturesFreeAll();
@@ -46,7 +42,3 @@ void setFlatAnimTexNum(const uint32_t num, const uint32_t animTexNum);
 // They return the texture frame pointed to by 'animTexNum' within the specified texture.
 const Texture* getWallAnimTexture(const uint32_t num);
 const Texture* getFlatAnimTexture(const uint32_t num);
-
-#ifdef __cplusplus
-}
-#endif

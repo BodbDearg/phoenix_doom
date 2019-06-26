@@ -2,10 +2,6 @@
 
 #include "Resource.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 void resourcesInit();
 void resourcesShutdown();
     
@@ -17,7 +13,3 @@ void* loadResourceData(const uint32_t num);
 
 void freeResource(const uint32_t num);
 void releaseResource(const uint32_t num);
-        
-#ifdef __cplusplus
-}
-#endif

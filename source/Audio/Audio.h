@@ -6,10 +6,6 @@
 // Functionality for playing music and sound
 //--------------------------------------------------------------------------------------------------
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 // Init and shutdown
 void audioInit();
 void audioLoadAllSounds();
@@ -34,7 +30,3 @@ uint32_t audioGetMusicVolume();
 void audioSetMusicVolume(const uint32_t volume);
 uint32_t audioGetSoundVolume();
 void audioSetSoundVolume(const uint32_t volume);
-
-#ifdef __cplusplus
-}
-#endif

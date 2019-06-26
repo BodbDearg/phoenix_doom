@@ -1,8 +1,6 @@
 #include "doom.h"
 #include "MapData.h"
 
-extern "C" {
-
 /**********************************
 
 Local structures
@@ -311,6 +309,4 @@ void P_SpawnDoorRaiseIn5Mins(sector_t *sec)
     door->topheight = P_FindLowestCeilingSurrounding(sec)-(4<<FRACBITS);
     door->topwait = VDOORWAIT;
     door->topcountdown = (5*60*TICKSPERSEC);
-}
-
 }

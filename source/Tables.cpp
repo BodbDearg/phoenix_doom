@@ -1,7 +1,5 @@
 #include "doom.h"
 
-extern "C" {
-
 Fixed finetangent[4096] = {
 -170892070,-56963832,-34178252,-24413002,-18987858,-15535488,-13145381,-11392632,
 -10052290,-8994122,-8137507,-7429866,-6835444,-6329082,-5892562,-5512364,
@@ -2083,5 +2081,3 @@ Fixed lightmins[256];   /* Minimum light factors */
 Fixed lightsubs[256];   /* Light subtraction */
 Fixed lightcoefs[256];  /* Light coeffecient */
 Fixed planelightcoef[256];  /* Plane light coeffecient */
-
-}

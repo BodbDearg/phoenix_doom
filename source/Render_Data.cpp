@@ -6,8 +6,6 @@
 #include "Textures.h"
 #include <string.h>
 
-extern "C" {
-
 #define STRETCH(WIDTH,HEIGHT) (Fixed)((160.0/(float)WIDTH)*((float)HEIGHT/180.0)*2.2*65536)     
 
 static Word ScreenWidths[6] = {280,256,224,192,160,128};
@@ -149,6 +147,4 @@ void InitMathTables(void)
         lightcoefs[i] = (Range<<16)/(800-(Fixed)ScreenWidth);
         planelightcoef[i] = Range*(0x140000/(800-(Fixed)ScreenWidth));
     } while (++i<256);
-}
-
 }

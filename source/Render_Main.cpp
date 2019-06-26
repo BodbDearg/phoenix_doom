@@ -1,7 +1,5 @@
 #include "doom.h"
 
-extern "C" {
-
 /* Data */
 viswall_t viswalls[MAXWALLCMDS];        /* Visible wall array */
 viswall_t *lastwallcmd;                 /* Pointer to free wall entry */
@@ -77,6 +75,4 @@ void R_RenderPlayerView() {
     SegCommands();      // Draw all everything Z Sorted
     DrawColors();       // Draw color overlay if needed
     DrawWeapons();      // Draw the weapons on top of the screen
-}
-
 }

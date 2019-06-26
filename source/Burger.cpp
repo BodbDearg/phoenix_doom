@@ -6,8 +6,6 @@
 #include <ctime>
 #include <SDL.h>
 
-extern "C" {
-
 // DC: 3DO specific headers - remove
 #if 0
     #include <event.h>
@@ -510,6 +508,4 @@ Word SaveAFile(Byte *name,void *data,LongWord dataSize)
     #else
         return -1;
     #endif
-}
-
 }

@@ -1,7 +1,5 @@
 #include "doom.h"
 
-extern "C" {
-
 #define BONUSADD 16     /* Time adder for bonus color */
 #define BASETHRESHOLD (7*TICKSPERSEC/4) /* Number of tics to exclusivly follow a target */
 
@@ -704,6 +702,4 @@ void DamageMObj(mobj_t *target,mobj_t *inflictor,mobj_t *source,Word damage)
             SetMObjState(target,target->InfoPtr->seestate); /* Reset actor */
         }
     }
-}
-
 }

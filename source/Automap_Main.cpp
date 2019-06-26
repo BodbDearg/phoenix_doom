@@ -3,8 +3,6 @@
 #include "MathUtils.h"
 #include <string.h>
 
-extern "C" {
-
 #define STEPVALUE (2<<FRACBITS) /* Speed to move around in the map (Fixed) For non-follow mode */
 #define MAXSCALES 0x10000   /* Maximum scale factor (Largest) */
 #define MINSCALES 0x00800   /* Minimum scale factor (Smallest) */
@@ -510,6 +508,4 @@ Skip:
         p->automapy = OldPlayerY;
         MapScale = OldScale;            /* Restore scale factor as well... */
     }
-}
-
 }

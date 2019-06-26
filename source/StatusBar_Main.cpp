@@ -2,8 +2,6 @@
 #include "Resources.h"
 #include <string.h>
 
-extern "C" {
-
 /**********************************
 
     Local enums and data
@@ -303,6 +301,4 @@ void ST_Drawer (void)
         i = i+newface;  /* Get shape requested */
     }
     DrawMShape(FACEX,FACEY,GetShapeIndexPtr(Faces,i)); /* Dead man */
-}
-
 }

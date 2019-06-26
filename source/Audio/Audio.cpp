@@ -22,8 +22,6 @@ static uint32_t gMusicVolume = MAX_AUDIO_VOLUME;
 static uint32_t gSoundVolume = MAX_AUDIO_VOLUME;
 static uint32_t gPlayingMusicTrackNum = UINT32_MAX;
 
-extern "C" {
-
 void audioInit() {   
     if (!gAudioOutputDevice.init()) {
         FATAL_ERROR("Unable to initialize an audio output device!");
@@ -143,6 +141,4 @@ void audioSetSoundVolume(const uint32_t volume) {
     if (gSoundAudioSystem.isInitialized()) {
         gSoundAudioSystem.setMasterVolume((float) gSoundVolume / (float) MAX_AUDIO_VOLUME);
     }
-}
-
 }

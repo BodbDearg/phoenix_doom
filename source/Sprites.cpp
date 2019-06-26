@@ -114,10 +114,6 @@ static SpriteImageHeader readSpriteFrameHeader(const std::byte* const pData) noe
     return header;
 }
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 void spritesInit() {
     gSprites.resize(getNumSprites());
 }
@@ -287,7 +283,3 @@ void freeSprite(const uint32_t resourceNum) {
     Sprite& sprite = getSpriteForResourceNum(resourceNum);
     freeSprite(sprite);
 }
-
-#ifdef __cplusplus
-}
-#endif

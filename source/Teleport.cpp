@@ -1,8 +1,6 @@
 #include "doom.h"
 #include "MapData.h"
 
-extern "C" {
-
 /**********************************
 
     Kill all monsters around the given spot
@@ -102,6 +100,4 @@ bool EV_Teleport(line_t *line,mobj_t *thing)
         ++sec;      /* Next sector */
     } while (++i < gNumSectors);
     return false;   /* Didn't teleport */
-}
-
 }

@@ -2,8 +2,6 @@
 #include "MapData.h"
 #include "MathUtils.h"
 
-extern "C" {
-
 //===================
 //
 // IN
@@ -437,6 +435,4 @@ bool PA_CrossSubsector(const subsector_t* sub)
 
 
     return true;            // passed the subsector ok
-}
-
 }

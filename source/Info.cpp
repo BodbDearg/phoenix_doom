@@ -1,7 +1,5 @@
 #include "doom.h"
 
-extern "C" {
-
 //--------------------------------------------------------------------------------------------------
 // This data determines each state of the sprites in DOOM.
 //
@@ -2458,5 +2456,3 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         sfx_None
     }
 };
-
-}

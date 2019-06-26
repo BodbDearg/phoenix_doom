@@ -3,8 +3,6 @@
 #include "Resources.h"
 #include <string.h>
 
-extern "C" {
-
 #define CURSORX 45      /* X coord for skulls */
 #define SLIDERX 106     /* X coord for slider bars */
 #define SLIDESTEP 6     /* Adjustment for volume to screen coord */
@@ -290,6 +288,4 @@ void O_Drawer(void)
 
     releaseResource(rSLIDER);
     UpdateAndPageFlip(true);
-}
-
 }

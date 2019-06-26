@@ -1,8 +1,6 @@
 #include "doom.h"
 #include "MathUtils.h"
 
-extern "C" {
-
 #define MAXBOB (16<<FRACBITS)   /* 16 pixels of bobbing up and down */
 #define SLOWTURNTICS 10         /* Time before fast turning */
 
@@ -613,6 +611,4 @@ void P_PlayerThink(player_t *player)
             player->bonuscount=0;
         }
     }
-}
-
 }

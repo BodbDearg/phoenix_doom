@@ -10,7 +10,7 @@
 - Fake contrast on walls
 - Tweak light diminishing (longer falloff + darker)
 - Tweak wall column rendering, looks a bit 'fuzzy' right now.
-- Fix gameplay logic speed issues (imp fireball very slow etc., monsters slow to react)
+- Fix monsters very slow reaction (appears broken in 3DO original also?)
 - Fix weird chainsaw sound
 - Implement transparent demons
 - Higher resolution + fullscreen support

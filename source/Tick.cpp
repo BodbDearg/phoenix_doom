@@ -3,8 +3,6 @@
 #include "Mem.h"
 #include <string.h>
 
-extern "C" {
-
 typedef struct thinker_t {
     thinker_t *next,*prev;
     void (*function)(thinker_t*);
@@ -292,6 +290,4 @@ void P_Stop() {
     ST_Stop();              // Release the status bar memory
     ReleaseMapMemory();     // Release all the map's memory
     PurgeLineSpecials();    // Release the memory for line specials
-}
-
 }
