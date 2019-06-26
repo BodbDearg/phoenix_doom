@@ -2,6 +2,8 @@
 #include "MathUtils.h"
 #include <stdlib.h>
 
+extern "C" {
+
 /**********************************
 
     Return true if the target mobj_t is in melee
@@ -835,4 +837,6 @@ void L_SkullBash(mobj_t *mo,mobj_t *skullthing)
     mo->flags &= ~MF_SKULLFLY;      /* The skull isn't flying fast anymore */
     mo->momx = mo->momy = mo->momz = 0;     /* Zap the momentum */
     SetMObjState(mo,mo->InfoPtr->spawnstate);   /* Normal mode */
+}
+
 }

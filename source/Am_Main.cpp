@@ -3,6 +3,8 @@
 #include "MathUtils.h"
 #include <string.h>
 
+extern "C" {
+
 #define STEPVALUE (2<<FRACBITS) /* Speed to move around in the map (Fixed) For non-follow mode */
 #define MAXSCALES 0x10000   /* Maximum scale factor (Largest) */
 #define MINSCALES 0x00800   /* Minimum scale factor (Smallest) */
@@ -32,7 +34,7 @@ typedef enum {      /* Cheat enum */
     ch_maxcheats
 } cheat_e;
 
-static Byte CheatStrings[ch_maxcheats][9] = { /* order should mirror cheat_e */
+static char CheatStrings[ch_maxcheats][10] = { /* order should mirror cheat_e */
     {"SEEALLUAC"},  /* allmap cheat */
     {"SEERUBBLE"},  /* Things cheat */
     {"URABADASS"},  /* God mode */
@@ -44,9 +46,9 @@ static Byte CheatStrings[ch_maxcheats][9] = { /* order should mirror cheat_e */
 
 static Word codes[CHEATLETTERS] = {PadA,PadB,PadC,PadUp,PadDown,PadLeft,PadRight,
     PadLeftShift,PadRightShift};    /* Masks for the joypad */
-static Byte CheatLetter[CHEATLETTERS] = {"ABCUDLRSE"};
+static char CheatLetter[CHEATLETTERS + 1] = { "ABCUDLRSE" };
 
-static Byte CurrentCheat[9];    /* Current cheat string */
+static char CurrentCheat[9];    /* Current cheat string */
 
 /**********************************
 
@@ -103,7 +105,7 @@ void AM_Start(void)
 static cheat_e AM_CheckCheat(Word NewButtons)
 {
     Word c;
-    Byte *SourcePtr;
+    char *SourcePtr;
 
     /* Convert the button press to a cheat char */
 
@@ -113,7 +115,7 @@ static cheat_e AM_CheckCheat(Word NewButtons)
             
         /* Shift the entire string over 1 char */
             {
-                Byte *EndPtr;
+                char*EndPtr;
                 SourcePtr = CurrentCheat;
                 EndPtr = SourcePtr+8;
                 do {
@@ -508,4 +510,6 @@ Skip:
         p->automapy = OldPlayerY;
         MapScale = OldScale;            /* Restore scale factor as well... */
     }
+}
+
 }

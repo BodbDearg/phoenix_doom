@@ -1,6 +1,8 @@
 #include "doom.h"
 #include "MapData.h"
 
+extern "C" {
+
 /**********************************
 
 Local structures
@@ -129,7 +131,7 @@ bool EV_DoDoor(line_t *line,vldoor_e type)
 
         /* new door thinker */
         rtn = true;
-        door = (vldoor_t *)AddThinker(T_VerticalDoor,sizeof(vldoor_t));
+        door = (vldoor_t *)AddThinker((ThinkerFunc) T_VerticalDoor,sizeof(vldoor_t));
         sec->specialdata = door;
         door->sector = sec;
         door->type = type;              /* Save the type */
@@ -246,7 +248,7 @@ void EV_VerticalDoor(line_t *line,mobj_t *thing)
     }
 
     /* new door thinker */
-    door = (vldoor_t *)AddThinker(T_VerticalDoor,sizeof(vldoor_t));
+    door = (vldoor_t *)AddThinker((ThinkerFunc) T_VerticalDoor,sizeof(vldoor_t));
     sec->specialdata = door;
     door->sector = sec;
     door->direction = 1;        /* Going up! */
@@ -280,7 +282,7 @@ void P_SpawnDoorCloseIn30 (sector_t *sec)
 {
     vldoor_t *door;
 
-    door = (vldoor_t *)AddThinker(T_VerticalDoor,sizeof(vldoor_t));
+    door = (vldoor_t *)AddThinker((ThinkerFunc) T_VerticalDoor,sizeof(vldoor_t));
     sec->specialdata = door;
     sec->special = 0;
     door->sector = sec;
@@ -299,7 +301,7 @@ void P_SpawnDoorRaiseIn5Mins(sector_t *sec)
 {
     vldoor_t *door;
 
-    door = (vldoor_t *)AddThinker(T_VerticalDoor,sizeof(vldoor_t));
+    door = (vldoor_t *)AddThinker((ThinkerFunc) T_VerticalDoor,sizeof(vldoor_t));
     sec->specialdata = door;
     sec->special = 0;
     door->sector = sec;
@@ -309,4 +311,6 @@ void P_SpawnDoorRaiseIn5Mins(sector_t *sec)
     door->topheight = P_FindLowestCeilingSurrounding(sec)-(4<<FRACBITS);
     door->topwait = VDOORWAIT;
     door->topcountdown = (5*60*TICKSPERSEC);
+}
+
 }

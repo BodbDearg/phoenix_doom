@@ -2,6 +2,8 @@
 #include "MapData.h"
 #include "Textures.h"
 
+extern "C" {
+
 /**********************************
 
     Local structs
@@ -168,7 +170,7 @@ bool EV_DoFloor(line_t *line,floor_e floortype)
 
         /* New floor thinker */
         rtn = true;                     /* I created a floor */
-        floor = (floormove_t *)AddThinker(T_MoveFloor,sizeof(floormove_t));
+        floor = (floormove_t*) AddThinker((ThinkerFunc) T_MoveFloor, sizeof(floormove_t));
         sec->specialdata = floor;       /* Mark the sector */
         floor->type = floortype;        /* Save the type of floor */
         floor->crush = false;           /* Assume it can't crush */
@@ -305,7 +307,7 @@ bool EV_BuildStairs(line_t *line)
 
         rtn = true;
         height = sec->floorheight + (8<<FRACBITS);  /* Go up 8 pixels */
-        floor = (floormove_t *)AddThinker(T_MoveFloor,sizeof(floormove_t));
+        floor = (floormove_t *)AddThinker((ThinkerFunc) T_MoveFloor,sizeof(floormove_t));
         sec->specialdata = floor;           /* Attach the record */
         floor->direction = 1;               /* Move up */
         floor->sector = sec;                /* Set the proper sector */
@@ -337,7 +339,7 @@ bool EV_BuildStairs(line_t *line)
                 }
                 
                 sec = tsec;                         /* I continue from here */
-                floor = (floormove_t *)AddThinker(T_MoveFloor,sizeof(floormove_t));
+                floor = (floormove_t *)AddThinker((ThinkerFunc) T_MoveFloor,sizeof(floormove_t));
                 sec->specialdata = floor;           /* Attach this floor */
                 floor->direction = 1;               /* Go up */
                 floor->sector = sec;                /* Set the sector I will affect */
@@ -387,7 +389,7 @@ bool EV_DoDonut(line_t *line)
             s3 = s2->lines[i]->backsector;  /* Get the back sector */
 
             /* Spawn rising slime */
-            floor = (floormove_t *)AddThinker(T_MoveFloor,sizeof(floormove_t));
+            floor = (floormove_t *)AddThinker((ThinkerFunc) T_MoveFloor,sizeof(floormove_t));
             s2->specialdata = floor;
             floor->type = donutRaise;
             floor->crush = false;
@@ -399,7 +401,7 @@ bool EV_DoDonut(line_t *line)
             floor->floordestheight = s3->floorheight;
 
             /* Spawn lowering donut-hole */
-            floor = (floormove_t *)AddThinker(T_MoveFloor,sizeof(floormove_t));
+            floor = (floormove_t *)AddThinker((ThinkerFunc) T_MoveFloor,sizeof(floormove_t));
             s1->specialdata = floor;
             floor->type = lowerFloor;
             floor->crush = false;
@@ -411,4 +413,6 @@ bool EV_DoDonut(line_t *line)
         } while (++i<s2->linecount);
     }
     return rtn;
+}
+
 }

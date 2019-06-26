@@ -1,6 +1,8 @@
 #include "doom.h"
 #include "MapData.h"
 
+extern "C" {
+
 /**********************************
 
     Local structures for moving ceilings
@@ -152,7 +154,7 @@ static void ActivateInStasisCeiling(Word tag)
         do {
             if (CeilingPtr->tag == tag && !CeilingPtr->direction) { /* Match? */
                 CeilingPtr->direction = CeilingPtr->olddirection;   /* Restart the platform */
-                ChangeThinkCode(CeilingPtr,T_MoveCeiling);  /* Reset code */
+                ChangeThinkCode(CeilingPtr,(ThinkerFunc) T_MoveCeiling);  /* Reset code */
             }
             CeilingPtr = CeilingPtr->next;  /* Get the next link */
         } while (CeilingPtr);
@@ -195,7 +197,7 @@ bool EV_DoCeiling(line_t *line, ceiling_e  type)
 
         /* New ceiling thinker */
         rtn = true;
-        ceiling = (ceiling_t *)AddThinker(T_MoveCeiling,sizeof(ceiling_t));
+        ceiling = (ceiling_t *)AddThinker((ThinkerFunc) T_MoveCeiling,sizeof(ceiling_t));
         sec->specialdata = ceiling;     /* Pass the pointer */
         ceiling->sector = sec;          /* Save the sector ptr */
         ceiling->tag = sec->tag;        /* Set the tag number */
@@ -268,4 +270,6 @@ bool EV_CeilingCrushStop(line_t *line)
 void ResetCeilings(void)
 {
     MainCeilingPtr = 0;     /* Discard the links */
+}
+
 }

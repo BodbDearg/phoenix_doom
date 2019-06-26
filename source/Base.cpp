@@ -1,6 +1,8 @@
 #include "doom.h"
 #include "MapData.h"
 
+extern "C" {
+
 static mobj_t *CheckThingMo;        /* Used for PB_CheckThing */
 static Fixed testx, testy;
 static Fixed testfloorz, testceilingz, testdropoffz;
@@ -552,3 +554,4 @@ void P_RunMobjBase(void)
     }
 }
 
+}

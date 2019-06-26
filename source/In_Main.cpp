@@ -3,6 +3,8 @@
 #include "Resources.h"
 #include <string.h>
 
+extern "C" {
+
 #define KVALX   232
 #define KVALY   70
 #define IVALX   232
@@ -112,9 +114,9 @@ void PrintBigFont(Word x,Word y,Byte *string)
             ucharx = loadResourceData(rCHARSET);    /* Make sure I have the text font */
             Current = ucharx;
         }
-        Current = GetShapeIndexPtr(Current,c);  /* Get the shape pointer */
-        DrawMShape(x, y2, Current);       /* Draw the char */
-        x+=getCCBWidth(Current)+1;      /* Get the width to tab */
+        const CelControlBlock* const pShape = GetShapeIndexPtr(Current,c);  /* Get the shape pointer */
+        DrawMShape(x, y2, pShape);      /* Draw the char */
+        x+=getCCBWidth(pShape)+1;       /* Get the width to tab */
     } while ((c = string[0])!=0);       /* Next index */
     
     if (ucharx) {                       /* Did I load the ASCII font? */
@@ -169,8 +171,8 @@ Word GetBigStringWidth(Byte *string)
             ucharx = loadResourceData(rCHARSET);    /* Load it in */
             Current = ucharx;                       /* Set the pointer */
         }
-        Current = GetShapeIndexPtr(Current,c);  /* Get the shape pointer */
-        Width+=getCCBWidth(Current)+1;          /* Get the width to tab */
+        const CelControlBlock* const pShape = GetShapeIndexPtr(Current,c);  /* Get the shape pointer */
+        Width+=getCCBWidth(pShape)+1;          /* Get the width to tab */
     } while ((c = string[0])!=0);       /* Next index */
     if (ucharx) {                       /* Did I load in the ASCII font? */
         releaseResource(rCHARSET);      /* Release the text font */
@@ -320,13 +322,15 @@ void IN_Drawer(void)
         PrintBigFontCenter(160,182,mapnames[nextmap-1]);
     }
     
-    DrawMShape(71,KVALY,GetShapeIndexPtr(IntermisShapes,KillShape));    /* Draw the shapes */
-    DrawMShape(65,IVALY,GetShapeIndexPtr(IntermisShapes,ItemsShape));
-    DrawMShape(27,SVALY,GetShapeIndexPtr(IntermisShapes,SecretsShape));
+    DrawMShape(71,KVALY, GetShapeIndexPtr(IntermisShapes,KillShape));    /* Draw the shapes */
+    DrawMShape(65,IVALY, GetShapeIndexPtr(IntermisShapes,ItemsShape));
+    DrawMShape(27,SVALY, GetShapeIndexPtr(IntermisShapes,SecretsShape));
 
     PrintNumber(KVALX,KVALY,killvalue,PNPercent|PNRight);   /* Print the numbers */
     PrintNumber(IVALX,IVALY,itemvalue,PNPercent|PNRight);
     PrintNumber(SVALX,SVALY,secretvalue,PNPercent|PNRight);
     releaseResource(rINTERMIS);
     UpdateAndPageFlip(true);                /* Show the screen */
+}
+
 }

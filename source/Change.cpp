@@ -1,5 +1,7 @@
 #include "doom.h"
 
+extern "C" {
+
 /**********************************
 
         SECTOR HEIGHT CHANGING
@@ -134,4 +136,6 @@ Word ChangeSector(sector_t *sector,Word crunch)
         } while (++y<y2);
     } while (++x<x2);
     return nofit;       /* Return flag */
+}
+
 }

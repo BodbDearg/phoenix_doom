@@ -1,6 +1,8 @@
 #include "doom.h"
 #include <string.h>
 
+extern "C" {
+
 #define CASTCOUNT 8
 
 typedef enum {
@@ -281,4 +283,6 @@ void F_Drawer(void)
         DrawSpriteCenter(CastState->SpriteFrame);       /* Draw the sprite */
     }
     UpdateAndPageFlip(true);        /* Show the frame */
+}
+
 }

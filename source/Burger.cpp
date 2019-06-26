@@ -120,11 +120,11 @@ void DrawRezShape(Word x, Word y, Word RezNum) {
 
 **********************************/
 
-const void* GetShapeIndexPtr(const void* ShapeArrayPtr, Word Index)
+const struct CelControlBlock* GetShapeIndexPtr(const void* ShapeArrayPtr, Word Index)
 {
     const uint32_t* const pShapeArrayOffsets = (const uint32_t*) ShapeArrayPtr;
     const uint32_t shapeArrayOffset = byteSwappedU32(pShapeArrayOffsets[Index]);
-    return &((Byte*) ShapeArrayPtr)[shapeArrayOffset];
+    return (const CelControlBlock*) &((Byte*) ShapeArrayPtr)[shapeArrayOffset];
 }
 
 
