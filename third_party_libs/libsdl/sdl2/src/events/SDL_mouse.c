@@ -29,6 +29,12 @@
 #include "SDL_events_c.h"
 #include "../video/SDL_sysvideo.h"
 
+// DC: incorporating fix http://hg.libsdl.org/SDL/rev/d188272453ce until SDL is updated with it.
+// Get undefined symbol errors for 'GetDoubleClickTime()' otherwise...
+#ifdef __WIN32__
+#include "../core/windows/SDL_windows.h"    // For GetDoubleClickTime()
+#endif
+
 /* #define DEBUG_MOUSE */
 
 /* The mouse state */
