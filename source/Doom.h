@@ -420,7 +420,7 @@ typedef struct mobj_t {
     Word flags;     /* State flags for object */
     Word MObjHealth;    /* Object's health */
     Word movedir;   /* 0-7 */
-    Word movecount; /* when 0, select a new dir */
+    int32_t movecount; /* when < 0, select a new dir */
     struct mobj_t *target;  /* thing being chased/attacked (or NULL) */
                             /* also the originator for missiles */
     Word reactiontime;  /* if non 0, don't attack yet */

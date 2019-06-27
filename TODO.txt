@@ -1,6 +1,7 @@
 - Screen tint fx (pain etc.)
 - Automap drawing
 - Screen wipes
+- Sprites need light diminishing
 - Finale drawing
 - Cache raw shape/cels that are being drawn
     - Need shape + animated shape manager
@@ -10,7 +11,7 @@
 - Fake contrast on walls
 - Tweak light diminishing (longer falloff + darker)
 - Tweak wall column rendering, looks a bit 'fuzzy' right now.
-- Fix monsters very slow reaction (appears broken in 3DO original also?)
+- Fix imp super fast fireballs
 - Fix weird chainsaw sound
 - Implement transparent demons
 - Higher resolution + fullscreen support

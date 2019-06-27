@@ -414,7 +414,7 @@ void A_Chase(mobj_t* const pActor) noexcept {
     }
 
     // Check for missile attack
-    if ((gameskill == sk_nightmare || !pActor->movecount) &&
+    if ((gameskill == sk_nightmare || pActor->movecount == 0) &&
         pInfo->missilestate &&
         CheckMissileRange(pActor)
     ) {
@@ -426,11 +426,9 @@ void A_Chase(mobj_t* const pActor) noexcept {
     }
 
     // Chase towards player and move the critter
-    if (pActor->movecount > 0) {
-        --pActor->movecount;
-    }
+    --pActor->movecount;
 
-    if ((pActor->movecount == 0) || !P_Move(*pActor)) {
+    if ((pActor->movecount < 0) || !P_Move(*pActor)) {
         P_NewChaseDir(*pActor);
     }
 
