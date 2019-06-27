@@ -325,9 +325,8 @@ static bool P_LookForPlayers(mobj_t& actor, bool bAllAround) noexcept {
         }
     }
 
-    // FIXME: DC - is this correct??
-    actor.threshold = (TICKSPERSEC * 4 / 4);    // Attack for 4 seconds
-    return true;                                // I have a target!
+    actor.threshold = TICKSPERSEC * 4;  // Follow for 4 seconds
+    return true;                        // I have a target!
 }
 
 //--------------------------------------------------------------------------------------------------
