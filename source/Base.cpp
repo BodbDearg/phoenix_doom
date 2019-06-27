@@ -1,4 +1,5 @@
-#include "doom.h"
+#include "Doom.h"
+#include "Enemy.h"
 #include "MapData.h"
 
 static mobj_t *CheckThingMo;        /* Used for PB_CheckThing */

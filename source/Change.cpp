@@ -1,4 +1,5 @@
 #include "doom.h"
+#include "Random.h"
 
 /**********************************
 
@@ -16,7 +17,7 @@
 **********************************/
 
 static Word crushchange;        /* If true, then crush bodies to blood */
-static Word nofit;          /* Set to true if something is blocking */
+static Word nofit;              /* Set to true if something is blocking */
 
 /**********************************
 
@@ -96,8 +97,8 @@ static Word PIT_ChangeSector(mobj_t *thing)
         DamageMObj(thing,0,0,10);       /* Take some damage */
         /* spray blood in a random direction */
         mo = SpawnMObj(thing->x,thing->y,thing->z + thing->height/2,&mobjinfo[MT_BLOOD]);
-        mo->momx = (255-GetRandom(511))<<(FRACBITS-4);  /* Have it jump out */
-        mo->momy = (255-GetRandom(511))<<(FRACBITS-4);
+        mo->momx = (255 - (Fixed) Random::nextU32(511)) << (FRACBITS - 4);  /* Have it jump out */
+        mo->momy = (255 - (Fixed) Random::nextU32(511)) << (FRACBITS - 4);
     }
     return true;        /* keep checking (crush other things) */
 }

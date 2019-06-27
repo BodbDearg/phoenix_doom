@@ -1,5 +1,6 @@
-#include "doom.h"
+#include "Doom.h"
 #include "MapData.h"
+#include "Random.h"
 
 typedef struct {        /* Struct for light flashers */
     sector_t *sector;   /* Sector to affect */
@@ -42,10 +43,10 @@ static void T_LightFlash(lightflash_t *flash)
 
     if (flash->sector->lightlevel == flash->maxlight) { /* Bright already? */
         flash->sector->lightlevel = flash->minlight;    /* Go dim */
-        flash->count = GetRandom(flash->mintime)+1; /* Time effect */
+        flash->count = Random::nextU32(flash->mintime)+1; /* Time effect */
     } else {
         flash->sector->lightlevel = flash->maxlight;    /* Set bright */
-        flash->count = GetRandom(flash->maxtime)+1; /* Time */
+        flash->count = Random::nextU32(flash->maxtime)+1; /* Time */
     }
 }
 
@@ -67,7 +68,7 @@ void P_SpawnLightFlash (sector_t *sector)
     flash->minlight = P_FindMinSurroundingLight(sector,sector->lightlevel);
     flash->maxtime = (TICKSPERSEC*4);       /* Time to hold light */
     flash->mintime = (TICKSPERSEC/2);
-    flash->count = GetRandom(flash->maxtime)+1; /* Init timer */
+    flash->count = Random::nextU32(flash->maxtime)+1; /* Init timer */
 }
 
 /**********************************
@@ -114,7 +115,7 @@ void P_SpawnStrobeFlash(sector_t *sector, Word fastOrSlow, bool inSync)
     sector->special = 0;    /* Nothing special about it during gameplay */
 
     if (!inSync) {
-        flash->count = GetRandom(7)+1;  /* Start at a random time */
+        flash->count = Random::nextU32(7)+1;  /* Start at a random time */
     } else {
         flash->count = 1;       /* Start at a fixed time */
     }

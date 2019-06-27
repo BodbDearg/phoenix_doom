@@ -1,8 +1,9 @@
-#include "doom.h"
+#include "Doom.h"
 #include "Mem.h"
+#include "Random.h"
 #include "Resources.h"
 #include "Textures.h"
-#include <string.h>
+#include <cstring>
 
 static void loadSkyTexture() {
     const uint32_t skyTexNum = getCurrentSkyTexNum();
@@ -113,7 +114,7 @@ void G_SecretExitLevel(void)
 
 void G_InitNew(skill_t skill,Word map)
 {
-    Randomize();        /* Reset the random number generator */
+    Random::init();        /* Reset the random number generator */
 
     gamemap = map;
     gameskill = skill;

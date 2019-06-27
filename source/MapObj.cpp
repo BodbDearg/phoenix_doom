@@ -1,7 +1,7 @@
-#include "doom.h"
-
-#include <string.h>
+#include "Doom.h"
 #include "Mem.h"
+#include "Random.h"
+#include <cstring>
 
 typedef struct {        /* Respawn think logic */
     Fixed x,y;          /* X and Y to spawn at */
@@ -120,7 +120,7 @@ Word SetMObjState(mobj_t *mobj,state_t *StatePtr)
 void Sub1RandomTick(mobj_t *mobj)
 {
     Word Delay;
-    Delay = GetRandom(3);   /* Getthe random adjustment */
+    Delay = Random::nextU32(3);   /* Getthe random adjustment */
     if (mobj->tics>=Delay) {    /* Too large? */
         mobj->tics-=Delay;  /* Set the new time */
     } else {
@@ -310,7 +310,7 @@ void SpawnMapThing(mapthing_t *mthing)
             mobj = SpawnMObj(mthing->x,mthing->y,z,InfoPtr);    /* Create the object */
             if (mobj->tics) {       /* Randomize the initial tic count */
                 if (mobj->tics!=-1) {
-                    mobj->tics = GetRandom(mobj->tics)+1;
+                    mobj->tics = Random::nextU32(mobj->tics)+1;
                 }
             }
             if (mobj->flags & MF_COUNTKILL) {       /* Must be killed? */
@@ -340,7 +340,7 @@ void P_SpawnPuff(Fixed x,Fixed y,Fixed z)
 {
     mobj_t *th;
 
-    z += (255-GetRandom(511))<<10;      /* Randomize the z */
+    z += (255-Random::nextU32(511))<<10;      /* Randomize the z */
     th = SpawnMObj(x,y,z,&mobjinfo[MT_PUFF]);       /* Create a puff */
     th->momz = FRACUNIT;    /* Allow it to move up per frame */
     Sub1RandomTick(th);
@@ -362,7 +362,7 @@ void P_SpawnBlood(Fixed x,Fixed y,Fixed z,Word damage)
 {
     mobj_t *th;
 
-    z += (255-GetRandom(511))<<10;  /* Move a little for the Z */
+    z += (255-Random::nextU32(511))<<10;  /* Move a little for the Z */
     th = SpawnMObj(x,y,z,&mobjinfo[MT_BLOOD]);  /* Create the blood (Hamburger) */
     th->momz = FRACUNIT*2;          /* Allow some ascending motion */
     Sub1RandomTick(th);
@@ -414,7 +414,7 @@ void P_SpawnMissile(mobj_t *source,mobj_t *dest,mobjinfo_t *InfoPtr)
     th->target = source;        /* Who launched it? */
     an = PointToAngle(source->x,source->y,dest->x,dest->y); /* Angle of travel */
     if (dest->flags & MF_SHADOW) {      /* Hard to see, miss on purpose! */
-        an += (255-GetRandom(511))<<20;
+        an += (255-Random::nextU32(511))<<20;
     }
     th->angle = an;
     an >>= ANGLETOFINESHIFT;        /* Convert to internal table record */

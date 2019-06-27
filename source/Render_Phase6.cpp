@@ -85,8 +85,8 @@ static void DrawTexture(drawtex_t *tex)
 
 static void DrawSeg(viswall_t *segl)
 {
-    register Word x;        // Current x coord
-    register int scale;
+    Word x;        // Current x coord
+    int scale;
     int _scalefrac;
     Word ActionBits;
     ActionBits = segl->WallActions;
@@ -241,10 +241,10 @@ static visplane_t* FindPlane(visplane_t *check, Fixed height, uint32_t PicHandle
 
 static void SegLoop(viswall_t *segl)
 {
-    register Word x;        /* Current x coord */
-    register int scale;
-    register int _scalefrac;
-    register Word ActionBits;
+    Word x;        /* Current x coord */
+    int scale;
+    int _scalefrac;
+    Word ActionBits;
     visplane_t *FloorPlane,*CeilingPlane;
     int ceilingclipy,floorclipy;
     

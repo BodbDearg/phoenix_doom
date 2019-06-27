@@ -68,10 +68,10 @@ static void MapPlane(Word x2,Word y)
 
 void DrawVisPlane(visplane_t *p)
 {
-    register Word x;
+    Word x;
     Word stop;
     Word oldtop;
-    register Word *open;
+    Word *open;
 
     const Texture* const pTex = getFlatAnimTexture((Word) p->PicHandle);
     PlaneSource = (Byte*) pTex->pData;
@@ -107,7 +107,7 @@ void DrawVisPlane(visplane_t *p)
             /* For lines on the top, check if the entry is going down */
             
             if (PrevTopY < NewTopY && PrevTopY<=PrevBottomY) {  /* Valid? */
-                register Word Count;
+                Word Count;
                     
                 Count = PrevBottomY+1;  /* Convert to < */
                 if (NewTopY<Count) {    /* Use the lower */
@@ -118,7 +118,7 @@ void DrawVisPlane(visplane_t *p)
                 } while (++PrevTopY<Count); /* Keep counting */
             }
             if (NewTopY < PrevTopY && NewTopY<=NewBottomY) {
-                register Word Count;
+                Word Count;
                 Count = NewBottomY+1;
                 if (PrevTopY<Count) {
                     Count = PrevTopY;
@@ -129,7 +129,7 @@ void DrawVisPlane(visplane_t *p)
             }
         
             if (PrevBottomY > NewBottomY && PrevBottomY>=PrevTopY) {
-                register int Count;
+                int Count;
                 Count = PrevTopY-1;
                 if (Count<(int)NewBottomY) {
                     Count = NewBottomY;
@@ -139,7 +139,7 @@ void DrawVisPlane(visplane_t *p)
                 } while ((int)--PrevBottomY>Count);
             }
             if (NewBottomY > PrevBottomY && NewBottomY>=NewTopY) {
-                register int Count;
+                int Count;
                 Count = NewTopY-1;
                 if (Count<(int)PrevBottomY) {
                     Count = PrevBottomY;

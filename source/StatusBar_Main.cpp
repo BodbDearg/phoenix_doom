@@ -1,4 +1,5 @@
-#include "doom.h"
+#include "Doom.h"
+#include "Random.h"
 #include "Resources.h"
 #include <string.h>
 
@@ -155,8 +156,8 @@ void ST_Ticker(void)
 
     facetics -= ElapsedTime;        /* Count down */
     if (facetics & 0x8000) {        /* Negative? */
-        facetics = GetRandom(15)*4;     /* New random value */
-        newface = GetRandom(2);     /* Which face 0-2 */
+        facetics = Random::nextU32(15)*4;     /* New random value */
+        newface = Random::nextU32(2);     /* Which face 0-2 */
     }
 
     /* Draw special face? */

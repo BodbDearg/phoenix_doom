@@ -1,4 +1,5 @@
-#include "doom.h"
+#include "Doom.h"
+#include "Enemy.h"
 
 //--------------------------------------------------------------------------------------------------
 // This data determines each state of the sprites in DOOM.

@@ -1,7 +1,8 @@
 #include "Audio/Audio.h"
-#include "doom.h"
+#include "Doom.h"
 #include "Mem.h"
-#include <string.h>
+#include "Random.h"
+#include <cstring>
 
 typedef struct thinker_t {
     thinker_t *next,*prev;
@@ -277,7 +278,7 @@ void P_Start() {
     AM_Start();         // Start the automap system
     ST_Start();         // Init the status bar this level
     G_DoLoadLevel();    // Load a level into memory
-    Randomize();        // Reset the random number generator
+    Random::init();     // Reset the random number generator
 
     S_StartSong(musicnum_t(Song_e1m1 - 1 + gamemap));
 }

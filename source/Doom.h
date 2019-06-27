@@ -169,8 +169,9 @@ typedef enum {      /* Faces for our hero */
     NUMSPCLFACES
 } spclface_e;
 
-typedef enum {      /* Basic direction list */
-    DI_EAST,        /* East etc... */
+// Basic direction list
+enum dirtype_t : uint32_t {      
+    DI_EAST,            // East etc...
     DI_NORTHEAST,
     DI_NORTH,
     DI_NORTHWEST,
@@ -178,9 +179,8 @@ typedef enum {      /* Basic direction list */
     DI_SOUTHWEST,
     DI_SOUTH,
     DI_SOUTHEAST,
-    DI_NODIR,       /* No direction at all */
-    NUMDIRS
-} dirtype_t;
+    DI_NODIR            // No direction at all
+};
 
 typedef enum {      /* Enums for floor types */
     lowerFloor,         /* lower floor to highest surrounding floor */
@@ -197,36 +197,41 @@ typedef enum {      /* Enums for floor types */
     donutRaise
 } floor_e;
 
-typedef enum {      /* Enums for moving sector results */
+// Enums for moving sector results
+typedef enum {
     moveok,
     crushed,
     pastdest
 } result_e;
 
-typedef enum {          /* Enums for ceiling types */
+// Enums for ceiling types
+enum ceiling_e {          
     lowerToFloor,
     raiseToHighest,
     lowerAndCrush,
     crushAndRaise,
     fastCrushAndRaise
-} ceiling_e;
+};
 
-typedef enum {          /* Enums for platform types */
+// Enums for platform types
+enum plattype_e {
     perpetualRaise,
     downWaitUpStay,
     raiseAndChange,
     raiseToNearestAndChange
-} plattype_e;
+};
 
-typedef enum {      /* Enums for door types */
+// Enums for door types
+enum vldoor_e {      
     normaldoor,
     close30ThenOpen,
     close,
     open,
     raiseIn5Mins
-} vldoor_e;
+};
 
-enum {          /* bbox coordinates */
+// bbox coordinates
+enum {
     BOXTOP,
     BOXBOTTOM,
     BOXLEFT,
@@ -727,33 +732,7 @@ extern void A_BFGsound(player_t *player,pspdef_t *psp);
 extern void SetupPSprites(player_t *curplayer);
 extern void MovePSprites(player_t *curplayer);
 
-/* Enemy.c */
-
-extern void A_Look(mobj_t *actor);
-extern void A_Chase(mobj_t *actor);
-extern void A_FaceTarget(mobj_t *actor);
-extern void A_PosAttack(mobj_t *actor);
-extern void A_SPosAttack(mobj_t *actor);
-extern void A_SpidRefire(mobj_t *actor);
-extern void A_TroopAttack(mobj_t *actor);
-extern void A_SargAttack(mobj_t *actor);
-extern void A_HeadAttack(mobj_t *actor);
-extern void A_CyberAttack(mobj_t *actor);
-extern void A_BruisAttack(mobj_t *actor);
-extern void A_SkullAttack(mobj_t *actor);
-extern void A_Scream(mobj_t *actor);
-extern void A_XScream(mobj_t *actor);
-extern void A_Pain(mobj_t *actor);
-extern void A_Fall(mobj_t *actor);
-extern void A_Explode(mobj_t *thingy);
-extern void A_BossDeath(mobj_t *mo);
-extern void A_Hoof(mobj_t *mo);
-extern void A_Metal(mobj_t *mo);
-extern void L_MissileHit(mobj_t *mo,mobj_t *missilething);
-extern void L_SkullBash(mobj_t *mo,mobj_t *skullthing);
-
 /* In RMain.c */
-
 extern viswall_t viswalls[MAXWALLCMDS];         /* Visible wall array */
 extern viswall_t *lastwallcmd;                  /* Pointer to free wall entry */
 extern visplane_t visplanes[MAXVISPLANES];      /* Visible floor array */

@@ -90,8 +90,6 @@ extern Word LastJoyButtons[4];      /* Save the previous joypad bits */
 extern Word ReadJoyButtons(Word Which);
 
 /* Misc routines */
-extern void Randomize(void);
-extern Word GetRandom(Word MaxVal);
 extern void LongWordToAscii(LongWord Input,Byte *AsciiPtr);
 extern Word SaveAFile(Byte *FileName,void *data,LongWord Length);
 

@@ -1,4 +1,5 @@
-#include "doom.h"
+#include "Doom.h"
+#include "Random.h"
 
 #define BONUSADD 16     /* Time adder for bonus color */
 #define BASETHRESHOLD (7*TICKSPERSEC/4) /* Number of tics to exclusivly follow a target */
@@ -624,7 +625,7 @@ void DamageMObj(mobj_t *target,mobj_t *inflictor,mobj_t *source,Word damage)
 
         /* make fall forwards sometimes */
         if (damage<40 && damage>target->MObjHealth &&
-             ((target->z - inflictor->z) > 64*FRACUNIT) && GetRandom(1) ) {
+             ((target->z - inflictor->z) > 64*FRACUNIT) && Random::nextBool() ) {
             ang += ANG180;      /* Do a 180 degree turn */
             thrust *= 4;        /* Move a little faster */
         }
@@ -685,7 +686,7 @@ void DamageMObj(mobj_t *target,mobj_t *inflictor,mobj_t *source,Word damage)
     }
     target->MObjHealth -= damage;   /* Remove damage from target */
 
-    if ( (GetRandom(255)<target->InfoPtr->painchance) &&    /* Should it react in pain? */
+    if ( (Random::nextU32(255)<target->InfoPtr->painchance) &&    /* Should it react in pain? */
         !(target->flags&MF_SKULLFLY) ) {
         target->flags |= MF_JUSTHIT;        /* fight back! */
         SetMObjState(target,target->InfoPtr->painstate);

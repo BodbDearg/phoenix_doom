@@ -1,10 +1,11 @@
-#include "doom.h"
+#include "Doom.h"
 #include "Endian.h"
 #include "MapData.h"
 #include "Mem.h"
+#include "Random.h"
 #include "Resources.h"
 #include "Textures.h"
-#include <string.h>
+#include <cstring>
 
 static line_t **LineArrayBuffer;    /* Pointer to array of line_t pointers used by sectors */
 
@@ -268,7 +269,7 @@ static void PreloadWalls() {
 // Load and prepare the game level
 //---------------------------------------------------------------------------------------------------------------------
 void SetupLevel(Word map) {
-    Randomize();            // Reset the random number generator
+    Random::init();         // Reset the random number generator
     LoadingPlaque();        // Display "Loading"
 
     // DC: TODO: Remove

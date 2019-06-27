@@ -1,8 +1,9 @@
-#include "doom.h"
+#include "Doom.h"
 #include "MapData.h"
 #include "Mem.h"
+#include "Random.h"
 #include "Textures.h"
-#include <string.h>
+#include <cstring>
 
 Word NumFlatAnims;      /* Number of flat anims */
 anim_t FlatAnims[] = {
@@ -587,7 +588,7 @@ void PlayerInSpecialSector(player_t *player,sector_t *sector)
     case 16:    /* SUPER HELLSLIME DAMAGE */
     case 4:     /* STROBE HURT */
         Damage = 20;
-        if (GetRandom(255)<5) {     /* Chance it didn't hurt */
+        if (Random::nextU32(255)<5) {     /* Chance it didn't hurt */
             Damage|=0x8000;     /* Suit didn't help! */
         }
         break;

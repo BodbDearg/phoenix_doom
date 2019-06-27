@@ -1,5 +1,6 @@
-#include "doom.h"
+#include "Doom.h"
 #include "MapData.h"
+#include "Random.h"
 
 /**********************************
 
@@ -243,9 +244,9 @@ RaisePart2:
             if (plat->high < sec->floorheight) {
                 plat->high = sec->floorheight;  /* Set highest mark */
             }
-            plat->wait = PLATWAIT;                  /* Delay when it hits bottom */
-            plat->status = (plat_e) GetRandom(1);   /* Up or down */
-            S_StartSound(&sec->SoundX,sfx_pstart);  /* Start */
+            plat->wait = PLATWAIT;                      /* Delay when it hits bottom */
+            plat->status = (plat_e) Random::nextU8(1);  /* Up or down */
+            S_StartSound(&sec->SoundX,sfx_pstart);      /* Start */
             break;
         }
         AddActivePlat(plat);        /* Add the platform to the list */

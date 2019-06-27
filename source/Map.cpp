@@ -1,6 +1,7 @@
-#include "doom.h"
+#include "Doom.h"
 #include "MapData.h"
-#include <stdlib.h>
+#include "Random.h"
+#include <cstdlib>
 
 mobj_t *linetarget;         /* Object that was targeted */
 mobj_t *tmthing;            /* mobj_t to be checked */
@@ -69,11 +70,11 @@ bool P_TryMove(mobj_t *thing, Fixed x, Fixed y)
     if (latchedmovething) {
         /* missile bash into a monster */
         if (thing->flags & MF_MISSILE) {
-            damage = (GetRandom(7)+1)*thing->InfoPtr->damage;   /* Ouch! */
+            damage = (Random::nextU32(7)+1)*thing->InfoPtr->damage;   /* Ouch! */
             DamageMObj(latchedmovething,thing,thing->target,damage);
         /* skull bash into a monster */
         } else if (thing->flags & MF_SKULLFLY) {
-            damage = (GetRandom(7)+1)*thing->InfoPtr->damage;
+            damage = (Random::nextU32(7)+1)*thing->InfoPtr->damage;
             DamageMObj(latchedmovething,thing,thing,damage);
             thing->flags &= ~MF_SKULLFLY;       /* Stop the skull from flying */
             thing->momx = thing->momy = thing->momz = 0;    /* No momentum */

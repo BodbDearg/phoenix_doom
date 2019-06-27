@@ -1,838 +1,737 @@
-#include "doom.h"
+#include "Enemy.h"
+
+#include "Doom.h"
 #include "MathUtils.h"
-#include <stdlib.h>
+#include "Random.h"
+#include <cstdlib>
 
-/**********************************
+//--------------------------------------------------------------------------------------------------
+// Return true if the target mobj_t is in melee range
+//--------------------------------------------------------------------------------------------------
+static bool CheckMeleeRange(const mobj_t* const pActor) noexcept {
+    const mobj_t* const pTarget = pActor->target;   // Get the mobj_t of the target
 
-    Return true if the target mobj_t is in melee
-    range
-
-**********************************/
-
-static Word CheckMeleeRange(mobj_t *actor)
-{
-    mobj_t *pl;     /* Target mobj_t pointer */
-    Fixed dist;     /* Distance calculated */
-
-    pl = actor->target;     /* Get the mobj_t of the target */
-    if (!pl ||          /* No target? */
-        !(actor->flags&MF_SEETARGET)) { /* Can't see target? */
-        return false;           /* Not in range... */
-    }
-    dist = GetApproxDistance(pl->x-actor->x,pl->y-actor->y);
-    if (dist >= MELEERANGE) {       /* Out of range? */
-        return false;           /* Can't attack yet */
-    }
-    return true;            /* Attack NOW! */
+    if (!pTarget)   // No target?
+        return false;
+    
+    if ((pActor->flags & MF_SEETARGET) == 0)    // Can't see target?
+        return false;
+    
+    const Fixed dist = GetApproxDistance(pTarget->x - pActor->x, pTarget->y - pActor->y);
+    return (dist < MELEERANGE);
 }
 
-/**********************************
-
-    Return true if the actor is in missile range
-    to the target
-
-**********************************/
-
-static Word CheckMissileRange(mobj_t *actor)
-{
-    Fixed dist;
-    mobj_t *pl;
-
-    if ( !(actor->flags & MF_SEETARGET) ) { /* Are you seen? */
-        return false;           /* Nope, don't fire! */
+//--------------------------------------------------------------------------------------------------
+// Return true if the actor is in missile range to the target
+//--------------------------------------------------------------------------------------------------
+static uint32_t CheckMissileRange(mobj_t* actor) noexcept {
+    if ((actor->flags & MF_SEETARGET) == 0)     // Are you seen?
+        return false;                           // Nope, don't fire!
+    
+    // If the target just hit the enemy, fight back!
+    if (actor->flags & MF_JUSTHIT) {
+        actor->flags &= ~MF_JUSTHIT;    // Clear the 'just hit' flag
+        return true;                    // Fire back
     }
 
-    /* The target just hit the enemy, so fight back! */
+    if (actor->reactiontime)    // Still waking up?
+        return false;           // Don't attack yet
+    
+    const mobj_t* const pTarget = actor->target;
+    Fixed dist = (GetApproxDistance(actor->x - pTarget->x, actor->y - pTarget->y) >> FRACBITS) - 64;
 
-    if (actor->flags & MF_JUSTHIT) {        /* Took damage? */
-        actor->flags &= ~MF_JUSTHIT;        /* Clear the flag */
-        return true;                /* Fire back */
+    if (!actor->InfoPtr->meleestate) {  // No hand-to-hand combat mode?
+        dist -= 128;                    // No melee attack, so fire more often
     }
 
-    if (actor->reactiontime) {      /* Still waking up? */
-        return false;       /* Don't attack yet */
+    if (actor->InfoPtr == &mobjinfo[MT_SKULL]) {    // Is it a skull?
+        dist >>= 1;                                 // Halve the distance for attack
     }
 
-    pl = actor->target;     /* Get local */
-    dist = (GetApproxDistance(actor->x-pl->x,actor->y-pl->y)>>FRACBITS)-64;
-    if (!actor->InfoPtr->meleestate) {  /* No hand-to-hand combat mode? */
-        dist -= 128;        /* No melee attack, so fire more often */
-    }
-
-    if (actor->InfoPtr == &mobjinfo[MT_SKULL]) {    /* Is it a skull? */
-        dist >>= 1;         /* Halve the distance for attack */
-    }
-
-    if (dist >= 201) {      /* 200 units? */
-        dist = 200;         /* Set the maximum */
-    }
-
-    if ((int)GetRandom(255)<dist) { /* Random chance for attack */
-        return false;       /* No attack */
-    }
-    return true;            /* Attack! */
-}
-
-/**********************************
-
-    Move in the current direction
-    returns false if the move is blocked
-    Called for ACTORS, not the player or missiles
-
-**********************************/
-
-static Fixed xspeed[8] = {FRACUNIT,47000,0,-47000,-FRACUNIT,-47000,0,47000};
-static Fixed yspeed[8] = {0,47000,FRACUNIT,47000,0,-47000,-FRACUNIT,-47000};
-
-static bool P_Move(mobj_t *actor)
-{
-    Word Direction;     /* Direction of travel */
-    Word Speed;     /* Speed of travel */
-    Fixed tryx,tryy;    /* New x and y */
-    line_t *blkline;
-
-    Direction = actor->movedir;
-    if (Direction == DI_NODIR) {    /* No direction of travel? */
-        return false;           /* Can't move */
-    }
-
-    Speed = actor->InfoPtr->Speed;      /* Get the speed into cache */
-    tryx = actor->x + ((Fixed)Speed*xspeed[Direction]);
-    tryy = actor->y + ((Fixed)Speed*yspeed[Direction]);
-
-    if (!P_TryMove(actor,tryx,tryy) ) { /* Open any specials */
-        if (actor->flags & MF_FLOAT && floatok) {   /* Must adjust height */
-            if (actor->z < tmfloorz) {
-                actor->z += FLOATSPEED;     /* Jump up */
-            } else {
-                actor->z -= FLOATSPEED;     /* Jump down */
-            }
-            actor->flags |= MF_INFLOAT;     /* I am floating (Or falling) */
-            return true;            /* I can move!! */
-        }
-        blkline = blockline;        /* What line blocked me? */
-        if (!blkline || !blkline->special) {    /* Am I blocked? */
-            return false;       /* Can't move */
-        }
-        actor->movedir = DI_NODIR;  /* Force no direction */
-            /* If the special isn't a door that can be opened, return false */
-        if (P_UseSpecialLine(actor,blkline)) {  /* Try to open it... */
-            return true;            /* Allow motion */
-        }
-        return false;       /* Can't move */
-    }
-
-    actor->flags &= ~MF_INFLOAT;        /* I am not floating anymore */
-    if ( !(actor->flags & MF_FLOAT) ) {     /* Can I float at all? */
-        actor->z = actor->floorz;       /* Attach to the floor */
-    }
-    return true;        /* Yes, I can move there... */
-}
-
-/**********************************
-
-    Attempts to move actoron in its current (ob->moveangle) direction.
-
-    If blocked by either a wall or an actor returns false
-    If move is either clear or blocked only by a door, returns TRUE and
-    if a door is in the way, an OpenDoor call is made to start it opening.
-
-**********************************/
-
-static bool P_TryWalk(mobj_t *actor)
-{
-    if (!P_Move(actor)) {       /* Try to move in this direction */
-        return false;           /* Return no */
-    }
-    actor->movecount = GetRandom(15);   /* Get distance to travel */
-    return true;        /* I'm moving */
-}
-
-/**********************************
-
-    Pick a direction to travel to chase
-    the actor's target
-
-**********************************/
-
-static dirtype_t opposite[] =
-    {DI_WEST,DI_SOUTHWEST,DI_SOUTH,DI_SOUTHEAST,DI_EAST,DI_NORTHEAST,
-    DI_NORTH,DI_NORTHWEST,DI_NODIR};
-
-static dirtype_t diags[] = {DI_NORTHWEST,DI_NORTHEAST,DI_SOUTHWEST,DI_SOUTHEAST};
-
-static void P_NewChaseDir(mobj_t *actor)
-{
-    Fixed deltax,deltay;
-    dirtype_t d1,d2;
-    int tdir;
-    dirtype_t olddir,turnaround;
-    mobj_t *target;
-
-    olddir = (dirtype_t)actor->movedir;     /* Get current direction */
-    turnaround=opposite[olddir];            /* Get opposite direction */
-
-    target = actor->target;
-    deltax = target->x - actor->x;      /* Get the x offset */
-    deltay = target->y - actor->y;      /* Get the y offset */
-
-    if (deltax>=(10*FRACUNIT)) {        /* Towards the east? */
-        d1=DI_EAST;
-    } else if (deltax<(-10*FRACUNIT)) { /* Towards the west? */
-        d1=DI_WEST;
-    } else {
-        d1=DI_NODIR;            /* Go straight */
-    }
-    if (deltay<(-10*FRACUNIT)) {        /* Towards the south? */
-        d2=DI_SOUTH;
-    } else if (deltay>=(10*FRACUNIT)) { /* Towards the north? */
-        d2=DI_NORTH;
-    } else {
-        d2=DI_NODIR;            /* Go straight */
-    }
-
-/* Try direct route diagonally */
-
-    if (d1 != DI_NODIR && d2 != DI_NODIR) {
-        Word Index;
-        Index = 0;
-        if (deltay<0) {
-            Index = 2;
-        }
-        if (deltax>=0) {
-            Index|=1;
-        }
-        actor->movedir = diags[Index];
-        if (actor->movedir != turnaround && P_TryWalk(actor)) {
-            return;     /* It's ok! */
-        }
-    }
-
-/* try other directions */
-
-    if (GetRandom(255)>=201 || (abs(deltax)<abs(deltay))) {
-        dirtype_t temp;
-        temp=d1;    /* Reverse the direction priorities */
-        d1=d2;
-        d2=temp;
-    }
-
-    if (d1==turnaround) {   /* Invalidate reverse course */
-        d1=DI_NODIR;
-    }
-    if (d2==turnaround) {
-        d2=DI_NODIR;
-    }
-
-    /* Move in the highest priority direction */
-
-    if (d1!=DI_NODIR) {
-        actor->movedir = d1;
-        if (P_TryWalk(actor)) {
-            return;     /* Either moved forward or attacked */
-        }
-    }
-
-    if (d2!=DI_NODIR) {
-        actor->movedir =d2; /* Low priority direction */
-        if (P_TryWalk(actor)) {
-            return;
-        }
-    }
-
-/* There is no direct path to the player, so pick another direction */
-
-    if (olddir!=DI_NODIR) {     /* Try the old direction */
-        actor->movedir =olddir;
-        if (P_TryWalk(actor)) {
-            return;
-        }
-    }
-
-/* Pick a direction by turning in a random order, don't */
-/* choose the reverse course */
-
-    if (GetRandom(1)) {     /* Which way to go duh George?  */
-        tdir = DI_EAST;
-        do {
-            if (tdir!=(int)turnaround) {    /* Not backwards? */
-                actor->movedir=(dirtype_t)tdir;
-                if (P_TryWalk(actor)) { /* Can I go this way? */
-                    return;
-                }
-            }
-        } while (++tdir<(DI_SOUTHEAST+1));
-    } else {
-        tdir = DI_SOUTHEAST;
-        do {
-            if (tdir!=(int)turnaround) {        /* Not backwards? */
-                actor->movedir=(dirtype_t)tdir;
-                if (P_TryWalk(actor)) { /* Can I go this way? */
-                    return;
-                }
-            }
-        } while (--tdir>=(int)DI_EAST); /* Next step */
-    }
-
-/* Hmmm, the only choice left is to turn around! */
-
-    if (turnaround != DI_NODIR) {       /* Valid direction? */
-        actor->movedir = turnaround;        /* Try backwards */
-        if (P_TryWalk(actor)) {
-            return;     /* Ok, let's go! */
-        }
-    }
-    actor->movedir = DI_NODIR;  /* Can't move */
-}
-
-/**********************************
-
-    If allaround is false, only look 180 degrees in front
-    returns true if a player is targeted
-
-**********************************/
-
-static bool P_LookForPlayers(mobj_t *actor, bool allaround)
-{
-    angle_t an;
-    Fixed dist;
-    mobj_t *mo;
-
-    /* pick another player as target if possible */
-
-    if (!(actor->flags & MF_SEETARGET) ) {      /* Can I see the player? */
-newtarget:
-        actor->target = players.mo;     /* Force player #0 tracking */
-        return false;       /* No one is targeted */
-    }
-    mo = actor->target;     /* Get the target */
-    if (!mo || !mo->MObjHealth) {   /* Is it alive? */
-        goto newtarget;     /* Pick a target... */
-    }
-
-    if (actor->subsector->sector->soundtarget == actor->target) {
-        allaround = true;       /* Ambush guys will turn around on a shot */
-    }
-
-    if (!allaround) {       /* Only 180 degrees? */
-        an = PointToAngle(actor->x,actor->y,mo->x,mo->y) - actor->angle;
-        if (an > ANG90 && an < ANG270) {    /* In the span? */
-            dist = GetApproxDistance(mo->x-actor->x,mo->y-actor->y);
-            /* if real close, react anyway */
-            if (dist > MELEERANGE) {
-                return false;       /* Behind back */
-            }
-        }
-    }
-    actor->threshold = (TICKSPERSEC*4/4);   /* Attack for 4 seconds */
-    return true;        /* I have a target! */
-}
-
-/**********************************
-
-    Stay in state until a player is sighted
-
-**********************************/
-
-void A_Look(mobj_t *actor)
-{
-    Word sound;
-
-/* If current target is visible, start attacking */
-
-    if (!P_LookForPlayers(actor, false)) {
-        return;
-    }
-
-/* Go into chase state */
-
-    sound = actor->InfoPtr->seesound;       /* Any sound to play? */
-    if (sound) {
-        switch (sound) {        /* Special case for the sound? */
-        case sfx_posit1:
-        case sfx_posit2:
-        case sfx_posit3:
-            sound = sfx_posit1+GetRandom(1);
-            break;
-        case sfx_bgsit1:
-        case sfx_bgsit2:
-            sound = sfx_bgsit1+GetRandom(1);
-        }
-        S_StartSound(&actor->x,sound);      /* Begin a sound */
-    }
-    SetMObjState(actor,actor->InfoPtr->seestate);   /* Set the chase state */
-}
-
-/**********************************
-
-    Actor has a melee attack, so it tries to close in as fast as possible
-
-**********************************/
-
-void A_Chase(mobj_t *actor)
-{
-    long delta;
-    Word Sound;
-    mobjinfo_t *info;
-
-    info = actor->InfoPtr;              /* Get the info record */
-    if (actor->reactiontime) {      /* Adjust the reaction time */
-        --actor->reactiontime;      /* Count down 1 */
+    if (dist >= 201) {      // 200 units?
+        dist = 200;         // Set the maximum
     }
     
-/* modify target threshold */
-
-    if (actor->threshold) {
-        --actor->threshold;
+    if (Random::nextU8() < dist) {      // Random chance for attack
+        return false;                   // No attack
     }
 
-/* turn towards movement direction if not there yet */
-
-    if (actor->movedir < 8) {
-        actor->angle &= (angle_t)(7UL<<29);
-        delta = actor->angle - (actor->movedir << 29);
-        if (delta > 0) {
-            actor->angle -= ANG45;
-        } else if (delta < 0) {
-            actor->angle += ANG45;
-        }
-    }
-
-    if (!actor->target || !(actor->target->flags&MF_SHOOTABLE)) {
-        /* Look for a new target */
-        if (P_LookForPlayers(actor, true)) {
-            return;     /* got a new target */
-        }
-        SetMObjState(actor,info->spawnstate);   /* Reset the state */
-        return;
-    }
-
-/* Don't attack twice in a row */
-
-    if (actor->flags & MF_JUSTATTACKED) {       /* Attacked? */
-        actor->flags &= ~MF_JUSTATTACKED;       /* Clear the flag */
-        P_NewChaseDir(actor);       /* Chase the player */
-        return;
-    }
-
-/* Check for melee attack */
-
-    if (info->meleestate && CheckMeleeRange(actor)) {
-        Sound = info->attacksound;      /* Attack sound? */
-        if (Sound) {        /* Attack sound? */
-            S_StartSound(&actor->x,Sound);
-        }
-        SetMObjState(actor,info->meleestate);
-        return;
-    }
-
-/* check for missile attack */
-
-    if ((gameskill == sk_nightmare || !actor->movecount) &&
-        info->missilestate && CheckMissileRange(actor)) {
-        SetMObjState(actor,info->missilestate); /* Shoot missile */
-        if (gameskill != sk_nightmare) {        /* Ruthless!! */
-            actor->flags |= MF_JUSTATTACKED;    /* Don't attack next round */
-        }
-        return;
-    }
-
-/* Chase towards player */
-
-    if (actor->movecount) {     /* Count down if needed */
-        --actor->movecount;
-    }
-    if (!actor->movecount || !P_Move(actor)) {  /* Move the critter */
-        P_NewChaseDir(actor);
-    }
-
-/* make active sound */
-
-    Sound = info->activesound;
-    if (Sound && GetRandom(255)<3) {        /* Only 1 in 80 chance of gurgle */
-        S_StartSound(&actor->x,Sound);
-    }
+    return true;    // Attack!
 }
 
-/**********************************
+//--------------------------------------------------------------------------------------------------
+// Move in the current direction.
+// Returns false if the move is blocked.
+// Called for ACTORS, not the player or missiles
+//--------------------------------------------------------------------------------------------------
+static constexpr Fixed MOVE_X_SPEEDS[8] = {
+    FRACUNIT,
+    47000,
+    0,
+    -47000,
+    -FRACUNIT,
+    -47000,
+    0,
+    47000
+};
 
-    Turn to face your target
+static constexpr Fixed MOVE_Y_SPEEDS[8] = {
+    0,
+    47000,
+    FRACUNIT,
+    47000,
+    0,
+    -47000,
+    -FRACUNIT,
+    -47000
+};
 
-**********************************/
+static bool P_Move(mobj_t& actor) noexcept {
+    const dirtype_t moveDir = (dirtype_t) actor.movedir;
 
-void A_FaceTarget(mobj_t *actor)
-{
-    mobj_t *target;
+    if (moveDir == DI_NODIR)    // No direction of travel?
+        return false;           // Can't move
+    
+    const uint32_t speed = actor.InfoPtr->Speed;
+    const Fixed tryX = actor.x + ((Fixed) speed * MOVE_X_SPEEDS[moveDir]);    // New x and y
+    const Fixed tryY = actor.y + ((Fixed) speed * MOVE_Y_SPEEDS[moveDir]);
 
-    target = actor->target;     /* Get the target pointer */
-    if (target) {       /* Is there a target? */
-        actor->flags &= ~MF_AMBUSH; /* Not ambushing anymore */
-        actor->angle = PointToAngle(actor->x,actor->y,target->x,target->y);
-        if (actor->target->flags & MF_SHADOW) {     /* Hard to see? */
-            actor->angle += (255-GetRandom(511))<<21;
+    // Try to open any specials if we can't move to a location
+    if (!P_TryMove(&actor, tryX, tryY) ) {
+        if (actor.flags & MF_FLOAT && floatok) {
+            // Must adjust height
+            if (actor.z < tmfloorz) {
+                actor.z += FLOATSPEED;      // Jump up
+            } else {
+                actor.z -= FLOATSPEED;      // Jump down
+            }
+
+            actor.flags |= MF_INFLOAT;      // I am floating (Or falling)
+            return true;                    // I can move!!
         }
+
+        line_t* const pBlockLine = blockline;       // What line blocked me?
+
+        if (!pBlockLine || !pBlockLine->special)    // Am I blocked?
+            return false;                           // Can't move
+        
+        actor.movedir = DI_NODIR;   // Force no direction
+        
+        // If the special isn't a door that can be opened, return 'false'.
+        // Otherwise if the door can be used then return 'true' to indicate we can move.
+        return P_UseSpecialLine(&actor, pBlockLine);
     }
+
+    actor.flags &= ~MF_INFLOAT;     // I am not floating anymore
+
+    if ((actor.flags & MF_FLOAT) == 0) {    // Can I float at all?
+        actor.z = actor.floorz;             // Attach to the floor
+    }
+
+    return true;    // Yes, I can move there...
 }
 
-/**********************************
-
-    Shoot the player with a pistol (Used by Zombiemen)
-
-**********************************/
-
-void A_PosAttack(mobj_t *actor)
-{
-    angle_t angle;
-    Word damage;
-
-    if (actor->target) {        /* Is there a target? */
-        A_FaceTarget(actor);    /* Face the target */
-        S_StartSound(&actor->x,sfx_pistol);     /* Shoot the pistol */
-        angle = actor->angle;       /* Get the angle */
-        angle += (255-GetRandom(511))<<20;  /* Angle of error */
-        damage = (GetRandom(7)+1)*3;    /* 1D8 * 3 */
-        LineAttack(actor,angle,MISSILERANGE,MAXINT,damage);
-    }
+//--------------------------------------------------------------------------------------------------
+// Attempts to move actor in its current (ob->moveangle) direction.
+//
+// If blocked by either a wall or an actor returns 'false'.
+// If move is either clear or blocked only by a door, returns 'true' and
+// if a door is in the way, an OpenDoor call is made to start it opening.
+//--------------------------------------------------------------------------------------------------
+static bool P_TryWalk(mobj_t& actor) noexcept {
+    if (!P_Move(actor))         // Try to move in this direction
+        return false;           // Can't move there!
+    
+    actor.movecount = Random::nextU8(15);       // Get distance to travel
+    return true;                                // I'm moving
 }
 
-/**********************************
+//--------------------------------------------------------------------------------------------------
+// Pick a direction to travel to chase the actor's target
+//--------------------------------------------------------------------------------------------------
+static constexpr dirtype_t OPPOSITE_DIR[] = {
+    DI_WEST,
+    DI_SOUTHWEST,
+    DI_SOUTH,
+    DI_SOUTHEAST,
+    DI_EAST,
+    DI_NORTHEAST,
+    DI_NORTH,
+    DI_NORTHWEST,
+    DI_NODIR
+};
 
-    Shoot the player with a shotgun (Used by Shotgun man)
+static constexpr dirtype_t DIAGONAL_DIRS[] = {
+    DI_NORTHWEST,
+    DI_NORTHEAST,
+    DI_SOUTHWEST,
+    DI_SOUTHEAST
+};
 
-**********************************/
+static void P_NewChaseDir(mobj_t& actor) noexcept {
+    const dirtype_t oldDir = (dirtype_t) actor.movedir;         // Get current direction
+    const dirtype_t turnaroundDir = OPPOSITE_DIR[oldDir];       // Get opposite direction
 
-void A_SPosAttack(mobj_t *actor)
-{
-    Word i,damage;
-    angle_t angle,bangle;
+    ASSERT(actor.target);
+    mobj_t& target = *actor.target;
+    const Fixed deltax = target.x - actor.x;    // Get the x offset
+    const Fixed deltay = target.y - actor.y;    // Get the y offset
 
-    if (actor->target) {
-        S_StartSound(&actor->x,sfx_shotgn);
-        A_FaceTarget(actor);
-        bangle = actor->angle;      /* Base angle */
-        i = 0;
+    dirtype_t d1;
+    
+    if (deltax >= (10 * FRACUNIT)) {    // Towards the east?
+        d1 = DI_EAST;
+    } else if (deltax < (-10 * FRACUNIT)) {     // Towards the west?
+        d1 = DI_WEST;
+    } else {
+        d1 = DI_NODIR;  // Go straight
+    }
+
+    dirtype_t d2;
+
+    if (deltay < (-10 * FRACUNIT)) {            // Towards the south?
+        d2 = DI_SOUTH;
+    } else if (deltay >= (10 * FRACUNIT)) {     // Towards the north?
+        d2 = DI_NORTH;
+    } else {
+        d2 = DI_NODIR;  // Go straight
+    }
+
+    // Try direct route diagonally
+    if (d1 != DI_NODIR && d2 != DI_NODIR) {
+        uint32_t index = 0;
+
+        if (deltay < 0) {
+            index = 2;
+        }
+
+        if (deltax >= 0) {
+            index |= 1;
+        }
+
+        actor.movedir = DIAGONAL_DIRS[index];
+
+        if (actor.movedir != turnaroundDir && P_TryWalk(actor))
+            return;     // It's ok!
+    }
+
+    // Try other directions
+    if (Random::nextU8() >= 201 || (abs(deltax) < abs(deltay))) {
+        const dirtype_t temp = d1;      // Reverse the direction priorities
+        d1 = d2;
+        d2 = temp;
+    }
+
+    // Invalidate reverse course
+    if (d1 == turnaroundDir) {   
+        d1 = DI_NODIR;
+    }
+
+    if (d2 == turnaroundDir) {
+        d2 = DI_NODIR;
+    }
+
+    // Move in the highest priority direction first and then the lower priority direction
+    if (d1 != DI_NODIR) {
+        actor.movedir = d1;
+
+        if (P_TryWalk(actor))
+            return;     // Either moved forward or attacked
+    }
+
+    if (d2 != DI_NODIR) {
+        actor.movedir = d2;     // Low priority direction
+
+        if (P_TryWalk(actor))
+            return;
+    }
+
+    // There is no direct path to the player, so pick another direction
+    if (oldDir != DI_NODIR) {
+        actor.movedir = oldDir;     // Try the old direction
+
+        if (P_TryWalk(actor))
+            return;
+    }
+
+    // Pick a direction by turning in a random order.
+    // Don't choose the reverse course!
+    if (Random::nextBool()) {   // Which way to go duh George?
+        int tdir = DI_EAST;
+
         do {
-            angle = bangle + ((255-GetRandom(511))<<20);
-            damage = (GetRandom(7)+1)*3;
-            LineAttack(actor,angle,MISSILERANGE,MAXINT,damage);
-        } while (++i<3);
+            if (tdir != (int) turnaroundDir) {      // Not backwards?
+                actor.movedir = (dirtype_t) tdir;
+                if (P_TryWalk(actor))               // Can I go this way?
+                    return;
+            }
+        } while (++tdir < (DI_SOUTHEAST + 1));
+    } else {
+        int tdir = DI_SOUTHEAST;
+
+        do {
+            if (tdir != (int) turnaroundDir) {      // Not backwards?
+                actor.movedir = (dirtype_t) tdir;
+                if (P_TryWalk(actor))               // Can I go this way?
+                    return;
+            }
+        } while (--tdir >= (int) DI_EAST);  // Next step
+    }
+
+    // Hmmm, the only choice left is to turn around (assuming we have a valid dir)
+    if (turnaroundDir != DI_NODIR) {
+        actor.movedir = turnaroundDir;  // Try backwards
+
+        if (P_TryWalk(actor))
+            return;     // Ok, let's go!
+    }
+
+    actor.movedir = DI_NODIR;   // Can't move
+}
+
+//--------------------------------------------------------------------------------------------------
+// If allaround is false, only look 180 degrees in front.
+// Returns true if a player is targeted.
+//--------------------------------------------------------------------------------------------------
+static bool P_LookForPlayers(mobj_t& actor, bool bAllAround) noexcept {
+    // Pick another player as target if possible
+    if (!(actor.flags & MF_SEETARGET)) {    // Can I see the player?
+    newtarget:
+        actor.target = players.mo;          // Force player #0 tracking
+        return false;                       // No one is targeted
+    }
+
+    const mobj_t* const pTarget = actor.target;     // Get the target
+
+    if (!pTarget || pTarget->MObjHealth <= 0) {     // Is it alive?
+        goto newtarget;                             // Pick a target...
+    }
+
+    // Ambush guys will turn around on a shot
+    if (actor.subsector->sector->soundtarget == actor.target) {
+        bAllAround = true;
+    }
+
+    if (!bAllAround) {  // Only 180 degrees?
+        const angle_t angle = PointToAngle(actor.x, actor.y, pTarget->x, pTarget->y) - actor.angle;
+
+        if (angle > ANG90 && angle < ANG270) {  // In the span?
+            const Fixed dist = GetApproxDistance(pTarget->x - actor.x, pTarget->y - actor.y);
+
+            // If real close, react anyway
+            if (dist > MELEERANGE) {
+                return false;   // Behind back
+            }
+        }
+    }
+
+    // FIXME: DC - is this correct??
+    actor.threshold = (TICKSPERSEC * 4 / 4);    // Attack for 4 seconds
+    return true;                                // I have a target!
+}
+
+//--------------------------------------------------------------------------------------------------
+// Stay in state until a player is sighted
+//--------------------------------------------------------------------------------------------------
+void A_Look(mobj_t* const pActor) noexcept {
+    // If current target is visible, start attacking
+    if (!P_LookForPlayers(*pActor, false)) {
+        return;
+    }
+
+    // Go into chase state
+    uint32_t sound = pActor->InfoPtr->seesound;      
+
+    if (sound) {                // Any sound to play?
+        switch (sound) {        // Special case for the sound?
+            case sfx_posit1:
+            case sfx_posit2:
+            case sfx_posit3:
+                sound = sfx_posit1 + Random::nextU32(1);
+                break;
+            
+            case sfx_bgsit1:
+            case sfx_bgsit2:
+                sound = sfx_bgsit1 + Random::nextU32(1);
+        }
+
+        S_StartSound(&pActor->x, sound);    // Begin a sound
+    }
+
+    SetMObjState(pActor, pActor->InfoPtr->seestate);    // Set the chase state
+}
+
+//--------------------------------------------------------------------------------------------------
+// Actor has a melee attack, so it tries to close in as fast as possible
+//--------------------------------------------------------------------------------------------------
+void A_Chase(mobj_t* const pActor) noexcept {
+    // Adjust the reaction time
+    if (pActor->reactiontime) {
+        --pActor->reactiontime;
+    }
+    
+    // Modify target threshold
+    if (pActor->threshold) {
+        --pActor->threshold;
+    }
+
+    // Turn towards movement direction if not there yet
+    if (pActor->movedir < 8) {
+        pActor->angle &= (angle_t)(7UL<<29);
+        const int32_t delta = pActor->angle - (pActor->movedir << 29);
+
+        if (delta > 0) {
+            pActor->angle -= ANG45;
+        } else if (delta < 0) {
+            pActor->angle += ANG45;
+        }
+    }
+
+    // Look for a new target if required
+    const mobjinfo_t* const pInfo = pActor->InfoPtr;
+
+    if ((!pActor->target) || ((pActor->target->flags & MF_SHOOTABLE) == 0)) {        
+        if (P_LookForPlayers(*pActor, true)) {
+            return;     // Got a new target
+        }
+
+        SetMObjState(pActor, pInfo->spawnstate);    // Reset the state
+        return;
+    }
+
+    // Don't attack twice in a row
+    if (pActor->flags & MF_JUSTATTACKED) {      // Attacked?
+        pActor->flags &= ~MF_JUSTATTACKED;      // Clear the flag
+        P_NewChaseDir(*pActor);                 // Chase the player
+        return;
+    }
+
+    // Check for melee attack
+    if (pInfo->meleestate && CheckMeleeRange(pActor)) {
+        S_StartSound(&pActor->x, pInfo->attacksound);   // Start attack sound
+        SetMObjState(pActor, pInfo->meleestate);
+        return;
+    }
+
+    // Check for missile attack
+    if ((gameskill == sk_nightmare || !pActor->movecount) &&
+        pInfo->missilestate &&
+        CheckMissileRange(pActor)
+    ) {
+        SetMObjState(pActor, pInfo->missilestate);      // Shoot missile
+        if (gameskill != sk_nightmare) {                // Ruthless!!
+            pActor->flags |= MF_JUSTATTACKED;           // Don't attack next round
+        }
+        return;
+    }
+
+    // Chase towards player and move the critter
+    if (pActor->movecount > 0) {
+        --pActor->movecount;
+    }
+
+    if ((pActor->movecount == 0) || !P_Move(*pActor)) {
+        P_NewChaseDir(*pActor);
+    }
+
+    // Make active sound - only 1 in 80 chance of gurgle
+    if (Random::nextU8() < 3) {
+        S_StartSound(&pActor->x, pInfo->activesound);
     }
 }
 
-/**********************************
+//--------------------------------------------------------------------------------------------------
+// Turn to face your target
+//--------------------------------------------------------------------------------------------------
+void A_FaceTarget(mobj_t* const pActor) noexcept {
+    const mobj_t* const pTarget = pActor->target;
 
-    Spider demon firing machine gun
+    if (pTarget) {                      // Is there a target?
+        pActor->flags &= ~MF_AMBUSH;    // Not ambushing anymore
+        pActor->angle = PointToAngle(pActor->x, pActor->y, pTarget->x, pTarget->y);
 
-**********************************/
-
-void A_SpidRefire(mobj_t *actor)
-{
-/* Keep firing unless target got out of sight */
-
-    A_FaceTarget(actor);
-    if (GetRandom(255) >= 10) {
-        if (!actor->target || !actor->target->MObjHealth ||
-            !(actor->flags&MF_SEETARGET) ) {
-            SetMObjState(actor,actor->InfoPtr->seestate);
+        if (pActor->target->flags & MF_SHADOW) {    // Hard to see?
+            pActor->angle += (255 - Random::nextU32(511)) << 21;
         }
     }
 }
 
-/**********************************
+//--------------------------------------------------------------------------------------------------
+// Shoot the player with a pistol (Used by Zombiemen)
+//--------------------------------------------------------------------------------------------------
+void A_PosAttack(mobj_t* const pActor) noexcept {   
+    if (pActor->target) {                       // Is there a target?
+        A_FaceTarget(pActor);                   // Face the target
+        S_StartSound(&pActor->x, sfx_pistol);   // Shoot the pistol
+        
+        angle_t angle = pActor->angle;                          // Get the angle
+        angle += (255 - Random::nextU32(511)) << 20;            // Angle of error
+        const uint32_t damage = (Random::nextU32(7) + 1) * 3;   // 1D8 * 3
 
-    Imp attack
+        LineAttack(pActor, angle, MISSILERANGE, MAXINT, damage);
+    }
+}
 
-**********************************/
-
-void A_TroopAttack(mobj_t *actor)
-{
-    Word damage;
-
-    if (actor->target) {
-        A_FaceTarget(actor);        /* Face your victim */
-        if (CheckMeleeRange(actor)) {
-            S_StartSound(&actor->x,sfx_claw);       /* Claw sound */
-            damage = (GetRandom(7)+1)*3;        /* 1D8 * 3 */
-            DamageMObj(actor->target,actor,actor,damage);
-            return;     /* End attack */
+//--------------------------------------------------------------------------------------------------
+// Shoot the player with a shotgun (Used by Shotgun man)
+//--------------------------------------------------------------------------------------------------
+void A_SPosAttack(mobj_t* const pActor) noexcept {
+    if (pActor->target) {
+        S_StartSound(&pActor->x, sfx_shotgn);
+        A_FaceTarget(pActor);
+        const angle_t bAngle = pActor->angle;   // Base angle
+        
+        for (uint32_t i = 0; i < 3u; ++i) {
+            const angle_t angle = bAngle + ((255 - Random::nextU32(511)) << 20);
+            const uint32_t damage = (Random::nextU32(7) + 1 ) * 3;
+            LineAttack(pActor, angle, MISSILERANGE, MAXINT, damage);
         }
-/* Launch a imp's missile */
-        P_SpawnMissile(actor,actor->target,&mobjinfo[MT_TROOPSHOT]);
     }
 }
 
-/**********************************
+//--------------------------------------------------------------------------------------------------
+// Spider demon firing machine gun
+//--------------------------------------------------------------------------------------------------
+void A_SpidRefire(mobj_t* const pActor) noexcept {    
+    A_FaceTarget(pActor);
 
-    Demon or Spectre attack
+    // Keep firing unless target got out of sight
+    if (Random::nextU8(255) >= 10) {
+        const bool bNoTarget = (
+            (!pActor->target) ||
+            (pActor->target->MObjHealth <= 0) ||
+            ((pActor->flags & MF_SEETARGET) == 0)
+        );
 
-**********************************/
-
-void A_SargAttack(mobj_t *actor)
-{
-    Word damage;
-
-    if (actor->target) {        /* Get the target pointer */
-        A_FaceTarget(actor);        /* Face the player */
-        damage = (GetRandom(7)+1)*4;        /* 1D8 * 4 */
-        LineAttack(actor,actor->angle,MELEERANGE,0,damage); /* Attack */
-    }
-}
-
-/**********************************
-
-    Evil eye attack
-
-**********************************/
-
-void A_HeadAttack (mobj_t *actor)
-{
-    Word damage;
-
-    if (actor->target) {        /* Anyone targeted? */
-        A_FaceTarget(actor);    /* Face the target */
-        if (CheckMeleeRange(actor)) {       /* In bite range? */
-            damage = (GetRandom(7)+1)*8;        /* 1D8 * 8 */
-            DamageMObj(actor->target,actor,actor,damage);
-            return;     /* Exit */
+        if (bNoTarget) {
+            SetMObjState(pActor, pActor->InfoPtr->seestate);
         }
-/* Launch a missile */
-        P_SpawnMissile(actor,actor->target,&mobjinfo[MT_HEADSHOT]); /* Shoot eye missile */
     }
 }
 
-/**********************************
+//--------------------------------------------------------------------------------------------------
+// Imp attack
+//--------------------------------------------------------------------------------------------------
+void A_TroopAttack(mobj_t* const pActor) noexcept {
+    if (pActor->target) {
+        A_FaceTarget(pActor);   // Face your victim
 
-    Cyberdemon firing missile
-
-**********************************/
-
-void A_CyberAttack(mobj_t *actor)
-{
-    if (actor->target) {
-        A_FaceTarget(actor);        /* Face the enemy */
-        P_SpawnMissile(actor,actor->target,&mobjinfo[MT_ROCKET]);   /* Launch missile */
-    }
-}
-
-/**********************************
-
-    Baron of hell attack
-
-**********************************/
-
-void A_BruisAttack(mobj_t *actor)
-{
-    Word damage;
-
-    if (actor->target) {        /* Target aquired? */
-        if (CheckMeleeRange(actor)) {       /* Claw range? */
-            S_StartSound(&actor->x,sfx_claw);   /* Ouch! */
-            damage = (GetRandom(7)+1)*11;   /* 1D8 * 11 */
-            DamageMObj(actor->target,actor,actor,damage);
-            return;     /* Exit */
+        if (CheckMeleeRange(pActor)) {
+            S_StartSound(&pActor->x, sfx_claw);                     // Claw sound
+            const uint32_t damage = (Random::nextU32(7) + 1) * 3;   // 1D8 * 3
+            DamageMObj(pActor->target, pActor, pActor, damage);
+            return;                                                 // End attack
         }
-/* Launch a missile */
-        P_SpawnMissile(actor,actor->target,&mobjinfo[MT_BRUISERSHOT]);
+        
+        // Launch a imp's missile
+        P_SpawnMissile(pActor, pActor->target, &mobjinfo[MT_TROOPSHOT]);
     }
 }
 
-/**********************************
+//--------------------------------------------------------------------------------------------------
+// Demon or Spectre attack
+//--------------------------------------------------------------------------------------------------
+void A_SargAttack(mobj_t* const pActor) noexcept {
+    if (pActor->target) {
+        A_FaceTarget(pActor);                                       // Face the player
+        const uint32_t damage = (Random::nextU32(7) + 1) * 4;       // 1D8 * 4
+        LineAttack(pActor, pActor->angle, MELEERANGE, 0, damage);   // Attack
+    }
+}
 
-    Fly at the player like a missile
+//--------------------------------------------------------------------------------------------------
+// Evil eye attack
+//--------------------------------------------------------------------------------------------------
+void A_HeadAttack(mobj_t* const pActor) noexcept {
+    if (pActor->target) {       // Anyone targeted?
+        A_FaceTarget(pActor);   // Face the target
 
-**********************************/
+        if (CheckMeleeRange(pActor)) {                              // In bite range?
+            const uint32_t damage = (Random::nextU32(7) + 1) * 8;   // 1D8 * 8
+            DamageMObj(pActor->target, pActor, pActor, damage);
+            return;
+        }
+        
+        // Launch a missile - shoot eye missile
+        P_SpawnMissile(pActor, pActor->target, &mobjinfo[MT_HEADSHOT]);
+    }
+}
 
-void A_SkullAttack(mobj_t *actor)
-{
-    mobj_t *dest;
-    angle_t an;
-    Word dist;
+//--------------------------------------------------------------------------------------------------
+// Cyberdemon firing missile
+//--------------------------------------------------------------------------------------------------
+void A_CyberAttack(mobj_t* const pActor) noexcept {
+    if (pActor->target) {
+        A_FaceTarget(pActor);                                           // Face the enemy
+        P_SpawnMissile(pActor, pActor->target, &mobjinfo[MT_ROCKET]);   // Launch missile
+    }
+}
 
-    dest = actor->target;
-    if (dest) {             /* Target aquired? */
-        actor->flags |= MF_SKULLFLY;        /* High speed mode */
-        S_StartSound(&actor->x,actor->InfoPtr->attacksound);
-        A_FaceTarget(actor);        /* Face the target */
-        an = actor->angle >> ANGLETOFINESHIFT;      /* Speed for distance */
-        actor->momx = sfixedMul16_16(SKULLSPEED, finecosine[an]);
-        actor->momy = sfixedMul16_16(SKULLSPEED, finesine[an]);
-        dist = GetApproxDistance(dest->x-actor->x,dest->y-actor->y);
-        dist = dist / SKULLSPEED;       /* Speed to hit target */
-        if (!dist) {        /* Prevent divide by 0 */
+//--------------------------------------------------------------------------------------------------
+// Baron of hell attack
+//--------------------------------------------------------------------------------------------------
+void A_BruisAttack(mobj_t* const pActor) noexcept {
+    if (pActor->target) {                                               // Target aquired?
+        if (CheckMeleeRange(pActor)) {                                  // Claw range?
+            S_StartSound(&pActor->x, sfx_claw);                         // Ouch!
+            const uint32_t damage = (Random::nextU32(7) + 1) * 11;      // 1D8 * 11
+            DamageMObj(pActor->target, pActor, pActor, damage);
+            return;
+        }
+
+        // Launch a missile
+        P_SpawnMissile(pActor, pActor->target, &mobjinfo[MT_BRUISERSHOT]);
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+// Fly at the player like a missile
+//--------------------------------------------------------------------------------------------------
+void A_SkullAttack(mobj_t* const pActor) noexcept {
+    const mobj_t* const pDest = pActor->target;
+
+    if (pDest) {                                                    // Target aquired?
+        pActor->flags |= MF_SKULLFLY;                               // High speed mode
+        S_StartSound(&pActor->x, pActor->InfoPtr->attacksound);
+        A_FaceTarget(pActor);                                       // Face the target
+
+        // Speed for distance
+        const angle_t angle = pActor->angle >> ANGLETOFINESHIFT;
+        pActor->momx = sfixedMul16_16(SKULLSPEED, finecosine[angle]);
+        pActor->momy = sfixedMul16_16(SKULLSPEED, finesine[angle]);
+
+        uint32_t dist = GetApproxDistance(pDest->x - pActor->x, pDest->y - pActor->y);
+        dist = dist / SKULLSPEED;   // Speed to hit target
+        if (dist == 0) {            // Prevent divide by 0
             dist = 1;
         }
-        actor->momz = (dest->z+(dest->height>>1) - actor->z) / dist;
+
+        pActor->momz = (pDest->z + (pDest->height >> 1) - pActor->z) / dist;
     }
 }
 
-/**********************************
+//--------------------------------------------------------------------------------------------------
+// Play a normal death sound
+//--------------------------------------------------------------------------------------------------
+void A_Scream(mobj_t* const pActor) noexcept {
+    uint32_t sound = pActor->InfoPtr->deathsound;
 
-    Play a normal death sound
+    switch (sound) {
+        case 0:         // No sound at all?
+            return;
+        
+        case sfx_podth1:
+        case sfx_podth2:
+        case sfx_podth3:
+            sound = sfx_podth1 + Random::nextU32(1);
+            break;
 
-**********************************/
-
-void A_Scream(mobj_t *actor)
-{
-    Word Sound;
-
-    Sound = actor->InfoPtr->deathsound;
-
-    switch (Sound) {
-    case 0:         /* No sound at all? */
-        return;
-
-    case sfx_podth1:
-    case sfx_podth2:
-    case sfx_podth3:
-        Sound = sfx_podth1 + GetRandom(1);
-        break;
-
-    case sfx_bgdth1:
-    case sfx_bgdth2:
-        Sound = sfx_bgdth1 + GetRandom(1);
+        case sfx_bgdth1:
+        case sfx_bgdth2:
+            sound = sfx_bgdth1 + Random::nextU32(1);
+            break;
     }
-    S_StartSound(&actor->x,Sound);
+
+    S_StartSound(&pActor->x, sound);
 }
 
-/**********************************
-
-    Play the gory squish sound for a gruesome death
-
-**********************************/
-
-void A_XScream(mobj_t *actor)
-{
-    S_StartSound(&actor->x,sfx_slop);       /* Make goo */
+//--------------------------------------------------------------------------------------------------
+// Play the gory squish sound for a gruesome death
+//--------------------------------------------------------------------------------------------------
+void A_XScream(mobj_t* const pActor) noexcept {
+    S_StartSound(&pActor->x, sfx_slop);
 }
 
-/**********************************
-
-    Play the pain sound if any
-
-**********************************/
-
-void A_Pain(mobj_t *actor)
-{
-    Word Sound;
-    Sound = actor->InfoPtr->painsound;      /* Get the sound # */
-    if (Sound) {            /* Valid? */
-        S_StartSound(&actor->x,Sound);      /* Play it */
-    }
+//--------------------------------------------------------------------------------------------------
+// Play the pain sound if any
+//--------------------------------------------------------------------------------------------------
+void A_Pain(mobj_t* const actor) noexcept {
+    S_StartSound(&actor->x, actor->InfoPtr->painsound);
 }
 
-/**********************************
-
-    Actor fell to the ground dead, mark so you can walk over it
-
-**********************************/
-
-void A_Fall(mobj_t *actor)
-{
-    actor->flags &= ~MF_SOLID;      /* Not solid anymore */
+//--------------------------------------------------------------------------------------------------
+// Actor fell to the ground dead, mark so you can walk over it
+//--------------------------------------------------------------------------------------------------
+void A_Fall(mobj_t* const pActor) noexcept {
+    pActor->flags &= ~MF_SOLID;     // Not solid anymore
 }
 
-
-/**********************************
-
-    Process damage from an explosion
-
-**********************************/
-
-void A_Explode(mobj_t *thingy)
-{
-    RadiusAttack(thingy,thingy->target,128);    /* BOOM! */
+//--------------------------------------------------------------------------------------------------
+// Process damage from an explosion
+//--------------------------------------------------------------------------------------------------
+void A_Explode(mobj_t* const pActor) noexcept {
+    RadiusAttack(pActor, pActor->target, 128);    // BOOM!
 }
 
-/**********************************
-
-    For level #8 of Original DOOM, I will trigger event #666
-    to allow you to access the exit portal when you kill the
-    Baron's of Hell.
-
-**********************************/
-
-void A_BossDeath(mobj_t *mo)
-{
-    mobj_t *mo2;
+//--------------------------------------------------------------------------------------------------
+// For level #8 of Original DOOM, I will trigger event #666
+// to allow you to access the exit portal when you kill the
+// Barons of Hell.
+//--------------------------------------------------------------------------------------------------
+void A_BossDeath(mobj_t* const pActor) noexcept {    
     line_t junk;
 
-    if (gamemap != 8) {     /* Level #8? */
-        return;         /* Kill all you want, we'll make more! */
+    if (gamemap != 8) {     // Level #8?
+        return;             // Kill all you want, we'll make more!
     }
 
-/* Scan the remaining thinkers to see if all bosses are dead */
-/* This is a brute force method, but it works! */
+    // Scan the remaining thinkers to see if all bosses are dead.
+    // This is a brute force method, but it works!
+    const mobj_t* pActor2 = mobjhead.next;
 
-    mo2 = mobjhead.next;        /* Get the first entry */
-    do {    /* Wrapped around? */
-        if (mo2 != mo && mo2->InfoPtr == mo->InfoPtr && mo2->MObjHealth) {
-            return;     /* Other boss not dead */
+    do {
+        if (pActor2 != pActor && pActor2->InfoPtr == pActor->InfoPtr && pActor2->MObjHealth) {
+            return;     // Other boss not dead
         }
-        mo2=mo2->next;      /* Keep scanning the list */
-    } while (mo2!=&mobjhead);
 
-/* Victory! */
+        // Keep scanning the list
+        pActor2 = pActor2->next;
 
-    junk.tag = 666;     /* Floor's must be tagged with 666 */
-    EV_DoFloor(&junk,lowerFloorToLowest);   /* Open the level */
+    } while (pActor2 != &mobjhead);     // Stop when wrapped around back to the start
+
+    // Victory!
+    junk.tag = 666;                         // Floor's must be tagged with 666
+    EV_DoFloor(&junk,lowerFloorToLowest);   // Open the level
 }
 
-/**********************************
-
-    Play the Cyberdemon's metal hoof sound
-
-**********************************/
-
-void A_Hoof(mobj_t *mo)
-{
-    S_StartSound(&mo->x,sfx_hoof);      /* Play the sound */
-    A_Chase(mo);                    /* Chase the player */
+//--------------------------------------------------------------------------------------------------
+// Play the Cyberdemon's metal hoof sound
+//--------------------------------------------------------------------------------------------------
+void A_Hoof(mobj_t* const pActor) noexcept {
+    S_StartSound(&pActor->x, sfx_hoof);     // Play the sound
+    A_Chase(pActor);                        // Chase the player
 }
 
-/**********************************
-
-    Make the spider demon's metal leg sound
-
-**********************************/
-
-void A_Metal(mobj_t *mo)
-{
-    S_StartSound(&mo->x,sfx_metal);     /* Make the sound */
-    A_Chase(mo);                    /* Handle the standard chase code */
+//--------------------------------------------------------------------------------------------------
+// Make the spider demon's metal leg sound
+//--------------------------------------------------------------------------------------------------
+void A_Metal(mobj_t* const pActor) noexcept {
+    S_StartSound(&pActor->x, sfx_metal);    // Make the sound
+    A_Chase(pActor);                        // Handle the standard chase code
 }
 
-/**********************************
-
-    A move in Base.c caused a missile to hit another thing or wall
-
-**********************************/
-
-void L_MissileHit(mobj_t *mo,mobj_t *missilething)
-{
-    Word damage;
-
-    if (missilething) {     /* Valid? */
-        damage = (GetRandom(7)+1)*mo->InfoPtr->damage;      /* Calc the damage */
-        DamageMObj(missilething,mo,mo->target,damage);  /* Inflict damage */
+//--------------------------------------------------------------------------------------------------
+// A move in Base.cpp caused a missile to hit another thing or wall
+//--------------------------------------------------------------------------------------------------
+void L_MissileHit(mobj_t* const mapObj, mobj_t* const pMissile) noexcept {
+    if (pMissile) {
+        const uint32_t damage = (Random::nextU32(7) +1 ) * mapObj->InfoPtr->damage;     // Calc the damage
+        DamageMObj(pMissile, mapObj, mapObj->target, damage);                           // Inflict damage
     }
-    ExplodeMissile(mo);     /* Detonate the missile */
+
+    ExplodeMissile(mapObj);     // Detonate the missile
 }
 
-/**********************************
-
-    A move in Base.c caused a flying skull to hit another thing or a wall
-
-**********************************/
-
-void L_SkullBash(mobj_t *mo,mobj_t *skullthing)
-{
-    Word damage;        /* Damage inflicted */
-
-    if (skullthing) {       /* Valid? */
-        damage = (GetRandom(7)+1)*mo->InfoPtr->damage;
-        DamageMObj(skullthing,mo,mo,damage);
+//--------------------------------------------------------------------------------------------------
+// A move in Base.cpp caused a flying skull to hit another thing or a wall
+//--------------------------------------------------------------------------------------------------
+void L_SkullBash(mobj_t* const pMapObj, mobj_t* const pSkull) noexcept {
+    if (pSkull) {
+        const uint32_t damage = (Random::nextU32(7) + 1) * pMapObj->InfoPtr->damage;
+        DamageMObj(pSkull, pMapObj, pMapObj, damage);
     }
-    mo->flags &= ~MF_SKULLFLY;      /* The skull isn't flying fast anymore */
-    mo->momx = mo->momy = mo->momz = 0;     /* Zap the momentum */
-    SetMObjState(mo,mo->InfoPtr->spawnstate);   /* Normal mode */
+
+    pMapObj->flags &= ~MF_SKULLFLY;                         // The skull isn't flying fast anymore
+    pMapObj->momx = pMapObj->momy = pMapObj->momz = 0;      // Zap the momentum
+    SetMObjState(pMapObj, pMapObj->InfoPtr->spawnstate);    // Normal mode
 }

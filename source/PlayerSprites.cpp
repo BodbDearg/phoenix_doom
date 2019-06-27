@@ -1,4 +1,5 @@
-#include "doom.h"
+#include "Doom.h"
+#include "Random.h"
 
 #define LOWERSPEED 18       /* Speed to lower the player's weapon */
 #define RAISESPEED 18       /* Speed to raise the player's weapon */
@@ -393,13 +394,13 @@ void A_Punch(player_t *player,pspdef_t *psp)
     mobj_t *mo,*target;
     Word damage;
 
-    damage = (GetRandom(7)+1)*3;        /* 1D8 * 3 */
+    damage = (Random::nextU32(7)+1)*3;        /* 1D8 * 3 */
     if (player->powers[pw_strength]) {  /* Are you a berserker? */
         damage *= 10;
     }
     mo = player->mo;            /* Get the object into a local */
     angle = mo->angle;          /* Get the player's angle */
-    angle += (255-GetRandom(511))<<18;  /* Adjust for direction of attack */
+    angle += (255-Random::nextU32(511))<<18;  /* Adjust for direction of attack */
     LineAttack(mo,angle,MELEERANGE,MAXINT,damage);  /* Attack! */
     target = linetarget;
     if (target) {       /* Did I hit someone? */
@@ -421,10 +422,10 @@ void A_Saw(player_t *player,pspdef_t *psp)
     Word damage;
     mobj_t *mo,*target;
 
-    damage = (GetRandom(7)+1)*3;        /* 1D8 * 3 */
+    damage = (Random::nextU32(7)+1)*3;        /* 1D8 * 3 */
     mo = player->mo;                    /* Get the player's object */
     angle = mo->angle;                  /* Get the current facing angle */
-    angle += (255-GetRandom(511))<<18;  /* Add a little randomness */
+    angle += (255-Random::nextU32(511))<<18;  /* Add a little randomness */
 
 /* use meleerange + 1 so the puff doesn't skip the flash */
 
@@ -491,7 +492,7 @@ void A_FirePlasma(player_t *player,pspdef_t *psp)
 {
     --player->ammo[am_cell];    /* Remove a round */
     /* I have two flash states, choose one randomly */
-    SetPlayerSprite(player,ps_flash,WeaponFlashStates[player->readyweapon]+GetRandom(1));
+    SetPlayerSprite(player,ps_flash,WeaponFlashStates[player->readyweapon]+Random::nextU32(1));
     SpawnPlayerMissile(player->mo,&mobjinfo[MT_PLASMA]);        /* Spawn the missile */
 }
 
@@ -506,10 +507,10 @@ static void GunShot(mobj_t *mo, bool accurate)
     angle_t angle;      /* Angle of fire */
     Word damage;        /* Damage done */
 
-    damage = (GetRandom(3)+1)*4;        /* 1D4 * 4 */
+    damage = (Random::nextU32(3)+1)*4;        /* 1D4 * 4 */
     angle = mo->angle;              /* Get the angle */
     if (!accurate) {
-        angle += (255-GetRandom(511))<<18;  /* Make it a little random */
+        angle += (255-Random::nextU32(511))<<18;  /* Make it a little random */
     }
     LineAttack(mo,angle,MISSILERANGE,MAXINT,damage);    /* Inflict damage */
 }
@@ -553,9 +554,9 @@ void A_FireShotgun(player_t *player, pspdef_t *psp)
 
     i = 7;      /* Init index */
     do {
-        damage = (GetRandom(3)+1)*4;        /* 1D4 * 4 */
+        damage = (Random::nextU32(3)+1)*4;        /* 1D4 * 4 */
         angle = mo->angle;
-        angle += (255-GetRandom(511))<<18;      /* Get some randomness */
+        angle += (255-Random::nextU32(511))<<18;      /* Get some randomness */
         LineAttack(mo,angle,MISSILERANGE,slope,damage); /* Do damage */
     } while (--i);      /* 7 pellets */
 }
@@ -642,7 +643,7 @@ void A_BFGSpray(mobj_t *mo)
             damage = 15;        /* Minimum 15 points of damage */
             j = 15;
             do {
-                damage += GetRandom(7);
+                damage += Random::nextU32(7);
             } while (--j);
             DamageMObj(target,mo->target,mo->target,damage);
         }
