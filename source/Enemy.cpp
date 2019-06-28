@@ -425,15 +425,18 @@ void A_Chase(mobj_t* const pActor) noexcept {
     }
 
     // Chase towards player and move the critter
-    --pActor->movecount;
-
-    if ((pActor->movecount < 0) || !P_Move(*pActor)) {
+    if ((pActor->movecount == 0) || !P_Move(*pActor)) {
         P_NewChaseDir(*pActor);
     }
 
     // Make active sound - only 1 in 80 chance of gurgle
     if (Random::nextU8() < 3) {
         S_StartSound(&pActor->x, pInfo->activesound);
+    }
+
+    // Decrease time until turn
+    if (pActor->movecount > 0) {
+        --pActor->movecount;
     }
 }
 
