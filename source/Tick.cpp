@@ -193,9 +193,9 @@ Word P_Ticker(void)
     Tick2 = false;
     Tick4 = false;
 
-    TimeMark1+=ElapsedTime; /* Timer for ticks */
-    TimeMark2+=ElapsedTime;
-    TimeMark4+=ElapsedTime;
+    TimeMark1+=gElapsedTime; /* Timer for ticks */
+    TimeMark2+=gElapsedTime;
+    TimeMark4+=gElapsedTime;
 
     if (TimeMark1>=TICKSPERSEC) {   /* Now see if the time has passed... */
         TimeMark1-=TICKSPERSEC;

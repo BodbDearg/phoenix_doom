@@ -94,7 +94,7 @@ Word MiniLoop(
     Word exit = 0;              // I am running
     gameaction = ga_nothing;    // Game is not in progress
     TotalGameTicks = 0;         // No vbls processed during game
-    ElapsedTime = 0;            // No time has elapsed yet
+    gElapsedTime = 0;            // No time has elapsed yet
 
     // Init the joypad states
     JoyPadButtons = PrevJoyPadButtons = NewJoyPadButtons = 0;
@@ -108,25 +108,25 @@ Word MiniLoop(
         clock_t curClock = clock();
 
         if ((curClock - lastClock) / (double) CLOCKS_PER_SEC > 1.0 / 60.0) {
-            ElapsedTime = 1;
+            gElapsedTime = 1;
             lastClock = curClock;
         }
         else {
-            ElapsedTime = 0;
+            gElapsedTime = 0;
             continue;
         }        
 
         // Run the tic immediately
-        TotalGameTicks += ElapsedTime;      // Add to the VBL count
+        TotalGameTicks += gElapsedTime;     // Add to the VBL count
         exit = ticker();                    // Process the keypad commands
 
         // Adaptive timing based on previous frame
         if (DemoPlayback || DemoRecording) {
-            ElapsedTime = 4;                    // Force 15 FPS
+            gElapsedTime = 4;                   // Force 15 FPS
         } else {
-            ElapsedTime = (Word) LastTics;      // Get the true time count
-            if (ElapsedTime >= 9) {             // Too slow?
-                ElapsedTime = 8;                // Make 7.5 fps as my mark
+            gElapsedTime = (Word) LastTics;     // Get the true time count
+            if (gElapsedTime >= 9) {            // Too slow?
+                gElapsedTime = 8;               // Make 7.5 fps as my mark
             }
         }
 

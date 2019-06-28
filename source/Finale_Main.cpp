@@ -158,8 +158,8 @@ Word F_Ticker(void)
 
 /* Advance state */
 
-    if (CastTics>ElapsedTime) {
-        CastTics-=ElapsedTime;
+    if (CastTics>gElapsedTime) {
+        CastTics-=gElapsedTime;
         return ga_nothing;      /* Not time to change state yet */
     }
 
@@ -269,7 +269,7 @@ void F_Drawer(void)
         EndTextString[TextIndex] = 0;           /* End the string here */
         F_PrintString(STARTX,STARTY,EndTextString); /* Print the string */
         EndTextString[TextIndex] = Temp;    /* Restore the string */
-        TextDelay+=ElapsedTime;     /* How much time has gone by? */
+        TextDelay+=gElapsedTime;     /* How much time has gone by? */
         if (TextDelay>=TEXTTIME) {
             TextDelay -= TEXTTIME;      /* Adjust the time */
             if (Temp) {     /* Already at the end? */

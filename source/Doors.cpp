@@ -32,8 +32,8 @@ static void T_VerticalDoor(vldoor_t *door)
 
     switch(door->direction) {
     case 0:     /* Waiting or in stasis */
-        if (door->topcountdown>ElapsedTime) {
-            door->topcountdown-=ElapsedTime;
+        if (door->topcountdown>gElapsedTime) {
+            door->topcountdown-=gElapsedTime;
         } else {
             door->topcountdown=0;       /* Force zero */
             
@@ -53,8 +53,8 @@ static void T_VerticalDoor(vldoor_t *door)
         }
         break;
     case 2:     /* INITIAL WAIT */
-        if (door->topcountdown>ElapsedTime) {
-            door->topcountdown-=ElapsedTime;
+        if (door->topcountdown>gElapsedTime) {
+            door->topcountdown-=gElapsedTime;
         } else {
             door->topcountdown=0;       /* Force zero */
             if (door->type == raiseIn5Mins) {

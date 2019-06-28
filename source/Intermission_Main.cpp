@@ -274,7 +274,7 @@ Word IN_Ticker(void)
         return ga_died;     /* Exit after drawing */
     }
 
-    INDelay+=ElapsedTime;
+    INDelay+=gElapsedTime;
     if (INDelay>=INTERTIME) {
         Bang = false;
         INDelay-=INTERTIME;

@@ -102,7 +102,7 @@ Word M_Ticker(void)
 
 /* Animate skull */
 
-    cursorcount += ElapsedTime;     /* Add time */
+    cursorcount += gElapsedTime;     /* Add time */
     if (cursorcount>=(TICKSPERSEC/4)) { /* Time to toggle the shape? */
         cursorframe ^= 1;
         cursorcount = 0;        /* Reset the count */
@@ -113,7 +113,7 @@ Word M_Ticker(void)
     if (! (buttons & (PadUp|PadDown|PadLeft|PadRight|PadA|PadB|PadC|PadD) ) ) {
         movecount = TICKSPERSEC;    /* Move immediately on next press */
     } else {
-        movecount += ElapsedTime;   /* Time unit */
+        movecount += gElapsedTime;   /* Time unit */
         if ( (movecount >= (TICKSPERSEC/3)) ||      /* Allow slow */
             (cursorpos == level && movecount >= (TICKSPERSEC/5))) { /* Fast? */
             movecount = 0;      /* Reset the timer */

@@ -39,6 +39,7 @@ set(SOURCE_FILES
     "Inter.cpp"
     "Intermission_Main.cpp"
     "Lights.cpp"
+    "Lights.h"
     "Macros.h"
     "Map.cpp"
     "MapData.cpp"

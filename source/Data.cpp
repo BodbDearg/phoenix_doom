@@ -23,7 +23,7 @@ Word PadUse = PadB;     /* Joypad bit for use */
 Word PadSpeed = PadC;   /* Joypad bit for high speed */
 Word ControlType;       /* Determine settings for PadAttack,Use,Speed */
 Word TotalGameTicks;    /* Total number of ticks since game start */
-Word ElapsedTime;       /* Ticks elapsed between frames */
+Word gElapsedTime;       /* Ticks elapsed between frames */
 Word MaxLevel;          /* Highest level selectable in menu (1-23) */
 Word *DemoDataPtr;      /* Running pointer to demo data */
 Word *DemoBuffer;       /* Pointer to demo data */

@@ -1,7 +1,10 @@
 #include "doom.h"
 #include "MapData.h"
 #include "MathUtils.h"
-#include <string.h>
+#include <cstring>
+
+// FIXME: TEMP!
+#include <SDL.h>
 
 #define STEPVALUE (2<<FRACBITS) /* Speed to move around in the map (Fixed) For non-follow mode */
 #define MAXSCALES 0x10000   /* Maximum scale factor (Largest) */
@@ -29,6 +32,7 @@ typedef enum {      /* Cheat enum */
     ch_godmode,
     ch_idkfa,
     ch_levelaccess,
+    ch_noclip,
     ch_maxcheats
 } cheat_e;
 
@@ -100,11 +104,34 @@ void AM_Start(void)
 
 **********************************/
 
+// FIXME: temp cheats - DC
+static Uint8 oldKBState[SDL_NUM_SCANCODES] = {};
+
 static cheat_e AM_CheckCheat(Word NewButtons)
 {
     Word c;
     char *SourcePtr;
 
+    // FIXME: temp cheats - DC
+    SDL_PumpEvents();
+    const Uint8* kbState = SDL_GetKeyboardState(NULL);
+    #define WAS_JUST_RELEASED(Key) ((kbState[(Key)] == SDL_RELEASED) && (oldKBState[(Key)] == SDL_PRESSED))
+
+    cheat_e cheat = ch_maxcheats;
+
+    if (WAS_JUST_RELEASED(SDL_SCANCODE_F1)) {
+        cheat = cheat_e::ch_godmode;
+    }
+    else if (WAS_JUST_RELEASED(SDL_SCANCODE_F2)) {
+        cheat = cheat_e::ch_idkfa;
+    }
+    else if (WAS_JUST_RELEASED(SDL_SCANCODE_F3)) {
+        cheat = cheat_e::ch_noclip;
+    }
+
+    std::memcpy(oldKBState, kbState, sizeof(Uint8) * SDL_NUM_SCANCODES);
+
+    #if 0
     /* Convert the button press to a cheat char */
 
     c = 0;
@@ -134,12 +161,14 @@ static cheat_e AM_CheckCheat(Word NewButtons)
                         return (cheat_e)i;      /* I got a CHEAT!! */
                     }
                     SourcePtr+=9;
-                } while (++i<ch_maxcheats);
+                } while (++i<ch_maxcheats - 1);
             }
         }
     } while (++c<CHEATLETTERS);     /* All scanned? */
     return (cheat_e)-1;     /* No cheat found this time */
+    #endif
 
+    return cheat;
 }
 
 /**********************************
@@ -280,6 +309,12 @@ void AM_Control(player_t *player)
         player->mo->MObjHealth = 100;
         player->AutomapFlags ^= AF_GODMODE; /* Toggle god mode */
         break;
+    case ch_noclip:
+        // DC: reimplementing noclip cheat
+        player->mo->flags ^= MF_NOCLIP;
+        player->mo->flags ^= MF_SOLID;
+        player->AutomapFlags ^= AF_NOCLIP; 
+        break;
     case ch_idkfa:
         {
         Word i;
@@ -331,7 +366,7 @@ void AM_Control(player_t *player)
 
     if (!FollowMode) {      /* Not being followed? */
         Fixed step;         /* Multiplier for joypad motion */
-        step = STEPVALUE*ElapsedTime;           /* Mul by integer */
+        step = STEPVALUE*gElapsedTime;           /* Mul by integer */
         step = sfixedDiv16_16(step, MapScale);  /* Adjust for scale factor */
         if (buttons & PadRight) {
             player->automapx+=step;     /* Step to the right */
@@ -358,7 +393,7 @@ void AM_Control(player_t *player)
                     MapScale = MINSCALES;       /* Set to smallest allowable */
                     break;      /* Leave now! */
                 }
-            } while (++NewButtons<ElapsedTime);     /* All done? */
+            } while (++NewButtons<gElapsedTime);     /* All done? */
         }
         if (buttons & PadLeftShift) {
             NewButtons = 0;         /* Init the count */
@@ -368,7 +403,7 @@ void AM_Control(player_t *player)
                     MapScale = MAXSCALES;           /* Set to maximum */
                     break;
                 }
-            } while (++NewButtons<ElapsedTime); /* All done? */
+            } while (++NewButtons<gElapsedTime); /* All done? */
         }
         /* Eat the direction keys if not in follow mode */
         buttons &= ~(PadUp|PadLeft|PadRight|PadDown|PadRightShift|PadLeftShift);

@@ -26,14 +26,21 @@ static void P_PlayerMove(mobj_t *mo)
 {
     Fixed momx, momy;
 
-    momx = ElapsedTime*(mo->momx>>2);       /* Get the momemtum */
-    momy = ElapsedTime*(mo->momy>>2);
+    momx = gElapsedTime*(mo->momx>>2);       /* Get the momemtum */
+    momy = gElapsedTime*(mo->momy>>2);
 
-    P_SlideMove(mo);            /* Slide the player ahead */
+    // DC: added a noclip cheat
+    if (mo->flags & MF_NOCLIP) {
+        slidex = mo->x + momx * 4;
+        slidey = mo->y + momy * 4;
+    }
+    else {
+        P_SlideMove(mo);            /* Slide the player ahead */
+    }
 
     if (slidex != mo->x || slidey != mo->y) {   /* No motion at all? */
         if (P_TryMove(mo,slidex,slidey)) {      /* Can I move? */
-            goto dospecial;     /* Movement OK, just special and exit */
+            goto dospecial;                     /* Movement OK, just special and exit */
         }
     }
 
@@ -170,8 +177,8 @@ static void P_PlayerMobjThink (mobj_t *mobj)
 /* cycle through states, calling action functions at transitions */
 
     if (mobj->tics != -1) {
-        if (mobj->tics>ElapsedTime) {       /* Time to cycle? */
-            mobj->tics-=ElapsedTime;
+        if (mobj->tics>gElapsedTime) {       /* Time to cycle? */
+            mobj->tics-=gElapsedTime;
             return;             /* Not time to cycle yet */
         }
         mobj->tics = 0;     /* Reset the tic count */
@@ -202,7 +209,7 @@ static void P_BuildMove(player_t *player)
     
 /* Use two stage accelerative turning on the joypad */
 
-    TurnIndex = player->turnheld + ElapsedTime;
+    TurnIndex = player->turnheld + gElapsedTime;
     
     if ( !(buttons & PadLeft) || !(oldbuttons & PadLeft) ) {        /* Not held? */
         if ( !(buttons & PadRight) || !(oldbuttons & PadRight) ) {
@@ -217,7 +224,7 @@ static void P_BuildMove(player_t *player)
     Motion = 0;             /* Assume no side motion */
     if (!(buttons & PadUse)) {      /* Use allows weapon change */
         if (buttons & (PadRightShift|PadLeftShift)) {   /* Side motion? */
-            Motion = sidemove[SpeedIndex]*ElapsedTime;  /* Sidestep to the right */
+            Motion = sidemove[SpeedIndex]*gElapsedTime;  /* Sidestep to the right */
             if (buttons & PadLeftShift) {
                 Motion = -Motion;   /* Sidestep to the left */
             }
@@ -228,7 +235,7 @@ static void P_BuildMove(player_t *player)
     Motion = 0;         /* No angle turning */
     if (SpeedIndex && !(buttons&(PadUp|PadDown)) ) {
         if (buttons & (PadRight|PadLeft)) {
-            Motion = fastangleturn[TurnIndex]*ElapsedTime;
+            Motion = fastangleturn[TurnIndex]*gElapsedTime;
             if (buttons & PadRight) {
                 Motion = -Motion;
             }
@@ -236,9 +243,9 @@ static void P_BuildMove(player_t *player)
     } else {
         if (buttons & (PadRight|PadLeft)) {
             Motion = angleturn[TurnIndex];      /* Don't time adjust, for fine tuning */
-            if (ElapsedTime<4) {
+            if (gElapsedTime<4) {
                 Motion>>=1;
-                if (ElapsedTime<2) {
+                if (gElapsedTime<2) {
                     Motion>>=1;
                 }
             }
@@ -251,7 +258,7 @@ static void P_BuildMove(player_t *player)
 
     Motion = 0;
     if (buttons & (PadUp|PadDown)) {
-        Motion = forwardmove[SpeedIndex]*ElapsedTime;
+        Motion = forwardmove[SpeedIndex]*gElapsedTime;
         if (buttons & PadDown) {
             Motion = -Motion;
         }
@@ -412,7 +419,7 @@ static void P_DeathThink(player_t *player)
 /* fall to the ground */
 
     if (player->viewheight > 8*FRACUNIT) {      /* Still above the ground */
-        player->viewheight -= (ElapsedTime<<FRACBITS);  /* Fall over */
+        player->viewheight -= (gElapsedTime<<FRACBITS);  /* Fall over */
         if (player->viewheight<(8*FRACUNIT)) {  /* Too far down? */
             player->viewheight=8*FRACUNIT;      /* Set to the bottom */
         }
@@ -438,7 +445,7 @@ static void P_DeathThink(player_t *player)
     } else {
 DownDamage:
         if (player->damagecount) {      /* Fade down the redness on the screen */
-            player->damagecount-=ElapsedTime;   /* Count down time */
+            player->damagecount-=gElapsedTime;   /* Count down time */
             if (player->damagecount&0x8000) {   /* Negative */
                 player->damagecount=0;      /* Force zero */
             }
@@ -509,8 +516,8 @@ void P_PlayerThink(player_t *player)
     if (!i) {               /* Am I active? */
         MoveThePlayer(player);      /* Move the player */
     } else {
-        if (ElapsedTime<i) {    /* Subtraction factor */
-            i-=ElapsedTime;     /* Remove time base */
+        if (gElapsedTime<i) {    /* Subtraction factor */
+            i-=gElapsedTime;     /* Remove time base */
         } else {
             i = 0;              /* Force zero */
         }
@@ -552,7 +559,7 @@ void P_PlayerThink(player_t *player)
 /* Process weapon attacks */
 
     if (buttons & PadAttack) {          /* Am I attacking? */
-        player->attackdown+=ElapsedTime;        /* Add in the timer */
+        player->attackdown+=gElapsedTime;        /* Add in the timer */
         if (player->attackdown >= (TICKSPERSEC*2)) {
             stbar.specialFace = f_mowdown;
         }
@@ -566,7 +573,7 @@ void P_PlayerThink(player_t *player)
 
     if (player->powers[pw_strength] && player->powers[pw_strength]<255) {
         /* Strength counts up to diminish fade */
-        player->powers[pw_strength]+=ElapsedTime;   /* Add some time */
+        player->powers[pw_strength]+=gElapsedTime;   /* Add some time */
         if (player->powers[pw_strength]>=256) { /* Time up? */
             player->powers[pw_strength] = 255;  /* Maximum */
         }
@@ -575,14 +582,14 @@ void P_PlayerThink(player_t *player)
 /* Count down timers for powers and screen colors */
 
     if (player->powers[pw_invulnerability]) {       /* God mode */
-        player->powers[pw_invulnerability]-=ElapsedTime;
+        player->powers[pw_invulnerability]-=gElapsedTime;
         if (player->powers[pw_invulnerability]&0x8000) {
             player->powers[pw_invulnerability]=0;
         }
     }
     
     if (player->powers[pw_invisibility]) {      /* Invisible? */
-        player->powers[pw_invisibility]-=ElapsedTime;
+        player->powers[pw_invisibility]-=gElapsedTime;
         if (player->powers[pw_invisibility]&0x8000) {
             player->powers[pw_invisibility] = 0;
         }
@@ -592,21 +599,21 @@ void P_PlayerThink(player_t *player)
     }
 
     if (player->powers[pw_ironfeet]) {      /* Radiation suit */
-        player->powers[pw_ironfeet]-=ElapsedTime;
+        player->powers[pw_ironfeet]-=gElapsedTime;
         if (player->powers[pw_ironfeet]&0x8000) {
             player->powers[pw_ironfeet]=0;
         }
     }
 
     if (player->damagecount) {          /* Red factor */
-        player->damagecount-=ElapsedTime;
+        player->damagecount-=gElapsedTime;
         if (player->damagecount&0x8000) {
             player->damagecount=0;
         }
     }
 
     if (player->bonuscount) {           /* Gold factor */
-        player->bonuscount-=ElapsedTime;
+        player->bonuscount-=gElapsedTime;
         if (player->bonuscount&0x8000) {
             player->bonuscount=0;
         }

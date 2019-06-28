@@ -133,8 +133,8 @@ static void T_PlatRaise(plat_t *plat)
             break;
         case waiting:
             if (plat->count) {      /* If waiting will expire... */
-                if (plat->count>ElapsedTime)    {       /* Time up? */
-                    plat->count-=ElapsedTime;   /* Remove the time (But leave 1) */
+                if (plat->count>gElapsedTime)    {       /* Time up? */
+                    plat->count-=gElapsedTime;   /* Remove the time (But leave 1) */
                 } else {
                     if (plat->sector->floorheight == plat->low) {   /* At the bottom? */
                         plat->status = up;      /* Move up */

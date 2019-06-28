@@ -129,7 +129,7 @@ void O_Control(player_t *player)
 
 /* animate skull */
 
-    cursorcount += ElapsedTime;
+    cursorcount += gElapsedTime;
     if (cursorcount >= (TICKSPERSEC/4)) {   /* Time up? */
         cursorframe ^= 1;       /* Toggle the frame */
         cursorcount = 0;        /* Reset the timer */
@@ -140,7 +140,7 @@ void O_Control(player_t *player)
     if (! (buttons & (PadUp|PadDown|PadLeft|PadRight) ) ) {
         movecount = TICKSPERSEC;        // move immediately on next press
     } else {
-        movecount += ElapsedTime;
+        movecount += gElapsedTime;
         if ( (movecount >= (TICKSPERSEC/3)) ||      /* Allow slow */
             (cursorpos < controls && movecount >= (TICKSPERSEC/5))) {   /* Fast? */
             movecount = 0;      /* Reset timer*/

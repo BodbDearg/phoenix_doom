@@ -509,7 +509,7 @@ static void P_MobjThinker(mobj_t *mobj)
         }
     }
 
-    Time = ElapsedTime;
+    Time = gElapsedTime;
     SightFlag = true;
     do {
         if (mobj->tics == -1) {     /* Never time out? */

@@ -41,8 +41,8 @@ static void T_Button(button_t *button)
 {
     /* Do buttons */
 
-    if (button->btimer>ElapsedTime) {   /* Time up? */
-        button->btimer-=ElapsedTime;    /* Adjust timer */
+    if (button->btimer>gElapsedTime) {   /* Time up? */
+        button->btimer-=gElapsedTime;    /* Adjust timer */
     } else {
         line_t *line;
         side_t *MySide;

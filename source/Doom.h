@@ -55,10 +55,6 @@ extern SDL_Renderer*   gRenderer;
 #define GRAVITY (4*FRACUNIT)    /* Rate of fall */
 #define MAXMOVE (16*FRACUNIT)   /* Maximum velocity */
 #define VIEWHEIGHT (41*FRACUNIT)    /* Height to render from */
-#define GLOWSPEED 16                /* Steps for a glowing light */
-#define STROBEBRIGHT (TICKSPERSEC/5)    /* Time to increase brightness for strobe */
-#define FASTDARK (TICKSPERSEC/2)    /* Ticks to glow quickly */
-#define SLOWDARK (TICKSPERSEC)      /* Ticks to glow slowly */
 #define INVULNTICS (30*TICKSPERSEC) /* Time for invulnerability */
 #define INVISTICS (60*TICKSPERSEC)  /* Time for invisibility */
 #define INFRATICS (120*TICKSPERSEC) /* Time for I/R goggles */
@@ -647,7 +643,7 @@ extern Word PadUse;     /* Joypad bit for use */
 extern Word PadSpeed;   /* Joypad bit for high speed */
 extern Word ControlType;    /* Determine settings for PadAttack,Use,Speed */
 extern Word TotalGameTicks; /* Total number of ticks since game start */
-extern Word ElapsedTime;    /* Ticks elapsed between frames */
+extern Word gElapsedTime;    /* Ticks elapsed between frames */
 extern Word MaxLevel;       /* Highest level selectable in menu (1-23) */
 extern Word *DemoDataPtr;   /* Running pointer to demo data */
 extern Word *DemoBuffer;    /* Pointer to demo data */
@@ -908,7 +904,7 @@ extern Fixed P_FindNextHighestFloor(sector_t *sec,Fixed currentheight);
 extern Fixed P_FindLowestCeilingSurrounding(sector_t *sec);
 extern Fixed P_FindHighestCeilingSurrounding(sector_t *sec);
 extern Word P_FindSectorFromLineTag(line_t *line,Word start);
-extern Word P_FindMinSurroundingLight(sector_t *sector,Word max);
+extern Word P_FindMinSurroundingLight(sector_t& sector,Word max);
 extern void P_CrossSpecialLine(line_t *line,mobj_t *thing);
 extern void P_ShootSpecialLine(mobj_t *thing,line_t *line);
 extern void PlayerInSpecialSector(player_t *player,sector_t *sector);
@@ -934,15 +930,6 @@ extern bool EV_DoDoor(line_t *line,vldoor_e type);
 extern void EV_VerticalDoor(line_t *line,mobj_t *thing);
 extern void P_SpawnDoorCloseIn30(sector_t *sec);
 extern void P_SpawnDoorRaiseIn5Mins(sector_t *sec);
-
-/* In Lights.c */
-
-extern void P_SpawnLightFlash(sector_t *sector);
-extern void P_SpawnStrobeFlash(sector_t *sector, Word fastOrSlow, bool inSync);
-extern void EV_StartLightStrobing(line_t *line);
-extern void EV_TurnTagLightsOff(line_t *line);
-extern void EV_LightTurnOn(line_t *line,Word bright);
-extern void P_SpawnGlowingLight(sector_t *sector);
 
 /* In Setup.c */
 extern mapthing_t deathmatchstarts[10],*deathmatch_p;   /* Deathmatch starts */

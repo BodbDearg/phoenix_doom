@@ -1,4 +1,5 @@
 #include "Doom.h"
+#include "Lights.h"
 #include "MapData.h"
 #include "Mem.h"
 #include "Random.h"
@@ -267,7 +268,7 @@ Word P_FindSectorFromLineTag(line_t *line,Word start)
 
 **********************************/
 
-Word P_FindMinSurroundingLight(sector_t *sector,Word max)
+Word P_FindMinSurroundingLight(sector_t& sector,Word max)
 {
     Word i;
     Word min;
@@ -275,11 +276,11 @@ Word P_FindMinSurroundingLight(sector_t *sector,Word max)
     sector_t *other;
 
     min = max;      /* Assume answer */
-    i = sector->linecount;
+    i = sector.linecount;
     if (i) {            /* Any lines? */
-        check = sector->lines;
+        check = sector.lines;
         do {
-            other = getNextSector(check[0],sector);
+            other = getNextSector(check[0], &sector);
             if (other) {
                 if (other->lightlevel < min) {
                     min = other->lightlevel;        /* Get darker */
@@ -300,6 +301,8 @@ Word P_FindMinSurroundingLight(sector_t *sector,Word max)
 
 void P_CrossSpecialLine(line_t *line,mobj_t *thing)
 {
+    ASSERT(line);
+    ASSERT(thing);
 
     /* Triggers that other things can activate */
 
@@ -355,11 +358,11 @@ void P_CrossSpecialLine(line_t *line,mobj_t *thing)
         line->special = 0;
         break;
     case 12:        /* Light Turn On - brightest near */
-        EV_LightTurnOn(line,0);
+        EV_LightTurnOn(*line,0);
         line->special = 0;
         break;
     case 13:        /* Light Turn On 255 */
-        EV_LightTurnOn(line,255);
+        EV_LightTurnOn(*line,255);
         line->special = 0;
         break;
     case 16:        /* Close Door 30 */
@@ -367,7 +370,7 @@ void P_CrossSpecialLine(line_t *line,mobj_t *thing)
         line->special = 0;
         break;
     case 17:        /* Start Light Strobing */
-        EV_StartLightStrobing(line);
+        EV_StartLightStrobing(*line);
         line->special = 0;
         break;
     case 19:        /* Lower Floor */
@@ -388,7 +391,7 @@ void P_CrossSpecialLine(line_t *line,mobj_t *thing)
         line->special = 0;
         break;
     case 35:        /* Lights Very Dark */
-        EV_LightTurnOn(line,35);
+        EV_LightTurnOn(*line,35);
         line->special = 0;
         break;
     case 36:        /* Lower Floor (TURBO) */
@@ -445,7 +448,7 @@ void P_CrossSpecialLine(line_t *line,mobj_t *thing)
         line->special = 0;
         break;
     case 104:       /* Turn lights off in sector(tag) */
-        EV_TurnTagLightsOff(line);
+        EV_TurnTagLightsOff(*line);
         line->special = 0;
         break;
 
@@ -470,13 +473,13 @@ void P_CrossSpecialLine(line_t *line,mobj_t *thing)
         EV_DoCeiling(line,fastCrushAndRaise);
         break;
     case 79:        /* Lights Very Dark */
-        EV_LightTurnOn(line,35);
+        EV_LightTurnOn(*line,35);
         break;
     case 80:        /* Light Turn On - brightest near */
-        EV_LightTurnOn(line,0);
+        EV_LightTurnOn(*line,0);
         break;
     case 81:        /* Light Turn On 255 */
-        EV_LightTurnOn(line,255);
+        EV_LightTurnOn(*line,255);
         break;
     case 82:        /* Lower Floor To Lowest */
         EV_DoFloor(line,lowerFloorToLowest);
@@ -660,16 +663,16 @@ void SpawnSpecials(void)
     do {
         switch(sector->special) {
         case 1:     /* FLICKERING LIGHTS */
-            P_SpawnLightFlash(sector);
+            P_SpawnLightFlash(*sector);
             break;
         case 2:     /* STROBE FAST */
-            P_SpawnStrobeFlash(sector,FASTDARK,false);
+            P_SpawnStrobeFlash(*sector,FASTDARK,false);
             break;
         case 3:     /* STROBE SLOW */
-            P_SpawnStrobeFlash(sector,SLOWDARK,false);
+            P_SpawnStrobeFlash(*sector,SLOWDARK,false);
             break;
         case 8:     /* GLOWING LIGHT */
-            P_SpawnGlowingLight(sector);
+            P_SpawnGlowingLight(*sector);
             break;
         case 9:     /* SECRET SECTOR */
             ++SecretsFoundInLevel;
@@ -678,10 +681,10 @@ void SpawnSpecials(void)
             P_SpawnDoorCloseIn30(sector);
             break;
         case 12:    /* SYNC STROBE SLOW */
-            P_SpawnStrobeFlash(sector,SLOWDARK,true);
+            P_SpawnStrobeFlash(*sector,SLOWDARK,true);
             break;
         case 13:    /* SYNC STROBE FAST */
-            P_SpawnStrobeFlash(sector,FASTDARK,true);
+            P_SpawnStrobeFlash(*sector,FASTDARK,true);
             break;
         case 14:    /* DOOR RAISE IN 5 MINUTES */
             P_SpawnDoorRaiseIn5Mins(sector);

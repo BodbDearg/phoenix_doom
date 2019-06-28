@@ -705,7 +705,7 @@ void MovePSprites(player_t *player)
     i = 0;              /* How many to process? (Must go from 0-NUMPSPRITES) */
     do {
         Word Remainder;
-        Remainder = ElapsedTime;    /* Get the atomic count */
+        Remainder = gElapsedTime;    /* Get the atomic count */
         while (psp->Time!=-1) { /* Never change state? */
             if (psp->Time>Remainder) {  /* Has enough time elapsed? */
                 psp->Time-=Remainder;   /* Remove time and exit */

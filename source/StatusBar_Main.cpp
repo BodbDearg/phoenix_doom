@@ -92,8 +92,8 @@ static Word gibdelay;       /* Delay for gibbing */
 static void CycleFlash(sbflash_t *FlashPtr)
 {
     if (FlashPtr->delay) {      /* Active? */
-        if (FlashPtr->delay>ElapsedTime) {  /* Still time? */
-            FlashPtr->delay-=ElapsedTime;   /* Remove the time */
+        if (FlashPtr->delay>gElapsedTime) {  /* Still time? */
+            FlashPtr->delay-=gElapsedTime;   /* Remove the time */
         } else {
             if (!--FlashPtr->times) {       /* Can I still go? */
                 FlashPtr->delay = 0;
@@ -154,7 +154,7 @@ void ST_Ticker(void)
 
     /* Animate face */
 
-    facetics -= ElapsedTime;        /* Count down */
+    facetics -= gElapsedTime;        /* Count down */
     if (facetics & 0x8000) {        /* Negative? */
         facetics = Random::nextU32(15)*4;     /* New random value */
         newface = Random::nextU32(2);     /* Which face 0-2 */
@@ -274,7 +274,7 @@ void ST_Drawer (void)
         i = GODFACE;        /* God mode */
         gibframe = 0;
     } else if (gibdraw) {       /* Got gibbed */
-        gibdelay-=ElapsedTime;      /* Time down gibbing */
+        gibdelay-=gElapsedTime;      /* Time down gibbing */
         i = FIRSTSPLAT+gibframe;
         if (gibdelay&0x8000) {
             ++gibframe;

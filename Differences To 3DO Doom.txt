@@ -18,3 +18,4 @@ There was a bug in the 3DO code for monsters that caused very different AI behav
         [] Observed this first with the imp, with its super fast fireballs! (much faster than PC Doom)
         [] There was also oddness sometimes when corpses slid down stairs far too quickly.
         [] Both these (and possibly other momentum related issues) are now fixed.
+    [] Pulsing lights cycling up and down too fast.
