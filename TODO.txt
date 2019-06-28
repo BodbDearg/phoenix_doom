@@ -11,8 +11,8 @@
 - Fake contrast on walls
 - Tweak light diminishing (longer falloff + darker)
 - Tweak wall column rendering, looks a bit 'fuzzy' right now.
-- Fix imp super fast fireballs
 - Fix weird chainsaw sound
+- Fix odd floor 'twitching' issue in level 2, near the entrance to the chainsaw area (by blinking lights).
 - Implement transparent demons
 - Higher resolution + fullscreen support
 - WASD + Mouse support

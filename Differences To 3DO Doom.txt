@@ -9,6 +9,12 @@ No longer have to use a cheat to access this!
 [] Sprites no longer appear unnaturally bright.
 3DO Doom seemed to light all sprites much brighter than the environment surrounding them. This may have been due to the lookup values that it used to light the sprites - perhaps they were too high? The darkness of sprites in this version much more closely mimicks the environment lighting and sprites hopefully blend in much better.
 
-[] Fixed a bug with monsters being very slow to target the player a lot of times.
-There was a bug in the 3DO code for monsters that caused very different behavior to the Jag and PC versions - now fixed.
-Monsters should be much more aggressive and challenging to play against now.
+[] Fixed a bug with monsters often being very slow to target the player at range.
+There was a bug in the 3DO code for monsters that caused very different AI behavior to the Jag and PC versions - now fixed. At longer distances monsters would sometimes be very reluctant to shoot at the player, sometimes taking up to a minute to do so. Monsters should be much more aggressive and challenging to play against now.
+
+[] Fixed some bugs with movement speeds & timing issues.
+3DO Doom changed the timebase from 35Hz on the PC original to 60Hz but introduced a few bugs along the way. Some issues I've found and fixed include:
+    [] 'Thing' movement due to momentum/velocity being too fast.
+        [] Observed this first with the imp, with its super fast fireballs! (much faster than PC Doom)
+        [] There was also oddness sometimes when corpses slid down stairs far too quickly.
+        [] Both these (and possibly other momentum related issues) are now fixed.
