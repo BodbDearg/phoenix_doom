@@ -7,25 +7,35 @@
 // FIXME: TEMP!
 #include <SDL.h>
 
-#define STEPVALUE   (2 << FRACBITS)   // Speed to move around in the map (Fixed) For non-follow mode
-#define MAXSCALES   0x10000           // Maximum scale factor (Largest)
-#define MINSCALES   0x00800           // Minimum scale factor (Smallest)
-#define ZOOMIN      66816L            // Fixed 1.02 * FRACUNIT
-#define ZOOMOUT     64222L            // Fixed (1/1.02) * FRACUNIT
+static constexpr Fixed STEPVALUE    = (2 << FRACBITS);      // Speed to move around in the map (Fixed) For non-follow mode
+static constexpr Fixed MAXSCALES    = 0x10000;              // Maximum scale factor (Largest)
+static constexpr Fixed MINSCALES    = 0x00800;              // Minimum scale factor (Smallest)
+static constexpr Fixed ZOOMIN       = 66816;                // Fixed 1.02 * FRACUNIT
+static constexpr Fixed ZOOMOUT      = 64222;                // Fixed (1/1.02) * FRACUNIT
+
+// RGBA5551 colors
+static constexpr uint16_t COLOR_BLACK       = 0x0001u;
+static constexpr uint16_t COLOR_BROWN       = 0x4102u;
+static constexpr uint16_t COLOR_BLUE        = 0x001Eu;
+static constexpr uint16_t COLOR_RED         = 0x6800u;
+static constexpr uint16_t COLOR_YELLOW      = 0x7BC0u;
+static constexpr uint16_t COLOR_GREEN       = 0x0380u;
+static constexpr uint16_t COLOR_LILAC       = 0x6A9Eu;
+static constexpr uint16_t COLOR_LIGHTGREY   = 0x6318u;
 
 // Used to restore the view if the screen goes blank
-static Fixed    OldPlayerX;         // X coord of the player previously
-static Fixed    OldPlayerY;         // Y coord of the player previously
-static Fixed    OldScale;           // Previous scale value
+static Fixed    gOldPlayerX;        // X coord of the player previously
+static Fixed    gOldPlayerY;        // Y coord of the player previously
+static Fixed    gOldScale;          // Previous scale value
 
-static Fixed    MapScale;           // Scaling constant for the automap
-static Word     TrueOldButtons;     // Previous buttons for joypad downs
-static bool     FollowMode;         // Follow mode active if true
-static bool     ShowAllThings;      // If true, show all objects
-static bool     ShowAllLines;       // If true, show all lines
+static Fixed    gMapScale;          // Scaling constant for the automap
+static Word     gTrueOldButtons;    // Previous buttons for joypad downs
+static bool     gFollowMode;        // Follow mode active if true
+static bool     gShowAllThings;     // If true, show all objects
+static bool     gShowAllLines;      // If true, show all lines
 
-#define NOSELENGTH 0x200000     // Player's triangle
-#define MOBJLENGTH 0x100000     // Object's triangle
+static constexpr Fixed NOSELENGTH = 0x200000;   // Player's triangle
+static constexpr Fixed MOBJLENGTH = 0x100000;   // Object's triangle
 
 typedef enum {      // Cheat enum
     ch_allmap,      // Show the map
@@ -64,12 +74,13 @@ static Word codes[CHEATLETTERS] = {
 static char CheatLetter[CHEATLETTERS + 1] = { "ABCUDLRSE" };
 static char CurrentCheat[9];    // Current cheat string
 
-//--------------------------------------------------------------------------------------------------// Multiply a map coord and a fixed point scale value and return the INTEGER result. 
+//--------------------------------------------------------------------------------------------------
+// Multiply a map coord and a fixed point scale value and return the INTEGER result. 
 // I assume that the scale cannot exceed 1.0 and the map coord has no fractional part.
 // This way I can use a 16 by 16 mul with 32 bit result (Single mul) to speed up the code.
 //--------------------------------------------------------------------------------------------------
 static inline int32_t MulByMapScale(const Fixed mapCoord) noexcept {
-    return ((mapCoord >> FRACBITS) * MapScale) >> FRACBITS;
+    return ((mapCoord >> FRACBITS) * gMapScale) >> FRACBITS;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -84,27 +95,21 @@ static inline int IMFixMulGetInt(const Fixed a, const Fixed b) noexcept {
 // If I need any permanent art, load it now.
 //--------------------------------------------------------------------------------------------------
 void AM_Start() noexcept {
-    MapScale = (FRACUNIT / 16);             // Default map scale factor (0.00625)
-    ShowAllThings = false;                  // Turn off the cheat
-    ShowAllLines = false;                   // Turn off the cheat
-    FollowMode = true;                      // Follow the player
+    gMapScale = (FRACUNIT / 16);            // Default map scale factor (0.00625)
+    gShowAllThings = false;                 // Turn off the cheat
+    gShowAllLines = false;                  // Turn off the cheat
+    gFollowMode = true;                     // Follow the player
     players.AutomapFlags &= ~AF_ACTIVE;     // Automap off
-    TrueOldButtons = JoyPadButtons;         // Get the current state
+    gTrueOldButtons = JoyPadButtons;        // Get the current state
 
     memset((char*) CurrentCheat, 0, sizeof(CurrentCheat));
 }
 
-/**********************************
-
-    Check for cheat codes for automap fun stuff!
-    Pass to me all the new joypad downs.
-
-**********************************/
-
+//--------------------------------------------------------------------------------------------------
+// Check for cheat codes for automap fun stuff!
+// Pass to me all the new joypad downs.
+//--------------------------------------------------------------------------------------------------
 static cheat_e AM_CheckCheat(Word NewButtons) noexcept {
-    Word c;
-    char *SourcePtr;
-
     // FIXME: temp cheats - DC
     SDL_PumpEvents();
     static Uint8 oldKBState[SDL_NUM_SCANCODES] = {};
@@ -124,9 +129,12 @@ static cheat_e AM_CheckCheat(Word NewButtons) noexcept {
     }
 
     std::memcpy(oldKBState, kbState, sizeof(Uint8) * SDL_NUM_SCANCODES);
+    return cheat;
 
     // FIMXE: DC: Replace/remove
     #if 0
+    Word c;
+    char *SourcePtr;
     // Convert the button press to a cheat char
     c = 0;
     do {
@@ -161,8 +169,6 @@ static cheat_e AM_CheckCheat(Word NewButtons) noexcept {
     } while (++c<CHEATLETTERS);     // All scanned?
     return (cheat_e)-1;     // No cheat found this time
     #endif
-
-    return cheat;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -223,7 +229,7 @@ static void DrawLine(
         yStep = -1;             // Step upwards
     }
 
-    int32_t delta = 0;      // Init the fractional step
+    int32_t delta = 0;  // Init the fractional step
 
     if (deltaX < deltaY) {              // Is the Y larger? (Step in Y)
         do {                            // Yes, make the Y step every pixel
@@ -249,283 +255,275 @@ static void DrawLine(
     } while (x != xEnd);            // At the bottom?
 }
 
-/**********************************
+//--------------------------------------------------------------------------------------------------
+// Called by P_PlayerThink before any other player processing.
+// Button bits can be eaten by clearing them in JoyPadButtons.
+//
+// Since I am making joypad events disappear and I want to track joypad downs, I need to cache 
+// the UNFILTERED JoyPadButtons and pass through a filtered NewPadButtons and JoyPadButtons.
+//--------------------------------------------------------------------------------------------------
+void AM_Control(player_t& player) noexcept {
+    uint32_t buttons = JoyPadButtons;                               // Get the joypad
+    uint32_t NewButtons = (gTrueOldButtons ^ buttons) & buttons;    // Get the UNFILTERED joypad
+    gTrueOldButtons = buttons;                                      // Set the previous joypad UNFILTERED
 
-    Called by P_PlayerThink before any other player processing
-
-    Button bits can be eaten by clearing them in JoyPadButtons
-
-    Since I am making joypad events disappear and I want to track 
-    joypad downs, I need to cache the UNFILTERED JoyPadButtons and pass through
-    a filtered NewPadButtons and JoyPadButtons 
-    
-**********************************/
-void AM_Control(player_t *player) noexcept
-{
-    Word buttons;   // Buttons
-    Word NewButtons;    // Button down events
-
-    buttons = JoyPadButtons;        // Get the joypad
-    NewButtons = (TrueOldButtons^buttons)&buttons;  // Get the UNFILTERED joypad
-    TrueOldButtons = buttons;   // Set the previous joypad UNFILTERED
-
-    if (NewButtons & (PadUse|PadStart)) {   // Shift down event?
-        if ((buttons&((PadUse|PadStart)))==((PadUse|PadStart))) {
-            if (!(player->AutomapFlags & AF_OPTIONSACTIVE)) {   // Can't toggle in option mode!
-                player->AutomapFlags ^= AF_ACTIVE;  // Swap the automap state if both held
+    if (NewButtons & (PadUse|PadStart)) {                           // Shift down event?
+        if ((buttons & (PadUse|PadStart)) == (PadUse|PadStart)) {
+            if (!(player.AutomapFlags & AF_OPTIONSACTIVE)) {        // Can't toggle in option mode!
+                player.AutomapFlags ^= AF_ACTIVE;                   // Swap the automap state if both held
             }
         }
     }
 
-    if ( !(player->AutomapFlags & AF_ACTIVE) )  {   // Is the automap is off?
-        return;     // Exit now!
+    if (!(player.AutomapFlags & AF_ACTIVE)) {   // Is the automap is off?
+        return;                                 // Exit now!
     }
 
-    buttons &= ~PadX;           // Don't allow option screen to come up
+    buttons &= ~PadX;   // Don't allow option screen to come up
 
-    switch (AM_CheckCheat(NewButtons)) {        // Check cheat events
-    case ch_allmap:
-        ShowAllLines ^= true;   // Toggle lines
-        break;
-    case ch_things:
-        ShowAllThings ^= true;  // Toggle things
-        break;
-    case ch_godmode:
-        player->health = 100;
-        player->mo->MObjHealth = 100;
-        player->AutomapFlags ^= AF_GODMODE; // Toggle god mode
-        break;
-    case ch_noclip:
-        // DC: reimplementing noclip cheat
-        player->mo->flags ^= MF_NOCLIP;
-        player->mo->flags ^= MF_SOLID;
-        player->AutomapFlags ^= AF_NOCLIP; 
-        break;
-    case ch_idkfa:
-        {
-        Word i;
-        Word j;
-        i = 0;
-        j = true;
-        do {
-            if (i==3) {     // 0-2 are keys, 3-5 are skulls
-                j=false;
-            }
-            player->cards[i] = j;       // Award all keycards
-        } while (++i<NUMCARDS);
-        player->armorpoints = 200;      // Full armor
-        player->armortype = 2;          // Mega armor
-        i = 0;
-        do {
-            player->weaponowned[i] = true;  // Give all weapons
-        } while (++i<NUMWEAPONS);
-        i = 0;
-        do {
-            player->ammo[i] = player->maxammo[i] = 500; // Full ammo!
-        } while (++i<NUMAMMO);
-        }
-        break;
-    case ch_levelaccess:
-        MaxLevel = 23;
-        WritePrefsFile();
-        break;
-    case ch_maxcheats:
-        break;
-    }
+    // Check cheat events
+    switch (AM_CheckCheat(NewButtons)) {
+        case ch_allmap:
+            gShowAllLines ^= true;      // Toggle lines
+            break;
 
-    if (FollowMode) {       // Test here to make SURE I get called at least once
-        mobj_t *mo;
-        mo = player->mo;
-        player->automapx = mo->x;   // Mark the automap position
-        player->automapy = mo->y;
-    }
-    OldPlayerX = player->automapx;      // Mark the previous position
-    OldPlayerY = player->automapy;
-    OldScale = MapScale;                // And scale value
+        case ch_things:
+            gShowAllThings ^= true;     // Toggle things
+            break;
 
-    if (NewButtons&PadX) {      // Enable/disable follow mode
-        FollowMode^=true;       // Toggle the mode
-    }
+        case ch_godmode:
+            player.health = 100;
+            player.mo->MObjHealth = 100;
+            player.AutomapFlags ^= AF_GODMODE;      // Toggle god mode
+            break;
 
-    // If follow mode if off, then I intercept the joypad motion to
-    // move the map anywhere on the screen
+        case ch_noclip:
+            // DC: reimplementing noclip cheat
+            player.mo->flags ^= MF_NOCLIP;
+            player.mo->flags ^= MF_SOLID;
+            player.AutomapFlags ^= AF_NOCLIP;
+            break;
 
-    if (!FollowMode) {      // Not being followed?
-        Fixed step;         // Multiplier for joypad motion
-        step = STEPVALUE*gElapsedTime;           // Mul by integer
-        step = sfixedDiv16_16(step, MapScale);  // Adjust for scale factor
-        if (buttons & PadRight) {
-            player->automapx+=step;     // Step to the right
-        }
-        if (buttons & PadLeft) {
-            player->automapx-=step;     // Step to the left
-        }
-        if (buttons & PadUp) {
-            player->automapy+=step;     // Step up
-        }
-        if (buttons & PadDown) {
-            player->automapy-=step;     // Step down
-        }
-
-        // Scaling is tricky, I cannot use a simple multiply to adjust
-        // the scale factor to the timebase since the formula is
-        // ZOOM to the ElapsedTime power times scale.
-
-        if (buttons & PadRightShift) {
-            NewButtons = 0;         // Init the count
+        case ch_idkfa: {
+            uint32_t i = 0;
+            uint32_t j = true;
+            
             do {
-                MapScale=sfixedMul16_16(MapScale, ZOOMOUT);     // Perform the scale
-                if (MapScale<MINSCALES) {       // Too small?
-                    MapScale = MINSCALES;       // Set to smallest allowable
-                    break;      // Leave now!
+                if (i == 3) {               // 0-2 are keys, 3-5 are skulls
+                    j = false;
                 }
-            } while (++NewButtons<gElapsedTime);     // All done?
+                player.cards[i] = j;        // Award all keycards
+            } while (++i < NUMCARDS);
+
+            player.armorpoints = 200;       // Full armor
+            player.armortype = 2;           // Mega armor
+            i = 0;
+
+            do {
+                player.weaponowned[i] = true;   // Give all weapons
+            } while (++i<NUMWEAPONS);
+
+            i = 0;
+
+            do {
+                player.ammo[i] = player.maxammo[i] = 500;   // Full ammo!
+            } while (++i<NUMAMMO);
+        }   break;
+
+        case ch_levelaccess:
+            MaxLevel = 23;
+            WritePrefsFile();
+            break;
+
+        case ch_maxcheats:
+            break;
+    }
+
+    if (gFollowMode) {                          // Test here to make SURE I get called at least once       
+        mobj_t* const pMapObj = player.mo;
+        player.automapx = pMapObj->x;           // Mark the automap position
+        player.automapy = pMapObj->y;
+    }
+
+    gOldPlayerX = player.automapx;      // Mark the previous position
+    gOldPlayerY = player.automapy;
+    gOldScale = gMapScale;               // And scale value
+
+    if (NewButtons & PadX) {    // Enable/disable follow mode
+        gFollowMode ^= true;    // Toggle the mode
+    }
+
+    // If follow mode if off, then I intercept the joypad motion to move the map anywhere on the screen.
+    if (!gFollowMode) {
+        Fixed step = STEPVALUE * gElapsedTime;      // Multiplier for joypad motion: mul by integer
+        step = sfixedDiv16_16(step, gMapScale);     // Adjust for scale factor
+
+        if (buttons & PadRight) {
+            player.automapx += step;    // Step to the right
         }
+
+        if (buttons & PadLeft) {
+            player.automapx -= step;    // Step to the left
+        }
+
+        if (buttons & PadUp) {
+            player.automapy += step;    // Step up
+        }
+
+        if (buttons & PadDown) {
+            player.automapy -= step;    // Step down
+        }
+
+        // Scaling is tricky, I cannot use a simple multiply to adjust the scale factor to the
+        // timebase since the formula is ZOOM to the ElapsedTime power times scale.
+        if (buttons & PadRightShift) {
+            NewButtons = 0;                                         // Init the count
+            do {
+                gMapScale = sfixedMul16_16(gMapScale, ZOOMOUT);     // Perform the scale
+                if (gMapScale < MINSCALES) {                        // Too small?
+                    gMapScale = MINSCALES;                          // Set to smallest allowable
+                    break;                                          // Leave now!
+                }
+            } while (++NewButtons < gElapsedTime);                  // All done?
+        }
+
         if (buttons & PadLeftShift) {
             NewButtons = 0;         // Init the count
             do {
-                MapScale=sfixedMul16_16(MapScale, ZOOMIN);      // Perform the scale
-                if (MapScale>=MAXSCALES) {          // Too large?
-                    MapScale = MAXSCALES;           // Set to maximum
+                gMapScale = sfixedMul16_16(gMapScale, ZOOMIN);      // Perform the scale
+                if (gMapScale >= MAXSCALES) {                       // Too large?
+                    gMapScale = MAXSCALES;                          // Set to maximum
                     break;
                 }
-            } while (++NewButtons<gElapsedTime); // All done?
+            } while (++NewButtons < gElapsedTime);                  // All done?
         }
+
         // Eat the direction keys if not in follow mode
         buttons &= ~(PadUp|PadLeft|PadRight|PadDown|PadRightShift|PadLeftShift);
     }
-    JoyPadButtons = buttons;        // Save the filtered joypad value
-    NewJoyPadButtons = (PrevJoyPadButtons^buttons)&buttons; // Filter the joydowns
+
+    JoyPadButtons = buttons;                                        // Save the filtered joypad value
+    NewJoyPadButtons = (PrevJoyPadButtons ^ buttons) & buttons;     // Filter the joydowns
 }
 
-/**********************************
-
-    Draws the current frame to workingscreen
-
-**********************************/
+//--------------------------------------------------------------------------------------------------
+// Draws the current frame to workingscreen
+//--------------------------------------------------------------------------------------------------
 void AM_Drawer() noexcept {
-    player_t *p;        // Pointer to current player record
-    line_t *line;       // Pointer to the list of lines that make a map
-    Word drawn;         // How many lines drawn?
-    Word i;             // Temp
-    Word color;         // Color to draw line in
-    Fixed ox,oy;        // X and Y to draw the map from
-    int x1,y1;          // Source line coords
-    int x2,y2;          // Dest line coords
+    DrawARect(0, 0, 320, 160, COLOR_BLACK);     // Black out the screen
 
-    DrawARect(0,0,320,160,BLACK);       // Blank out the screen
+    player_t* const pPlayer = &players;     // Get pointer to the player
+    Fixed ox = pPlayer->automapx;           // Get the x and y to draw from
+    Fixed oy = pPlayer->automapy;
+    line_t* pLine = gpLines;                // Init the list pointer to the line segment array
+    uint32_t drawn = 0;                     // Init the count of drawn lines
+    uint32_t i = gNumLines;                 // Init the line count
 
-    p = &players;           // Get pointer to the player
-    ox = p->automapx;       // Get the x and y to draw from
-    oy = p->automapy;
-    line = gpLines;         // Init the list pointer to the line segment array
-    drawn = 0;              // Init the count of drawn lines
-    i = gNumLines;          // Init the line count
     do {
-        if (ShowAllLines ||                     // Cheat?
-            p->powers[pw_allmap] ||             // Automap enabled?
-            ((line->flags & ML_MAPPED) &&       // If not mapped or don't draw
-            !(line->flags & ML_DONTDRAW)) )  {
+        if (gShowAllLines ||                    // Cheat?
+            pPlayer->powers[pw_allmap] || (     // Automap enabled?
+                (pLine->flags & ML_MAPPED) &&   // If not mapped or don't draw
+                !(pLine->flags & ML_DONTDRAW)
+            )
+         ) {
+            const int32_t x1 = MulByMapScale(pLine->v1.x-ox);       // Source line coords: scale it
+            const int32_t y1 = MulByMapScale(pLine->v1.y-oy);
+            const int32_t x2 = MulByMapScale(pLine->v2.x-ox);       // Dest line coords: scale it
+            const int32_t y2 = MulByMapScale(pLine->v2.y-oy);
 
-            x1 = MulByMapScale(line->v1.x-ox);  // Scale it
-            y1 = MulByMapScale(line->v1.y-oy);
-            x2 = MulByMapScale(line->v2.x-ox);  // Scale it
-            y2 = MulByMapScale(line->v2.y-oy);
-            if ((y1>80 && y2>80) || (y1<-80 && y2<-80) ||
-                (x1>160 && x2>160) || (x1<-160 && x2<-160)) {
-                goto Skip;      // Is the line clipped?
+            // Is the line clipped?
+            if ((y1 > 80 && y2 > 80) ||
+                (y1 < -80 && y2 < -80) ||
+                (x1 > 160 && x2 > 160) ||
+                (x1 < -160 && x2 < -160)
+            ) {
+                ++pLine;
+                continue;
             }
 
             // Figure out color
-            if ((ShowAllLines ||
-                p->powers[pw_allmap]) &&    // If compmap && !Mapped yet
-                !(line->flags & ML_MAPPED)) {
-                color = LIGHTGREY;
-            } else if (!(line->flags & ML_TWOSIDED)) {  // One-sided line
-                color = RED;
-            } else if (line->special == 97 ||       // Teleport line
-                line->special == 39) {
-                color = GREEN;
-            } else if (line->flags & ML_SECRET) {   // Secret room?
-                color = RED;
-            } else if (line->special) {
-                color = BLUE;           // SPECIAL LINE
-            } else if (line->frontsector->floorheight !=
-                line->backsector->floorheight) {
-                color = YELLOW;
+            uint16_t color;
+
+            if ((gShowAllLines ||
+                pPlayer->powers[pw_allmap]) &&      // If compmap && !Mapped yet
+                (!(pLine->flags & ML_MAPPED))
+            ) {
+                color = COLOR_LIGHTGREY;
+            } else if (!(pLine->flags & ML_TWOSIDED)) {     // One-sided line
+                color = COLOR_RED;
+            } else if (pLine->special == 97 || pLine->special == 39) {  // Teleport line
+                color = COLOR_GREEN;
+            } else if (pLine->flags & ML_SECRET) {      // Secret room?
+                color = COLOR_RED;
+            } else if (pLine->special) {    // Special line
+                color = COLOR_BLUE;
+            } else if (pLine->frontsector->floorheight != pLine->backsector->floorheight) {     // Floor height change
+                color = COLOR_YELLOW;
             } else {
-                color = BROWN;
+                color = COLOR_BROWN;
             }
-            DrawLine(x1,y1,x2,y2,color);        // Draw the line
+
+            DrawLine(x1, y1, x2, y2, color);    // Draw the line
             ++drawn;                            // A line is drawn
         }
-Skip:
-        ++line;
+        ++pLine;
     } while (--i);
 
     // Draw the position of the player
-
     {
-        Fixed NoseScale;        // Scale factor for triangle size
-        mobj_t *mo;
-        angle_t angle;          // Angle of view
-        int nx3,ny3;            // Other points for the triangle
-        
         // Get the size of the triangle into a cached local
-        NoseScale = sfixedMul16_16(NOSELENGTH, MapScale);
-        mo = players.mo;
+        const Fixed noseScale = sfixedMul16_16(NOSELENGTH, gMapScale);
+        mobj_t* const pMapObj = players.mo;
 
-        x1 = MulByMapScale(mo->x-ox);                           // Get the screen
-        y1 = MulByMapScale(mo->y-oy);                           // coords
-        angle = mo->angle>>ANGLETOFINESHIFT;                    // Get angle
-        nx3 = IMFixMulGetInt(finecosine[angle],NoseScale)+x1;
-        ny3 = IMFixMulGetInt(finesine[angle],NoseScale)+y1;
+        int32_t x1 = MulByMapScale(pMapObj->x - ox);            // Get the screen
+        int32_t y1 = MulByMapScale(pMapObj->y - oy);            // coords
+        angle_t angle = pMapObj->angle >> ANGLETOFINESHIFT;     // Get angle of view
 
-        angle = (angle-((ANG90+ANG45)>>ANGLETOFINESHIFT))&FINEMASK;
-        x2 = IMFixMulGetInt(finecosine[angle],NoseScale)+x1;
-        y2 = IMFixMulGetInt(finesine[angle],NoseScale)+y1;
+        const int32_t nx3 = IMFixMulGetInt(finecosine[angle], noseScale) + x1;  // Other points for the triangle
+        const int32_t ny3 = IMFixMulGetInt(finesine[angle], noseScale) + y1;
 
-        angle = (angle+(((ANG90+ANG45)>>ANGLETOFINESHIFT)*2))&FINEMASK;
-        x1 = IMFixMulGetInt(finecosine[angle],NoseScale)+x1;
-        y1 = IMFixMulGetInt(finesine[angle],NoseScale)+y1;
+        angle = (angle - ((ANG90 + ANG45) >> ANGLETOFINESHIFT)) & FINEMASK;
+        const int32_t x2 = IMFixMulGetInt(finecosine[angle], noseScale) + x1;
+        const int32_t y2 = IMFixMulGetInt(finesine[angle], noseScale) + y1;
 
-        DrawLine(x1,y1,x2,y2,GREEN);    // Draw the triangle
-        DrawLine(x2,y2,nx3,ny3,GREEN);
-        DrawLine(nx3,ny3,x1,y1,GREEN);  
+        angle = (angle + (((ANG90 + ANG45) >> ANGLETOFINESHIFT) * 2)) & FINEMASK;
+        x1 = IMFixMulGetInt(finecosine[angle], noseScale)+x1;
+        y1 = IMFixMulGetInt(finesine[angle], noseScale)+y1;
+
+        DrawLine(x1, y1, x2, y2, COLOR_GREEN);      // Draw the triangle
+        DrawLine(x2, y2, nx3, ny3, COLOR_GREEN);
+        DrawLine(nx3, ny3, x1, y1, COLOR_GREEN);
     }
 
-    // SHOW ALL MAP THINGS (CHEAT)
-    if (ShowAllThings) {
-        int ObjScale;
-        mobj_t *mo;
-        mobj_t *pmo;
-        Fixed nx3;
-        
-        ObjScale = MulByMapScale(MOBJLENGTH);   // Get the triangle size
-        mo = mobjhead.next;
-        pmo = p->mo;
-        while (mo != &mobjhead) {       // Wrapped around?
-            if (mo != pmo) {            // Not the player?
-                x1 = MulByMapScale(mo->x-ox);
-                y1 = MulByMapScale(mo->y-oy);
-                
-                x2 = x1-ObjScale;       // Create the triangle
-                y2 = y1+ObjScale;
-                nx3 = x1+ObjScale;
-                y1 = y1-ObjScale;
+    // Show all map things (cheat)
+    if (gShowAllThings) {
+        const int32_t objScale = MulByMapScale(MOBJLENGTH);   // Get the triangle size
+        mobj_t* pMapObj = mobjhead.next;
+        const mobj_t* const pPlayerMapObj = pPlayer->mo;
 
-                DrawLine(x1,y1,x2,y2,LILAC);    // Draw the triangle
-                DrawLine(x2,y2,nx3,y2,LILAC);
-                DrawLine(nx3,y2,x1,y1,LILAC);
+        while (pMapObj != &mobjhead) {          // Wrapped around?
+            if (pMapObj != pPlayerMapObj) {     // Not the player?
+                const int32_t x1 = MulByMapScale(pMapObj->x-ox);
+                int32_t y1 = MulByMapScale(pMapObj->y-oy);
+                
+                const int32_t x2 = x1 - objScale;       // Create the triangle
+                const int32_t y2 = y1 + objScale;
+                const int32_t nx3 = x1 + objScale;
+                y1 = y1 - objScale;
+
+                DrawLine(x1, y1, x2, y2, COLOR_LILAC);      // Draw the triangle
+                DrawLine(x2, y2, nx3, y2, COLOR_LILAC);
+                DrawLine(nx3, y2, x1, y1, COLOR_LILAC);
             }
-            mo = mo->next;      // Next item?
+
+            pMapObj = pMapObj->next;    // Next item?
         }
     }
 
     // If less than 5 lines drawn, move to last position!
     if (drawn < 5) {
-        p->automapx = OldPlayerX;       // Restore the x,y
-        p->automapy = OldPlayerY;
-        MapScale = OldScale;            // Restore scale factor as well...
+        pPlayer->automapx = gOldPlayerX;      // Restore the x,y
+        pPlayer->automapy = gOldPlayerY;
+        gMapScale = gOldScale;          // Restore scale factor as well...
     }
 }

@@ -22,22 +22,6 @@ typedef int32_t Item;
 
 #define TICKSPERSEC 60
 
-#define BLACK 0x0000
-#define DARKGREY 0x39CE
-#define BROWN 0x4102
-#define PURPLE 0x3898
-#define BLUE 0x001E
-#define DARKGREEN 0x0200
-#define ORANGE 0x79C0
-#define RED 0x6800
-#define BEIGE 0x7A92
-#define YELLOW 0x7BC0
-#define GREEN 0x0380
-#define LIGHTBLUE 0x235E
-#define LILAC 0x6A9E
-#define PERIWINKLE 0x3A1E
-#define LIGHTGREY 0x6318
-#define WHITE 0x7FFF
 #define SfxActive 1
 #define MusicActive 2
 

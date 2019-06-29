@@ -942,7 +942,7 @@ extern void InitMathTables(void);
 
 /* In AMMain.c */
 extern void AM_Start(void) noexcept;
-extern void AM_Control(player_t *player) noexcept;
+extern void AM_Control(player_t& player) noexcept;
 extern void AM_Drawer(void) noexcept;
 
 /* In Shoot.c */

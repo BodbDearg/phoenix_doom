@@ -225,7 +225,7 @@ Word P_Ticker(void)
     if (pl->playerstate == PST_REBORN) {    /* Restart player? */
         G_DoReborn();       /* Poof!! */
     }
-    AM_Control(pl);     /* Handle automap controls */
+    AM_Control(*pl);    /* Handle automap controls */
     O_Control(pl);      /* Handle option controls */
     P_PlayerThink(pl);  /* Process player in the game */
         
