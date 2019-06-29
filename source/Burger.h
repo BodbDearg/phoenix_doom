@@ -1,19 +1,6 @@
-/********************************
+#pragma once
 
-    Burger Bill's universal library
-    3DO version
-    Also available for Mac, Apple IIgs, IBM PC
-
-********************************/
-
-#ifndef __BURGER__
-#define __BURGER__
-
-#include <stdint.h>
-
-#ifndef __cplusplus
-    #include <stdbool.h>
-#endif
+#include <cstdint>
 
 /* DC: header from the 3DO SDK - leaving here for reference for now.
  
@@ -29,10 +16,6 @@ typedef uint16_t    Short;      // DC: was 'unsigned short' in original 3DO sour
 typedef int32_t     Frac;       // DC: was 'long' in original 3DO source
 typedef int32_t     Fixed;      // DC: was 'long' in original 3DO source
 typedef double      extended;
-
-typedef struct {
-    Word top,left,bottom,right;
-} Rect;
 
 // DC: this is in the 3DO SDK - define for now to fix compile errors
 typedef int32_t Item;
@@ -62,11 +45,11 @@ typedef int32_t Item;
 extern Byte *VideoPointer;
 extern Word FramebufferWidth;
 extern Word FramebufferHeight;
-extern void DrawShape(const uint32_t x1, const uint32_t y1, const struct CelControlBlock* const pShape);
-extern void DrawMShape(const uint32_t x1, const uint32_t y1, const struct CelControlBlock* const pShape);
-extern void DrawARect(Word x,Word y,Word Width,Word Height,Word Color);
-extern const struct CelControlBlock* GetShapeIndexPtr(const void* ShapeArrayPtr, Word Index);
-extern void DrawRezShape(Word x,Word y,Word RezNum);
+extern void DrawShape(const uint32_t x1, const uint32_t y1, const struct CelControlBlock* const pShape) noexcept;
+extern void DrawMShape(const uint32_t x1, const uint32_t y1, const struct CelControlBlock* const pShape) noexcept;
+extern void DrawARect(const uint32_t x, const uint32_t y, const uint32_t width, const uint32_t height, const uint16_t color) noexcept;
+extern const struct CelControlBlock* GetShapeIndexPtr(const void* ShapeArrayPtr, Word Index) noexcept;
+extern void DrawRezShape(Word x,Word y,Word RezNum) noexcept;
 
 /* Input handlers */
 #define PadDown         0x80000000
@@ -85,19 +68,17 @@ extern void DrawRezShape(Word x,Word y,Word RezNum);
 #define PadXRight       0x00080000
 
 extern Word LastJoyButtons[4];      /* Save the previous joypad bits */
-extern Word ReadJoyButtons(Word Which);
+extern Word ReadJoyButtons(Word Which) noexcept;
 
 /* Misc routines */
-extern void LongWordToAscii(LongWord Input,Byte *AsciiPtr);
-extern Word SaveAFile(Byte *FileName,void *data,LongWord Length);
+extern void LongWordToAscii(LongWord Input,Byte *AsciiPtr) noexcept;
+extern Word SaveAFile(Byte *FileName,void *data,LongWord Length) noexcept;
 
 /* Time and Events */
 extern LongWord LastTick;
-extern LongWord ReadTick(void);
+extern LongWord ReadTick() noexcept;
 
 /* Misc */
 extern Word SystemState;
 extern Item VideoItem;          /* 3DO Specific! */
 extern Item VideoScreen;        /* 3DO Specific! */
-
-#endif

@@ -58,41 +58,10 @@ LongWord LastTick;      /* Time last waited at */
 static volatile LongWord TickValue;
 static bool TimerInited;
 
-/**********************************
-
-    Draw a solid colored rect on the screen
-    
-**********************************/
-
-// DC: FIXME: reimplement/replace
-#if 0
-    static LongWord MyCelData;  /* Color to draw with CCB */
-
-    static CCB MyCCB2 = {       /* This is for rects */
-        CCB_LAST|CCB_SPABS|CCB_LDSIZE|CCB_LDPRS|
-        CCB_LDPPMP|CCB_CCBPRE|CCB_YOXY|CCB_ACW|CCB_ACCW|
-        CCB_ACE|CCB_BGND|CCB_NOBLK, /* ccb_flags */
-        0x00000000,     /* ccb_NextPtr */
-        (CelData *) &MyCelData, /* ccb_CelData */
-        0x00000000, /* ccb_PIPPtr */
-        0x00000000, /* ccb_X */
-        0x00000000, /* ccb_Y */
-        0x00100000, /* ccb_HDX */
-        0x00000000, /* ccb_HDY */
-        0x00000000, /* ccb_VDX */
-        0x00010000, /* ccb_VDY */
-        0x00000000, /* ccb_DDX */
-        0x00000000, /* ccb_DDY */
-        0x1F001F00, /* ccb_PIXC */
-        0x40000016, /* ccb_PRE0 */
-        0x03FF1000  /* ccb_PRE1 Low bit is X control*/
-    };
-#endif
-
 //---------------------------------------------------------------------------------------------------------------------
 // Draw a shape using a resource number
 //---------------------------------------------------------------------------------------------------------------------
-void DrawRezShape(Word x, Word y, Word RezNum) {
+void DrawRezShape(Word x, Word y, Word RezNum) noexcept {
     DrawShape(x, y, reinterpret_cast<const CelControlBlock*>(loadResourceData(RezNum)));
     releaseResource(RezNum);
 }
@@ -103,7 +72,7 @@ void DrawRezShape(Word x, Word y, Word RezNum) {
 
 **********************************/
 
-const struct CelControlBlock* GetShapeIndexPtr(const void* ShapeArrayPtr, Word Index)
+const struct CelControlBlock* GetShapeIndexPtr(const void* ShapeArrayPtr, Word Index) noexcept
 {
     const uint32_t* const pShapeArrayOffsets = (const uint32_t*) ShapeArrayPtr;
     const uint32_t shapeArrayOffset = byteSwappedU32(pShapeArrayOffsets[Index]);
@@ -119,7 +88,7 @@ const struct CelControlBlock* GetShapeIndexPtr(const void* ShapeArrayPtr, Word I
 
 Word LastJoyButtons[4];     /* Save the previous joypad bits */
 
-Word ReadJoyButtons(Word PadNum)
+Word ReadJoyButtons(Word PadNum) noexcept
 {
     // DC: FIXME: TEMP
     Word buttons = 0;
@@ -193,7 +162,7 @@ Word ReadJoyButtons(Word PadNum)
 
 // DC: FIXME: reimplement/replace
 #if 0
-static void Timer60Hz(void)
+static void Timer60Hz(void) noexcept
 {
     Item devItem;       /* Item referance for a timer device */
     Item IOReqItem;     /* IO Request item */
@@ -217,7 +186,7 @@ static void Timer60Hz(void)
 }
 #endif
 
-LongWord ReadTick(void)
+LongWord ReadTick() noexcept
 {
     if (TimerInited) {      /* Was the timer started? */
         return TickValue;
@@ -253,7 +222,7 @@ static LongWord TensTable[] = {
 1000000000
 };
 
-void LongWordToAscii(LongWord Val,Byte *AsciiPtr)
+void LongWordToAscii(LongWord Val,Byte *AsciiPtr) noexcept
 {
     Word Index;      /* Index to TensTable */
     LongWord BigNum;    /* Temp for TensTable value */
@@ -285,7 +254,7 @@ void LongWordToAscii(LongWord Val,Byte *AsciiPtr)
 
 **********************************/
 
-Word SaveAFile(Byte *name,void *data,LongWord dataSize)
+Word SaveAFile(Byte *name,void *data,LongWord dataSize) noexcept
 {
     // DC: FIXME: reimplement/replace
     #if 0

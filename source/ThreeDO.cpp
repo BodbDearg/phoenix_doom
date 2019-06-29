@@ -7,6 +7,7 @@
 #include "Resources.h"
 #include "Textures.h"
 #include "Video.h"
+#include <algorithm>
 #include <cstdio>
 #include <ctime>
 #include <memory.h>
@@ -480,7 +481,7 @@ void ClearPrefsFile() {
     audioSetSoundVolume(MAX_AUDIO_VOLUME);      // Init the sound effects volume
     audioSetMusicVolume(MAX_AUDIO_VOLUME);      // Init the music volume
     ControlType = 3;                            // Use basic joypad controls
-    MaxLevel = 24;                              // Only allow level 1 to select from
+    MaxLevel = 1;                               // Only allow level 1 to select from
     ScreenSize = 0;                             // Default screen size
     WritePrefsFile();                           // Output the new prefs
 }
@@ -690,7 +691,7 @@ void AddCCB(Word x,Word y,MyCCB* NewCCB)
     #endif
 }
 
-static void DrawShapeImpl(const uint32_t x1, const uint32_t y1, const CelControlBlock* const pShape, bool bIsMasked) {
+static void DrawShapeImpl(const uint32_t x1, const uint32_t y1, const CelControlBlock* const pShape, bool bIsMasked) noexcept {
     // TODO: DC - This is temp!
     uint16_t* pImage;
     uint16_t imageW;
@@ -747,7 +748,7 @@ static void DrawShapeImpl(const uint32_t x1, const uint32_t y1, const CelControl
 
 **********************************/
 
-void DrawMShape(const uint32_t x1, const uint32_t y1, const CelControlBlock* const pShape) {
+void DrawMShape(const uint32_t x1, const uint32_t y1, const CelControlBlock* const pShape) noexcept {
     // TODO: DC - This is temp!
     DrawShapeImpl(x1, y1, pShape, true);
 
@@ -764,7 +765,7 @@ void DrawMShape(const uint32_t x1, const uint32_t y1, const CelControlBlock* con
 
 **********************************/
 
-void DrawShape(const uint32_t x1, const uint32_t y1, const CelControlBlock* const pShape) {
+void DrawShape(const uint32_t x1, const uint32_t y1, const CelControlBlock* const pShape) noexcept {
     // TODO: DC - This is temp!
     DrawShapeImpl(x1, y1, pShape, false);
 
@@ -782,37 +783,30 @@ void DrawShape(const uint32_t x1, const uint32_t y1, const CelControlBlock* cons
 
 **********************************/
 
-void DrawARect(Word x1, Word y1, Word Width, Word Height, Word color) {
+void DrawARect(const uint32_t x, const uint32_t y, const uint32_t width, const uint32_t height, const uint16_t color) noexcept {
 
+    const uint32_t color32 = Video::rgba5551ToScreenCol(color);
+
+    // Clip the rect bounds
+    if (x >= Video::SCREEN_WIDTH || y >= Video::SCREEN_HEIGHT)
+        return;
     
+    const uint32_t xEnd = std::min(x + width, Video::SCREEN_WIDTH);
+    const uint32_t yEnd = std::min(y + height, Video::SCREEN_HEIGHT);
 
-    // DC: FIXME: implement/replace
-    #if 0
-        MyCCB* DestCCB;         /* Pointer to new CCB entry */
+    // Fill the color
+    uint32_t* pRow = Video::gFrameBuffer + x + (y * Video::SCREEN_WIDTH);
 
-        DestCCB = CurrentCCB;       /* Copy pointer to local */
-        if (DestCCB>=&CCBArray[CCBTotal]) {     /* Am I full already? */
-            FlushCCBs();                /* Draw all the CCBs/Lines */
-            DestCCB=CCBArray;
+    for (uint32_t yCur = y; yCur < yEnd; ++yCur) {
+        uint32_t* pPixel = pRow;
+
+        for (uint32_t xCur = x; xCur < xEnd; ++xCur) {
+            *pPixel = color32;
+            ++pPixel;
         }
-        DestCCB->ccb_Flags = CCB_LDSIZE|CCB_LDPRS|
-            CCB_LDPPMP|CCB_CCBPRE|CCB_YOXY|CCB_ACW|CCB_ACCW|
-            CCB_ACE|CCB_BGND|CCB_NOBLK; /* ccb_flags */
 
-        DestCCB->ccb_PIXC = 0x1F00;     /* PIXC control */
-        DestCCB->ccb_PRE0 = 0x40000016;     /* Preamble */
-        DestCCB->ccb_PRE1 = 0x03FF1000;     /* Second preamble */
-        DestCCB->ccb_SourcePtr = (CelData *)0;  /* Save the source ptr */
-        DestCCB->ccb_PLUTPtr = (void *)(color<<16);     /* Set the color pixel */
-        DestCCB->ccb_XPos = x1<<16;     /* Set the x and y coord for start */
-        DestCCB->ccb_YPos = y1<<16;
-        DestCCB->ccb_HDX = Width<<20;       /* OK */
-        DestCCB->ccb_HDY = 0<<20;
-        DestCCB->ccb_VDX = 0<<16;
-        DestCCB->ccb_VDY = Height<<16;
-        ++DestCCB;              /* Next CCB */
-        CurrentCCB = DestCCB;   /* Save the CCB pointer */
-    #endif
+        pRow += Video::SCREEN_WIDTH;
+    }
 }
 
 /**********************************
@@ -901,20 +895,6 @@ void DrawSkyLine()
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-// Makes a framebuffer color from the given RGB values.
-// Saturates/clamps the values if they are out of range.
-//---------------------------------------------------------------------------------------------------------------------
-static uint32_t makeFramebufferColor(const Fixed rFrac, const Fixed gFrac, const Fixed bFrac) {
-    const uint16_t rInt = rFrac >> (FRACBITS - 3);
-    const uint16_t gInt = gFrac >> (FRACBITS - 3);
-    const uint16_t bInt = bFrac >> (FRACBITS - 3);
-    const uint32_t rClamp = (rInt > 0xFF) ? 0xFF : rInt;
-    const uint32_t gClamp = (gInt > 0xFF) ? 0xFF : gInt;
-    const uint32_t bClamp = (bInt > 0xFF) ? 0xFF : bInt;
-    return ((rClamp << 24) | (gClamp << 16) | (bClamp << 8) | 0xFF);
-}
-
-//---------------------------------------------------------------------------------------------------------------------
 // Returns a fixed point multipler for the given texture light value (which is in 4.3 format)
 // This can be used to scale RGB values due to lighting.
 //---------------------------------------------------------------------------------------------------------------------
@@ -981,7 +961,7 @@ void DrawWallColumn(
             const Fixed darkenedG = sfixedMul16_16(texGFrac, lightMultiplier);
             const Fixed darkenedB = sfixedMul16_16(texBFrac, lightMultiplier);
 
-            const uint32_t finalColor = makeFramebufferColor(darkenedR, darkenedG, darkenedB);
+            const uint32_t finalColor = Video::fixedRgbToScreenCol(darkenedR, darkenedG, darkenedB);
             const uint32_t screenX = tx_x + ScreenXOffset;
             const uint32_t screenY = dstY + ScreenYOffset;
 
@@ -1073,7 +1053,7 @@ void DrawFloorColumn(Word ds_y,Word ds_x1,Word Count,LongWord xfrac,
         const Fixed darkenedG = sfixedMul16_16(texGFrac, lightMultiplier);
         const Fixed darkenedB = sfixedMul16_16(texBFrac, lightMultiplier);
 
-        const uint32_t finalColor = makeFramebufferColor(darkenedR, darkenedG, darkenedB);        
+        const uint32_t finalColor = Video::fixedRgbToScreenCol(darkenedR, darkenedG, darkenedB);        
         const uint32_t screenX = ds_x1 + pixelNum + ScreenXOffset;
         const uint32_t screenY = ds_y + ScreenYOffset;
 
@@ -1413,7 +1393,7 @@ void DrawSpriteNoClip(const vissprite_t* const pVisSprite) {
                 const Fixed darkenedB = sfixedMul16_16(texBFrac, lightMultiplier);
 
                 // Save the final output color
-                const uint32_t finalColor = makeFramebufferColor(darkenedR, darkenedG, darkenedB);
+                const uint32_t finalColor = Video::fixedRgbToScreenCol(darkenedR, darkenedG, darkenedB);
                 *pDstPixel = finalColor;
             }
 
@@ -1550,7 +1530,7 @@ static void OneSpriteLine(
             const Fixed darkenedB = sfixedMul16_16(texBFrac, lightMultiplier);
             
             // Save the final output color
-            const uint32_t finalColor = makeFramebufferColor(darkenedR, darkenedG, darkenedB);
+            const uint32_t finalColor = Video::fixedRgbToScreenCol(darkenedR, darkenedG, darkenedB);
             *pDstPixel = finalColor;
         }
         

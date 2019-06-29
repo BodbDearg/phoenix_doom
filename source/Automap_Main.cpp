@@ -83,15 +83,15 @@ static inline int IMFixMulGetInt(const Fixed a, const Fixed b) noexcept {
 // Init all the variables for the automap system Called during P_Start when the game is initally loaded.
 // If I need any permanent art, load it now.
 //--------------------------------------------------------------------------------------------------
-void AM_Start(void)
-{
-    MapScale = (FRACUNIT/16);   // Default map scale factor (0.00625)
-    ShowAllThings = false;      // Turn off the cheat
-    ShowAllLines = false;       // Turn off the cheat
-    FollowMode = true;          // Follow the player
-    players.AutomapFlags &= ~AF_ACTIVE; // Automap off
-    TrueOldButtons = JoyPadButtons; // Get the current state
-    memset((char *)CurrentCheat,0,sizeof(CurrentCheat));
+void AM_Start() noexcept {
+    MapScale = (FRACUNIT / 16);             // Default map scale factor (0.00625)
+    ShowAllThings = false;                  // Turn off the cheat
+    ShowAllLines = false;                   // Turn off the cheat
+    FollowMode = true;                      // Follow the player
+    players.AutomapFlags &= ~AF_ACTIVE;     // Automap off
+    TrueOldButtons = JoyPadButtons;         // Get the current state
+
+    memset((char*) CurrentCheat, 0, sizeof(CurrentCheat));
 }
 
 /**********************************
@@ -101,8 +101,7 @@ void AM_Start(void)
 
 **********************************/
 
-static cheat_e AM_CheckCheat(Word NewButtons)
-{
+static cheat_e AM_CheckCheat(Word NewButtons) noexcept {
     Word c;
     char *SourcePtr;
 
@@ -166,21 +165,14 @@ static cheat_e AM_CheckCheat(Word NewButtons)
     return cheat;
 }
 
-/**********************************
-
-    Draw a pixel on the screen but clip it to the visible area.
-    I assume a coordinate system where 0,0 is at the upper left corner
-    of the screen.
-
-**********************************/
-
-static void ClipPixel(Word x, Word y, Word color) {
-    if (x < 320 && y < 160) {       // On the screen?
-        const uint32_t colR = (color & 0b0111110000000000) >> 10;
-        const uint32_t colG = (color & 0b0000001111100000) >> 5;
-        const uint32_t colB = (color & 0b0000000000011111) >> 0;        
-        const uint32_t frambufferCol = ((colR << 27) | (colG << 19) | (colB << 11) | 0xFFu);
-        Video::gFrameBuffer[y * Video::SCREEN_WIDTH + x] = frambufferCol;
+//--------------------------------------------------------------------------------------------------
+// Draw a pixel on the screen but clip it to the visible area.
+// I assume a coordinate system where 0,0 is at the upper left corner of the screen.
+//--------------------------------------------------------------------------------------------------
+static void ClipPixel(const uint32_t x, const uint32_t y, const uint16_t color) noexcept {
+    if (x < 320 && y < 160) {   // On the screen?
+        const uint32_t color32 = Video::rgba5551ToScreenCol(color);
+        Video::gFrameBuffer[y * Video::SCREEN_WIDTH + x] = color32;
     }
 }
 
@@ -198,8 +190,7 @@ static void ClipPixel(Word x, Word y, Word color) {
 
 **********************************/
 
-static void DrawLine(Word x1,Word y1,Word x2,Word y2,Word color)
-{
+static void DrawLine(Word x1,Word y1,Word x2,Word y2,Word color) noexcept {
     Word DeltaX,DeltaY;     // X and Y motion
     Word Delta;             // Fractional step
     int XStep,YStep;        // Step to the left or right
@@ -260,8 +251,7 @@ static void DrawLine(Word x1,Word y1,Word x2,Word y2,Word color)
     a filtered NewPadButtons and JoyPadButtons 
     
 **********************************/
-
-void AM_Control(player_t *player)
+void AM_Control(player_t *player) noexcept
 {
     Word buttons;   // Buttons
     Word NewButtons;    // Button down events
@@ -404,8 +394,7 @@ void AM_Control(player_t *player)
     Draws the current frame to workingscreen
 
 **********************************/
-void AM_Drawer(void)
-{
+void AM_Drawer() noexcept {
     player_t *p;        // Pointer to current player record
     line_t *line;       // Pointer to the list of lines that make a map
     Word drawn;         // How many lines drawn?
