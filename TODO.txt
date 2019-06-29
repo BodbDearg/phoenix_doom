@@ -1,5 +1,4 @@
 - Screen tint fx (pain etc.)
-- Automap drawing
 - Screen wipes
 - Sprites need light diminishing
 - Finale drawing
@@ -28,6 +27,7 @@
 - Fix bug with bottom of sprites rendering past walls (1 or 2px more than we should have?)
 - Fix address sanitizer crash on angle LUT lookup (easy to reproduce on MacOS with Xcode)
 - Fix issue on level 10 with small crate textures - alignment issue?
+- Fix head not exploding on death
 - Maybe add menu sounds?
 - Do lighting effects on player gun.
 - Maybe center numbers on HUD?

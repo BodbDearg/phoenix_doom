@@ -132,7 +132,7 @@ static cheat_e AM_CheckCheat(Word NewButtons) noexcept {
     do {
         if (NewButtons & codes[c]) {        // Key press?
             
-        // Shift the entire string over 1 char
+            // Shift the entire string over 1 char
             {
                 char*EndPtr;
                 SourcePtr = CurrentCheat;
@@ -143,7 +143,7 @@ static cheat_e AM_CheckCheat(Word NewButtons) noexcept {
                 } while (SourcePtr!=EndPtr);
                 EndPtr[0] = CheatLetter[c];     // Set the new end char
             }
-    // Does the string match a cheat sequence?
+            // Does the string match a cheat sequence?
             {
                 Word i;
                 i = 0;
@@ -176,68 +176,77 @@ static void ClipPixel(const uint32_t x, const uint32_t y, const uint16_t color) 
     }
 }
 
-/**********************************
+//--------------------------------------------------------------------------------------------------
+// Draw a line in the automap, I use a classic Bresanhem line algorithm and call a routine to clip 
+// to the visible bounds. All x and y's assume a coordinate system where 0,0 is the CENTER of the
+// visible screen!
+//
+// Even though all the variables are cast as unsigned, they are truly signed. I do this to test
+// for out of bounds with one compare (x>=0 && x<320) is now just (x<320). Neat eh?
+//--------------------------------------------------------------------------------------------------
+static void DrawLine(
+    const uint32_t x1,
+    const uint32_t y1,
+    const uint32_t x2,
+    const uint32_t y2,
+    const uint16_t color
+) noexcept {
+    // Coord adjustment:
+    // (1) Move the x coords to the CENTER of the screen
+    // (2) Vertically flip and then CENTER the y
+    int32_t x = x1 + 160;
+    const int32_t xEnd = x2 + 160;
+    int32_t y = 80 - y1;
+    const int32_t yEnd = 80 - y2;
+   
+    // Draw the initial pixel
+    ClipPixel(x, y, color);
 
-    Draw a line in the automap, I use a classic Bresanhem line
-    algorithm and call a routine to clip to the visible bounds.
+    // Get the distance to travel
+    uint32_t deltaX = xEnd - x;
+    uint32_t deltaY = yEnd - y;
 
-    All x and y's assume a coordinate system where 0,0 is the CENTER
-    of the visible screen!
-
-    Even though all the variables are cast as unsigned, they
-    are truly signed. I do this to test for out of bounds with one
-    compare (x>=0 && x<320) is now just (x<320). Neat eh?
-
-**********************************/
-
-static void DrawLine(Word x1,Word y1,Word x2,Word y2,Word color) noexcept {
-    Word DeltaX,DeltaY;     // X and Y motion
-    Word Delta;             // Fractional step
-    int XStep,YStep;        // Step to the left or right
-
-    x1+=160;        // Move the x coords to the CENTER of the screen
-    x2+=160;
-    y1=80-y1;       // Vertically flip and then CENTER the y
-    y2=80-y2;
-    ClipPixel(x1,y1,color);     // Draw the initial pixel
-
-    DeltaX = x2-x1;         // Get the distance to travel
-    DeltaY = y2-y1;
-    if (!DeltaX && !DeltaY) {       // No line here?
-        return;             // Exit now
+    if (deltaX == 0 && deltaY == 0) {   // No line here?
+        return;                         // Exit now
     }
-    XStep = 1;              // Assume positive step
-    YStep = 1;
-    if (DeltaX&0x8000) {    // Going left?
-        DeltaX = -DeltaX;   // Make positive
-        XStep = -1;         // Step to the left
+
+    int32_t xStep = 1;          // Assume positive step
+    int32_t yStep = 1;
+
+    if (deltaX & 0x80000000) {  // Going left?
+        deltaX = -deltaX;       // Make positive
+        xStep = -1;             // Step to the left
     }
-    if (DeltaY&0x8000) {    // Going up?
-        DeltaY = -DeltaY;   // Make positive
-        YStep = -1;
+
+    if (deltaY & 0x80000000) {  // Going up?
+        deltaY = -deltaY;       // Make positive
+        yStep = -1;             // Step upwards
     }
-    Delta = 0;              // Init the fraction
-    if (DeltaX<DeltaY) {    // Is the Y larger? (Step in Y)
-        do {                // Yes, make the Y step every pixel
-            y1+=YStep;      // Step the Y pixel
-            Delta+=DeltaX;  // Add the X fraction
-            if (Delta>=DeltaY) {    // Time to step the X?
-                x1+=XStep;          // Step the X
-                Delta-=DeltaY;      // Adjust the fraction
+
+    int32_t delta = 0;      // Init the fractional step
+
+    if (deltaX < deltaY) {              // Is the Y larger? (Step in Y)
+        do {                            // Yes, make the Y step every pixel
+            y += yStep;                 // Step the Y pixel
+            delta += deltaX;            // Add the X fraction
+            if (delta >= deltaY) {      // Time to step the X?
+                x += xStep;             // Step the X
+                delta -= deltaY;        // Adjust the fraction
             }
-            ClipPixel(x1,y1,color); // Draw a pixel
-        } while (y1!=y2);           // At the bottom?
-        return;             // Exit
+            ClipPixel(x, y, color);     // Draw a pixel
+        } while (y != yEnd);            // At the bottom?
+        return;                         // Exit
     }
-    do {            // Nope, make the X step every pixel
-        x1+=XStep;      // Step the X coord
-        Delta+=DeltaY;  // Adjust the Y fraction
-        if (Delta>=DeltaX) {    // Time to step Y?
-            y1+=YStep;      // Step the Y coord
-            Delta-=DeltaX;  // Adjust the fraction
+
+    do {                            // Nope, make the X step every pixel
+        x += xStep;                 // Step the X coord
+        delta += deltaY;            // Adjust the Y fraction
+        if (delta >= deltaX) {      // Time to step Y?
+            y += yStep;             // Step the Y coord
+            delta -= deltaX;        // Adjust the fraction
         }
-        ClipPixel(x1,y1,color);     // Draw a pixel
-    } while (x1!=x2);       // At the bottom?
+        ClipPixel(x, y, color);     // Draw a pixel
+    } while (x != xEnd);            // At the bottom?
 }
 
 /**********************************
