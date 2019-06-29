@@ -86,6 +86,8 @@ set(SOURCE_FILES
     "ThreeDO.cpp"
     "Tick.cpp"
     "User.cpp"
+    "Video.cpp"
+    "Video.h"
 )
 
 set(OTHER_FILES

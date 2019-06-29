@@ -7,13 +7,6 @@
 #include <burger.h>
 #include <SDL.h>
 
-// DC: FIXME: DO NOT HARDCODE LIKE THIS!
-#define SCREEN_WIDTH 320
-#define SCREEN_HEIGHT 200   // Note: 3DO vertical res was 240 but 240 px was unused (black border)
-
-extern SDL_Window*     gWindow;
-extern SDL_Renderer*   gRenderer;
-
 /****************************
 
     Global defines

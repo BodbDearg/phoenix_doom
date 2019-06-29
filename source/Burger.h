@@ -37,7 +37,6 @@ typedef struct {
 // DC: this is in the 3DO SDK - define for now to fix compile errors
 typedef int32_t Item;
 
-#define __3DO__
 #define TICKSPERSEC 60
 
 #define BLACK 0x0000
@@ -63,7 +62,6 @@ typedef int32_t Item;
 extern Byte *VideoPointer;
 extern Word FramebufferWidth;
 extern Word FramebufferHeight;
-extern void SetAPixel(Word x,Word y,Word Color);
 extern void DrawShape(const uint32_t x1, const uint32_t y1, const struct CelControlBlock* const pShape);
 extern void DrawMShape(const uint32_t x1, const uint32_t y1, const struct CelControlBlock* const pShape);
 extern void DrawARect(Word x,Word y,Word Width,Word Height,Word Color);

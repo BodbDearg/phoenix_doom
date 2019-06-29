@@ -8,6 +8,7 @@
 - Cleanup and optimize render code
 - Intro logos
 - Intro videos? (maybe)
+- Fix view bob not working.
 - Fake contrast on walls
 - Tweak light diminishing (longer falloff + darker)
 - Tweak wall column rendering, looks a bit 'fuzzy' right now.

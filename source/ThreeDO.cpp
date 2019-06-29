@@ -1,15 +1,16 @@
 #include "Audio/Audio.h"
 #include "CelUtils.h"
-#include "doom.h"
+#include "Doom.h"
 #include "Endian.h"
 #include "MathUtils.h"
 #include "Mem.h"
 #include "Resources.h"
 #include "Textures.h"
+#include "Video.h"
+#include <cstdio>
+#include <ctime>
 #include <memory.h>
 #include <SDL.h>
-#include <stdio.h>
-#include <time.h>
 
 /* DC: headers from the 3DO SDK - leaving here for reference for now.
 
@@ -21,73 +22,6 @@
 #include <audio.h>
 #include <celutils.h>
 */
-
-SDL_Window*     gWindow;
-SDL_Renderer*   gRenderer;
-uint32_t*       gFrameBuffer;
-SDL_Texture*    gFramebufferTexture;
-
-static void createDisplay() {
-    if (SDL_InitSubSystem(SDL_INIT_VIDEO) != 0) {
-        FATAL_ERROR("Unable to initialize SDL!");
-    }
-    
-    Uint32 windowCreateFlags = 0;
-    
-    #ifndef __MACOSX__
-        windowCreateFlags |= SDL_WINDOW_OPENGL;
-    #endif
-
-    gWindow = SDL_CreateWindow(
-        "PhoenixDoom",
-        SDL_WINDOWPOS_CENTERED,
-        SDL_WINDOWPOS_CENTERED,
-        SCREEN_WIDTH * 5,
-        SCREEN_HEIGHT * 5,
-        windowCreateFlags
-    );
-    
-    if (!gWindow) {
-        FATAL_ERROR("Unable to create a window!");
-    }
-
-    gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-    const uint32_t framebufferSize = SCREEN_WIDTH * SCREEN_WIDTH * sizeof(uint32_t);
-    gFrameBuffer = (uint32_t*) MemAlloc(framebufferSize);
-    
-    if (!gRenderer) {
-        FATAL_ERROR("Failed to create renderer!");
-    }
-    
-    int textureAccessMode = SDL_TEXTUREACCESS_STREAMING;
-    
-    #ifdef __MACOSX__
-        // Streaming doesn't work for the Metal backend currently!
-        textureAccessMode = SDL_TEXTUREACCESS_STATIC;
-    #endif
-
-    gFramebufferTexture = SDL_CreateTexture(
-        gRenderer,
-        SDL_PIXELFORMAT_RGBA8888,
-        textureAccessMode,
-        SCREEN_WIDTH,
-        SCREEN_HEIGHT
-    );
-
-    if (!gFramebufferTexture) {
-        FATAL_ERROR("Failed to create a framebuffer texture!");
-    }
-}
-
-static void shutdownDisplay() {
-    MemFree(gFrameBuffer);
-    gFrameBuffer = 0;
-    SDL_DestroyRenderer(gRenderer);
-    gRenderer = 0;
-    SDL_DestroyWindow(gWindow);
-    gWindow = 0;
-    SDL_QuitSubSystem(SDL_INIT_VIDEO);
-}
 
 //-----------------------------------------------------------------------------
 // DC: define these things from the 3DO SDK for now to fix compile errors
@@ -546,7 +480,7 @@ void ClearPrefsFile() {
     audioSetSoundVolume(MAX_AUDIO_VOLUME);      // Init the sound effects volume
     audioSetMusicVolume(MAX_AUDIO_VOLUME);      // Init the music volume
     ControlType = 3;                            // Use basic joypad controls
-    MaxLevel = 1;                               // Only allow level 1 to select from
+    MaxLevel = 24;                              // Only allow level 1 to select from
     ScreenSize = 0;                             // Default screen size
     WritePrefsFile();                           // Output the new prefs
 }
@@ -630,24 +564,7 @@ static void FlushCCBs(void)
 **********************************/
 
 void UpdateAndPageFlip(const bool bAllowDebugClear) {
-    SDL_UpdateTexture(gFramebufferTexture, NULL, gFrameBuffer, SCREEN_WIDTH * sizeof(uint32_t));    
-    SDL_RenderCopy(gRenderer, gFramebufferTexture, NULL, NULL);
-
-    // Clear the framebuffer to pink to spot rendering gaps
-    #if ASSERTS_ENABLED
-        if (bAllowDebugClear) {
-            const uint32_t pinkU32 = 0xFF00FFFF;
-            uint32_t* pPixel = gFrameBuffer;
-            uint32_t* const pEndPixel = gFrameBuffer + (SCREEN_WIDTH * SCREEN_HEIGHT);
-
-            while (pPixel < pEndPixel) {
-                *pPixel = pinkU32;
-                ++pPixel;
-            }
-        }
-    #endif
-
-    SDL_RenderPresent(gRenderer);
+    Video::present(bAllowDebugClear);
 
     // DC: FIXME: implement/replace
     #if 0
@@ -717,11 +634,11 @@ void DrawPlaque(Word RezNum)
 //---------------------------------------------------------------------------------------------------------------------
 void ThreeDOMain() {
     InitTools();                // Init the 3DO tool system
-    createDisplay();    
+    Video::init();
     UpdateAndPageFlip(true);    // Init the video display's vars    
     ReadPrefsFile();            // Load defaults
     D_DoomMain();               // Start doom
-    shutdownDisplay();
+    Video::shutdown();
 }
 
 /**********************************
@@ -786,8 +703,8 @@ static void DrawShapeImpl(const uint32_t x1, const uint32_t y1, const CelControl
 
     for (uint32_t y = y1; y < yEnd; ++y) {
         for (uint32_t x = x1; x < xEnd; ++x) {
-            if (x >= 0 && x < SCREEN_WIDTH) {
-                if (y >= 0 && y < SCREEN_HEIGHT) {
+            if (x >= 0 && x < Video::SCREEN_WIDTH) {
+                if (y >= 0 && y < Video::SCREEN_HEIGHT) {
                     const uint16_t color = *pCurImagePixel;
                     const uint16_t colorA = (color & 0b1000000000000000) >> 10;
                     const uint16_t colorR = (color & 0b0111110000000000) >> 10;
@@ -812,7 +729,7 @@ static void DrawShapeImpl(const uint32_t x1, const uint32_t y1, const CelControl
                             255
                         );
 
-                        gFrameBuffer[y * SCREEN_WIDTH + x] = finalColor;
+                        Video::gFrameBuffer[y * Video::SCREEN_WIDTH + x] = finalColor;
                     }
                 }
             }
@@ -860,94 +777,15 @@ void DrawShape(const uint32_t x1, const uint32_t y1, const CelControlBlock* cons
 
 /**********************************
 
-    Draw a solid colored line using the 3DO
-    cel engine hardware. This replaces the generic code
-    found in AMMain.c.
-    My brain hurts.
-
-**********************************/
-
-void DrawLine(Word x1,Word y1,Word x2,Word y2,Word color)
-{
-    // DC: FIXME: implement/replace
-    #if 0
-        MyCCB* DestCCB;         /* Pointer to new CCB entry */
-
-        DestCCB = CurrentCCB;       /* Copy pointer to local */
-        if (DestCCB>=&CCBArray[CCBTotal]) {     /* Am I full already? */
-            FlushCCBs();                /* Draw all the CCBs/Lines */
-            DestCCB=CCBArray;
-        }
-        DestCCB->ccb_Flags = CCB_LDSIZE|CCB_LDPRS|
-            CCB_LDPPMP|CCB_CCBPRE|CCB_YOXY|CCB_ACW|CCB_ACCW|
-            CCB_ACE|CCB_BGND|CCB_NOBLK; /* ccb_flags */
-
-        DestCCB->ccb_PIXC = 0x1F00;     /* PIXC control */
-        DestCCB->ccb_PRE0 = 0x40000016;     /* Preamble */
-        DestCCB->ccb_PRE1 = 0x03FF1000;     /* Second preamble */
-        DestCCB->ccb_SourcePtr = (CelData *)0;  /* Save the source ptr */
-        DestCCB->ccb_PLUTPtr = (void *)(color<<16);     /* Set the color pixel */
-
-        if ((int)x2<(int)x1) {  /* By sorting the x and y's I can only draw lines */
-            Word Temp;      /* in two types, x>=y or x<y */
-            Temp = x1;      /* Swap the x's */
-            x1 = x2;
-            x2 = Temp;
-            Temp = y1;      /* Swap the y's */
-            y1 = y2;
-            y2 = Temp;
-        }
-
-        y1=-y1;         /* The y's are upside down!! */
-        y2=-y2;
-
-        x2=(x2-x1)+1;   /* Get the DELTA value (Always positive) */
-        y2=y2-y1;       /* But add 1 for inclusive size depending on sign */
-        x1+=160;    /* Move the x coords to the CENTER of the screen */
-        y1+=80;     /* Vertically flip and then CENTER the y */
-
-        if (y2&0x8000) {    /* Negative y? */
-            y2-=1;          /* Widen by 1 pixel */
-            if (x2<(-y2)) { /* Quadrant 7? */
-                x1-=1;
-                y1+=1;
-                goto Quadrant7; /* OK */
-            }       /* Quadrant 6 */
-            goto Quadrant6;     /* OK */
-        }
-        ++y2;
-        if (x2<y2) {    /* Quadrant 7? */
-    Quadrant7:
-            DestCCB->ccb_HDX = 1<<20;
-            DestCCB->ccb_HDY = 0<<20;
-            DestCCB->ccb_VDX = x2<<16;
-            DestCCB->ccb_VDY = y2<<16;
-        } else {        /* Quadrant 6 */
-            --y1;
-    Quadrant6:
-            DestCCB->ccb_VDX = 0<<16;
-            DestCCB->ccb_VDY = 1<<16;
-            DestCCB->ccb_HDX = x2<<20;
-            DestCCB->ccb_HDY = y2<<20;
-        }
-    
-        DestCCB->ccb_XPos = x1<<16;     /* Set the x and y coord for start */
-        DestCCB->ccb_YPos = y1<<16;
-
-        ++DestCCB;          /* Next CCB */
-        CurrentCCB = DestCCB;   /* Save the CCB pointer */
-    #endif
-}
-
-/**********************************
-
     This code is functionally equivalent to the Burgerlib
     version except that it is using the cached CCB system.
 
 **********************************/
 
-void DrawARect(Word x1,Word y1,Word Width,Word Height,Word color)
-{
+void DrawARect(Word x1, Word y1, Word Width, Word Height, Word color) {
+
+    
+
     // DC: FIXME: implement/replace
     #if 0
         MyCCB* DestCCB;         /* Pointer to new CCB entry */
@@ -1147,7 +985,7 @@ void DrawWallColumn(
             const uint32_t screenX = tx_x + ScreenXOffset;
             const uint32_t screenY = dstY + ScreenYOffset;
 
-            gFrameBuffer[screenY * SCREEN_WIDTH + screenX] = finalColor;
+            Video::gFrameBuffer[screenY * Video::SCREEN_WIDTH + screenX] = finalColor;
         }
     }
     
@@ -1239,7 +1077,7 @@ void DrawFloorColumn(Word ds_y,Word ds_x1,Word Count,LongWord xfrac,
         const uint32_t screenX = ds_x1 + pixelNum + ScreenXOffset;
         const uint32_t screenY = ds_y + ScreenYOffset;
 
-        gFrameBuffer[screenY * SCREEN_WIDTH + screenX] = finalColor;
+        Video::gFrameBuffer[screenY * Video::SCREEN_WIDTH + screenX] = finalColor;
     }
 
     // DC: FIXME: implement/replace
@@ -1552,7 +1390,7 @@ void DrawSpriteNoClip(const vissprite_t* const pVisSprite) {
         Fixed texelYFrac = startTexelY;
         
         const uint16_t* const pImageCol = pImage + texelXInt * spriteH;
-        uint32_t* pDstPixel = &gFrameBuffer[x + ScreenXOffset + (y1 + ScreenYOffset) * SCREEN_WIDTH];
+        uint32_t* pDstPixel = &Video::gFrameBuffer[x + ScreenXOffset + (y1 + ScreenYOffset) * Video::SCREEN_WIDTH];
 
         for (int y = y1; y <= y2; ++y) {
             // Grab this pixels color from the sprite image and skip if alpha 0
@@ -1581,7 +1419,7 @@ void DrawSpriteNoClip(const vissprite_t* const pVisSprite) {
 
             // Onto the next pixel in the column
             texelYFrac += texelStepY;
-            pDstPixel += SCREEN_WIDTH;
+            pDstPixel += Video::SCREEN_WIDTH;
         }
 
         texelXFrac += texelStepX;   // Next column
@@ -1689,7 +1527,7 @@ static void OneSpriteLine(
     // Render the sprite column
     const uint16_t* const pImageCol = getSpriteColumn(pVisSprite, spriteX);
     Fixed texelYFrac = startTexelY;
-    uint32_t* pDstPixel = &gFrameBuffer[screenX + ScreenXOffset + (y1 + ScreenYOffset) * SCREEN_WIDTH];
+    uint32_t* pDstPixel = &Video::gFrameBuffer[screenX + ScreenXOffset + (y1 + ScreenYOffset) * Video::SCREEN_WIDTH];
 
     for (int y = y1; y <= y2; ++y) {
         // Grab this pixels color from the sprite image and skip if alpha 0
@@ -1718,7 +1556,7 @@ static void OneSpriteLine(
         
         // Onto the next pixel in the column
         texelYFrac += texelStepY;
-        pDstPixel += SCREEN_WIDTH;
+        pDstPixel += Video::SCREEN_WIDTH;
     }
 
     // DC: FIXME: implement/replace

@@ -89,21 +89,6 @@ static bool TimerInited;
     };
 #endif
 
-#if 0
-void DrawARect(Word x,Word y,Word Width,Word Height,Word Color)
-{
-    // DC: FIXME: reimplement/replace
-    #if 0
-        MyCelData = Color<<16;          /* Adjust for BIG endian long to short */
-        MyCCB2.ccb_XPos = (x<<16);      /* Set the topmost X */
-        MyCCB2.ccb_YPos = (y<<16);      /* Set the topmost Y */
-        MyCCB2.ccb_HDX = (Width<<20);   /* Set the width factor */
-        MyCCB2.ccb_VDY = (Height<<16);  /* Set the height factor */
-        DrawCels(VideoItem,&MyCCB2);    /* Draw the rect */
-    #endif
-}
-#endif
-
 //---------------------------------------------------------------------------------------------------------------------
 // Draw a shape using a resource number
 //---------------------------------------------------------------------------------------------------------------------
