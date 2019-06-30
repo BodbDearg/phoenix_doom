@@ -19,16 +19,8 @@
 #endif
 
 /* Width of the screen in pixels */
-Word FramebufferWidth = 320;
-Word FramebufferHeight = 200;
-
-/**********************************
-
-    Variable for sound and other global system states
-
-**********************************/
-
-Word SystemState = 3;    /* Enable Sound/Music as default */
+uint32_t FramebufferWidth = 320;
+uint32_t FramebufferHeight = 200;
 
 /**********************************
 
@@ -37,7 +29,7 @@ Word SystemState = 3;    /* Enable Sound/Music as default */
 
 **********************************/
 
-Byte *VideoPointer;     /* Pointer to draw buffer */
+uint8_t *VideoPointer;     /* Pointer to draw buffer */
 Item VideoItem;         /* 3DO specific video Item number for hardware */
 Item VideoScreen;       /* 3DO specific screen Item number for hardware */
 
@@ -47,7 +39,7 @@ Item VideoScreen;       /* 3DO specific screen Item number for hardware */
 
 **********************************/
 
-LongWord LastTick;      /* Time last waited at */
+uint32_t LastTick;      /* Time last waited at */
 
 /**********************************
 
@@ -55,13 +47,13 @@ LongWord LastTick;      /* Time last waited at */
 
 **********************************/
 
-static volatile LongWord TickValue;
+static volatile uint32_t TickValue;
 static bool TimerInited;
 
 //---------------------------------------------------------------------------------------------------------------------
 // Draw a shape using a resource number
 //---------------------------------------------------------------------------------------------------------------------
-void DrawRezShape(Word x, Word y, Word RezNum) noexcept {
+void DrawRezShape(uint32_t x, uint32_t y, uint32_t RezNum) noexcept {
     DrawShape(x, y, reinterpret_cast<const CelControlBlock*>(loadResourceData(RezNum)));
     releaseResource(RezNum);
 }
@@ -72,7 +64,7 @@ void DrawRezShape(Word x, Word y, Word RezNum) noexcept {
 
 **********************************/
 
-const struct CelControlBlock* GetShapeIndexPtr(const void* ShapeArrayPtr, Word Index) noexcept
+const struct CelControlBlock* GetShapeIndexPtr(const void* ShapeArrayPtr, uint32_t Index) noexcept
 {
     const uint32_t* const pShapeArrayOffsets = (const uint32_t*) ShapeArrayPtr;
     const uint32_t shapeArrayOffset = byteSwappedU32(pShapeArrayOffsets[Index]);
@@ -86,12 +78,12 @@ const struct CelControlBlock* GetShapeIndexPtr(const void* ShapeArrayPtr, Word I
 
 **********************************/
 
-Word LastJoyButtons[4];     /* Save the previous joypad bits */
+uint32_t LastJoyButtons[4];     /* Save the previous joypad bits */
 
-Word ReadJoyButtons(Word PadNum) noexcept
+uint32_t ReadJoyButtons(uint32_t PadNum) noexcept
 {
     // DC: FIXME: TEMP
-    Word buttons = 0;
+    uint32_t buttons = 0;
     const Uint8 *state = SDL_GetKeyboardState(NULL);
 
     if (state[SDL_SCANCODE_UP]) {
@@ -186,7 +178,7 @@ static void Timer60Hz(void) noexcept
 }
 #endif
 
-LongWord ReadTick() noexcept
+uint32_t ReadTick() noexcept
 {
     if (TimerInited) {      /* Was the timer started? */
         return TickValue;
@@ -209,7 +201,7 @@ LongWord ReadTick() noexcept
 
 ****************************************/
 
-static LongWord TensTable[] = {
+static uint32_t TensTable[] = {
 1,              /* Table to quickly div by 10 */
 10,
 100,
@@ -222,12 +214,12 @@ static LongWord TensTable[] = {
 1000000000
 };
 
-void LongWordToAscii(LongWord Val,Byte *AsciiPtr) noexcept
+void LongWordToAscii(uint32_t Val, char* AsciiPtr) noexcept
 {
-    Word Index;      /* Index to TensTable */
-    LongWord BigNum;    /* Temp for TensTable value */
-    Word Letter;        /* ASCII char */
-    Word Printing;      /* Flag for printing */
+    uint32_t Index;      /* Index to TensTable */
+    uint32_t BigNum;    /* Temp for TensTable value */
+    uint32_t Letter;        /* ASCII char */
+    uint32_t Printing;      /* Flag for printing */
 
     Index = 10;      /* 10 digits to process */
     Printing = false;   /* Not printing yet */
@@ -254,119 +246,8 @@ void LongWordToAscii(LongWord Val,Byte *AsciiPtr) noexcept
 
 **********************************/
 
-Word SaveAFile(Byte *name,void *data,LongWord dataSize) noexcept
+uint32_t SaveAFile(Byte *name, void *data, uint32_t dataSize) noexcept
 {
     // DC: FIXME: reimplement/replace
-    #if 0
-        Item fileItem;      /* Item for opened file */
-        Item ioReqItem;     /* Item for i/o request */
-        IOInfo ioInfo;      /* Struct for I/O request data passing */
-        Err result;         /* Returned result */
-        LongWord numBlocks; /* Number of blocks returned */
-        LongWord blockSize; /* Size of a data block for device */
-        LongWord roundedSize;   /* Rounded file size */
-        FileStatus status;  /* Status I/O request record */
-
-        DeleteFile((char *)name);   /* Get rid of the file if it was already there */
-
-        result = CreateFile((char *)name);      /* Create the file again... */
-        if (result >= 0) {
-            fileItem = OpenDiskFile((char *)name);  /* Open the file for access */
-            if (fileItem >= 0) {
-
-                /* Create an IOReq to communicate with the file */
-
-                ioReqItem = CreateIOReq(NULL,0,fileItem,0);
-                if (ioReqItem >= 0) {
-                    /* Get the block size of the file */
-                    memset(&ioInfo, 0, sizeof(IOInfo));
-                    ioInfo.ioi_Command = CMD_STATUS;
-                    ioInfo.ioi_Recv.iob_Buffer = &status;
-                    ioInfo.ioi_Recv.iob_Len = sizeof(FileStatus);
-                    result = DoIO(ioReqItem,&ioInfo);
-                    if (result >= 0) {
-                        blockSize = status.fs.ds_DeviceBlockSize;
-                        /* Round to block size */
-
-                        numBlocks = (dataSize + blockSize - 1) / blockSize;
-
-                        /* allocate the blocks we need for this file */
-                        ioInfo.ioi_Command = FILECMD_ALLOCBLOCKS;
-                        ioInfo.ioi_Recv.iob_Buffer = NULL;
-                        ioInfo.ioi_Recv.iob_Len = 0;
-                        ioInfo.ioi_Offset = numBlocks;
-                        result = DoIO(ioReqItem, &ioInfo);
-                        if (result >= 0) {
-                            /* Tell the system how many bytes for this file */
-                            memset(&ioInfo,0,sizeof(IOInfo));
-                            ioInfo.ioi_Command = FILECMD_SETTYPE;
-                            ioInfo.ioi_Offset = (LongWord)0x33444F46;
-                            DoIO(ioReqItem,&ioInfo);
-
-                            memset(&ioInfo,0,sizeof(IOInfo));
-                            ioInfo.ioi_Command = FILECMD_SETEOF;
-                            ioInfo.ioi_Offset = dataSize;
-                            result = DoIO(ioReqItem, &ioInfo);
-                            if (result >= 0) {
-                                roundedSize = 0;
-                                if (dataSize >= blockSize) {
-                                    /* If we have more than one block's worth of */
-                                    /* data, write as much of it as possible. */
-
-                                    roundedSize = (dataSize / blockSize) * blockSize;
-                                    ioInfo.ioi_Command = CMD_WRITE;
-                                    ioInfo.ioi_Send.iob_Buffer = (void *)data;
-                                    ioInfo.ioi_Send.iob_Len = roundedSize;
-                                    ioInfo.ioi_Offset = 0;
-                                    result = DoIO(ioReqItem, &ioInfo);
-
-                                    data = (void *)((LongWord)data + roundedSize);
-                                    dataSize -= roundedSize;    /* Data remaining */
-                                }
-
-                /* If the amount of data left isn't as large as a whole */
-                /* block, we must allocate a memory buffer of the size */
-                /* of the block, copy the rest of the data into it, */
-                /* and write the buffer to disk. */
-
-                                if ((result >= 0) && dataSize) {
-                                    void *temp;
-                                    temp = AllocAPointer(blockSize);
-                                    if (temp) {
-                                        memcpy(temp,data,dataSize);
-                                        ioInfo.ioi_Command = CMD_WRITE;
-                                        ioInfo.ioi_Send.iob_Buffer = temp;
-                                        ioInfo.ioi_Send.iob_Len = blockSize;
-                                        ioInfo.ioi_Offset = roundedSize;
-                                        result = DoIO(ioReqItem,&ioInfo);
-
-                                        DeallocAPointer(temp);
-                                    } else {
-                                        result = NOMEM;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    DeleteIOReq(ioReqItem);
-                } else {
-                    result = ioReqItem;
-                }
-                CloseDiskFile(fileItem);
-            } else {
-                result = fileItem;
-            }
-
-            /* don't leave a potentially corrupt file around... */
-            if (result < 0) {
-                DeleteFile((char *)name);
-            }
-        }
-        if (result>=0) {
-            result = 0;
-        }
-        return (result);
-    #else
-        return -1;
-    #endif
+    return -1;
 }

@@ -1,5 +1,14 @@
-#include "Doom.h"
+#include "PlayerSprites.h"
+
+#include "Data.h"
+#include "Info.h"
+#include "Map.h"
+#include "MapObj.h"
+#include "MapUtil.h"
+#include "Player.h"
 #include "Random.h"
+#include "Sounds.h"
+#include "Tables.h"
 
 #define LOWERSPEED 18       /* Speed to lower the player's weapon */
 #define RAISESPEED 18       /* Speed to raise the player's weapon */

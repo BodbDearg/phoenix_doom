@@ -1,6 +1,11 @@
 #include "Audio/Audio.h"
-#include "doom.h"
+#include "Data.h"
+#include "MapObj.h"
+#include "MapUtil.h"
 #include "MathUtils.h"
+#include "Player.h"
+#include "Sounds.h"
+#include "Tables.h"
 
 #define S_CLIPPING_DIST (3600 * 0x10000)    // Clip sounds beyond this distance
 #define S_CLOSE_DIST (200 * 0x10000)        // Sounds at this distance or closer are full volume sounds
@@ -33,10 +38,9 @@ void S_StartSound(const Fixed* const pOriginXY, const uint32_t soundId) {
         if (pOriginXY != &pListener->x) {
             const Fixed dist = GetApproxDistance(pListener->x - pOriginXY[0], pListener->y - pOriginXY[1]);
             
-            if (dist > S_CLIPPING_DIST) {   // Too far away?
+            if (dist > S_CLIPPING_DIST)     // Too far away?
                 return;
-            }
-                
+            
             angle_t angle = PointToAngle(pListener->x, pListener->y, pOriginXY[0], pOriginXY[1]);
             angle = angle - pListener->angle;
             angle >>= ANGLETOFINESHIFT;
@@ -44,10 +48,9 @@ void S_StartSound(const Fixed* const pOriginXY, const uint32_t soundId) {
             if (dist >= S_CLOSE_DIST) {
                 const int vol = (255 * ((S_CLIPPING_DIST - dist) >> FRACBITS)) / S_ATTENUATOR;
 
-                if (!vol) {     // Too quiet?
+                if (vol <= 0)   // Too quiet?
                     return;
-                }
-
+                
                 const int sep = 128 - (sfixedMul16_16(S_STEREO_SWING, finesine[angle]) >> FRACBITS);
                 rightVolume = (sep * vol) >> 8;
                 leftVolume = ((256 - sep) * vol) >> 8;
@@ -110,7 +113,7 @@ static const uint8_t SONG_LOOKUP[] = {
     1       // .. ?
 };
 
-void S_StartSong(const musicnum_t musicId) {
+void S_StartSong(const uint8_t musicId) {
     const uint32_t trackNum = SONG_LOOKUP[musicId];    
     audioPlayMusic(trackNum);
 }

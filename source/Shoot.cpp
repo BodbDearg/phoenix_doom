@@ -1,6 +1,12 @@
-#include "doom.h"
+#include "Shoot.h"
+
+#include "Data.h"
+#include "Map.h"
 #include "MapData.h"
+#include "MapObj.h"
+#include "MapUtil.h"
 #include "MathUtils.h"
+#include "Tables.h"
 
 //===================
 //
@@ -69,8 +75,7 @@ static bool PA_CrossBSPNode(const node_t* pNode) {
 =
 =====================
 */
-
-void P_Shoot2(void)
+void P_Shoot2()
 {
     mobj_t      *t1;
     unsigned    angle;
@@ -133,10 +138,8 @@ void P_Shoot2(void)
 =
 ==================
 */
-
-bool PA_DoIntercept(void *value, bool isline, int frac)
-{
-    intptr_t     temp;
+bool PA_DoIntercept(void *value, bool isline, Fixed frac) {
+    intptr_t temp;
 
     if (old_frac < frac)
     {
@@ -170,8 +173,7 @@ bool PA_DoIntercept(void *value, bool isline, int frac)
 =
 ==============================================================================
 */
-
-bool PA_ShootLine (line_t *li, Fixed interceptfrac)
+bool PA_ShootLine(line_t* li, Fixed interceptfrac)
 {
     Fixed       slope;
     Fixed       dist;
@@ -244,8 +246,7 @@ bool PA_ShootLine (line_t *li, Fixed interceptfrac)
 =
 ==============================================================================
 */
-bool PA_ShootThing (mobj_t *th, Fixed interceptfrac)
-{
+bool PA_ShootThing(mobj_t* th, Fixed interceptfrac) {
     Fixed       frac;
     Fixed       dist;
     Fixed       thingaimtopslope, thingaimbottomslope;
@@ -303,9 +304,7 @@ bool PA_ShootThing (mobj_t *th, Fixed interceptfrac)
 = the sight.
 =================
 */
-
-Fixed PA_SightCrossLine (line_t *line)
-{
+Fixed PA_SightCrossLine(line_t* line) {
     int         s1, s2;
     int         p1x,p1y,p2x,p2y,p3x,p3y,p4x,p4y,dx,dy,ndx,ndy;
 
@@ -366,9 +365,7 @@ Fixed PA_SightCrossLine (line_t *line)
 static struct {
  vertex_t tv1,tv2;
 } thingline;
-
-bool PA_CrossSubsector(const subsector_t* sub)
-{
+bool PA_CrossSubsector(const subsector_t* sub) {
     seg_t       *seg;
     line_t      *line;
     int         count;

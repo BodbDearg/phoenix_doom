@@ -1,4 +1,4 @@
-#include "doom.h"
+#include "Tables.h"
 
 Fixed finetangent[4096] = {
 -170892070,-56963832,-34178252,-24413002,-18987858,-15535488,-13145381,-11392632,
@@ -2062,22 +2062,22 @@ angle_t tantoangle[2049] = {
 536870911
 };
 
-int viewangletox[FINEANGLES/4];
-angle_t xtoviewangle[MAXSCREENWIDTH+1];
-Word yslope[MAXSCREENHEIGHT];
-Word distscale[MAXSCREENWIDTH];
-Word IDivTable[8192];
-Word CenterX;           /* Center X coord */
-Word CenterY;           /* Center Y coord */
-Word ScreenWidth;   /* Width of the view screen */
-Word ScreenHeight;  /* Height of the view screen */
-Fixed Stretch;      /* Stretch factor */
-Fixed StretchWidth; /* Stretch factor * ScreenWidth */
-Word ScreenXOffset; /* True X coord for projected screen */
-Word ScreenYOffset; /* True Y coord for projected screen */
-LongWord GunXScale; /* Scale factor for player's weapon for X */
-LongWord GunYScale; /* Scale factor for player's weapon for Y */
-Fixed lightmins[256];   /* Minimum light factors */
-Fixed lightsubs[256];   /* Light subtraction */
-Fixed lightcoefs[256];  /* Light coeffecient */
-Fixed planelightcoef[256];  /* Plane light coeffecient */
+int32_t     viewangletox[FINEANGLES/4];
+angle_t     xtoviewangle[MAXSCREENWIDTH+1];
+uint32_t    yslope[MAXSCREENHEIGHT];
+uint32_t    distscale[MAXSCREENWIDTH];
+uint32_t    IDivTable[8192];
+uint32_t    CenterX;
+uint32_t    CenterY;
+uint32_t    ScreenWidth;
+uint32_t    ScreenHeight;
+Fixed       Stretch;
+Fixed       StretchWidth;
+uint32_t    ScreenXOffset;
+uint32_t    ScreenYOffset;
+uint32_t    GunXScale;
+uint32_t    GunYScale;
+Fixed       lightmins[256];
+Fixed       lightsubs[256];
+Fixed       lightcoefs[256];
+Fixed       planelightcoef[256];

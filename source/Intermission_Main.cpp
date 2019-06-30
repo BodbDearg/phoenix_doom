@@ -1,7 +1,12 @@
+#include "Intermission_Main.h"
+
 #include "CelUtils.h"
-#include "doom.h"
+#include "Data.h"
+#include "DoomRez.h"
+#include "Player.h"
 #include "Resources.h"
-#include <string.h>
+#include "Sounds.h"
+#include <cstring>
 
 #define KVALX   232
 #define KVALY   70
@@ -23,37 +28,35 @@ enum {      /* Intermission shape group */
 
 **********************************/
 
-static Byte *mapnames[] = {
-    (Byte *)"Hangar",
-    (Byte *)"Nuclear Plant",
-    (Byte *)"Toxin Refinery",
-    (Byte *)"Command Control",
-    (Byte *)"Phobos Lab",
-    (Byte *)"Central Processing",
-    (Byte *)"Computer Station",
-    (Byte *)"Phobos Anomaly",
-    (Byte *)"Deimos Anomaly",
-    (Byte *)"Containment Area",
-    (Byte *)"Refinery",
-    (Byte *)"Deimos Lab",
-    (Byte *)"Command Center",
-    (Byte *)"Halls of the Damned",
-    (Byte *)"Spawning Vats",
-    (Byte *)"Tower of Babel",
-    (Byte *)"Hell Keep",
-    (Byte *)"Pandemonium",
-    (Byte *)"House of Pain",
-    (Byte *)"Unholy Cathedral",
-    (Byte *)"Mt. Erebus",
-    (Byte *)"Limbo",
-    (Byte *)"Dis",
-    (Byte *)"Military Base"
-//  (Byte *)"Fortress of Mystery",
-//  (Byte *)"Warrens"
+static const char* mapnames[] = {
+    "Hangar",
+    "Nuclear Plant",
+    "Toxin Refinery",
+    "Command Control",
+    "Phobos Lab",
+    "Central Processing",
+    "Computer Station",
+    "Phobos Anomaly",
+    "Deimos Anomaly",
+    "Containment Area",
+    "Refinery",
+    "Deimos Lab",
+    "Command Center",
+    "Halls of the Damned",
+    "Spawning Vats",
+    "Tower of Babel",
+    "Hell Keep",
+    "Pandemonium",
+    "House of Pain",
+    "Unholy Cathedral",
+    "Mt. Erebus",
+    "Limbo",
+    "Dis",
+    "Military Base"
 };
 
-static Byte Finished[] = "Finished";
-static Byte Entering[] = "Entering";
+static const char* const Finished = "Finished";
+static const char* const Entering = "Entering";
 
 static Word killpercent;        /* Percent to attain */
 static Word itempercent;
@@ -69,8 +72,7 @@ static Word BangCount;          /* Delay for gunshot sound */
 
 **********************************/
 
-void PrintBigFont(Word x,Word y,Byte *string)
-{
+void PrintBigFont(uint32_t x, uint32_t y, const char* string) {
     Word y2,c;
     const void *ucharx;
     const void *Current;
@@ -129,8 +131,7 @@ void PrintBigFont(Word x,Word y,Byte *string)
 
 **********************************/
 
-Word GetBigStringWidth(Byte *string)
-{
+uint32_t GetBigStringWidth(const char* string) {
     Word c,Width;
     const void* ucharx;
     const void* Current;
@@ -186,22 +187,21 @@ Word GetBigStringWidth(Byte *string)
 
 **********************************/
 
-void PrintNumber(Word x,Word y,Word value,Word Flags)
-{
-    Byte v[16];     /* Buffer for text string */
+void PrintNumber(uint32_t x, uint32_t y, uint32_t value, uint32_t Flags) {
+    char v[16];     /* Buffer for text string */
 
-    LongWordToAscii(value,v);       /* Convert to string */
-    value = strlen((char *)v);      /* Get the length in chars */
-    if (Flags&PNPercent) {          /* Append a percent sign? */
+    LongWordToAscii(value, v);      /* Convert to string */
+    value = strlen((char*) v);      /* Get the length in chars */
+    if (Flags& PNFLAGS_PERCENT) {          /* Append a percent sign? */
         v[value] = '%';             /* Append it */
         ++value;
         v[value] = 0;               /* Make sure it's zero terminated */
     }
-    if (Flags&PNCenter) {           /* Center it? */
-        PrintBigFontCenter(x,y,v);
+    if (Flags & PNFLAGS_CENTER) {           /* Center it? */
+        PrintBigFontCenter(x, y, v);
         return;
     }
-    if (Flags&PNRight) {        /* Right justified? */
+    if (Flags & PNFLAGS_RIGHT) {        /* Right justified? */
         x-=GetBigStringWidth(v);
     }
     PrintBigFont(x,y,v);    /* Print the string */
@@ -212,9 +212,7 @@ void PrintNumber(Word x,Word y,Word value,Word Flags)
     Print an ascii string centered on the x coord
 
 **********************************/
-
-void PrintBigFontCenter(Word x,Word y,Byte *String)
-{
+void PrintBigFontCenter(uint32_t x, uint32_t y, const char* String) {
     x-=(GetBigStringWidth(String)/2);
     PrintBigFont(x,y,String);
 }
@@ -225,8 +223,7 @@ void PrintBigFontCenter(Word x,Word y,Byte *String)
 
 **********************************/
 
-void IN_Start(void)
-{
+void IN_Start() {
     INDelay = 0;
     BangCount = 0;
     killvalue = itemvalue = secretvalue = 0;    /* All values shown are zero */
@@ -248,9 +245,7 @@ void IN_Start(void)
     Exit the intermission
 
 **********************************/
-
-void IN_Stop(void)
-{
+void IN_Stop() {
     S_StopSong();       /* Kill the music */
 }
 
@@ -259,9 +254,7 @@ void IN_Stop(void)
     Exit the intermission
 
 **********************************/
-
-Word IN_Ticker(void)
-{
+uint32_t IN_Ticker() {
     Word Bang;
     if (TotalGameTicks < (TICKSPERSEC/2)) { /* Initial wait before I begin */
         return ga_nothing;      /* Do nothing */
@@ -305,9 +298,7 @@ Word IN_Ticker(void)
     Draw the intermission screen
     
 **********************************/
-
-void IN_Drawer(void)
-{
+void IN_Drawer() {
     const void* IntermisShapes;         /* Cached pointer */
     DrawRezShape(0,0,rBACKGRNDBROWN);   /* Load and draw the skulls */
     
@@ -324,9 +315,9 @@ void IN_Drawer(void)
     DrawMShape(65,IVALY, GetShapeIndexPtr(IntermisShapes,ItemsShape));
     DrawMShape(27,SVALY, GetShapeIndexPtr(IntermisShapes,SecretsShape));
 
-    PrintNumber(KVALX,KVALY,killvalue,PNPercent|PNRight);   /* Print the numbers */
-    PrintNumber(IVALX,IVALY,itemvalue,PNPercent|PNRight);
-    PrintNumber(SVALX,SVALY,secretvalue,PNPercent|PNRight);
+    PrintNumber(KVALX,KVALY,killvalue, PNFLAGS_PERCENT|PNFLAGS_RIGHT);   /* Print the numbers */
+    PrintNumber(IVALX,IVALY,itemvalue, PNFLAGS_PERCENT|PNFLAGS_RIGHT);
+    PrintNumber(SVALX,SVALY,secretvalue ,PNFLAGS_PERCENT|PNFLAGS_RIGHT);
     releaseResource(rINTERMIS);
     UpdateAndPageFlip(true);                /* Show the screen */
 }

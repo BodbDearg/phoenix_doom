@@ -1,5 +1,10 @@
-#include "doom.h"
+#include "MapUtil.h"
+
+#include "Data.h"
 #include "MapData.h"
+#include "MapObj.h"
+#include "Render_Main.h"
+#include "Tables.h"
 
 /**********************************
 
@@ -9,7 +14,7 @@
 
 **********************************/
 
-angle_t SlopeAngle(LongWord num,LongWord den)
+angle_t SlopeAngle(uint32_t num, uint32_t den)
 {
     num>>=(FRACBITS-3);         /* Leave in 3 extra bits for just a little more precision */
     den>>=FRACBITS;             /* Must be an int */
@@ -32,7 +37,7 @@ angle_t SlopeAngle(LongWord num,LongWord den)
 
 **********************************/
 
-angle_t PointToAngle(Fixed x1,Fixed y1,Fixed x2,Fixed y2)
+angle_t PointToAngle(Fixed x1, Fixed y1, Fixed x2, Fixed y2)
 {
     x2 -= x1;   /* Convert the two points into a fractional slope */
     y2 -= y1;
@@ -76,7 +81,7 @@ angle_t PointToAngle(Fixed x1,Fixed y1,Fixed x2,Fixed y2)
 
 **********************************/
 
-Fixed PointToDist(Fixed x,Fixed y)
+Fixed PointToDist(Fixed x, Fixed y)
 {
     angle_t angle;
 
@@ -108,7 +113,7 @@ Fixed PointToDist(Fixed x,Fixed y)
 
 **********************************/
 
-Fixed GetApproxDistance(Fixed dx,Fixed dy)
+Fixed GetApproxDistance(Fixed dx, Fixed dy)
 {
     if (dx<0) {
         dx = -dx;       /* Get the absolute value of the distance */
@@ -134,7 +139,7 @@ Fixed GetApproxDistance(Fixed dx,Fixed dy)
     
 **********************************/
 
-Word PointOnVectorSide(Fixed x, Fixed y, const vector_t *line)
+uint32_t PointOnVectorSide(Fixed x, Fixed y, const vector_t *line)
 {
     Word Result;
     Fixed dx,dy;
@@ -219,7 +224,7 @@ subsector_t* PointInSubsector(Fixed x, Fixed y) {
     
 **********************************/
 
-void MakeVector(line_t *li,vector_t *dl)
+void MakeVector(line_t* li, vector_t* dl)
 {
     Fixed Temp;
     Temp = li->v1.x;        /* Get the X of the vector */
@@ -237,7 +242,7 @@ void MakeVector(line_t *li,vector_t *dl)
 
 **********************************/
 
-Fixed InterceptVector(vector_t *First,vector_t *Second)
+Fixed InterceptVector(vector_t* First, vector_t* Second)
 {
     Fixed num,den;
     Fixed dx2,dy2;
@@ -263,7 +268,7 @@ Fixed InterceptVector(vector_t *First,vector_t *Second)
     
 **********************************/
 
-Word LineOpening(line_t *linedef)
+Word LineOpening(line_t* linedef)
 {
     sector_t *front;
     sector_t *back;
@@ -384,7 +389,7 @@ void SetThingPosition(mobj_t* thing) {
 // The validcount flags are used to avoid checking lines that are marked in multiple mapblocks,
 // so increment validcount before the first call to BlockLinesIterator, then make one or more calls to it.
 //---------------------------------------------------------------------------------------------------------------------
-Word BlockLinesIterator(Word x, Word y, Word(*func)(line_t*)) {
+uint32_t BlockLinesIterator(uint32_t x, uint32_t y, uint32_t(*func)(line_t*)) {
     if (x < gBlockMapWidth && y < gBlockMapHeight) {    // On the map?
         y = y * gBlockMapWidth;
         y += x;
@@ -413,7 +418,7 @@ Word BlockLinesIterator(Word x, Word y, Word(*func)(line_t*)) {
 //---------------------------------------------------------------------------------------------------------------------
 // Scan all objects standing on this map block.
 //---------------------------------------------------------------------------------------------------------------------
-Word BlockThingsIterator(Word x, Word y, Word(*func)(mobj_t*)) {
+uint32_t BlockThingsIterator(uint32_t x, uint32_t y, uint32_t(*func)(mobj_t*)) {
     // Check if we are off the map or not
     if (x < gBlockMapWidth && y < gBlockMapHeight) {
         y = y * gBlockMapWidth;

@@ -1,25 +1,36 @@
+#include "Tick.h"
+
 #include "Audio/Audio.h"
-#include "Doom.h"
+#include "Automap_Main.h"
+#include "Data.h"
+#include "DoomRez.h"
+#include "Game.h"
+#include "MapObj.h"
 #include "Mem.h"
+#include "Player.h"
 #include "Random.h"
+#include "Render_Main.h"
+#include "Sounds.h"
+#include "Specials.h"
 #include <cstring>
 
-typedef struct thinker_t {
-    thinker_t *next,*prev;
+struct thinker_t {
+    thinker_t* next;
+    thinker_t* prev;
     void (*function)(thinker_t*);
-} thinker_t;
+};
 
-mobj_t mobjhead;    /* Head and tail of mobj list */
-bool Tick4;         /* True 4 times a second */
-bool Tick2;         /* True 2 times a second */
-bool Tick1;         /* True 1 time a second */
-bool gamepaused;    /* True if the game is currently paused */
+static Word         TimeMark1;      // Timer for ticks
+static Word         TimeMark2;      // Timer for ticks
+static Word         TimeMark4;      // Timer for ticks
+static thinker_t    thinkercap;     // Both the head and tail of the thinker list
+static bool         refreshdrawn;   // Used to refresh "Paused"
 
-static Word TimeMark1;  /* Timer for ticks */
-static Word TimeMark2;  /* Timer for ticks */
-static Word TimeMark4;  /* Timer for ticks */
-static thinker_t thinkercap;    /* Both the head and tail of the thinker list */
-static bool refreshdrawn;       /* Used to refresh "Paused" */
+mobj_t  mobjhead;
+bool    Tick4;
+bool    Tick2;
+bool    Tick1;
+bool    gamepaused;
 
 /**********************************
 
@@ -28,7 +39,7 @@ static bool refreshdrawn;       /* Used to refresh "Paused" */
 
 **********************************/
 
-static void RemoveMeThink(thinker_t *Current)
+static void RemoveMeThink(thinker_t* Current)
 {
     thinker_t *Next;
     thinker_t *Prev;
@@ -51,7 +62,7 @@ static void RemoveMeThink(thinker_t *Current)
     memory.
 
 **********************************/
-void InitThinkers(void)
+void InitThinkers()
 {
     ResetPlats();               // Reset the platforms
     ResetCeilings();            // Reset the ceilings
@@ -87,7 +98,7 @@ void InitThinkers(void)
     finishes.
 
 **********************************/
-void *AddThinker(ThinkerFunc FuncProc, Word MemSize)
+void* AddThinker(ThinkerFunc FuncProc, uint32_t MemSize)
 {
     thinker_t *Prev;
     thinker_t *thinker;
@@ -110,7 +121,7 @@ void *AddThinker(ThinkerFunc FuncProc, Word MemSize)
     thinking turn comes up
 
 **********************************/
-void RemoveThinker(void *thinker)
+void RemoveThinker(void* thinker)
 {
     thinker = ((thinker_t *)thinker)-1;                 // Index to the true structure
     ((thinker_t*)thinker)->function = RemoveMeThink;    // Delete the structure on the next pass
@@ -122,7 +133,7 @@ void RemoveThinker(void *thinker)
     
 **********************************/
 
-void ChangeThinkCode(void *thinker, ThinkerFunc FuncProc)
+void ChangeThinkCode(void* thinker, ThinkerFunc FuncProc)
 {
     thinker = ((thinker_t *)thinker)-1;
     ((thinker_t *)thinker)->function = FuncProc;
@@ -134,21 +145,21 @@ void ChangeThinkCode(void *thinker, ThinkerFunc FuncProc)
 
 **********************************/
 
-void RunThinkers (void)
+void RunThinkers()
 {
     thinker_t *currentthinker;
     thinker_t *NextThinker;
 
-    currentthinker = thinkercap.next;       /* Get the first entry */
-    while (currentthinker != &thinkercap) { /* Looped back? */
-        /* Get the next entry (In case of change or removal) */
+    currentthinker = thinkercap.next;       // Get the first entry
+    while (currentthinker != &thinkercap) { // Looped back?
+        // Get the next entry (In case of change or removal)
         NextThinker = currentthinker->next;
-        if (currentthinker->function) {     /* Is the function ptr ok? */
-            /* Call the think logic */
-            /* Note : It may be a call to a think remove routine! */
+        if (currentthinker->function) {     // Is the function ptr ok?
+            // Call the think logic
+            // Note : It may be a call to a think remove routine!
             currentthinker->function(currentthinker+1);
         }
-        currentthinker = NextThinker;   /* Go to the next entry */
+        currentthinker = NextThinker;   // Go to the next entry
     }
 }
 
@@ -158,11 +169,11 @@ void RunThinkers (void)
 
 **********************************/
 
-static void CheckCheats(void)
+static void CheckCheats()
 {
-    if ((NewJoyPadButtons & PadStart) && !(players.AutomapFlags & AF_OPTIONSACTIVE)) {      /* Pressed pause? */
+    if ((NewJoyPadButtons & PadStart) && !(players.AutomapFlags & AF_OPTIONSACTIVE)) {      // Pressed pause?
         if (gamepaused || !(JoyPadButtons&PadUse)) {
-            gamepaused ^= 1;        /* Toggle the pause flag */
+            gamepaused ^= 1;        // Toggle the pause flag
 
             if (gamepaused) {
                 audioPauseSound();
@@ -181,23 +192,23 @@ static void CheckCheats(void)
 
 **********************************/
 
-Word P_Ticker(void)
+uint32_t P_Ticker()
 {
     player_t *pl;
 
-    /* wait for refresh to latch all needed data before */
-    /* running the next tick */
+    // wait for refresh to latch all needed data before
+    // running the next tick
 
-    gameaction = ga_nothing;        /* Game in progress */
-    Tick1 = false;          /* Reset the flags */
+    gameaction = ga_nothing;        // Game in progress
+    Tick1 = false;          // Reset the flags
     Tick2 = false;
     Tick4 = false;
 
-    TimeMark1+=gElapsedTime; /* Timer for ticks */
+    TimeMark1+=gElapsedTime; // Timer for ticks
     TimeMark2+=gElapsedTime;
     TimeMark4+=gElapsedTime;
 
-    if (TimeMark1>=TICKSPERSEC) {   /* Now see if the time has passed... */
+    if (TimeMark1>=TICKSPERSEC) {   // Now see if the time has passed...
         TimeMark1-=TICKSPERSEC;
         Tick1 = true;
     }
@@ -210,33 +221,33 @@ Word P_Ticker(void)
         Tick4 = true;
     }
 
-    CheckCheats();      /* Handle pause and cheats */
+    CheckCheats();      // Handle pause and cheats
 
-/* Do option screen processing and control reading */
+// Do option screen processing and control reading
 
-    if (gamepaused) {       /* If in pause mode, then don't do any game logic */
+    if (gamepaused) {       // If in pause mode, then don't do any game logic
         return gameaction;
     }
 
-/* Run player actions */
+// Run player actions
 
     pl = &players;
     
-    if (pl->playerstate == PST_REBORN) {    /* Restart player? */
-        G_DoReborn();       /* Poof!! */
+    if (pl->playerstate == PST_REBORN) {    // Restart player?
+        G_DoReborn();       // Poof!!
     }
-    AM_Control(*pl);    /* Handle automap controls */
-    O_Control(pl);      /* Handle option controls */
-    P_PlayerThink(pl);  /* Process player in the game */
+    AM_Control(*pl);    // Handle automap controls
+    O_Control(pl);      // Handle option controls
+    P_PlayerThink(pl);  // Process player in the game
         
     if (!(players.AutomapFlags & AF_OPTIONSACTIVE)) {
-        RunThinkers();      /* Handle logic for doors, walls etc... */
-        P_RunMobjBase();    /* Handle critter think logic */
+        RunThinkers();      // Handle logic for doors, walls etc...
+        P_RunMobjBase();    // Handle critter think logic
     }
-    P_UpdateSpecials(); /* Handle wall and floor animations */
-    ST_Ticker();        /* Update status bar */
-    return gameaction;  /* may have been set to ga_died, ga_completed, */
-                        /* or ga_secretexit */
+    P_UpdateSpecials(); // Handle wall and floor animations
+    ST_Ticker();        // Update status bar
+    return gameaction;  // may have been set to ga_died, ga_completed,
+                        // or ga_secretexit
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -280,7 +291,7 @@ void P_Start() {
     G_DoLoadLevel();    // Load a level into memory
     Random::init();     // Reset the random number generator
 
-    S_StartSong(musicnum_t(Song_e1m1 - 1 + gamemap));
+    S_StartSong(Song_e1m1 - 1 + gamemap);
 }
 
 //--------------------------------------------------------------------------------------------------

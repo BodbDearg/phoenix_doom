@@ -1,5 +1,11 @@
-#include "doom.h"
+#include "Data.h"
+#include "Floor.h"
 #include "MapData.h"
+#include "MapObj.h"
+#include "Player.h"
+#include "Sounds.h"
+#include "Specials.h"
+#include "Tick.h"
 
 /**********************************
 

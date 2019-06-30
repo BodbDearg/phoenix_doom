@@ -1,7 +1,11 @@
 #include "Audio/Audio.h"
-#include "doom.h"
+#include "Data.h"
+#include "DoomRez.h"
+#include "Intermission_Main.h"
+#include "Player.h"
 #include "Resources.h"
-#include <string.h>
+#include "Sounds.h"
+#include <cstring>
 
 #define CURSORX 45      /* X coord for skulls */
 #define SLIDERX 106     /* X coord for slider bars */
@@ -38,15 +42,36 @@ static Word cursorpos;          /* Y position of the skull */
 static Word movecount;          /* Time mark to move the skull */
 static Word CursorYs[NUMMENUITEMS] = {SFXVOLY-2,MUSICVOLY-2,JOYPADY-2,SIZEY-2};
 
-static Byte SpeedTxt[] = "Speed";       /* Local ASCII */
-static Byte FireTxt[] = "Fire";
-static Byte UseTxt[] = "Use";
-static Byte *buttona[NUMCONTROLOPTIONS] =
-        {SpeedTxt,SpeedTxt,FireTxt,FireTxt,UseTxt,UseTxt};
-static Byte *buttonb[NUMCONTROLOPTIONS] =
-        {FireTxt,UseTxt,SpeedTxt,UseTxt,SpeedTxt,FireTxt};
-static Byte *buttonc[NUMCONTROLOPTIONS] =
-        {UseTxt,FireTxt,UseTxt,SpeedTxt,FireTxt,SpeedTxt};
+static const char* const SpeedTxt = "Speed";       /* Local ASCII */
+static const char* const FireTxt = "Fire";
+static const char* const UseTxt = "Use";
+
+static const char* const buttona[NUMCONTROLOPTIONS] = {
+    SpeedTxt,
+    SpeedTxt,
+    FireTxt,
+    FireTxt,
+    UseTxt,
+    UseTxt
+};
+
+static const char* const buttonb[NUMCONTROLOPTIONS] = {
+    FireTxt,
+    UseTxt,
+    SpeedTxt,
+    UseTxt,
+    SpeedTxt,
+    FireTxt
+};
+
+static const char* const buttonc[NUMCONTROLOPTIONS] = {
+    UseTxt,
+    FireTxt,
+    UseTxt,
+    SpeedTxt,
+    FireTxt,
+    SpeedTxt
+};
 
 static Word configuration[NUMCONTROLOPTIONS][3] = {
     {PadA,PadB,PadC},
@@ -250,11 +275,11 @@ void O_Drawer(void)
     const void* const pShapes = loadResourceData(rSLIDER);
 
     // Draw menu text
-    PrintBigFontCenter(160, 10, (Byte*) "Options");
+    PrintBigFontCenter(160, 10, "Options");
 
     if (cursorpos < controls) {
-        PrintBigFontCenter(160, SFXVOLY, (Byte*) "Sound Volume");
-        PrintBigFontCenter(160, MUSICVOLY, (Byte*) "Music Volume");
+        PrintBigFontCenter(160, SFXVOLY, "Sound Volume");
+        PrintBigFontCenter(160, MUSICVOLY, "Music Volume");
 
         // Draw scroll bars
         DrawMShape(SLIDERX, SFXVOLY + 20, GetShapeIndexPtr(pShapes, BAR));
@@ -272,14 +297,14 @@ void O_Drawer(void)
 
     } else {
         // Draw joypad info
-        PrintBigFontCenter(160, JOYPADY, (Byte*) "Controls");
-        PrintBigFont(JOYPADX + 10, JOYPADY + 20, (Byte*) "A");
-        PrintBigFont(JOYPADX + 10, JOYPADY + 40, (Byte*) "B");
-        PrintBigFont(JOYPADX + 10, JOYPADY + 60, (Byte*) "C");
+        PrintBigFontCenter(160, JOYPADY, "Controls");
+        PrintBigFont(JOYPADX + 10, JOYPADY + 20, "A");
+        PrintBigFont(JOYPADX + 10, JOYPADY + 40, "B");
+        PrintBigFont(JOYPADX + 10, JOYPADY + 60, "C");
         PrintBigFont(JOYPADX + 40, JOYPADY + 20, buttona[ControlType]);
         PrintBigFont(JOYPADX + 40, JOYPADY + 40, buttonb[ControlType]);
         PrintBigFont(JOYPADX + 40, JOYPADY + 60, buttonc[ControlType]);
-        PrintBigFontCenter(160, SIZEY, (Byte*) "Screen Size");
+        PrintBigFontCenter(160, SIZEY, "Screen Size");
         DrawMShape(SLIDERX, SIZEY + 20, GetShapeIndexPtr(pShapes, BAR));
         
         const Word offset = (5 - ScreenSize) * 18;

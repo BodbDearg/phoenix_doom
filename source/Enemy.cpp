@@ -1,8 +1,19 @@
 #include "Enemy.h"
 
-#include "Doom.h"
+#include "Data.h"
+#include "Floor.h"
+#include "Info.h"
+#include "Macros.h"
+#include "Map.h"
+#include "MapObj.h"
+#include "MapUtil.h"
 #include "MathUtils.h"
+#include "Move.h"
+#include "Player.h"
 #include "Random.h"
+#include "Sounds.h"
+#include "Tables.h"
+#include "Tick.h"
 #include <cstdlib>
 
 //--------------------------------------------------------------------------------------------------

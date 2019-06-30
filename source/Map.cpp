@@ -1,25 +1,37 @@
-#include "Doom.h"
+#include "Map.h"
+
+#include "Data.h"
+#include "Info.h"
 #include "MapData.h"
+#include "MapObj.h"
+#include "MapUtil.h"
+#include "Move.h"
+#include "Player.h"
 #include "Random.h"
+#include "Shoot.h"
+#include "Sounds.h"
+#include "Specials.h"
+#include "Tables.h"
 #include <cstdlib>
 
-mobj_t *linetarget;         /* Object that was targeted */
-mobj_t *tmthing;            /* mobj_t to be checked */
-Fixed tmx,tmy;          /* Temp x,y for a position to be checked */
-bool checkposonly;      /* If true, just check the position, no actions */
-mobj_t *shooter;            /* Source of a direct line shot */
-angle_t attackangle;        /* Angle to target */
-Fixed attackrange;      /* Range to target */
-Fixed aimtopslope;      /* Range of slope to target weapon */
-Fixed aimbottomslope;
+mobj_t*     linetarget;
+mobj_t*     tmthing;
+Fixed       tmx;
+Fixed       tmy;
+bool        checkposonly;
+mobj_t*     shooter;
+angle_t     attackangle;
+Fixed       attackrange;
+Fixed       aimtopslope;
+Fixed       aimbottomslope;
 
-static int usebbox[4];      /* Local box for BSP traversing */
-static vector_t useline;    /* Temp subdivided line for targeting */
-static line_t *closeline;   /* Line to target */
-static Fixed closedist; /* Distance to target */
-static mobj_t *bombsource;  /* Explosion source */
-static mobj_t *bombspot;    /* Explosion position */
-static Word bombdamage;     /* Damage done by explosion */
+static int32_t      usebbox[4];     // Local box for BSP traversing
+static vector_t     useline;        // Temp subdivided line for targeting
+static line_t*      closeline;      // Line to target
+static Fixed        closedist;      // Distance to target
+static mobj_t*      bombsource;     // Explosion source
+static mobj_t*      bombspot;       // Explosion position
+static uint32_t     bombdamage;     // Damage done by explosion
 
 /**********************************
 
@@ -39,12 +51,12 @@ movething   thing collision
 
 bool P_CheckPosition(mobj_t *thing, Fixed x, Fixed y)
 {
-    tmthing = thing;        /* Copy parms to globals */
+    tmthing = thing;        // Copy parms to globals
     tmx = x;
     tmy = y;
-    checkposonly = true;    /* Only check the position */
-    P_TryMove2();           /* See if I can move there... */
-    return trymove2;        /* Return the result */
+    checkposonly = true;    // Only check the position
+    P_TryMove2();           // See if I can move there...
+    return trymove2;        // Return the result
 }
 
 /**********************************
@@ -58,33 +70,33 @@ bool P_TryMove(mobj_t *thing, Fixed x, Fixed y)
     Word damage;
     mobj_t *latchedmovething;
 
-    tmthing = thing;        /* Source xy */
-    tmx = x;                /* New x,y */
+    tmthing = thing;        // Source xy
+    tmx = x;                // New x,y
     tmy = y;
-    P_TryMove2();           /* Move to the new spot */
+    P_TryMove2();           // Move to the new spot
 
-/* Pick up the specials */
+// Pick up the specials
 
-    latchedmovething = movething;       /* Hit something? */
+    latchedmovething = movething;       // Hit something?
 
     if (latchedmovething) {
-        /* missile bash into a monster */
+        // missile bash into a monster
         if (thing->flags & MF_MISSILE) {
-            damage = (Random::nextU32(7)+1)*thing->InfoPtr->damage;   /* Ouch! */
+            damage = (Random::nextU32(7)+1)*thing->InfoPtr->damage;   // Ouch!
             DamageMObj(latchedmovething,thing,thing->target,damage);
-        /* skull bash into a monster */
+        // skull bash into a monster
         } else if (thing->flags & MF_SKULLFLY) {
             damage = (Random::nextU32(7)+1)*thing->InfoPtr->damage;
             DamageMObj(latchedmovething,thing,thing,damage);
-            thing->flags &= ~MF_SKULLFLY;       /* Stop the skull from flying */
-            thing->momx = thing->momy = thing->momz = 0;    /* No momentum */
-            SetMObjState(thing,thing->InfoPtr->spawnstate); /* Reset state */
-        /* Try to pick it up */
+            thing->flags &= ~MF_SKULLFLY;       // Stop the skull from flying
+            thing->momx = thing->momy = thing->momz = 0;    // No momentum
+            SetMObjState(thing,thing->InfoPtr->spawnstate); // Reset state
+        // Try to pick it up
         } else {
             TouchSpecialThing(latchedmovething,thing);
         }
     }
-    return trymove2;        /* Return result */
+    return trymove2;        // Return result
 }
 
 /**********************************
@@ -99,35 +111,35 @@ static Word PIT_UseLines(line_t *li)
     vector_t dl;
     Fixed frac;
 
-/* check bounding box first */
+// check bounding box first
 
-    if (usebbox[BOXRIGHT] <= li->bbox[BOXLEFT]  /* Within the bounding box? */
+    if (usebbox[BOXRIGHT] <= li->bbox[BOXLEFT]  // Within the bounding box?
     ||  usebbox[BOXLEFT] >= li->bbox[BOXRIGHT]
     ||  usebbox[BOXTOP] <= li->bbox[BOXBOTTOM]
     ||  usebbox[BOXBOTTOM] >= li->bbox[BOXTOP] ) {
-        return true;            /* Nope, they don't collide */
+        return true;            // Nope, they don't collide
     }
 
-/* find distance along usetrace */
+// find distance along usetrace
 
-    MakeVector(li,&dl);         /* Convert true line to a divline struct */
-    frac = InterceptVector(&useline,&dl);       /* How much do they intercept */
-    if ((frac < 0) ||           /* Behind source? */
-        (frac > closedist)) {   /* Too far away? */
-        return true;        /* No collision */
+    MakeVector(li,&dl);         // Convert true line to a divline struct
+    frac = InterceptVector(&useline,&dl);       // How much do they intercept
+    if ((frac < 0) ||           // Behind source?
+        (frac > closedist)) {   // Too far away?
+        return true;        // No collision
     }
 
-/* The line is actually hit, find the distance */
+// The line is actually hit, find the distance
 
-    if (!li->special) {     /* Not a special line? */
-        if (LineOpening(li)) {  /* See if it passes through */
-            return true;    /* keep going */
+    if (!li->special) {     // Not a special line?
+        if (LineOpening(li)) {  // See if it passes through
+            return true;    // keep going
         }
     }
-    closeline = li;     /* This is the line of travel */
-    closedist = frac;   /* This is the length of the line */
+    closeline = li;     // This is the line of travel
+    closedist = frac;   // This is the length of the line
 
-    return true;        /* Can't use for than one special line in a row */
+    return true;        // Can't use for than one special line in a row
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -207,21 +219,21 @@ static Word PIT_RadiusAttack(mobj_t *thing)
 {
     Fixed dx,dy,dist;
 
-    if (!(thing->flags & MF_SHOOTABLE) ) {      /* Can this item be hit? */
-        return true;            /* Next thing... */
+    if (!(thing->flags & MF_SHOOTABLE) ) {      // Can this item be hit?
+        return true;            // Next thing...
     }
 
-    dx = abs(thing->x - bombspot->x);       /* Absolute distance from BOOM */
+    dx = abs(thing->x - bombspot->x);       // Absolute distance from BOOM
     dy = abs(thing->y - bombspot->y);
-    dist = dx>=dy ? dx : dy;        /* Get the greater of the two */
+    dist = dx>=dy ? dx : dy;        // Get the greater of the two
     dist = (dist - thing->radius) >> FRACBITS;
-    if (dist < 0) {     /* Within the blast? */
-        dist = 0;       /* Fix the distance */
+    if (dist < 0) {     // Within the blast?
+        dist = 0;       // Fix the distance
     }
-    if (dist < bombdamage) {        /* Within blast range? */
+    if (dist < bombdamage) {        // Within blast range?
         DamageMObj(thing,bombspot,bombsource,bombdamage-dist);
     }
-    return true;        /* Continue */
+    return true;        // Continue
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -270,17 +282,17 @@ Fixed AimLineAttack(mobj_t *t1,angle_t angle,Fixed distance)
     shooter = t1;
     attackrange = distance;
     attackangle = angle;
-    aimtopslope = 100*FRACUNIT/160; /* Can't shoot outside view angles */
+    aimtopslope = 100*FRACUNIT/160; // Can't shoot outside view angles
     aimbottomslope = -100*FRACUNIT/160;
 
     ++validcount;
 
-    P_Shoot2();         /* Call other code */
+    P_Shoot2();         // Call other code
     linetarget = shootmobj;
-    if (linetarget) {       /* Was there a valid hit? */
-        return shootslope;  /* Return the slope of target */
+    if (linetarget) {       // Was there a valid hit?
+        return shootslope;  // Return the slope of target
     }
-    return 0;       /* No target */
+    return 0;       // No target
 }
 
 /**********************************
@@ -301,46 +313,46 @@ void LineAttack(mobj_t *t1,angle_t angle,Fixed distance,Fixed slope,Word damage)
     attackangle = angle;
 
     if (slope == MAXINT) {
-        aimtopslope = 100*FRACUNIT/160; /* can't shoot outside view angles */
+        aimtopslope = 100*FRACUNIT/160; // can't shoot outside view angles
         aimbottomslope = -100*FRACUNIT/160;
     } else {
         aimtopslope = slope+1;
         aimbottomslope = slope-1;
     }
     ++validcount;
-    P_Shoot2();         /* Perform the calculations */
-    linetarget = shootmobj;     /* Get the result */
+    P_Shoot2();         // Perform the calculations
+    linetarget = shootmobj;     // Get the result
     shootline2 = shootline;
     shootx2 = shootx;
     shooty2 = shooty;
     shootz2 = shootz;
 
-/* Shoot thing */
-    if (linetarget) {           /* Did you hit? */
+// Shoot thing
+    if (linetarget) {           // Did you hit?
         if (linetarget->flags & MF_NOBLOOD) {
-            P_SpawnPuff(shootx2,shooty2,shootz2);   /* Make a spark on the target */
+            P_SpawnPuff(shootx2,shooty2,shootz2);   // Make a spark on the target
         } else {
-            P_SpawnBlood(shootx2,shooty2,shootz2,damage);   /* Squirt some blood! */
+            P_SpawnBlood(shootx2,shooty2,shootz2,damage);   // Squirt some blood!
         }
-        DamageMObj(linetarget,t1,t1,damage);        /* Do the damage */
+        DamageMObj(linetarget,t1,t1,damage);        // Do the damage
         return;
     }
 
-/* Shoot wall */
+// Shoot wall
 
-    if (shootline2) {       /* Hit a wall? */
-        if (shootline2->special) {      /* Special */
-            P_ShootSpecialLine(t1, shootline2); /* Open a door or switch? */
+    if (shootline2) {       // Hit a wall?
+        if (shootline2->special) {      // Special
+            P_ShootSpecialLine(t1, shootline2); // Open a door or switch?
         }
         if (shootline2->frontsector->CeilingPic==-1) {
             if (shootz2 > shootline2->frontsector->ceilingheight) {
-                return;     /* don't shoot the sky! */
+                return;     // don't shoot the sky!
             }
             if  (shootline2->backsector &&
                 shootline2->backsector->CeilingPic==-1) {
-                return;     /* it's a sky hack wall */
+                return;     // it's a sky hack wall
             }
         }
-        P_SpawnPuff(shootx2,shooty2,shootz2);       /* Make a puff of smoke */
+        P_SpawnPuff(shootx2,shooty2,shootz2);       // Make a puff of smoke
     }
 }

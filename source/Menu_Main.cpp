@@ -1,4 +1,6 @@
-#include "doom.h"
+#include "Data.h"
+#include "DoomRez.h"
+#include "Intermission_Main.h"
 #include "Resources.h"
 
 #define CURSORX 50      /* X coord of skull cursor */
@@ -182,7 +184,7 @@ void M_Drawer() {
         releaseResource(rSKULLS);
 
         // Draw start level information
-        PrintBigFont(CURSORX + 24, AREAY, (Byte*) "Level");
+        PrintBigFont(CURSORX + 24, AREAY, "Level");
         PrintNumber(CURSORX + 40, AREAY + 20, playermap, 0);
 
         // Draw difficulty information
@@ -190,7 +192,7 @@ void M_Drawer() {
         DrawMShape(CURSORX + 40, DIFFICULTYY + 20, GetShapeIndexPtr(pShapes, playerskill));
 
         // Draw the options screen
-        PrintBigFont(CURSORX + 24, OPTIONSY, (Byte*) "Options Menu");
+        PrintBigFont(CURSORX + 24, OPTIONSY, "Options Menu");
         releaseResource(rMAINMENU);
         UpdateAndPageFlip(true);
     }

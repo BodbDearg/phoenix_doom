@@ -1,8 +1,10 @@
 #include "Lights.h"
 
-#include "Doom.h"
+#include "Data.h"
 #include "MapData.h"
 #include "Random.h"
+#include "Specials.h"
+#include "Tick.h"
 
 // Struct for light flashers 
 struct lightflash_t {        

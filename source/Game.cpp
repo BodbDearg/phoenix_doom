@@ -1,8 +1,15 @@
-#include "Doom.h"
+#include "Game.h"
+
+#include "Data.h"
+#include "Info.h"
+#include "Intermission_Main.h"
+#include "MapObj.h"
 #include "Mem.h"
+#include "Player.h"
 #include "Random.h"
 #include "Resources.h"
 #include "Textures.h"
+#include "Tick.h"
 #include <cstring>
 
 static void loadSkyTexture() {
@@ -13,7 +20,7 @@ static void loadSkyTexture() {
 //---------------------------------------------------------------------------------------------------------------------
 // Prepare to load a game level
 //---------------------------------------------------------------------------------------------------------------------
-void G_DoLoadLevel(void) {
+void G_DoLoadLevel() {
     if (players.playerstate == PST_DEAD) {
         players.playerstate = PST_REBORN;   // Force rebirth
     }
@@ -29,7 +36,7 @@ void G_DoLoadLevel(void) {
 
 **********************************/
 
-void G_PlayerFinishLevel(void)
+void G_PlayerFinishLevel()
 {
     player_t *p;        /* Local pointer */
 
@@ -52,7 +59,7 @@ void G_PlayerFinishLevel(void)
 
 **********************************/
 
-void G_PlayerReborn(void)
+void G_PlayerReborn()
 {
     player_t *p;        /* Local */
     Word i;
@@ -79,7 +86,7 @@ void G_PlayerReborn(void)
 
 **********************************/
 
-void G_DoReborn(void)
+void G_DoReborn()
 {
     gameaction = ga_died;   /* Reload the level from scratch */
 }
@@ -90,7 +97,7 @@ void G_DoReborn(void)
 
 **********************************/
 
-void G_ExitLevel(void)
+void G_ExitLevel()
 {
     gameaction = ga_completed;
 }
@@ -101,7 +108,7 @@ void G_ExitLevel(void)
 
 **********************************/
 
-void G_SecretExitLevel(void)
+void G_SecretExitLevel()
 {
     gameaction = ga_secretexit;
 }
@@ -112,7 +119,7 @@ void G_SecretExitLevel(void)
 
 **********************************/
 
-void G_InitNew(skill_t skill,Word map)
+void G_InitNew(skill_t skill, uint32_t map)
 {
     Random::init();        /* Reset the random number generator */
 
@@ -154,7 +161,7 @@ void G_InitNew(skill_t skill,Word map)
 
 **********************************/
 
-void G_RunGame(void)
+void G_RunGame()
 {
     for (;;) {
 
@@ -211,7 +218,7 @@ void G_RunGame(void)
 
 **********************************/
 
-Word G_PlayDemoPtr(Word *demo)
+uint32_t G_PlayDemoPtr(uint32_t* demo)
 {
     Word exit;
     Word skill,map;

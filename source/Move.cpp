@@ -1,5 +1,11 @@
-#include "doom.h"
+#include "Move.h"
+
+#include "Data.h"
+#include "Info.h"
+#include "Map.h"
 #include "MapData.h"
+#include "MapObj.h"
+#include "MapUtil.h"
 
 bool        trymove2;       // Result from P_TryMove2
 bool        floatok;        // If true, move would be ok if within tmfloorz - tmceilingz
@@ -15,7 +21,6 @@ static Word             tmflags;
 static Fixed            tmdropoffz;     // Lowest point contacted
 static subsector_t*     newsubsec;      // Dest subsector
 
-
 /*
 ===================
 =
@@ -26,8 +31,7 @@ static subsector_t*     newsubsec;      // Dest subsector
 =
 ===================
 */
-
-void P_TryMove2(void)
+void P_TryMove2()
 {
     trymove2 = false;       // until proven otherwise
     floatok = false;
@@ -79,7 +83,7 @@ void P_TryMove2(void)
     return;
 }
 
-static Word PM_CrossCheck(line_t *ld) 
+static uint32_t PM_CrossCheck(line_t* ld) 
 {
     if (PM_BoxCrossLine (ld))   {
         if (!PIT_CheckLine(ld)) {
@@ -138,10 +142,10 @@ void PM_CheckPosition() {
     // Check things first, possibly picking things up.
     // The bounding box is extended by MAXRADIUS because mobj_ts are grouped into mapblocks based
     // on their origin point, and can overlap into adjacent blocks by up to MAXRADIUS units.
-    int xl = (tmbbox[BOXLEFT] - gBlockMapOriginX - MAXRADIUS) >> MAPBLOCKSHIFT;
-    int xh = (tmbbox[BOXRIGHT] - gBlockMapOriginX + MAXRADIUS) >> MAPBLOCKSHIFT;
-    int yl = (tmbbox[BOXBOTTOM] - gBlockMapOriginY - MAXRADIUS) >> MAPBLOCKSHIFT;
-    int yh = (tmbbox[BOXTOP] - gBlockMapOriginY + MAXRADIUS) >> MAPBLOCKSHIFT;
+    int32_t xl = (tmbbox[BOXLEFT] - gBlockMapOriginX - MAXRADIUS) >> MAPBLOCKSHIFT;
+    int32_t xh = (tmbbox[BOXRIGHT] - gBlockMapOriginX + MAXRADIUS) >> MAPBLOCKSHIFT;
+    int32_t yl = (tmbbox[BOXBOTTOM] - gBlockMapOriginY - MAXRADIUS) >> MAPBLOCKSHIFT;
+    int32_t yh = (tmbbox[BOXTOP] - gBlockMapOriginY + MAXRADIUS) >> MAPBLOCKSHIFT;
     
     if (xl < 0) {
         xl = 0;
@@ -151,12 +155,12 @@ void PM_CheckPosition() {
         yl = 0;
     }
     
-    if (xh >= gBlockMapWidth) {
-        xh = gBlockMapWidth - 1;
+    if (xh >= (int32_t) gBlockMapWidth) {
+        xh = (int32_t) gBlockMapWidth - 1;
     }
     
-    if (yh >= gBlockMapHeight) {
-        yh = gBlockMapHeight - 1;
+    if (yh >= (int32_t) gBlockMapHeight) {
+        yh = (int32_t) gBlockMapHeight - 1;
     }
 
     for (int bx = xl; bx <= xh; bx++) {
@@ -182,12 +186,12 @@ void PM_CheckPosition() {
         yl = 0;
     }
     
-    if (xh >= gBlockMapWidth) {
-        xh = gBlockMapWidth - 1;
+    if (xh >= (int32_t) gBlockMapWidth) {
+        xh = (int32_t) gBlockMapWidth - 1;
     }
     
-    if (yh >= gBlockMapHeight) {
-        yh = gBlockMapHeight - 1;
+    if (yh >= (int32_t) gBlockMapHeight) {
+        yh = (int32_t) gBlockMapHeight - 1;
     }
 
     for (int bx = xl; bx <= xh; bx++) {
@@ -213,8 +217,7 @@ void PM_CheckPosition() {
 =
 =================
 */
-
-bool PM_BoxCrossLine (line_t *ld)
+bool PM_BoxCrossLine(line_t* ld)
 {
     Fixed       x1, y1, x2, y2;
     Fixed       lx, ly;
@@ -267,8 +270,7 @@ bool PM_BoxCrossLine (line_t *ld)
 = Adjusts tmfloorz and tmceilingz as lines are contacted
 ==================
 */
-
-bool PIT_CheckLine (line_t *ld)
+bool PIT_CheckLine(line_t* ld)
 {
     Fixed       pm_opentop, pm_openbottom;
     Fixed       pm_lowfloor;
@@ -336,8 +338,7 @@ bool PIT_CheckLine (line_t *ld)
 =
 ==================
 */
-
-Word PIT_CheckThing (mobj_t *thing)
+uint32_t PIT_CheckThing(mobj_t* thing)
 {
     Fixed       blockdist;
     int         delta;

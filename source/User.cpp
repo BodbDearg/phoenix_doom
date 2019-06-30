@@ -1,5 +1,14 @@
-#include "doom.h"
+#include "Data.h"
+#include "Info.h"
+#include "Map.h"
+#include "MapObj.h"
+#include "MapUtil.h"
 #include "MathUtils.h"
+#include "Player.h"
+#include "Slide.h"
+#include "Sounds.h"
+#include "Specials.h"
+#include "Tables.h"
 
 #define MAXBOB (16<<FRACBITS)   /* 16 pixels of bobbing up and down */
 #define SLOWTURNTICS 10         /* Time before fast turning */
@@ -9,12 +18,32 @@ static bool onground;        /* True if the player is on the ground */
 static LongWord forwardmove[2] = {0x38000>>2,0x60000>>2};
 static LongWord sidemove[2] = {0x38000>>2,0x58000>>2};
 
-static Fixed angleturn[] =
-    {600<<FRACBITS, 600<<FRACBITS,1000<<FRACBITS,1000<<FRACBITS,1200<<FRACBITS,
-    1400<<FRACBITS,1600<<FRACBITS,1800<<FRACBITS,1800<<FRACBITS,2000<<FRACBITS};
-static Fixed fastangleturn[] =  /* Will be mul'd by ElapsedTime */
-    {400<<FRACBITS, 400<<FRACBITS, 450<<FRACBITS, 500<<FRACBITS, 500<<FRACBITS,
-     600<<FRACBITS, 600<<FRACBITS, 650<<FRACBITS, 650<<FRACBITS, 700<<FRACBITS};
+static Fixed angleturn[] = {
+    600 << FRACBITS, 
+    600 << FRACBITS,
+    1000 << FRACBITS,
+    1000 << FRACBITS,
+    1200 << FRACBITS,
+    1400 << FRACBITS,
+    1600 << FRACBITS,
+    1800 << FRACBITS,
+    1800 << FRACBITS,
+    2000 << FRACBITS
+};
+
+// Will be mul'd by ElapsedTime
+static Fixed fastangleturn[] = {
+    400 << FRACBITS,
+    400 << FRACBITS,
+    450 << FRACBITS,
+    500 << FRACBITS,
+    500 << FRACBITS,
+    600 << FRACBITS,
+    600 << FRACBITS,
+    650 << FRACBITS,
+    650 << FRACBITS,
+    700 << FRACBITS
+};
 
 /**********************************
 

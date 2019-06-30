@@ -1,5 +1,7 @@
-#include "doom.h"
+#include "MapUtil.h"
 #include "MathUtils.h"
+#include "Render_Main.h"
+#include "Tables.h"
 #include "Textures.h"
 
 /**********************************

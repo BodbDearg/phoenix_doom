@@ -1,16 +1,25 @@
-#include "Doom.h"
+#include "Specials.h"
+
+#include "Data.h"
+#include "DoomRez.h"
+#include "Floor.h"
+#include "Game.h"
 #include "Lights.h"
 #include "MapData.h"
+#include "MapObj.h"
 #include "Mem.h"
+#include "Player.h"
 #include "Random.h"
 #include "Textures.h"
+#include "Tick.h"
 #include <cstring>
 
 Word NumFlatAnims;      /* Number of flat anims */
+
 anim_t FlatAnims[] = {
-    {rNUKAGE3-rF_START,rNUKAGE1-rF_START,rNUKAGE1-rF_START},
-    {rFWATER4-rF_START,rFWATER1-rF_START,rFWATER1-rF_START},
-    {rLAVA4-rF_START,rLAVA1-rF_START,rLAVA1-rF_START}
+    { rNUKAGE3 - rF_START, rNUKAGE1 - rF_START, rNUKAGE1 - rF_START},
+    { rFWATER4 - rF_START, rFWATER1 - rF_START, rFWATER1 - rF_START},
+    { rLAVA4 - rF_START, rLAVA1 - rF_START, rLAVA1 - rF_START}
 };
 
 static Word numlinespecials;        /* Number of line specials */
@@ -22,7 +31,7 @@ static line_t **linespeciallist;    /* Pointer to array of line pointers */
 
 **********************************/
 
-void P_InitPicAnims(void)
+void P_InitPicAnims()
 {
     NumFlatAnims = sizeof(FlatAnims)/sizeof(anim_t);        /* Set the number */
 }
@@ -34,7 +43,7 @@ void P_InitPicAnims(void)
 
 **********************************/
 
-side_t *getSide(sector_t *sec,Word line,Word side)
+side_t *getSide(sector_t *sec, uint32_t line, uint32_t side)
 {
     return (sec->lines[line])->SidePtr[side];
 }
@@ -46,7 +55,7 @@ side_t *getSide(sector_t *sec,Word line,Word side)
 
 **********************************/
 
-sector_t *getSector(sector_t *sec,Word line,Word side)
+sector_t *getSector(sector_t *sec, uint32_t line, uint32_t side)
 {
     return (sec->lines[line])->SidePtr[side]->sector;
 }
@@ -58,7 +67,7 @@ sector_t *getSector(sector_t *sec,Word line,Word side)
 
 **********************************/
 
-bool twoSided(sector_t *sec,Word line)
+bool twoSided(sector_t *sec, uint32_t line)
 {
     if ((sec->lines[line])->flags & ML_TWOSIDED) {
         return true;
@@ -72,7 +81,7 @@ bool twoSided(sector_t *sec,Word line)
 
 **********************************/
 
-sector_t *getNextSector(line_t *line,sector_t *sec)
+sector_t *getNextSector(line_t *line, sector_t *sec)
 {
     if (!(line->flags & ML_TWOSIDED)) {
         return 0;
@@ -150,7 +159,7 @@ Fixed P_FindHighestFloorSurrounding(sector_t *sec)
 
 **********************************/
 
-Fixed P_FindNextHighestFloor(sector_t *sec,Fixed currentheight)
+Fixed P_FindNextHighestFloor(sector_t* sec, Fixed currentheight)
 {
     Word i;
     line_t **check;
@@ -182,7 +191,7 @@ Fixed P_FindNextHighestFloor(sector_t *sec,Fixed currentheight)
 
 **********************************/
 
-Fixed P_FindLowestCeilingSurrounding(sector_t *sec)
+Fixed P_FindLowestCeilingSurrounding(sector_t* sec)
 {
     Word i;
     line_t **check;
@@ -242,7 +251,7 @@ Fixed P_FindHighestCeilingSurrounding(sector_t *sec)
 
 **********************************/
 
-Word P_FindSectorFromLineTag(line_t *line,Word start)
+Word P_FindSectorFromLineTag(line_t *line, uint32_t start)
 {
     Word tag;
     sector_t *sec;
@@ -268,7 +277,7 @@ Word P_FindSectorFromLineTag(line_t *line,Word start)
 
 **********************************/
 
-Word P_FindMinSurroundingLight(sector_t& sector,Word max)
+Word P_FindMinSurroundingLight(sector_t& sector, uint32_t max)
 {
     Word i;
     Word min;
@@ -299,7 +308,7 @@ Word P_FindMinSurroundingLight(sector_t& sector,Word max)
 
 **********************************/
 
-void P_CrossSpecialLine(line_t *line,mobj_t *thing)
+void P_CrossSpecialLine(line_t *line, mobj_t *thing)
 {
     ASSERT(line);
     ASSERT(thing);
@@ -540,7 +549,7 @@ void P_CrossSpecialLine(line_t *line,mobj_t *thing)
 
 **********************************/
 
-void P_ShootSpecialLine(mobj_t *thing,line_t *line)
+void P_ShootSpecialLine(mobj_t *thing, line_t *line)
 {
     /* Impacts that other things can activate */
 
@@ -573,7 +582,7 @@ void P_ShootSpecialLine(mobj_t *thing,line_t *line)
 
 **********************************/
 
-void PlayerInSpecialSector(player_t *player,sector_t *sector)
+void PlayerInSpecialSector(player_t *player, sector_t *sector)
 {
     Word Damage;
 
@@ -653,7 +662,7 @@ void P_UpdateSpecials() {
 
 **********************************/
 
-void SpawnSpecials(void)
+void SpawnSpecials()
 {
     /* Init special SECTORs */
     PurgeLineSpecials();                /* Make SURE they are gone */
@@ -732,7 +741,7 @@ void SpawnSpecials(void)
 
 **********************************/
 
-void PurgeLineSpecials(void)
+void PurgeLineSpecials()
 {
     if (linespeciallist) {                      /* Is there a valid pointer? */
         MEM_FREE_AND_NULL(linespeciallist);     /* Release it */

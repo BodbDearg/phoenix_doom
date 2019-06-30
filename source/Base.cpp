@@ -1,7 +1,11 @@
-#include "Doom.h"
+#include "Data.h"
 #include "Enemy.h"
+#include "Info.h"
 #include "MapData.h"
+#include "MapObj.h"
+#include "MapUtil.h"
 #include "MathUtils.h"
+#include "Tick.h"
 
 static mobj_t *CheckThingMo;        /* Used for PB_CheckThing */
 static Fixed testx, testy;

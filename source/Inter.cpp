@@ -1,5 +1,12 @@
-#include "Doom.h"
+#include "Data.h"
+#include "DoomRez.h"
+#include "Info.h"
+#include "MapObj.h"
+#include "MapUtil.h"
+#include "Player.h"
 #include "Random.h"
+#include "Sounds.h"
+#include "Tables.h"
 
 #define BONUSADD 16     /* Time adder for bonus color */
 #define BASETHRESHOLD (7*TICKSPERSEC/4) /* Number of tics to exclusivly follow a target */

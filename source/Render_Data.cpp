@@ -1,15 +1,16 @@
-#include "doom.h"
+#include "Data.h"
 #include "MathUtils.h"
 #include "Mem.h"
 #include "Resources.h"
 #include "Sprites.h"
+#include "Tables.h"
 #include "Textures.h"
-#include <string.h>
+#include <cstring>
 
 #define STRETCH(WIDTH,HEIGHT) (Fixed)((160.0/(float)WIDTH)*((float)HEIGHT/180.0)*2.2*65536)     
 
-static Word ScreenWidths[6] = {280,256,224,192,160,128};
-static Word ScreenHeights[6] = {160,144,128,112,96,80};
+static Word ScreenWidths[6] = { 280, 256, 224, 192, 160, 128};
+static Word ScreenHeights[6] = { 160, 144, 128, 112, 96, 80};
 static Fixed Stretchs[6] = {
     STRETCH(280,160),
     STRETCH(256,144),

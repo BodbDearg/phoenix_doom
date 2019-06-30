@@ -1,11 +1,17 @@
 #include "CelUtils.h"
-#include "doom.h"
-#include "Endian.h"
-#include "MapData.h"
-#include "MathUtils.h"
-#include "Resources.h"
 
-#define MAXSEGS 32      /* Maximum number of segs to scan */
+#include "Data.h"
+#include "DoomRez.h"
+#include "Info.h"
+#include "MapData.h"
+#include "MapObj.h"
+#include "MapUtil.h"
+#include "MathUtils.h"
+#include "Render_Main.h"
+#include "Resources.h"
+#include "Tables.h"
+
+static constexpr uint32_t MAXSEGS = 32;     // Maximum number of segs to scan
 
 /**********************************
 

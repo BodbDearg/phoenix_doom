@@ -1,6 +1,15 @@
-#include "Doom.h"
+#include "MapObj.h"
+
+#include "Data.h"
+#include "Game.h"
+#include "Info.h"
+#include "Map.h"
+#include "MapUtil.h"
 #include "Mem.h"
+#include "Player.h"
 #include "Random.h"
+#include "Tables.h"
+#include "Tick.h"
 #include <cstring>
 
 typedef struct {        /* Respawn think logic */
@@ -60,7 +69,7 @@ static void T_Respawn(spawnthing_t *mthing)
 
 **********************************/
 
-void P_RemoveMobj(mobj_t *mobj)
+void P_RemoveMobj(mobj_t* mobj)
 {
     /* Add to the respawnque for altdeath mode */
     #if 0
@@ -93,7 +102,7 @@ void P_RemoveMobj(mobj_t *mobj)
 
 **********************************/
 
-Word SetMObjState(mobj_t *mobj,state_t *StatePtr)
+Word SetMObjState(mobj_t*mobj, state_t* StatePtr)
 {
     if (!StatePtr) {                /* Shut down state? */
         P_RemoveMobj(mobj);         /* Remove the object */
@@ -117,7 +126,7 @@ Word SetMObjState(mobj_t *mobj,state_t *StatePtr)
 
 **********************************/
 
-void Sub1RandomTick(mobj_t *mobj)
+void Sub1RandomTick(mobj_t* mobj)
 {
     Word Delay;
     Delay = Random::nextU32(3);   /* Getthe random adjustment */
@@ -134,7 +143,7 @@ void Sub1RandomTick(mobj_t *mobj)
 
 **********************************/
 
-void ExplodeMissile(mobj_t *mo)
+void ExplodeMissile(mobj_t* mo)
 {
     Word Sound;
     mo->momx = mo->momy = mo->momz = 0;     /* Stop forward momentum */
@@ -153,7 +162,7 @@ void ExplodeMissile(mobj_t *mo)
 
 **********************************/
 
-mobj_t *SpawnMObj(Fixed x,Fixed y,Fixed z,mobjinfo_t *InfoPtr)
+mobj_t *SpawnMObj(Fixed x, Fixed y, Fixed z, mobjinfo_t* InfoPtr)
 {
     mobj_t *mobj;
     state_t *st;
@@ -212,7 +221,7 @@ mobj_t *SpawnMObj(Fixed x,Fixed y,Fixed z,mobjinfo_t *InfoPtr)
 
 **********************************/
 
-void P_SpawnPlayer(mapthing_t *mthing)
+void P_SpawnPlayer(mapthing_t* mthing)
 {
     player_t *p;
     Fixed x,y;
@@ -255,7 +264,7 @@ void P_SpawnPlayer(mapthing_t *mthing)
 
 **********************************/
 
-void SpawnMapThing(mapthing_t *mthing)
+void SpawnMapThing(mapthing_t* mthing)
 {
     Word i,Type;
     mobj_t *mobj;
@@ -336,7 +345,7 @@ void SpawnMapThing(mapthing_t *mthing)
 
 **********************************/
 
-void P_SpawnPuff(Fixed x,Fixed y,Fixed z)
+void P_SpawnPuff(Fixed x, Fixed y, Fixed z)
 {
     mobj_t *th;
 
@@ -358,7 +367,7 @@ void P_SpawnPuff(Fixed x,Fixed y,Fixed z)
 
 **********************************/
 
-void P_SpawnBlood(Fixed x,Fixed y,Fixed z,Word damage)
+void P_SpawnBlood(Fixed x, Fixed y, Fixed z, uint32_t damage)
 {
     mobj_t *th;
 
@@ -379,7 +388,7 @@ void P_SpawnBlood(Fixed x,Fixed y,Fixed z,Word damage)
 
 **********************************/
 
-static void P_CheckMissileSpawn(mobj_t *th)
+static void P_CheckMissileSpawn(mobj_t* th)
 {
     th->x += (th->momx>>1); /* Adjust x and y based on momentum */
     th->y += (th->momy>>1); /* move a little forward so an angle can */
@@ -397,7 +406,7 @@ static void P_CheckMissileSpawn(mobj_t *th)
 
 **********************************/
 
-void P_SpawnMissile(mobj_t *source,mobj_t *dest,mobjinfo_t *InfoPtr)
+void P_SpawnMissile(mobj_t* source, mobj_t* dest, mobjinfo_t* InfoPtr)
 {
     mobj_t *th;
     angle_t an;
@@ -438,7 +447,7 @@ void P_SpawnMissile(mobj_t *source,mobj_t *dest,mobjinfo_t *InfoPtr)
 
 **********************************/
 
-void SpawnPlayerMissile(mobj_t *source,mobjinfo_t *InfoPtr)
+void SpawnPlayerMissile(mobj_t* source, mobjinfo_t* InfoPtr)
 {
     mobj_t *th;
     angle_t an;

@@ -1,6 +1,13 @@
-#include "doom.h"
+#include "Data.h"
+#include "DoomRez.h"
 #include "Endian.h"
+#include "Info.h"
+#include "MapObj.h"
+#include "Player.h"
+#include "PlayerSprites.h"
+#include "Render_Main.h"
 #include "Resources.h"
+#include "Tables.h"
 
 #define SCREENGUNY -40      /* Y offset to center the player's weapon properly */
 
@@ -329,10 +336,10 @@ void DrawVisSprite(const vissprite_t* const pVisSprite) {
 
 static void DrawAWeapon(pspdef_t *psp,Word Shadow)
 {
-    const state_t* const StatePtr = psp->StatePtr;                                  // Get the state struct pointer
-    const Word RezNum = StatePtr->SpriteFrame >> FF_SPRITESHIFT;                    // Get the file
-    const Short* Input = (Short*)loadResourceData(RezNum);                          // Get the main pointer
-    Input = (Short*) GetShapeIndexPtr(Input,StatePtr->SpriteFrame & FF_FRAMEMASK);  // Pointer to the xy offset'd shape
+    const state_t* const StatePtr = psp->StatePtr;                                      // Get the state struct pointer
+    const Word RezNum = StatePtr->SpriteFrame >> FF_SPRITESHIFT;                        // Get the file
+    const uint16_t* Input = (uint16_t*)loadResourceData(RezNum);                        // Get the main pointer
+    Input = (uint16_t*) GetShapeIndexPtr(Input,StatePtr->SpriteFrame & FF_FRAMEMASK);   // Pointer to the xy offset'd shape
     
     // FIXME: DC: Reimplement/replace
     #if 0

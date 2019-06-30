@@ -1,7 +1,13 @@
-#include "doom.h"
+#include "Automap_Main.h"
+
+#include "Data.h"
 #include "MapData.h"
-#include "Video.h"
+#include "MapObj.h"
 #include "MathUtils.h"
+#include "Player.h"
+#include "Tables.h"
+#include "Tick.h"
+#include "Video.h"
 #include <cstring>
 
 // FIXME: TEMP!

@@ -1,31 +1,44 @@
-#include "doom.h"
+#include "Slide.h"
+
+#include "Data.h"
 #include "MapData.h"
+#include "MapObj.h"
+#include "MapUtil.h"
 #include "MathUtils.h"
+#include "Tables.h"
 
 #define CLIPRADIUS  23
 #define SIDE_ON 0
 #define SIDE_FRONT  1
 #define SIDE_BACK   -1
 
-Fixed slidex, slidey;       // the final position
-line_t *specialline;
+Fixed       slidex;         // The final position
+Fixed       slidey;       
+line_t*     specialline;
 
-static Fixed        slidedx, slidedy;       // current move for completablefrac
-
-static Fixed        endbox[4];              // final proposed position
-
-static Fixed blockfrac;         // the fraction of move that gets completed
-static Fixed blocknvx, blocknvy;    // the vector of the line that blocks move
+static Fixed slidedx;       // Current move for completablefrac
+static Fixed slidedy;
+static Fixed endbox[4];     // Final proposed position
+static Fixed blockfrac;     // The fraction of move that gets completed
+static Fixed blocknvx;      // The vector of the line that blocks move
+static Fixed blocknvy;
 
 // p1, p2 are line endpoints
 // p3, p4 are move endpoints
+static int32_t  p1x;
+static int32_t  p1y;
+static int32_t  p2x;
+static int32_t  p2y;
+static int32_t  p3x;
+static int32_t  p3y;
+static int32_t  p4x;
+static int32_t  p4y;
 
-static int p1x, p1y, p2x, p2y, p3x, p3y, p4x, p4y;
-static Fixed    nvx, nvy;               // normalized line vector
+static Fixed    nvx;            // Normalized line vector
+static Fixed    nvy;
+static mobj_t*  slidething;
 
-static mobj_t *slidething;
-
-static int  SL_PointOnSide2 (int x1, int y1, int x2, int y2, int x3, int y3)
+static int SL_PointOnSide2(int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t x3, int32_t y3)
 {
     int nx, ny;
     int dist;
@@ -44,7 +57,6 @@ static int  SL_PointOnSide2 (int x1, int y1, int x2, int y2, int x3, int y3)
     return SIDE_FRONT;
 }
 
-
 /*
 ===================
 =
@@ -52,8 +64,7 @@ static int  SL_PointOnSide2 (int x1, int y1, int x2, int y2, int x3, int y3)
 =
 ===================
 */
-
-void P_SlideMove (mobj_t *mo)
+void P_SlideMove(mobj_t* mo)
 {
     Fixed   dx, dy;
     Fixed   rx, ry;
@@ -180,7 +191,7 @@ Fixed P_CompletableFrac(Fixed dx, Fixed dy) {
     return blockfrac;
 }
 
-int SL_PointOnSide (int x, int y)
+int32_t SL_PointOnSide(int32_t x, int32_t y)
 {
     int     dx, dy, dist;
 
@@ -199,8 +210,7 @@ int SL_PointOnSide (int x, int y)
     return SIDE_ON;
 }
 
-
-Fixed SL_CrossFrac (void)
+Fixed SL_CrossFrac()
 {
     int     dx, dy, dist1, dist2, frac;
 
@@ -225,8 +235,7 @@ Fixed SL_CrossFrac (void)
     return frac;
 }
 
-
-bool CheckLineEnds (void)
+bool CheckLineEnds()
 {
     int     snx, sny;       // sight normals
     int     dist1, dist2;
@@ -265,8 +274,7 @@ bool CheckLineEnds (void)
 = returns the fraction of the current move that crosses the line segment
 ====================
 */
-
-void ClipToLine ( void )
+void ClipToLine()
 {
     Fixed frac;
     int         side2, side3;
@@ -333,8 +341,7 @@ blockmove:
 =
 ==================
 */
-
-Word SL_CheckLine(line_t *ld)
+uint32_t SL_CheckLine(line_t* ld)
 {
     Fixed opentop, openbottom;
     sector_t    *front, *back;
@@ -405,11 +412,10 @@ findfrac:
     return true;
 }
 
-
 static line_t **list;
 static line_t *ld;
 
-void SL_CheckSpecialLines(int x1, int y1, int x2, int y2) {
+void SL_CheckSpecialLines(int32_t x1, int32_t y1, int32_t x2, int32_t y2) {
     int xl, xh, yl, yh;
     
     if (x1<x2) {

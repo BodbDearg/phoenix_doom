@@ -1,6 +1,9 @@
-#include "doom.h"
+#include "Data.h"
 #include "MapData.h"
+#include "MapObj.h"
+#include "MapUtil.h"
 #include "MathUtils.h"
+#include "Render_Main.h"
 
 static Fixed sightzstart;           // eye z of looker
 static Fixed topslope, bottomslope; // slopes to top and bottom of target

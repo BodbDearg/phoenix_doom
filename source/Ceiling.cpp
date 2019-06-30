@@ -1,5 +1,8 @@
-#include "doom.h"
+#include "Floor.h"
 #include "MapData.h"
+#include "Sounds.h"
+#include "Specials.h"
+#include "Tick.h"
 
 /**********************************
 

@@ -18,11 +18,11 @@ namespace Video {
     // Presents the framebuffer to the screen
     void present(const bool bAllowDebugClear) noexcept;
 
-    //---------------------------------------------------------------------------------------------------------------------
+    //------------------------------------------------------------------------------------------------------------------
     // Makes a framebuffer color from the given 16.16 fixed point RGB values.
     // Saturates/clamps the values if they are out of range.
     // The returned value is fully opaque.
-    //---------------------------------------------------------------------------------------------------------------------
+    //------------------------------------------------------------------------------------------------------------------
     static uint32_t fixedRgbToScreenCol(const Fixed rFrac, const Fixed gFrac, const Fixed bFrac) noexcept {
         const uint16_t rInt = rFrac >> (FRACBITS - 3);
         const uint16_t gInt = gFrac >> (FRACBITS - 3);
@@ -33,9 +33,9 @@ namespace Video {
         return ((rClamp << 24) | (gClamp << 16) | (bClamp << 8) | 0xFF);
     }
 
-    //---------------------------------------------------------------------------------------------------------------------
+    //------------------------------------------------------------------------------------------------------------------
     // Makes a framebuffer color from the given RGBA5551 color value.
-    //---------------------------------------------------------------------------------------------------------------------
+    //------------------------------------------------------------------------------------------------------------------
     static uint32_t rgba5551ToScreenCol(const uint16_t color) noexcept {
         const uint32_t r5 = (color & 0b0111110000000000) >> 10;
         const uint32_t g5 = (color & 0b0000001111100000) >> 5;

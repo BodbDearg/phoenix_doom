@@ -1,5 +1,9 @@
-#include "doom.h"
-#include <string.h>
+#include "Data.h"
+#include "DoomRez.h"
+#include "Info.h"
+#include "Intermission_Main.h"
+#include "Sounds.h"
+#include <cstring>
 
 #define CASTCOUNT 8
 
@@ -8,15 +12,15 @@ typedef enum {
     fin_charcast
 } final_e;
 
-static Byte *CastNames[] = {        /* Names of all the critters */
-    (Byte *)"Zombieman",
-    (Byte *)"Shotgun Guy",
-    (Byte *)"Imp",
-    (Byte *)"Demon",
-    (Byte *)"Lost Soul",
-    (Byte *)"Cacodemon",
-    (Byte *)"Baron of Hell",
-    (Byte *)"Our Hero"
+static const char* const CastNames[] = {        /* Names of all the critters */
+    "Zombieman",
+    "Shotgun Guy",
+    "Imp",
+    "Demon",
+    "Lost Soul",
+    "Cacodemon",
+    "Baron of Hell",
+    "Our Hero"
 };
 
 static mobjinfo_t *CastOrder[] = {  /* Pointer to the critter's base information */
@@ -46,7 +50,7 @@ static bool CastonMelee;    /* Type of attack to play */
 static Word TextIndex;      /* Index to the opening text */
 static Word TextDelay;      /* Delay before next char */
 
-static Byte EndTextString[] =
+static char EndTextString[] =
     "     id software\n"
     "     salutes you!\n"
     "\n"
@@ -67,7 +71,7 @@ static Byte EndTextString[] =
 
 **********************************/
 
-static void F_PrintString(Word text_x,Word text_y,Byte *string)
+static void F_PrintString(Word text_x,Word text_y, char* string)
 {
     Word index;
     Word val;
@@ -277,7 +281,7 @@ void F_Drawer(void)
             }
         } 
     } else {
-        PrintBigFontCenter(160,20,CastNames[CastNum]);  /* Print the name */
+        PrintBigFontCenter(160,20, CastNames[CastNum]);  /* Print the name */
         DrawSpriteCenter(CastState->SpriteFrame);       /* Draw the sprite */
     }
     UpdateAndPageFlip(true);        /* Show the frame */

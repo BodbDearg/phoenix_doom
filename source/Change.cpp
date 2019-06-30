@@ -1,5 +1,12 @@
-#include "doom.h"
+#include "Data.h"
+#include "Info.h"
+#include "Map.h"
+#include "MapObj.h"
+#include "MapUtil.h"
+#include "Move.h"
+#include "Player.h"
 #include "Random.h"
+#include "Tick.h"
 
 /**********************************
 

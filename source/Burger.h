@@ -12,28 +12,21 @@
 typedef uint32_t    Word;       // DC: was 'unsigned int' in original 3DO source
 typedef uint8_t     Byte;       // DC: was 'unsigned char' in original 3DO source
 typedef uint32_t    LongWord;   // DC: was 'unsigned long' in original 3DO source
-typedef uint16_t    Short;      // DC: was 'unsigned short' in original 3DO source
-typedef int32_t     Frac;       // DC: was 'long' in original 3DO source
-typedef int32_t     Fixed;      // DC: was 'long' in original 3DO source
-typedef double      extended;
 
 // DC: this is in the 3DO SDK - define for now to fix compile errors
 typedef int32_t Item;
 
 #define TICKSPERSEC 60
 
-#define SfxActive 1
-#define MusicActive 2
-
 /* In Graphics */
-extern Byte *VideoPointer;
-extern Word FramebufferWidth;
-extern Word FramebufferHeight;
+extern uint8_t *VideoPointer;
+extern uint32_t FramebufferWidth;
+extern uint32_t FramebufferHeight;
 extern void DrawShape(const uint32_t x1, const uint32_t y1, const struct CelControlBlock* const pShape) noexcept;
 extern void DrawMShape(const uint32_t x1, const uint32_t y1, const struct CelControlBlock* const pShape) noexcept;
 extern void DrawARect(const uint32_t x, const uint32_t y, const uint32_t width, const uint32_t height, const uint16_t color) noexcept;
-extern const struct CelControlBlock* GetShapeIndexPtr(const void* ShapeArrayPtr, Word Index) noexcept;
-extern void DrawRezShape(Word x,Word y,Word RezNum) noexcept;
+extern const struct CelControlBlock* GetShapeIndexPtr(const void* ShapeArrayPtr, uint32_t Index) noexcept;
+extern void DrawRezShape(uint32_t x, uint32_t y, uint32_t RezNum) noexcept;
 
 /* Input handlers */
 #define PadDown         0x80000000
@@ -51,18 +44,17 @@ extern void DrawRezShape(Word x,Word y,Word RezNum) noexcept;
 #define PadXLeft        0x00100000
 #define PadXRight       0x00080000
 
-extern Word LastJoyButtons[4];      /* Save the previous joypad bits */
-extern Word ReadJoyButtons(Word Which) noexcept;
+extern uint32_t LastJoyButtons[4];      /* Save the previous joypad bits */
+extern uint32_t ReadJoyButtons(uint32_t Which) noexcept;
 
 /* Misc routines */
-extern void LongWordToAscii(LongWord Input,Byte *AsciiPtr) noexcept;
-extern Word SaveAFile(Byte *FileName,void *data,LongWord Length) noexcept;
+extern void LongWordToAscii(uint32_t Input, char* AsciiPtr) noexcept;
+extern uint32_t SaveAFile(uint8_t* FileName, void* data, uint32_t Length) noexcept;
 
 /* Time and Events */
-extern LongWord LastTick;
-extern LongWord ReadTick() noexcept;
+extern uint32_t LastTick;
+extern uint32_t ReadTick() noexcept;
 
 /* Misc */
-extern Word SystemState;
 extern Item VideoItem;          /* 3DO Specific! */
 extern Item VideoScreen;        /* 3DO Specific! */

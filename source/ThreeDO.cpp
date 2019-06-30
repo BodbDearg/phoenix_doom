@@ -1,10 +1,13 @@
 #include "Audio/Audio.h"
 #include "CelUtils.h"
-#include "Doom.h"
+#include "Data.h"
 #include "Endian.h"
+#include "Macros.h"
 #include "MathUtils.h"
 #include "Mem.h"
+#include "Render_Main.h"
 #include "Resources.h"
+#include "Tables.h"
 #include "Textures.h"
 #include "Video.h"
 #include <algorithm>
@@ -1940,14 +1943,14 @@ void DrawColors(void)
 
 Word LastJoyButtons[4];     /* Save the previous joypad bits */
 static Word FileNum;
-static Short OneLine[640];
+static uint16_t OneLine[640];
 
 Word ReadJoyButtons(Word PadNum)
 {
     char FileName[20];
     ControlPadEventData ControlRec;
-    Short *OldImage;
-    Short *DestImage;
+    uint16_t *OldImage;
+    uint16_t *DestImage;
 
     GetControlPad(PadNum+1,FALSE,&ControlRec);      /* Read joypad */
     if (PadNum<4) {
@@ -1961,7 +1964,7 @@ Word ReadJoyButtons(Word PadNum)
             if (PrevPage==-1) {     /* Wrapped? */
                 PrevPage = SCREENS-1;
             }
-            OldImage = (Short *) &ScreenMaps[PrevPage][0];  /* Get work buffer */
+            OldImage = (uint16_t *) &ScreenMaps[PrevPage][0];  /* Get work buffer */
             i = 0;
             DestImage = OldImage;
             do {

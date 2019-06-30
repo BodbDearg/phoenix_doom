@@ -1,10 +1,15 @@
-#include "Doom.h"
+#include "Data.h"
+#include "DoomRez.h"
 #include "Endian.h"
 #include "MapData.h"
+#include "MapObj.h"
 #include "Mem.h"
+#include "Player.h"
 #include "Random.h"
 #include "Resources.h"
+#include "Specials.h"
 #include "Textures.h"
+#include "Tick.h"
 #include <cstring>
 
 static line_t **LineArrayBuffer;    /* Pointer to array of line_t pointers used by sectors */

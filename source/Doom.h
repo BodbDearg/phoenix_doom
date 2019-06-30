@@ -1,11 +1,17 @@
 #pragma once
 
-#include "doomrez.h"
-#include "sounds.h"
+#include "Burger.h"
 #include "Sprites.h"
-#include "states.h"
-#include <burger.h>
-#include <SDL.h>
+#include "States.h"
+
+struct player_t;
+struct subsector_t;
+
+//----------------------------------------------------------------------------------------------------------------------
+// Global typedefs
+//----------------------------------------------------------------------------------------------------------------------
+typedef int32_t     Fixed;      // 16.16 fixed point number
+typedef uint32_t    angle_t;    // 32-bit BAM angle (uses the full 32-bits to represent 360)
 
 /****************************
 
@@ -58,15 +64,6 @@
 #define USERANGE (70<<FRACBITS)     /* Range of pressing spacebar to activate something */
 #define MELEERANGE (70<<FRACBITS)   /* Range of hand to hand combat */
 #define MISSILERANGE (32*64<<FRACBITS)  /* Range of guns targeting */
-
-
-/****************************
-
-    Global typedefs
-
-****************************/
-
-typedef LongWord angle_t;           /* Global angle */
 
 /****************************
 
@@ -257,85 +254,6 @@ typedef struct {    /* Struct describing an object on the map */
 #define FF_FRAMEMASK    0x000000FF  /* Use the rest */
 #define FF_SPRITESHIFT  16          /* Bits to shift for group */
 
-typedef void (*PspActionFunc)(struct player_t*, struct pspdef_t*);
-typedef void (*MObjActionFunc)(struct mobj_t*);
-
-// An actor's state
-typedef struct state_t {    
-    uint32_t SpriteFrame;   // Which sprite to display?
-    uint32_t Time;          // Time before next action
-
-    // Logic to execute for next state
-    union {
-        const MObjActionFunc  mobjAction;   // Used for map object actions
-        const PspActionFunc   pspAction;    // Used for player sprite actions
-    };
-    
-    struct state_t* nextstate;  // Index to state table for next state
-
-#ifdef __cplusplus
-    // Constructor for player sprite state
-    constexpr inline state_t(
-        uint32_t SpriteFrame,
-        uint32_t Time,
-        PspActionFunc pspAction,
-        state_t* nextstate
-    ) noexcept
-        : SpriteFrame(SpriteFrame)
-        , Time(Time)
-        , pspAction(pspAction)
-        , nextstate(nextstate)
-    {
-    }
-
-    // Constructor for map object state
-    constexpr inline state_t(
-        uint32_t SpriteFrame,
-        uint32_t Time,
-        MObjActionFunc mobjAction,
-        state_t* nextstate
-    ) noexcept
-        : SpriteFrame(SpriteFrame)
-        , Time(Time)
-        , mobjAction(mobjAction)
-        , nextstate(nextstate)
-    {
-    }
-#endif
-
-} state_t;
-
-typedef struct pspdef_t {    /* Describe a 2d object's placement in the 3d world */
-    state_t *StatePtr;  /* a NULL state means not active */
-    Word Time;          /* Time to elapse before next state */
-    int WeaponX,WeaponY; /* X and Y in pixels */
-} pspdef_t;
-
-typedef struct {        /* Describe an actor's basic variables */
-    state_t *spawnstate;    /* State number to be spawned */
-    state_t *seestate;      /* First action state */
-    state_t *painstate;     /* State when in pain */
-    state_t *meleestate;    /* State when attacking */
-    state_t *missilestate;  /* State for missile weapon */
-    state_t *deathstate;    /* State for normal death */
-    state_t *xdeathstate;   /* State for gruesome death */
-    Fixed Radius;       /* Radius for collision checking */
-    Fixed Height;       /* Height for collision checking */
-    Word doomednum;     /* Number in doom ed */
-    Word spawnhealth;   /* Hit points at spawning */
-    Word painchance;        /* % chance of pain when hit */
-    Word mass;          /* Mass for impact recoil */
-    Word flags;         /* Generic state flags */
-    uint8_t Speed;     /* Rate of speed for normal chase or walk */
-    uint8_t reactiontime;  /* Time before first action */
-    uint8_t damage;        /* Damage done for attack */
-    uint8_t seesound;      /* Sound effect after first action */
-    uint8_t attacksound;   /* Sound when attacking */
-    uint8_t painsound;     /* Pain sound */
-    uint8_t deathsound;    /* Sound for normal death */
-    uint8_t activesound;   /* Sound to play at random times for mood */
-} mobjinfo_t;
-
 // Describes a 2D shape rendered to the screen
 typedef struct {
     int x1,x2,y1,y2;                    // Clipped to screen edges column range
@@ -355,122 +273,7 @@ typedef struct {
     int         minx, maxx;                 // Minimum x, max x
 } visplane_t;
 
-#define MF_SPECIAL      1           // call P_SpecialThing when touched
-#define MF_SOLID        2
-#define MF_SHOOTABLE    4
-#define MF_NOSECTOR     8           // don't use the sector links
-                                    // (invisible but touchable)
-#define MF_NOBLOCKMAP   16          // don't use the BlockLinkPtr
-                                    // (inert but displayable)
-#define MF_AMBUSH       32          /* Only attack when seen */
-#define MF_JUSTHIT      64          // try to attack right back
-#define MF_JUSTATTACKED 128         // take at least one step before attacking
-#define MF_SPAWNCEILING 0x100       // hang from ceiling instead of floor
-#define MF_NOGRAVITY    0x200       // don't apply gravity every tic
-#define MF_DROPOFF      0x400       // allow jumps from high places
-#define MF_PICKUP       0x800       // for players to pick up items
-#define MF_NOCLIP       0x1000      // player cheat
-#define MF_SLIDE        0x2000      // keep info about sliding along walls
-#define MF_FLOAT        0x4000      // allow moves to any height, no gravity
-#define MF_TELEPORT     0x8000      // don't cross lines or look at heights
-#define MF_MISSILE      0x10000     // don't hit same species, explode on block
-#define MF_DROPPED      0x20000     // dropped by a demon, not level spawned
-#define MF_SHADOW       0x40000     // use fuzzy draw (shadow demons / invis)
-#define MF_NOBLOOD      0x80000     // don't bleed when shot (use puff)
-#define MF_CORPSE       0x100000    // don't stop moving halfway off a step
-#define MF_INFLOAT      0x200000    // floating to a height for a move, don't
-                                    // auto float to target's height
-#define MF_COUNTKILL    0x400000    // count towards intermission kill total
-#define MF_COUNTITEM    0x800000    // count towards intermission item total
-#define MF_SKULLFLY     0x1000000   // skull in flight
-#define MF_NOTDMATCH    0x2000000   // don't spawn in death match (key cards)
-#define MF_SEETARGET    0x4000000   // is target visible?
-
-typedef struct mobj_t { 
-    struct mobj_t *prev,*next;  /* Linked list entries */
-    Fixed x,y,z;        /* Location in 3Space */
-
-/* info for drawing */
-
-    struct mobj_t *snext,*sprev;    /* links in sector (if needed) */
-    angle_t angle;      /* Angle of view */
-
-/* interaction info */
-
-    struct mobj_t *bnext,*bprev;    /* links in blocks (if needed) */
-    struct subsector_t *subsector;  /* Subsector currently standing on */
-    Fixed floorz,ceilingz;      // closest together of contacted secs
-    Fixed radius,height;        // for movement checking
-    Fixed momx,momy,momz;       // momentums
-
-    mobjinfo_t *InfoPtr;    /* Pointer to mobj info record */
-    Word tics;      /* Time before next state */
-    state_t *state; /* Pointer to current state record (Can't be NULL!) */
-    Word flags;     /* State flags for object */
-    Word MObjHealth;    /* Object's health */
-    Word movedir;   /* 0-7 */
-    uint32_t movecount; /* when 0, select a new dir */
-    struct mobj_t *target;  /* thing being chased/attacked (or NULL) */
-                            /* also the originator for missiles */
-    Word reactiontime;  /* if non 0, don't attack yet */
-                        /* used by player to freeze a bit after teleporting */
-    Word threshold;     /* if >0, the target will be chased */
-                        /* no matter what (even if shot) */
-    struct player_t *player;    /* only valid if type == MT_PLAYER */
-} mobj_t;
-
-#define AF_ACTIVE 1     /* Automap active */
-#define AF_FOLLOW 2     /* Follow mode on */
-#define AF_ALLLINES 4   /* All lines cheat */
-#define AF_ALLMOBJ 8    /* All objects cheat */
-#define AF_NOCLIP 0x10  /* Can walk through walls */
-#define AF_GODMODE 0x20 /* No one can hurt me! */
-#define AF_OPTIONSACTIVE 0x80 /* options screen running */
-
-typedef struct player_t {   /* Player's current game state */
-    mobj_t *mo;             /* Pointer to sprite object */
-
-    Word health;            /* only used between levels, mo->health */ 
-                            /* is used during levels */
-    Word armorpoints;       /* Amount of armor */
-    Word armortype;         /* armor type is 0-2 */
-    Word ammo[NUMAMMO];     /* Current ammo */
-    Word maxammo[NUMAMMO];  /* Maximum ammo */
-    Word killcount;         /* Number of critters killed */
-    Word itemcount;         /* Number of items gathered */
-    Word secretcount;       /* Number of secret sectors touched */
-    char *message;      /* Hint messages */
-    mobj_t *attacker;   /* Who did damage (NULL for floors) */
-    Word extralight;        /* so gun flashes light up areas */
-    Word fixedcolormap; /* can be set to REDCOLORMAP, etc */
-    Word colormap;      /* 0-3 for which color to draw player */
-    pspdef_t psprites[NUMPSPRITES]; /* view sprites (gun, etc) */
-    struct sector_t *lastsoundsector;   /* Pointer to sector where I last made a sound */
-    Fixed forwardmove;      /* Motion ahead (- for reverse) */
-    Fixed sidemove;         /* Motion to the side (- for left) */
-    Fixed viewz;            /* focal origin above r.z */
-    Fixed viewheight;       /* base height above floor for viewz */
-    Fixed deltaviewheight;  /* squat speed */
-    Fixed bob;              /* bounded/scaled total momentum */
-    Fixed automapx,automapy;    /* X and Y coord on the auto map */
-    angle_t angleturn;      /* Speed of turning */
-    Word turnheld;          /* For accelerative turning */
-    Word damagecount;       /* Redness factor */
-    Word bonuscount;        /* Goldness factor */
-    Word powers[NUMPOWERS];     /* invinc and invis are tic counters */
-    Word AutomapFlags;          /* Bit flags for options and automap */
-    weapontype_t readyweapon;   /* Weapon being used */
-    weapontype_t pendingweapon; /* wp_nochange if not changing */
-    playerstate_t playerstate;  /* Alive/dead... */
-    bool    cards[NUMCARDS];    /* Keycards held */
-    bool    backpack;       /* Got the backpack? */
-    bool    attackdown;     /* Held the attack key if true */
-    bool    usedown;        /* Held the use button down if true */
-    bool    weaponowned[NUMWEAPONS];    /* Do I own these weapons? */
-    bool    refire;         /* refired shots are less accurate */
-} player_t;
-
-typedef struct sector_t {       /* Describe a playfield sector (Polygon) */
+struct sector_t {       /* Describe a playfield sector (Polygon) */
     Fixed floorheight;  /* Floor height */
     Fixed ceilingheight;    /* Top and bottom height */
     Word FloorPic;      /* Floor texture # */
@@ -488,16 +291,16 @@ typedef struct sector_t {       /* Describe a playfield sector (Polygon) */
     void *specialdata;  /* Thinker struct for reversable actions */
     Word linecount;     /* Number of lines in polygon */
     struct line_t **lines;  /* [linecount] size */
-} sector_t;
+};
 
-typedef struct {        /* Vector struct */
+struct vector_t {        /* Vector struct */
     Fixed x,y;          /* X,Y start of line */
     Fixed dx,dy;        /* Distance traveled */
-} vector_t;
+};
 
-typedef struct {    /* Point in a map */
+struct vertex_t {    /* Point in a map */
     Fixed x,y;      /* X and Y coord of dot */
-} vertex_t;
+};
 
 typedef struct {    /* Data for a line side */
     Fixed textureoffset;    /* Column texture offset (X) */
@@ -628,138 +431,11 @@ typedef struct {
     bool        tryopen[NUMCARDS];  /* Tried to open a card or skull door */
 } stbar_t;
 
-/* In Data.c */
-extern ammotype_t WeaponAmmos[NUMWEAPONS];  /* Ammo for weapons */
-extern Word maxammo[NUMAMMO];   /* Max ammo for ammo types */
-extern Word PadAttack;  /* Joypad bit for attack */
-extern Word PadUse;     /* Joypad bit for use */
-extern Word PadSpeed;   /* Joypad bit for high speed */
-extern Word ControlType;    /* Determine settings for PadAttack,Use,Speed */
-extern Word TotalGameTicks; /* Total number of ticks since game start */
-extern Word gElapsedTime;    /* Ticks elapsed between frames */
-extern Word MaxLevel;       /* Highest level selectable in menu (1-23) */
-extern Word *DemoDataPtr;   /* Running pointer to demo data */
-extern Word *DemoBuffer;    /* Pointer to demo data */
-extern Word JoyPadButtons;  /* Current joypad */
-extern Word PrevJoyPadButtons;  /* Previous joypad */
-extern Word NewJoyPadButtons;   /* New joypad button downs */
-extern skill_t StartSkill;  /* Default skill level */
-extern Word StartMap;       /* Default map start */
-extern const void* BigNumFont;    /* Cached pointer to the big number font (rBIGNUMB) */
-extern Word TotalKillsInLevel;      /* Number of monsters killed */
-extern Word ItemsFoundInLevel;      /* Number of items found */
-extern Word SecretsFoundInLevel;        /* Number of secrets discovered */
-extern Word tx_texturelight;    /* Light value to pass to hardware */
-extern Fixed lightsub;
-extern Fixed lightcoef;
-extern Fixed lightmin;
-extern Fixed lightmax;
-extern player_t players;    /* Current player stats */
-extern gameaction_t gameaction; /* Current game state */
-extern skill_t gameskill;       /* Current skill level */
-extern Word gamemap;            /* Current game map # */
-extern Word nextmap;            /* The map to go to after the stats */
-extern Word ScreenSize;     /* Screen size to use */
-extern bool LowDetail;      /* Use low detail mode */
-extern bool DemoRecording;  /* True if demo is being recorded */
-extern bool DemoPlayback;   /* True if demo is being played */
-extern bool DoWipe;         /* True if I should do the DOOM wipe */
-
-/* In Tables.c */
-
-extern Fixed finetangent[4096];
-extern Fixed *finecosine;
-extern Fixed finesine[10240];
-extern angle_t tantoangle[2049];
-extern angle_t xtoviewangle[MAXSCREENWIDTH+1];
-extern int viewangletox[FINEANGLES/4];
-extern Word yslope[MAXSCREENHEIGHT];            /* 6.10 frac */
-extern Word distscale[MAXSCREENWIDTH];      /* 1.15 frac */
-extern Word IDivTable[8192];            /* 1.0 / 0-5500 for recipocal muls */   
-extern Word CenterX;        /* Center X coord in fixed point */
-extern Word CenterY;        /* Center Y coord in fixed point */
-extern Word ScreenWidth;    /* Width of the view screen */
-extern Word ScreenHeight;   /* Height of the view screen */
-extern Fixed Stretch;       /* Stretch factor */
-extern Fixed StretchWidth;  /* Stretch factor * ScreenWidth */
-extern Word ScreenXOffset;  /* True X coord for projected screen */
-extern Word ScreenYOffset;  /* True Y coord for projected screen */
-extern LongWord GunXScale;  /* Scale factor for player's weapon for X */
-extern LongWord GunYScale;  /* Scale factor for player's weapon for Y */
-extern Fixed lightmins[256];    /* Minimum light factors */
-extern Fixed lightsubs[256];    /* Light subtraction */
-extern Fixed lightcoefs[256];   /* Light coeffecient */
-extern Fixed planelightcoef[256];   /* Plane light coeffecient */
-
-/* In Info.c */
-
-extern state_t states[NUMSTATES];
-extern mobjinfo_t mobjinfo[NUMMOBJTYPES];
-
-/* In PSpr.c */
-
-extern void LowerPlayerWeapon(player_t *player);
-extern void A_WeaponReady(player_t *player,pspdef_t *psp);
-extern void A_ReFire(player_t *player,pspdef_t *psp);
-extern void A_Lower(player_t *player,pspdef_t *psp);
-extern void A_Raise(player_t *player,pspdef_t *psp);
-extern void A_GunFlash(player_t *player,pspdef_t *psp);
-extern void A_Punch(player_t *player,pspdef_t *psp);
-extern void A_Saw(player_t *player,pspdef_t *psp);
-extern void A_FireMissile(player_t *player,pspdef_t *psp);
-extern void A_FireBFG(player_t *player,pspdef_t *psp);
-extern void A_FirePlasma(player_t *player,pspdef_t *psp);
-extern void A_FirePistol(player_t *player,pspdef_t *psp);
-extern void A_FireShotgun(player_t *player,pspdef_t *psp);
-extern void A_CockSgun(player_t *player,pspdef_t *psp);
-extern void A_FireCGun(player_t *player,pspdef_t *psp);
-extern void A_Light0(player_t *player,pspdef_t *psp);
-extern void A_Light1(player_t *player,pspdef_t *psp);
-extern void A_Light2(player_t *player,pspdef_t *psp);
-extern void A_BFGSpray(mobj_t *mo);
-extern void A_BFGsound(player_t *player,pspdef_t *psp);
-extern void SetupPSprites(player_t *curplayer);
-extern void MovePSprites(player_t *curplayer);
-
-/* In RMain.c */
-extern viswall_t viswalls[MAXWALLCMDS];         /* Visible wall array */
-extern viswall_t *lastwallcmd;                  /* Pointer to free wall entry */
-extern visplane_t visplanes[MAXVISPLANES];      /* Visible floor array */
-extern visplane_t *lastvisplane;                /* Pointer to free floor entry */
-extern vissprite_t  vissprites[MAXVISSPRITES];  /* Visible sprite array */
-extern vissprite_t *vissprite_p;        /* Pointer to free sprite entry */
-extern Byte openings[MAXOPENINGS];
-extern Byte *lastopening;
-extern Fixed viewx,viewy,viewz;     /* Camera x,y,z */
-extern angle_t viewangle;               /* Camera angle */
-extern Fixed viewcos,viewsin;           /* Camera sine,cosine from angle */
-extern Word validcount;     /* Increment every time a check is made */
-extern Word extralight;     /* bumped light from gun blasts */
-extern angle_t clipangle;   /* Leftmost clipping angle */
-extern angle_t doubleclipangle; /* Doubled leftmost clipping angle */
-
-extern void R_Init(void);
-extern void R_Setup(void);
-extern void R_RenderPlayerView(void);
-
 // In Sound.c
 extern void S_Clear();
 extern void S_StartSound(const Fixed* const pOriginXY, const uint32_t soundId);
-extern void S_StartSong(const musicnum_t musicId);
+extern void S_StartSong(const uint8_t musicId);
 extern void S_StopSong();
-
-// In MObj.c
-extern void P_RemoveMobj(mobj_t *th);
-extern Word SetMObjState(mobj_t *mobj,state_t *StatePtr);
-extern void Sub1RandomTick(mobj_t *mobj);
-extern void ExplodeMissile(mobj_t *mo);
-extern mobj_t *SpawnMObj(Fixed x,Fixed y,Fixed z,mobjinfo_t *InfoPtr);
-extern void P_SpawnPlayer(mapthing_t *mthing);
-extern void SpawnMapThing(mapthing_t *mthing);
-extern void P_SpawnPuff(Fixed x,Fixed y,Fixed z);
-extern void P_SpawnBlood(Fixed x,Fixed y,Fixed z,Word damage);
-extern void P_SpawnMissile(mobj_t *source,mobj_t *dest,mobjinfo_t *InfoPtr);
-extern void SpawnPlayerMissile(mobj_t *source,mobjinfo_t *InfoPtr);
 
 // In DMain.c
 extern void AddToBox(Fixed *box,Fixed x,Fixed y);
@@ -773,106 +449,16 @@ extern Word MiniLoop(
 
 extern void D_DoomMain(void);
 
-/* In Tick.c */
-
-extern bool Tick4;          /* True 4 times a second */
-extern bool Tick2;          /* True 2 times a second */
-extern bool Tick1;          /* True 1 time a second */
-extern bool gamepaused;     /* True if the game is currently paused */
-extern mobj_t mobjhead;     /* Head and tail of mobj list */
-
-typedef void (*ThinkerFunc)(struct thinker_t*);
-
-extern void InitThinkers(void);
-extern void *AddThinker(ThinkerFunc FuncProc, Word MemSize);
-extern void RemoveThinker(void *thinker);
-extern void ChangeThinkCode(void *thinker, ThinkerFunc FuncProc);
-extern void RunThinkers(void);
-extern Word P_Ticker(void);
-extern void P_Drawer(void);
-extern void P_Start(void);
-extern void P_Stop(void);
-
-/* In Map.c */
-
-extern mobj_t *linetarget;      /* Object that was targeted */
-extern mobj_t *tmthing;         /* mobj_t to be checked */
-extern Fixed tmx,tmy;           /* Temp x,y for a position to be checked */
-extern bool checkposonly;       /* If true, just check the position, no actions */
-extern mobj_t *shooter;         /* Source of a direct line shot */
-extern angle_t attackangle;     /* Angle to target */
-extern Fixed attackrange;       /* Range to target */
-extern Fixed aimtopslope;       /* Range of slope to target weapon */
-extern Fixed aimbottomslope;
-
-extern bool P_CheckPosition(mobj_t *thing,Fixed x,Fixed y);
-extern bool P_TryMove(mobj_t *thing,Fixed x,Fixed y);
-extern void P_UseLines(player_t *player);
-extern void RadiusAttack(mobj_t *spot,mobj_t *source,Word damage);
-extern Fixed AimLineAttack(mobj_t *t1,angle_t angle,Fixed distance);
-extern void LineAttack(mobj_t *t1,angle_t angle,Fixed distance,Fixed slope,Word damage);
-
 /* In Inter.c */
 extern void TouchSpecialThing(mobj_t *special,mobj_t *toucher);
 extern void DamageMObj(mobj_t *target,mobj_t *inflictor,mobj_t *source,Word damage);
 
-/* In MapUtl.c */
-extern angle_t SlopeAngle(LongWord num,LongWord den);
-extern angle_t PointToAngle(Fixed x1,Fixed y1,Fixed x2,Fixed y2);
-extern Fixed PointToDist(Fixed x,Fixed y);
-extern Fixed GetApproxDistance(Fixed dx,Fixed dy);
-extern Word PointOnVectorSide(Fixed x, Fixed y, const vector_t* line);
-extern subsector_t *PointInSubsector(Fixed x,Fixed y);
-extern void MakeVector(line_t *li,vector_t *dl);
-extern Fixed InterceptVector(vector_t *v2,vector_t *v1);
-extern Word LineOpening(line_t *linedef);
-extern void UnsetThingPosition(mobj_t *thing);
-extern void SetThingPosition(mobj_t *thing);
-extern Word BlockLinesIterator(Word x,Word y,Word(*func)(line_t*));
-extern Word BlockThingsIterator(Word x,Word y,Word(*func)(mobj_t*));
-
-/* In Move.c */
-extern bool trymove2;           /* Result from P_TryMove2 */
-extern bool floatok;            /* if true, move would be ok if within tmfloorz - tmceilingz */
-extern Fixed tmfloorz;          /* Current floor z for P_TryMove2 */
-extern Fixed tmceilingz;        /* Current ceiling z for P_TryMove2 */
-extern mobj_t *movething;       /* Either a skull/missile target or a special pickup */
-extern line_t *blockline;       /* Might be a door that can be opened */
-
-extern void P_TryMove2(void);
-extern void PM_CheckPosition(void);
-extern bool PM_BoxCrossLine(line_t *ld);
-extern bool PIT_CheckLine(line_t *ld);
-extern Word PIT_CheckThing(mobj_t *thing);
-
 /* In Switch.c */
-
 extern Word NumSwitches;        /* Number of switches * 2 */
 extern Word SwitchList[];
 extern void P_InitSwitchList(void);
 extern void P_ChangeSwitchTexture(line_t *line, bool useAgain);
 extern bool P_UseSpecialLine(mobj_t *thing, line_t *line);
-
-/* In Game.c */
-
-extern void G_DoLoadLevel(void);
-extern void G_PlayerFinishLevel(void);
-extern void G_PlayerReborn(void);
-extern void G_DoReborn(void);
-extern void G_ExitLevel(void);
-extern void G_SecretExitLevel(void);
-extern void G_InitNew(skill_t skill,Word map);
-extern void G_RunGame(void);
-extern Word G_PlayDemoPtr(Word *demo);
-extern void G_RecordDemo(void);
-
-/* In Floor.c */
-
-extern result_e T_MovePlane(sector_t *sector,Fixed speed,
-            Fixed dest,bool crush,bool Ceiling,int direction);
-extern bool EV_DoFloor(line_t *line,floor_e floortype);
-extern bool EV_BuildStairs(line_t *line);
-extern bool EV_DoDonut(line_t *line);
 
 /* In FMain.c */
 
@@ -880,30 +466,6 @@ extern void F_Start(void);
 extern void F_Stop(void);
 extern Word F_Ticker(void);
 extern void F_Drawer(void);
-
-/* In Spec.c */
-
-extern Word NumFlatAnims;       /* Number of flat anims */
-extern anim_t FlatAnims[];      /* Array of flat animations */
-
-extern void P_InitPicAnims(void);
-extern side_t *getSide(sector_t *sec,Word line,Word side);
-extern sector_t *getSector(sector_t *sec,Word line,Word side);
-extern bool twoSided(sector_t *sec,Word line);
-extern sector_t *getNextSector(line_t *line,sector_t *sec);
-extern Fixed P_FindLowestFloorSurrounding(sector_t *sec);
-extern Fixed P_FindHighestFloorSurrounding(sector_t *sec);
-extern Fixed P_FindNextHighestFloor(sector_t *sec,Fixed currentheight);
-extern Fixed P_FindLowestCeilingSurrounding(sector_t *sec);
-extern Fixed P_FindHighestCeilingSurrounding(sector_t *sec);
-extern Word P_FindSectorFromLineTag(line_t *line,Word start);
-extern Word P_FindMinSurroundingLight(sector_t& sector,Word max);
-extern void P_CrossSpecialLine(line_t *line,mobj_t *thing);
-extern void P_ShootSpecialLine(mobj_t *thing,line_t *line);
-extern void PlayerInSpecialSector(player_t *player,sector_t *sector);
-extern void P_UpdateSpecials();
-extern void SpawnSpecials(void);
-extern void PurgeLineSpecials(void);
 
 /* In Ceilng.c */
 
@@ -933,75 +495,25 @@ extern void ReleaseMapMemory(void);
 extern void P_Init(void);
 
 /* In Telept.c */
-
 extern bool EV_Teleport(line_t *line,mobj_t *thing);
 
 /* In RData.c */
 extern void R_InitData(void);
 extern void InitMathTables(void);
 
-/* In AMMain.c */
-extern void AM_Start(void) noexcept;
-extern void AM_Control(player_t& player) noexcept;
-extern void AM_Drawer(void) noexcept;
-
-/* In Shoot.c */
-
-extern line_t *shootline;
-extern mobj_t *shootmobj;
-extern Fixed shootslope;                    // between aimtop and aimbottom
-extern Fixed shootx, shooty, shootz;        // location for puff/blood
-
-extern void P_Shoot2(void);
-extern bool PA_DoIntercept(void *value, bool isline, int frac);
-extern bool PA_ShootLine(line_t *li,Fixed interceptfrac);
-extern bool PA_ShootThing(mobj_t *th,Fixed interceptfrac);
-extern Fixed PA_SightCrossLine(line_t *line);
-extern bool PA_CrossSubsector(const subsector_t* sub);
-
 /* In Change.c */
-
 extern Word ChangeSector(sector_t *sector,Word crunch);
 
 /* In User.c */
 
 extern void P_PlayerThink(player_t *player);
 
-/* In Slide.c */
-
-extern Fixed slidex, slidey;        /* the final position */
-extern line_t *specialline;
-
-extern void P_SlideMove(mobj_t *mo);
-extern Fixed P_CompletableFrac(Fixed dx,Fixed dy);
-extern int SL_PointOnSide(int x, int y);
-extern Fixed SL_CrossFrac(void);
-extern bool CheckLineEnds(void);
-extern void ClipToLine(void);
-extern Word SL_CheckLine(line_t *ld);
-extern void SL_CheckSpecialLines(int x1, int y1, int x2, int y2);
-
 /* In Sight.c */
-
 extern Word CheckSight(mobj_t *t1,mobj_t *t2);
 
 /* In Base.c */
 
 extern void P_RunMobjBase(void);
-
-/* In InMain.c */
-
-#define PNPercent 1 /* Flags for PrintNumber, Percent sign appended? */
-#define PNCenter 2  /* Use X as center and not left x */
-#define PNRight 4   /* Use right justification */
-extern void PrintBigFont(Word x,Word y,Byte *string);
-extern Word GetBigStringWidth(Byte *string);
-extern void PrintNumber(Word x,Word y,Word value,Word Flags);
-extern void PrintBigFontCenter(Word x,Word y,Byte *String);
-extern void IN_Start(void);
-extern void IN_Stop(void);
-extern Word IN_Ticker(void);
-extern void IN_Drawer(void);
 
 /* In OMain.c */
 

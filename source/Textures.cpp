@@ -1,7 +1,8 @@
 #include "Textures.h"
 
-#include "doom.h"
-#include "doomrez.h"
+#include "Data.h"
+#include "Doom.h"
+#include "DoomRez.h"
 #include "Endian.h"
 #include "Macros.h"
 #include "Mem.h"

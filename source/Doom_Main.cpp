@@ -1,8 +1,14 @@
-#include "doom.h"
+#include "Data.h"
+#include "DoomRez.h"
+#include "Game.h"
+#include "Player.h"
+#include "Render_Main.h"
 #include "Resources.h"
+#include "Sounds.h"
 
 // FIXME: DC: TEMP - REMOVE
-#include <time.h>
+#include <SDL.h>
+#include <ctime>
 
 //--------------------------------------------------------------------------------------------------
 // Grow a box if needed to encompass a point

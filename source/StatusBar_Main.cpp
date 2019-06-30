@@ -1,7 +1,11 @@
-#include "Doom.h"
+#include "Data.h"
+#include "DoomRez.h"
+#include "Intermission_Main.h"
+#include "Player.h"
 #include "Random.h"
 #include "Resources.h"
-#include <string.h>
+#include "Sounds.h"
+#include <cstring>
 
 /**********************************
 
@@ -240,12 +244,12 @@ void ST_Drawer (void)
         ind = WeaponAmmos[p->readyweapon];
         if (ind != am_noammo) {     /* No ammo needed? */
             i = p->ammo[ind];
-            PrintNumber(AMMOX,AMMOY,i,PNRight);     /* Draw ammo */
+            PrintNumber(AMMOX,AMMOY,i,PNFLAGS_RIGHT);     /* Draw ammo */
         }
     }
-    PrintNumber(HEALTHX,HEALTHY,p->health,PNRight|PNPercent);   /* Draw the health */
-    PrintNumber(ARMORX,ARMORY,p->armorpoints,PNRight|PNPercent);    /* Draw armor */
-    PrintNumber(MAPX,MAPY,gamemap,PNCenter);        /* Draw AREA */
+    PrintNumber(HEALTHX,HEALTHY,p->health,PNFLAGS_RIGHT|PNFLAGS_PERCENT);   /* Draw the health */
+    PrintNumber(ARMORX,ARMORY,p->armorpoints,PNFLAGS_RIGHT|PNFLAGS_PERCENT);    /* Draw armor */
+    PrintNumber(MAPX,MAPY,gamemap,PNFLAGS_CENTER);        /* Draw AREA */
 
     /* Cards & skulls */
 
