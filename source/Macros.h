@@ -6,10 +6,8 @@
 #endif
 
 // Required includes for error handling
-#if ASSERTS_ENABLED == 1
-    #include <stdio.h>
-    #include <stdlib.h>
-#endif
+#include <cstdio>
+#include <cstdlib>
 
 // Regular assert without a message
 #if ASSERTS_ENABLED == 1
@@ -35,7 +33,7 @@
             }\
         } while (0)
 #else
-    #define ASSERT_LOG(Condition)
+    #define ASSERT_LOG(Condition, Message)
 #endif
 
 // Assert with a formatted message on failure
