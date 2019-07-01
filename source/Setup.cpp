@@ -17,34 +17,34 @@
 #include "Tick.h"
 #include <cstring>
 
-static line_t **LineArrayBuffer;    /* Pointer to array of line_t pointers used by sectors */
+static line_t **LineArrayBuffer;    // Pointer to array of line_t pointers used by sectors 
 
 static uint32_t PreLoadTable[] = {
-    rSPR_ZOMBIE,            /* Zombiemen */
-    rSPR_SHOTGUY,           /* Shotgun guys */
-    rSPR_IMP,               /* Imps */
-    rSPR_DEMON,             /* Demons */
-    rSPR_CACODEMON,         /* Cacodemons */
-    rSPR_LOSTSOUL,          /* Lost souls */
-    rSPR_BARON,             /* Baron of Hell */
-    rSPR_OURHEROBDY,        /* Our dead hero */
-    rSPR_BARREL,            /* Exploding barrel */
-    rSPR_SHOTGUN,           /* Shotgun on floor */
-    rSPR_CLIP,              /* Clip of bullets */
-    rSPR_SHELLS,            /* 4 shotgun shells */
-    rSPR_STIMPACK,          /* Stimpack */
-    rSPR_MEDIKIT,           /* Med-kit */
-    rSPR_GREENARMOR,        /* Normal armor */
-    rSPR_BLUEARMOR,         /* Mega armor */
-    rSPR_HEALTHBONUS,       /* Health bonus */
-    rSPR_ARMORBONUS,        /* Armor bonus */
-    rSPR_BLUD,              /* Blood from bullet hit */
-    rSPR_PUFF,              /* Gun sparks on wall */
+    rSPR_ZOMBIE,            // Zombiemen 
+    rSPR_SHOTGUY,           // Shotgun guys 
+    rSPR_IMP,               // Imps 
+    rSPR_DEMON,             // Demons 
+    rSPR_CACODEMON,         // Cacodemons 
+    rSPR_LOSTSOUL,          // Lost souls 
+    rSPR_BARON,             // Baron of Hell 
+    rSPR_OURHEROBDY,        // Our dead hero 
+    rSPR_BARREL,            // Exploding barrel 
+    rSPR_SHOTGUN,           // Shotgun on floor 
+    rSPR_CLIP,              // Clip of bullets 
+    rSPR_SHELLS,            // 4 shotgun shells 
+    rSPR_STIMPACK,          // Stimpack 
+    rSPR_MEDIKIT,           // Med-kit 
+    rSPR_GREENARMOR,        // Normal armor 
+    rSPR_BLUEARMOR,         // Mega armor 
+    rSPR_HEALTHBONUS,       // Health bonus 
+    rSPR_ARMORBONUS,        // Armor bonus 
+    rSPR_BLUD,              // Blood from bullet hit 
+    rSPR_PUFF,              // Gun sparks on wall 
     UINT32_MAX
 };
 
-mapthing_t deathmatchstarts[10],*deathmatch_p;  /* Deathmatch starts */
-mapthing_t playerstarts;    /* Starting position for players */
+mapthing_t deathmatchstarts[10],*deathmatch_p;  // Deathmatch starts 
+mapthing_t playerstarts;    // Starting position for players 
 
 /**********************************
 
@@ -54,57 +54,57 @@ mapthing_t playerstarts;    /* Starting position for players */
 **********************************/
 static void GroupLines(void)
 {
-    line_t **linebuffer;    /* Pointer to linebuffer array */
-    uint32_t total;             /* Number of entries needed for linebuffer array */
-    line_t *li;             /* Pointer to a work line record */
+    line_t **linebuffer;    // Pointer to linebuffer array 
+    uint32_t total;             // Number of entries needed for linebuffer array 
+    line_t *li;             // Pointer to a work line record 
     uint32_t i,j;
-    sector_t *sector;       /* Work sector pointer */
-    Fixed block;            /* Clipped bounding box value */
+    sector_t *sector;       // Work sector pointer 
+    Fixed block;            // Clipped bounding box value 
     Fixed bbox[4];
 
-    /* count number of lines in each sector */
-    li = gpLines;       /* Init pointer to line array */
-    total = 0;          /* How many line pointers are needed for sector line array */
-    i = gNumLines;      /* How many lines to process */
+    // count number of lines in each sector 
+    li = gpLines;       // Init pointer to line array 
+    total = 0;          // How many line pointers are needed for sector line array 
+    i = gNumLines;      // How many lines to process 
     do {
-        li->frontsector->linecount++;                               /* Inc the front sector's line count */
-        if (li->backsector && li->backsector != li->frontsector) {  /* Two sided line? */
-            li->backsector->linecount++;                            /* Add the back side referance */
-            ++total;                                                /* Inc count */
+        li->frontsector->linecount++;                               // Inc the front sector's line count 
+        if (li->backsector && li->backsector != li->frontsector) {  // Two sided line? 
+            li->backsector->linecount++;                            // Add the back side referance 
+            ++total;                                                // Inc count 
         }
-        ++total;                                                    /* Inc for the front */
-        ++li;                                                       /* Next line down */
+        ++total;                                                    // Inc for the front 
+        ++li;                                                       // Next line down 
     } while (--i);
 
-    /* Build line tables for each sector */
+    // Build line tables for each sector 
     linebuffer = (line_t**)MemAlloc(total * sizeof(line_t*));
     
-    LineArrayBuffer = linebuffer;   /* Save in global for later disposal */
-    sector = gpSectors;             /* Init the sector pointer */
-    i = gNumSectors;                /* Get the sector count */
+    LineArrayBuffer = linebuffer;   // Save in global for later disposal 
+    sector = gpSectors;             // Init the sector pointer 
+    i = gNumSectors;                // Get the sector count 
     
     do {
-        bbox[BOXTOP] = bbox[BOXRIGHT] = FIXED_MIN;     /* Invalidate the rect */
+        bbox[BOXTOP] = bbox[BOXRIGHT] = FIXED_MIN;     // Invalidate the rect 
         bbox[BOXBOTTOM] = bbox[BOXLEFT] = FIXED_MAX;
-        sector->lines = linebuffer;                 /* Get the current list entry */
-        li = gpLines;                               /* Init the line array pointer */
+        sector->lines = linebuffer;                 // Get the current list entry 
+        li = gpLines;                               // Init the line array pointer 
         j = gNumLines;
         
         do {
             if (li->frontsector == sector || li->backsector == sector) {
-                linebuffer[0] = li;                 /* Add the pointer to the entry list */
-                ++linebuffer;                       /* Add to the count */
-                AddToBox(bbox,li->v1.x,li->v1.y);   /* Adjust the bounding box */
-                AddToBox(bbox,li->v2.x,li->v2.y);   /* Both points */
+                linebuffer[0] = li;                 // Add the pointer to the entry list 
+                ++linebuffer;                       // Add to the count 
+                AddToBox(bbox,li->v1.x,li->v1.y);   // Adjust the bounding box 
+                AddToBox(bbox,li->v2.x,li->v2.y);   // Both points 
             }
             ++li;
-        } while (--j);      /* All done? */
+        } while (--j);      // All done? 
 
-        /* Set the sound origin to the center of the bounding box */
-        sector->SoundX = (bbox[BOXRIGHT]+bbox[BOXLEFT])/2;      /* Get average */
-        sector->SoundY = (bbox[BOXTOP]+bbox[BOXBOTTOM])/2;      /* This is SIGNED! */
+        // Set the sound origin to the center of the bounding box 
+        sector->SoundX = (bbox[BOXRIGHT]+bbox[BOXLEFT])/2;      // Get average 
+        sector->SoundY = (bbox[BOXTOP]+bbox[BOXBOTTOM])/2;      // This is SIGNED! 
 
-        /* Adjust bounding box to map blocks and clip to unsigned values */
+        // Adjust bounding box to map blocks and clip to unsigned values 
         block = (bbox[BOXTOP] - gBlockMapOriginY + MAXRADIUS) >> MAPBLOCKSHIFT;
         ++block;
         block = (block > (int) gBlockMapHeight) ? gBlockMapHeight : block;

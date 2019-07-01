@@ -61,13 +61,13 @@ void InitMathTables() {
     CenterY = (ScreenHeight/2);
     ScreenXOffset = ((320-ScreenWidth)/2);
     ScreenYOffset = ((160-ScreenHeight)/2);
-    GunXScale = (ScreenWidth*0x100000)/320;     /* Get the 3DO scale factor for the gun shape */
-    GunYScale = (ScreenHeight*0x10000)/160;     /* And the y scale */
+    GunXScale = (ScreenWidth*0x100000)/320;     // Get the 3DO scale factor for the gun shape 
+    GunYScale = (ScreenHeight*0x10000)/160;     // And the y scale 
 
     Stretch = Stretchs[ScreenSize];
     StretchWidth = Stretch*((int)ScreenWidth/2);
 
-    /* Create the viewangletox table */    
+    // Create the viewangletox table     
     j = sfixedDiv16_16(CenterX << FRACBITS, finetangent[FINEANGLES / 4 + FIELDOFVIEW / 2]);
     i = 0;
     do {
@@ -89,7 +89,7 @@ void InitMathTables() {
         i+=2;
     } while (i<FINEANGLES/2);
 
-    /* Using the viewangletox, create xtoviewangle table */
+    // Using the viewangletox, create xtoviewangle table 
         
     i = 0;
     do {
@@ -101,7 +101,7 @@ void InitMathTables() {
         xtoviewangle[i] = (x<<(ANGLETOFINESHIFT+1))-ANG90;
     } while (++i<ScreenWidth+1);
     
-    /* Set the minimums and maximums for viewangletox */
+    // Set the minimums and maximums for viewangletox 
     i = 0;
     do {
         if (viewangletox[i]==-1) {
@@ -111,7 +111,7 @@ void InitMathTables() {
         }
     } while (++i<FINEANGLES/4);
     
-    /* Make the yslope table for floor and ceiling textures */
+    // Make the yslope table for floor and ceiling textures 
     
     i = 0;
     do {
@@ -124,7 +124,7 @@ void InitMathTables() {
         yslope[i] = j;
     } while (++i<ScreenHeight);
     
-    /* Create the distance scale table for floor and ceiling textures */
+    // Create the distance scale table for floor and ceiling textures 
     
     i = 0;
     do {
@@ -132,13 +132,13 @@ void InitMathTables() {
         distscale[i] = sfixedDiv16_16(FRACUNIT, j) >> 1;
     } while (++i<ScreenWidth);
 
-    /* Create the lighting tables */
+    // Create the lighting tables 
     
     i = 0;
     do {
         Fixed Range;
         j = i/3;
-        lightmins[i] = j;   /* Save the light minimum factors */
+        lightmins[i] = j;   // Save the light minimum factors 
         Range = i-j;
         lightsubs[i] = ((Fixed)ScreenWidth*Range)/(800-(Fixed)ScreenWidth);
         lightcoefs[i] = (Range<<16)/(800-(Fixed)ScreenWidth);

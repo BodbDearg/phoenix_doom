@@ -17,7 +17,7 @@
     #include <task.h>
 #endif
 
-/* Width of the screen in pixels */
+// Width of the screen in pixels 
 uint32_t FramebufferWidth = 320;
 uint32_t FramebufferHeight = 200;
 
@@ -28,9 +28,9 @@ uint32_t FramebufferHeight = 200;
 
 **********************************/
 
-uint8_t *VideoPointer;     /* Pointer to draw buffer */
-Item VideoItem;         /* 3DO specific video Item number for hardware */
-Item VideoScreen;       /* 3DO specific screen Item number for hardware */
+uint8_t *VideoPointer;     // Pointer to draw buffer 
+Item VideoItem;         // 3DO specific video Item number for hardware 
+Item VideoScreen;       // 3DO specific screen Item number for hardware 
 
 /**********************************
 
@@ -38,7 +38,7 @@ Item VideoScreen;       /* 3DO specific screen Item number for hardware */
 
 **********************************/
 
-uint32_t LastTick;      /* Time last waited at */
+uint32_t LastTick;      // Time last waited at 
 
 /**********************************
 
@@ -77,7 +77,7 @@ const struct CelControlBlock* GetShapeIndexPtr(const void* ShapeArrayPtr, uint32
 
 **********************************/
 
-uint32_t LastJoyButtons[4];     /* Save the previous joypad bits */
+uint32_t LastJoyButtons[4];     // Save the previous joypad bits 
 
 uint32_t ReadJoyButtons(uint32_t PadNum) noexcept
 {
@@ -135,11 +135,11 @@ uint32_t ReadJoyButtons(uint32_t PadNum) noexcept
     #if 0
         ControlPadEventData ControlRec;
 
-        GetControlPad(PadNum+1,FALSE,&ControlRec);      /* Read joypad */
+        GetControlPad(PadNum+1,FALSE,&ControlRec);      // Read joypad 
         if (PadNum<4) {
             LastJoyButtons[PadNum] = (Word)ControlRec.cped_ButtonBits;
         }
-        return (Word)ControlRec.cped_ButtonBits;        /* Return the data */
+        return (Word)ControlRec.cped_ButtonBits;        // Return the data 
     #endif
 }
 
@@ -155,42 +155,42 @@ uint32_t ReadJoyButtons(uint32_t PadNum) noexcept
 #if 0
 static void Timer60Hz(void) noexcept
 {
-    Item devItem;       /* Item referance for a timer device */
-    Item IOReqItem;     /* IO Request item */
-    IOInfo ioInfo;      /* IO Info struct */
-    struct timeval tv;  /* Timer time struct */
+    Item devItem;       // Item referance for a timer device 
+    Item IOReqItem;     // IO Request item 
+    IOInfo ioInfo;      // IO Info struct 
+    struct timeval tv;  // Timer time struct 
 
-    devItem = OpenNamedDevice("timer",0);       /* Open the timer */
-    IOReqItem = CreateIOReq(0,0,devItem,0);     /* Create a IO request */
+    devItem = OpenNamedDevice("timer",0);       // Open the timer 
+    IOReqItem = CreateIOReq(0,0,devItem,0);     // Create a IO request 
 
-    for (;;) {  /* Stay forever */
+    for (;;) {  // Stay forever 
         tv.tv_sec = 0;
-        tv.tv_usec = 16667;                     /* 60 times per second */
-        memset(&ioInfo,0,sizeof(ioInfo));       /* Init the struct */
-        ioInfo.ioi_Command = TIMERCMD_DELAY;    /* Sleep for some time */
+        tv.tv_usec = 16667;                     // 60 times per second 
+        memset(&ioInfo,0,sizeof(ioInfo));       // Init the struct 
+        ioInfo.ioi_Command = TIMERCMD_DELAY;    // Sleep for some time 
         ioInfo.ioi_Unit = TIMER_UNIT_USEC;
-        ioInfo.ioi_Send.iob_Buffer = &tv;       /* Pass the time struct */
+        ioInfo.ioi_Send.iob_Buffer = &tv;       // Pass the time struct 
         ioInfo.ioi_Send.iob_Len = sizeof(tv);
-        DoIO(IOReqItem,&ioInfo);                /* Perform the task sleep */
-        ++TickValue;                            /* Inc at 60 hz */
+        DoIO(IOReqItem,&ioInfo);                // Perform the task sleep 
+        ++TickValue;                            // Inc at 60 hz 
     }
 }
 #endif
 
 uint32_t ReadTick() noexcept
 {
-    if (TimerInited) {      /* Was the timer started? */
+    if (TimerInited) {      // Was the timer started? 
         return TickValue;
     }
     
-    TimerInited = true;     /* Mark as started */
+    TimerInited = true;     // Mark as started 
 
     // DC: FIXME: reimplement/replace
     #if 0
         CreateThread("Timer60Hz",KernelBase->kb_CurrentTask->t.n_Priority+10,Timer60Hz,512);
     #endif
     
-    return TickValue;       /* Return the tick value */
+    return TickValue;       // Return the tick value 
 }
 
 /****************************************
@@ -201,7 +201,7 @@ uint32_t ReadTick() noexcept
 ****************************************/
 
 static uint32_t TensTable[] = {
-1,              /* Table to quickly div by 10 */
+1,              // Table to quickly div by 10 
 10,
 100,
 1000,
@@ -215,28 +215,28 @@ static uint32_t TensTable[] = {
 
 void LongWordToAscii(uint32_t Val, char* AsciiPtr) noexcept
 {
-    uint32_t Index;      /* Index to TensTable */
-    uint32_t BigNum;    /* Temp for TensTable value */
-    uint32_t Letter;        /* ASCII char */
-    uint32_t Printing;      /* Flag for printing */
+    uint32_t Index;      // Index to TensTable 
+    uint32_t BigNum;    // Temp for TensTable value 
+    uint32_t Letter;        // ASCII char 
+    uint32_t Printing;      // Flag for printing 
 
-    Index = 10;      /* 10 digits to process */
-    Printing = false;   /* Not printing yet */
+    Index = 10;      // 10 digits to process 
+    Printing = false;   // Not printing yet 
     do {
-        --Index;        /* Dec index */
-        BigNum = TensTable[Index];  /* Get div value in local */
-        Letter = '0';            /* Init ASCII value */
-        while (Val>=BigNum) {    /* Can I divide? */
-            Val-=BigNum;        /* Remove value */
-            ++Letter;            /* Inc ASCII value */
+        --Index;        // Dec index 
+        BigNum = TensTable[Index];  // Get div value in local 
+        Letter = '0';            // Init ASCII value 
+        while (Val>=BigNum) {    // Can I divide? 
+            Val-=BigNum;        // Remove value 
+            ++Letter;            // Inc ASCII value 
         }
-        if (Printing || Letter!='0' || !Index) {    /* Already printing? */
-            Printing = true;        /* Force future printing */
-            AsciiPtr[0] = Letter;       /* Also must print on last char */
+        if (Printing || Letter!='0' || !Index) {    // Already printing? 
+            Printing = true;        // Force future printing 
+            AsciiPtr[0] = Letter;       // Also must print on last char 
             ++AsciiPtr;
         }
-    } while (Index);        /* Any more left? */
-    AsciiPtr[0] = 0;        /* Terminate the string */
+    } while (Index);        // Any more left? 
+    AsciiPtr[0] = 0;        // Terminate the string 
 }
 
 /**********************************

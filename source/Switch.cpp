@@ -19,24 +19,24 @@
 
 **********************************/
 
-#define BUTTONTIME TICKSPERSEC      /* 1 second */
+#define BUTTONTIME TICKSPERSEC      // 1 second 
 
-typedef enum {      /* Positions for the button */
-    top,            /* Top button */
-    middle,         /* Middle button */
-    bottom          /* Bottom button */
+typedef enum {      // Positions for the button 
+    top,            // Top button 
+    middle,         // Middle button 
+    bottom          // Bottom button 
 } bwhere_e;
 
-typedef struct {            /* Struct to describe a switch */
-    line_t *line;           /* Line that the button is on */
-    uint32_t btexture;      /* Texture # */
-    uint32_t btimer;        /* Time before switching back */
-    bwhere_e where;         /* Vertical position of the button */
+typedef struct {            // Struct to describe a switch 
+    line_t *line;           // Line that the button is on 
+    uint32_t btexture;      // Texture # 
+    uint32_t btimer;        // Time before switching back 
+    bwhere_e where;         // Vertical position of the button 
 } button_t;
 
-uint32_t NumSwitches;       /* Number of switches * 2 */
+uint32_t NumSwitches;       // Number of switches * 2 
 uint32_t SwitchList[] = {
-    rSW1BRN1-rT_START,rSW2BRN1-rT_START,            /* Before,After */
+    rSW1BRN1-rT_START,rSW2BRN1-rT_START,            // Before,After 
     rSW1GARG-rT_START,rSW2GARG-rT_START,
     rSW1GSTON-rT_START,rSW2GSTON-rT_START,
     rSW1HOT-rT_START,rSW2HOT-rT_START,
@@ -52,16 +52,16 @@ uint32_t SwitchList[] = {
 
 static void T_Button(button_t *button)
 {
-    /* Do buttons */
+    // Do buttons 
 
-    if (button->btimer>gElapsedTime) {   /* Time up? */
-        button->btimer-=gElapsedTime;    /* Adjust timer */
+    if (button->btimer>gElapsedTime) {   // Time up? 
+        button->btimer-=gElapsedTime;    // Adjust timer 
     } else {
         line_t *line;
         side_t *MySide;
 
         line = button->line;
-        MySide = line->SidePtr[0];  /* Get the side record */
+        MySide = line->SidePtr[0];  // Get the side record 
         switch(button->where) {
         case top:
             MySide->toptexture = button->btexture;
@@ -74,7 +74,7 @@ static void T_Button(button_t *button)
             break;
         }
         S_StartSound(&line->frontsector->SoundX,sfx_swtchn);
-        RemoveThinker(button);  /* unlink and free */
+        RemoveThinker(button);  // unlink and free 
     }
 }
 
@@ -116,12 +116,12 @@ static void P_StartButton(line_t *line,bwhere_e w,uint32_t texture,uint32_t time
 
 void P_ChangeSwitchTexture(line_t *line, bool useAgain)
 {
-    uint32_t texTop;        /* Cached texture numbers */
+    uint32_t texTop;        // Cached texture numbers 
     uint32_t texMid;
     uint32_t texBot;
     uint32_t i;
-    uint32_t sound;     /* Sound effect to play */
-    side_t *MySide; /* Pointer to the side struct */
+    uint32_t sound;     // Sound effect to play 
+    side_t *MySide; // Pointer to the side struct 
     Fixed *SoundOrg;
 
     if (!useAgain) {
@@ -135,7 +135,7 @@ void P_ChangeSwitchTexture(line_t *line, bool useAgain)
     texBot = MySide->bottomtexture;
 
     sound = sfx_swtchn;
-    if (line->special == 11) {      /* EXIT SWITCH? */
+    if (line->special == 11) {      // EXIT SWITCH? 
         sound = sfx_swtchx;
     }
 
@@ -175,30 +175,30 @@ void P_ChangeSwitchTexture(line_t *line, bool useAgain)
 
 bool P_UseSpecialLine(mobj_t *thing,line_t *line)
 {
-    /* Switches that other things can activate */
+    // Switches that other things can activate 
 
-    if (!thing->player) {       /* Monster? */
+    if (!thing->player) {       // Monster? 
         if (line->flags & ML_SECRET) {
-            return false;       /* never open secret doors */
+            return false;       // never open secret doors 
         }
         switch(line->special) {
         default:
             return false;
-        case 1:     /* MANUAL DOOR RAISE */
-#if 0           /* Don't let monsters open locked doors */
-        case 32:    /* MANUAL BLUE */
-        case 33:    /* MANUAL RED */
-        case 34:    /* MANUAL YELLOW */
+        case 1:     // MANUAL DOOR RAISE 
+#if 0           // Don't let monsters open locked doors 
+        case 32:    // MANUAL BLUE 
+        case 33:    // MANUAL RED 
+        case 34:    // MANUAL YELLOW 
 #endif
-                ;       /* No effect */
+                ;       // No effect 
         }
     }
 
-    /* do something */
+    // do something 
 
     switch (line->special) {
 
-    /* Normal doors */
+    // Normal doors 
     case 1:         // Vertical Door
     case 31:        // Manual door open
     case 26:        // Blue Card Door Raise
@@ -216,7 +216,7 @@ bool P_UseSpecialLine(mobj_t *thing,line_t *line)
         EV_VerticalDoor(line,thing);
         break;
 
-    /* Buttons */
+    // Buttons 
 
     case 42:        // Close Door
         if (EV_DoDoor(line,close)) {
@@ -289,7 +289,7 @@ bool P_UseSpecialLine(mobj_t *thing,line_t *line)
         }
         break;
 
-    /* Switches (One shot buttons) */
+    // Switches (One shot buttons) 
 
     case 7:         // Build Stairs
         if (EV_BuildStairs(line)) {

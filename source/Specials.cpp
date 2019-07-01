@@ -19,7 +19,7 @@
 #include "Textures.h"
 #include "Tick.h"
 
-uint32_t NumFlatAnims;      /* Number of flat anims */
+uint32_t NumFlatAnims;      // Number of flat anims 
 
 anim_t FlatAnims[] = {
     { rNUKAGE3 - rF_START, rNUKAGE1 - rF_START, rNUKAGE1 - rF_START},
@@ -27,8 +27,8 @@ anim_t FlatAnims[] = {
     { rLAVA4 - rF_START, rLAVA1 - rF_START, rLAVA1 - rF_START}
 };
 
-static uint32_t numlinespecials;    /* Number of line specials */
-static line_t **linespeciallist;    /* Pointer to array of line pointers */
+static uint32_t numlinespecials;    // Number of line specials 
+static line_t **linespeciallist;    // Pointer to array of line pointers 
 
 /**********************************
 
@@ -38,7 +38,7 @@ static line_t **linespeciallist;    /* Pointer to array of line pointers */
 
 void P_InitPicAnims()
 {
-    NumFlatAnims = sizeof(FlatAnims)/sizeof(anim_t);        /* Set the number */
+    NumFlatAnims = sizeof(FlatAnims)/sizeof(anim_t);        // Set the number 
 }
 
 /**********************************
@@ -92,10 +92,10 @@ sector_t *getNextSector(line_t *line, sector_t *sec)
         return 0;
     }
 
-    if (line->frontsector == sec) {     /* Going backwards? */
-        return line->backsector;        /* Go the other way */
+    if (line->frontsector == sec) {     // Going backwards? 
+        return line->backsector;        // Go the other way 
     }
-    return line->frontsector;       /* Use the front */
+    return line->frontsector;       // Use the front 
 }
 
 /**********************************
@@ -111,21 +111,21 @@ Fixed P_FindLowestFloorSurrounding(sector_t *sec)
     sector_t *other;
     Fixed floor;
 
-    floor = sec->floorheight;   /* Get the current floor */
+    floor = sec->floorheight;   // Get the current floor 
     i = sec->linecount;
-    if (i) {        /* Any lines */
-        check = sec->lines; /* Get the first pointer */
+    if (i) {        // Any lines 
+        check = sec->lines; // Get the first pointer 
         do {
-            other = getNextSector(check[0],sec);    /* Connected? */
+            other = getNextSector(check[0],sec);    // Connected? 
             if (other) {
-                if (other->floorheight < floor) {   /* Check the floor */
-                    floor = other->floorheight; /* Lower floor */
+                if (other->floorheight < floor) {   // Check the floor 
+                    floor = other->floorheight; // Lower floor 
                 }
             }
             ++check;
         } while (--i);
     }
-    return floor;       /* Return the height */
+    return floor;       // Return the height 
 }
 
 /**********************************
@@ -141,15 +141,15 @@ Fixed P_FindHighestFloorSurrounding(sector_t *sec)
     sector_t *other;
     Fixed floor;
 
-    floor = -500*FRACUNIT;      /* Assume very high */
-    i = sec->linecount;         /* Get the count */
+    floor = -500*FRACUNIT;      // Assume very high 
+    i = sec->linecount;         // Get the count 
     if (i) {
-        check = sec->lines; /* Init the line pointer */
+        check = sec->lines; // Init the line pointer 
         do {
             other = getNextSector(check[0],sec);
             if (other) {
                 if (other->floorheight > floor) {
-                    floor = other->floorheight; /* Get the new floor */
+                    floor = other->floorheight; // Get the new floor 
                 }
             }
             ++check;
@@ -169,25 +169,25 @@ Fixed P_FindNextHighestFloor(sector_t* sec, Fixed currentheight)
     uint32_t i;
     line_t **check;
     sector_t *other;
-    Fixed height;       /* Value to return */
+    Fixed height;       // Value to return 
 
-    height = 0x7FFFFFFF;        /* Init to the maximum Fixed */
-    i = sec->linecount;         /* Any lines? */
+    height = 0x7FFFFFFF;        // Init to the maximum Fixed 
+    i = sec->linecount;         // Any lines? 
     if (i) {
-        check = sec->lines;     /* Init line pointer */
+        check = sec->lines;     // Init line pointer 
         do {
-            other = getNextSector(check[0],sec);    /* Connecting sector? */
+            other = getNextSector(check[0],sec);    // Connecting sector? 
             if (other) {
-                if (other->floorheight>currentheight) { /* Higher than current? */
-                    if (other->floorheight<height) {    /* Lower than result? */
-                        height = other->floorheight;    /* Change result */
+                if (other->floorheight>currentheight) { // Higher than current? 
+                    if (other->floorheight<height) {    // Lower than result? 
+                        height = other->floorheight;    // Change result 
                     }
                 }
             }
             ++check;
         } while (--i);
     }
-    return height;      /* Return the answer */
+    return height;      // Return the answer 
 }
 
 /**********************************
@@ -203,15 +203,15 @@ Fixed P_FindLowestCeilingSurrounding(sector_t* sec)
     sector_t *other;
     Fixed height;
 
-    height = 0x7FFFFFFF;        /* Maximum height */
+    height = 0x7FFFFFFF;        // Maximum height 
     i = sec->linecount;
     if (i) {
-        check = sec->lines;     /* Get the line pointer */
+        check = sec->lines;     // Get the line pointer 
         do {
-            other = getNextSector(check[0],sec);    /* Next sector in list */
+            other = getNextSector(check[0],sec);    // Next sector in list 
             if (other) {
-                if (other->ceilingheight < height) {    /* Lower? */
-                    height = other->ceilingheight;  /* Set the new height */
+                if (other->ceilingheight < height) {    // Lower? 
+                    height = other->ceilingheight;  // Set the new height 
                 }
             }
             ++check;
@@ -233,21 +233,21 @@ Fixed P_FindHighestCeilingSurrounding(sector_t *sec)
     sector_t *other;
     Fixed height;
 
-    height = 0;     /* Lowest ceiling possible */
+    height = 0;     // Lowest ceiling possible 
     i = sec->linecount;
     if (i) {
-        check = sec->lines; /* Get pointer to line pointers */
+        check = sec->lines; // Get pointer to line pointers 
         do {
             other = getNextSector(check[0],sec);
             if (other) {
-                if (other->ceilingheight > height) {    /* Higher? */
-                    height = other->ceilingheight;      /* Save the highest */
+                if (other->ceilingheight > height) {    // Higher? 
+                    height = other->ceilingheight;      // Save the highest 
                 }
             }
             ++check;
         } while (--i);
     }
-    return height;      /* Return highest */
+    return height;      // Return highest 
 }
 
 /**********************************
@@ -262,18 +262,18 @@ uint32_t P_FindSectorFromLineTag(line_t *line, uint32_t start)
     sector_t *sec;
     ++start;
     
-    if (start < gNumSectors) {      /* Valid? */
-        tag = line->tag;            /* Cache the tag */
-        sec = &gpSectors[start];    /* Get the sector pointer */
+    if (start < gNumSectors) {      // Valid? 
+        tag = line->tag;            // Cache the tag 
+        sec = &gpSectors[start];    // Get the sector pointer 
         
         do {
-            if (sec->tag == tag) {  /* Tag match? */
-                return start;       /* Return the index */
+            if (sec->tag == tag) {  // Tag match? 
+                return start;       // Return the index 
             }
-            ++sec;                          /* Next pointer */
-        } while (++start < gNumSectors);    /* Keep counting */
+            ++sec;                          // Next pointer 
+        } while (++start < gNumSectors);    // Keep counting 
     }
-    return -1;      /* No good... */
+    return -1;      // No good... 
 }
 
 /**********************************
@@ -289,15 +289,15 @@ uint32_t P_FindMinSurroundingLight(sector_t& sector, uint32_t max)
     line_t **check;
     sector_t *other;
 
-    min = max;      /* Assume answer */
+    min = max;      // Assume answer 
     i = sector.linecount;
-    if (i) {            /* Any lines? */
+    if (i) {            // Any lines? 
         check = sector.lines;
         do {
             other = getNextSector(check[0], &sector);
             if (other) {
                 if (other->lightlevel < min) {
-                    min = other->lightlevel;        /* Get darker */
+                    min = other->lightlevel;        // Get darker 
                 }
             }
             ++check;
@@ -318,18 +318,18 @@ void P_CrossSpecialLine(line_t *line, mobj_t *thing)
     ASSERT(line);
     ASSERT(thing);
 
-    /* Triggers that other things can activate */
+    // Triggers that other things can activate 
 
-    if (!thing->player) {   /* Not a player? */
+    if (!thing->player) {   // Not a player? 
         switch(line->special) {
-        default:    /* None of the above? */
-            return; /* Exit */
-        case 39:    /* TELEPORT TRIGGER */
-        case 97:    /* TELEPORT RETRIGGER */
-        case 4:     /* RAISE DOOR */
-        case 10:    /* PLAT DOWN-WAIT-UP-STAY TRIGGER */
-        case 88:    /* PLAT DOWN-WAIT-UP-STAY RETRIGGER */
-            ;       /* Null event */
+        default:    // None of the above? 
+            return; // Exit 
+        case 39:    // TELEPORT TRIGGER 
+        case 97:    // TELEPORT RETRIGGER 
+        case 4:     // RAISE DOOR 
+        case 10:    // PLAT DOWN-WAIT-UP-STAY TRIGGER 
+        case 88:    // PLAT DOWN-WAIT-UP-STAY RETRIGGER 
+            ;       // Null event 
         }
     }
 
@@ -343,205 +343,205 @@ void P_CrossSpecialLine(line_t *line, mobj_t *thing)
 **********************************/
 
     switch (line->special) {
-    case 2:         /* Open Door */
+    case 2:         // Open Door 
         EV_DoDoor(line,open);
         line->special = 0;
         break;
-    case 3:         /* Close Door */
+    case 3:         // Close Door 
         EV_DoDoor(line,close);
         line->special = 0;
         break;
-    case 4:         /* Raise Door */
+    case 4:         // Raise Door 
         EV_DoDoor(line,normaldoor);
         line->special = 0;
         break;
-    case 5:         /* Raise Floor */
+    case 5:         // Raise Floor 
         EV_DoFloor(line,raiseFloor);
         line->special = 0;
         break;
-    case 6:         /* Fast Ceiling Crush & Raise */
+    case 6:         // Fast Ceiling Crush & Raise 
         EV_DoCeiling(line,fastCrushAndRaise);
         line->special = 0;
         break;
-    case 8:         /* Build Stairs */
+    case 8:         // Build Stairs 
         EV_BuildStairs(line);
         line->special = 0;
         break;
-    case 10:        /* PlatDownWaitUp */
+    case 10:        // PlatDownWaitUp 
         EV_DoPlat(line,downWaitUpStay,0);
         line->special = 0;
         break;
-    case 12:        /* Light Turn On - brightest near */
+    case 12:        // Light Turn On - brightest near 
         EV_LightTurnOn(*line,0);
         line->special = 0;
         break;
-    case 13:        /* Light Turn On 255 */
+    case 13:        // Light Turn On 255 
         EV_LightTurnOn(*line,255);
         line->special = 0;
         break;
-    case 16:        /* Close Door 30 */
+    case 16:        // Close Door 30 
         EV_DoDoor(line,close30ThenOpen);
         line->special = 0;
         break;
-    case 17:        /* Start Light Strobing */
+    case 17:        // Start Light Strobing 
         EV_StartLightStrobing(*line);
         line->special = 0;
         break;
-    case 19:        /* Lower Floor */
+    case 19:        // Lower Floor 
         EV_DoFloor(line,lowerFloor);
         line->special = 0;
         break;
-    case 22:        /* Raise floor to nearest height and change texture */
+    case 22:        // Raise floor to nearest height and change texture 
         EV_DoPlat(line,raiseToNearestAndChange,0);
         line->special = 0;
         break;
-    case 25:        /* Ceiling Crush and Raise */
+    case 25:        // Ceiling Crush and Raise 
         EV_DoCeiling(line,crushAndRaise);
         line->special = 0;
         break;
-    case 30:        /* Raise floor to shortest texture height */
-                    /* on either side of lines */
+    case 30:        // Raise floor to shortest texture height 
+                    // on either side of lines 
         EV_DoFloor(line,raiseToTexture);
         line->special = 0;
         break;
-    case 35:        /* Lights Very Dark */
+    case 35:        // Lights Very Dark 
         EV_LightTurnOn(*line,35);
         line->special = 0;
         break;
-    case 36:        /* Lower Floor (TURBO) */
+    case 36:        // Lower Floor (TURBO) 
         EV_DoFloor(line,turboLower);
         line->special = 0;
         break;
-    case 37:        /* LowerAndChange */
+    case 37:        // LowerAndChange 
         EV_DoFloor(line,lowerAndChange);
         line->special = 0;
         break;
-    case 38:        /* Lower Floor To Lowest */
+    case 38:        // Lower Floor To Lowest 
         EV_DoFloor(line,lowerFloorToLowest);
         line->special = 0;
         break;
-    case 39:        /* TELEPORT! */
+    case 39:        // TELEPORT! 
         EV_Teleport(line,thing);
         line->special = 0;
         break;
-    case 40:        /* RaiseCeilingLowerFloor */
+    case 40:        // RaiseCeilingLowerFloor 
         EV_DoCeiling(line,raiseToHighest);
         EV_DoFloor(line,lowerFloorToLowest);
         line->special = 0;
         break;
-    case 44:        /* Ceiling Crush */
+    case 44:        // Ceiling Crush 
         EV_DoCeiling(line,lowerAndCrush);
         line->special = 0;
         break;
-    case 52:        /* EXIT! */
+    case 52:        // EXIT! 
         G_ExitLevel();
         line->special = 0;
         break;
-    case 53:        /* Perpetual Platform Raise */
+    case 53:        // Perpetual Platform Raise 
         EV_DoPlat(line,perpetualRaise,0);
         line->special = 0;
         break;
-    case 54:        /* Platform Stop */
+    case 54:        // Platform Stop 
         EV_StopPlat(line);
         line->special = 0;
         break;
-    case 56:        /* Raise Floor Crush */
+    case 56:        // Raise Floor Crush 
         EV_DoFloor(line,raiseFloorCrush);
         line->special = 0;
         break;
-    case 57:        /* Ceiling Crush Stop */
+    case 57:        // Ceiling Crush Stop 
         EV_CeilingCrushStop(line);
         line->special = 0;
         break;
-    case 58:        /* Raise Floor 24 */
+    case 58:        // Raise Floor 24 
         EV_DoFloor(line,raiseFloor24);
         line->special = 0;
         break;
-    case 59:        /* Raise Floor 24 And Change */
+    case 59:        // Raise Floor 24 And Change 
         EV_DoFloor(line,raiseFloor24AndChange);
         line->special = 0;
         break;
-    case 104:       /* Turn lights off in sector(tag) */
+    case 104:       // Turn lights off in sector(tag) 
         EV_TurnTagLightsOff(*line);
         line->special = 0;
         break;
 
-    /* These are restartable, do not affect line->special */
+    // These are restartable, do not affect line->special 
 
-    case 72:        /* Ceiling Crush */
+    case 72:        // Ceiling Crush 
         EV_DoCeiling(line,lowerAndCrush);
         break;
-    case 73:        /* Ceiling Crush and Raise */
+    case 73:        // Ceiling Crush and Raise 
         EV_DoCeiling(line,crushAndRaise);
         break;
-    case 74:        /* Ceiling Crush Stop */
+    case 74:        // Ceiling Crush Stop 
         EV_CeilingCrushStop(line);
         break;
-    case 75:        /* Close Door */
+    case 75:        // Close Door 
         EV_DoDoor(line,close);
         break;
-    case 76:        /* Close Door 30 */
+    case 76:        // Close Door 30 
         EV_DoDoor(line,close30ThenOpen);
         break;
-    case 77:        /* Fast Ceiling Crush & Raise */
+    case 77:        // Fast Ceiling Crush & Raise 
         EV_DoCeiling(line,fastCrushAndRaise);
         break;
-    case 79:        /* Lights Very Dark */
+    case 79:        // Lights Very Dark 
         EV_LightTurnOn(*line,35);
         break;
-    case 80:        /* Light Turn On - brightest near */
+    case 80:        // Light Turn On - brightest near 
         EV_LightTurnOn(*line,0);
         break;
-    case 81:        /* Light Turn On 255 */
+    case 81:        // Light Turn On 255 
         EV_LightTurnOn(*line,255);
         break;
-    case 82:        /* Lower Floor To Lowest */
+    case 82:        // Lower Floor To Lowest 
         EV_DoFloor(line,lowerFloorToLowest);
         break;
-    case 83:        /* Lower Floor */
+    case 83:        // Lower Floor 
         EV_DoFloor(line,lowerFloor);
         break;
-    case 84:        /* LowerAndChange */
+    case 84:        // LowerAndChange 
         EV_DoFloor(line,lowerAndChange);
         break;
-    case 86:        /* Open Door */
+    case 86:        // Open Door 
         EV_DoDoor(line,open);
         break;
-    case 87:        /* Perpetual Platform Raise */
+    case 87:        // Perpetual Platform Raise 
         EV_DoPlat(line,perpetualRaise,0);
         break;
-    case 88:        /* PlatDownWaitUp */
+    case 88:        // PlatDownWaitUp 
         EV_DoPlat(line,downWaitUpStay,0);
         break;
-    case 89:        /* Platform Stop */
+    case 89:        // Platform Stop 
         EV_StopPlat(line);
         break;
-    case 90:        /* Raise Door */
+    case 90:        // Raise Door 
         EV_DoDoor(line,normaldoor);
         break;
-    case 91:        /* Raise Floor */
+    case 91:        // Raise Floor 
         EV_DoFloor(line,raiseFloor);
         break;
-    case 92:        /* Raise Floor 24 */
+    case 92:        // Raise Floor 24 
         EV_DoFloor(line,raiseFloor24);
         break;
-    case 93:        /* Raise Floor 24 And Change */
+    case 93:        // Raise Floor 24 And Change 
         EV_DoFloor(line,raiseFloor24AndChange);
         break;
-    case 94:        /* Raise Floor Crush */
+    case 94:        // Raise Floor Crush 
         EV_DoFloor(line,raiseFloorCrush);
         break;
-    case 95:        /* Raise floor to nearest height and change texture */
+    case 95:        // Raise floor to nearest height and change texture 
         EV_DoPlat(line,raiseToNearestAndChange,0);
         break;
-    case 96:        /* Raise floor to shortest texture height */
-                    /* on either side of lines */
+    case 96:        // Raise floor to shortest texture height 
+                    // on either side of lines 
         EV_DoFloor(line,raiseToTexture);
         break;
-    case 97:        /* TELEPORT! */
+    case 97:        // TELEPORT! 
         EV_Teleport(line,thing);
         break;
-    case 98:        /* Lower Floor (TURBO) */
+    case 98:        // Lower Floor (TURBO) 
         EV_DoFloor(line,turboLower);
         break;
     }
@@ -556,24 +556,24 @@ void P_CrossSpecialLine(line_t *line, mobj_t *thing)
 
 void P_ShootSpecialLine(mobj_t *thing, line_t *line)
 {
-    /* Impacts that other things can activate */
+    // Impacts that other things can activate 
 
     if (!thing->player) {
-        if (line->special!=46) {    /* Open door impact */
+        if (line->special!=46) {    // Open door impact 
             return;
         }
     }
 
     switch(line->special) {
-    case 24:        /* RAISE FLOOR */
+    case 24:        // RAISE FLOOR 
         EV_DoFloor(line,raiseFloor);
         P_ChangeSwitchTexture(line, false);
         break;
-    case 46:        /* OPEN DOOR */
+    case 46:        // OPEN DOOR 
         EV_DoDoor(line,open);
         P_ChangeSwitchTexture(line, true);
         break;
-    case 47:        /* RAISE FLOOR NEAR AND CHANGE */
+    case 47:        // RAISE FLOOR NEAR AND CHANGE 
         EV_DoPlat(line,raiseToNearestAndChange,0);
         P_ChangeSwitchTexture(line, false);
     }
@@ -592,29 +592,29 @@ void PlayerInSpecialSector(player_t *player, sector_t *sector)
     uint32_t Damage;
 
     if (player->mo->z != sector->floorheight) {
-        return;     /* not all the way down yet */
+        return;     // not all the way down yet 
     }
-    Damage = 0;     /* No damage taken */
+    Damage = 0;     // No damage taken 
     switch (sector->special) {
-    case 5:     /* HELLSLIME DAMAGE */
+    case 5:     // HELLSLIME DAMAGE 
         Damage = 10;
         break;
-    case 7:     /* NUKAGE DAMAGE */
+    case 7:     // NUKAGE DAMAGE 
         Damage = 5;
         break;
-    case 16:    /* SUPER HELLSLIME DAMAGE */
-    case 4:     /* STROBE HURT */
+    case 16:    // SUPER HELLSLIME DAMAGE 
+    case 4:     // STROBE HURT 
         Damage = 20;
-        if (Random::nextU32(255)<5) {     /* Chance it didn't hurt */
-            Damage|=0x8000;     /* Suit didn't help! */
+        if (Random::nextU32(255)<5) {     // Chance it didn't hurt 
+            Damage|=0x8000;     // Suit didn't help! 
         }
         break;
-    case 9:     /* Found a secret sector */
+    case 9:     // Found a secret sector 
         ++player->secretcount;
-        sector->special = 0;        /* Remove the special */
+        sector->special = 0;        // Remove the special 
     }
-    if (Damage && Tick1) {      /* Time for pain */
-        if (Damage&0x8000 || !player->powers[pw_ironfeet]) {    /* Inflict? */
+    if (Damage && Tick1) {      // Time for pain 
+        if (Damage&0x8000 || !player->powers[pw_ironfeet]) {    // Inflict? 
             DamageMObj(player->mo,0,0,Damage&0x7FFF);
         }
     }
@@ -669,73 +669,73 @@ void P_UpdateSpecials() {
 
 void SpawnSpecials()
 {
-    /* Init special SECTORs */
-    PurgeLineSpecials();                /* Make SURE they are gone */
+    // Init special SECTORs 
+    PurgeLineSpecials();                // Make SURE they are gone 
     sector_t* sector = gpSectors;
     uint32_t i = 0;
     
     do {
         switch(sector->special) {
-        case 1:     /* FLICKERING LIGHTS */
+        case 1:     // FLICKERING LIGHTS 
             P_SpawnLightFlash(*sector);
             break;
-        case 2:     /* STROBE FAST */
+        case 2:     // STROBE FAST 
             P_SpawnStrobeFlash(*sector,FASTDARK,false);
             break;
-        case 3:     /* STROBE SLOW */
+        case 3:     // STROBE SLOW 
             P_SpawnStrobeFlash(*sector,SLOWDARK,false);
             break;
-        case 8:     /* GLOWING LIGHT */
+        case 8:     // GLOWING LIGHT 
             P_SpawnGlowingLight(*sector);
             break;
-        case 9:     /* SECRET SECTOR */
+        case 9:     // SECRET SECTOR 
             ++SecretsFoundInLevel;
             break;
-        case 10:    /* DOOR CLOSE IN 30 SECONDS */
+        case 10:    // DOOR CLOSE IN 30 SECONDS 
             P_SpawnDoorCloseIn30(sector);
             break;
-        case 12:    /* SYNC STROBE SLOW */
+        case 12:    // SYNC STROBE SLOW 
             P_SpawnStrobeFlash(*sector,SLOWDARK,true);
             break;
-        case 13:    /* SYNC STROBE FAST */
+        case 13:    // SYNC STROBE FAST 
             P_SpawnStrobeFlash(*sector,FASTDARK,true);
             break;
-        case 14:    /* DOOR RAISE IN 5 MINUTES */
+        case 14:    // DOOR RAISE IN 5 MINUTES 
             P_SpawnDoorRaiseIn5Mins(sector);
         }
         ++sector;
     } while (++i < gNumSectors);
 
-    /* Init line EFFECTs, first pass, count the effects detected */
+    // Init line EFFECTs, first pass, count the effects detected 
 
-    numlinespecials = 0;        /* No specials found */
-    i = gNumLines;              /* Get the line count */
+    numlinespecials = 0;        // No specials found 
+    i = gNumLines;              // Get the line count 
     if (i) {
         line_t *line;
-        line = gpLines;         /* Traverse the list */
+        line = gpLines;         // Traverse the list 
         do {
-            if (line->special==48) {    /* EFFECT FIRSTCOL SCROLL+ */
-                ++numlinespecials;      /* Inc the count */
+            if (line->special==48) {    // EFFECT FIRSTCOL SCROLL+ 
+                ++numlinespecials;      // Inc the count 
             }
             ++line;
-        } while (--i);      /* All done? */
+        } while (--i);      // All done? 
     }
-    if (numlinespecials) {      /* Any found? */
+    if (numlinespecials) {      // Any found? 
         line_t *line;
         line_t **linelist;
         
-        /* Get memory for the list */
+        // Get memory for the list 
         linelist = (line_t**) MemAlloc(sizeof(line_t*) * numlinespecials);
-        linespeciallist = linelist;     /* Save the pointer */
+        linespeciallist = linelist;     // Save the pointer 
         i = gNumLines;
-        line = gpLines;                 /* Reset the count */
+        line = gpLines;                 // Reset the count 
         
         do {
-            if (line->special==48) {    /* EFFECT FIRSTCOL SCROLL+ */
-                linelist[0] = line;     /* Store the pointer */
+            if (line->special==48) {    // EFFECT FIRSTCOL SCROLL+ 
+                linelist[0] = line;     // Store the pointer 
                 ++linelist;
             }
-            ++line;     /* Next line to scan */
+            ++line;     // Next line to scan 
         } while (--i);
     }
 }
@@ -748,8 +748,8 @@ void SpawnSpecials()
 
 void PurgeLineSpecials()
 {
-    if (linespeciallist) {                      /* Is there a valid pointer? */
-        MEM_FREE_AND_NULL(linespeciallist);     /* Release it */
-        numlinespecials = 0;                    /* No lines */
+    if (linespeciallist) {                      // Is there a valid pointer? 
+        MEM_FREE_AND_NULL(linespeciallist);     // Release it 
+        numlinespecials = 0;                    // No lines 
     }
 }

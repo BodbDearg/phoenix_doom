@@ -12,7 +12,7 @@
 // DC: this is in the 3DO SDK - define for now to fix compile errors
 typedef int32_t Item;
 
-/* In Graphics */
+// In Graphics 
 extern uint8_t *VideoPointer;
 extern uint32_t FramebufferWidth;
 extern uint32_t FramebufferHeight;
@@ -22,7 +22,7 @@ extern void DrawARect(const uint32_t x, const uint32_t y, const uint32_t width, 
 extern const struct CelControlBlock* GetShapeIndexPtr(const void* ShapeArrayPtr, uint32_t Index) noexcept;
 extern void DrawRezShape(uint32_t x, uint32_t y, uint32_t RezNum) noexcept;
 
-/* Input handlers */
+// Input handlers 
 #define PadDown         0x80000000
 #define PadUp           0x40000000
 #define PadRight        0x20000000
@@ -38,17 +38,17 @@ extern void DrawRezShape(uint32_t x, uint32_t y, uint32_t RezNum) noexcept;
 #define PadXLeft        0x00100000
 #define PadXRight       0x00080000
 
-extern uint32_t LastJoyButtons[4];      /* Save the previous joypad bits */
+extern uint32_t LastJoyButtons[4];      // Save the previous joypad bits 
 extern uint32_t ReadJoyButtons(uint32_t Which) noexcept;
 
-/* Misc routines */
+// Misc routines 
 extern void LongWordToAscii(uint32_t Input, char* AsciiPtr) noexcept;
 extern uint32_t SaveAFile(const char* FileName, void* data, uint32_t Length) noexcept;
 
-/* Time and Events */
+// Time and Events 
 extern uint32_t LastTick;
 extern uint32_t ReadTick() noexcept;
 
-/* Misc */
-extern Item VideoItem;          /* 3DO Specific! */
-extern Item VideoScreen;        /* 3DO Specific! */
+// Misc 
+extern Item VideoItem;          // 3DO Specific! 
+extern Item VideoScreen;        // 3DO Specific! 
