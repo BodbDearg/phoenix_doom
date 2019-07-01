@@ -2,6 +2,9 @@
 
 #include "Doom.h"
 
+struct line_t;
+struct mobj_t;
+
 extern bool     trymove2;       // Result from P_TryMove2
 extern bool     floatok;        // If true, move would be ok if within tmfloorz - tmceilingz
 extern Fixed    tmfloorz;       // Current floor z for P_TryMove2

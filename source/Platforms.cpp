@@ -1,7 +1,10 @@
+#include "Platforms.h"
+
 #include "Data.h"
 #include "Floor.h"
 #include "MapData.h"
 #include "Random.h"
+#include "Sound.h"
 #include "Sounds.h"
 #include "Specials.h"
 #include "Tick.h"
@@ -22,7 +25,7 @@ typedef enum {      /* Current action for the platform */
     in_stasis
 } plat_e;
 
-typedef struct plat_t {     /* Structure for a moving platform */
+struct plat_t {     /* Structure for a moving platform */
     sector_t *sector;   /* Sector the platform will modify */
     struct plat_t *next;    /* Next entry in the linked list */
     Fixed speed;        /* Speed of motion */
@@ -35,7 +38,7 @@ typedef struct plat_t {     /* Structure for a moving platform */
     plat_e oldstatus;   /* Previous status */
     plattype_e type;    /* Type of platform */
     bool crush;         /* Can it crush things? */
-} plat_t;
+};
 
 static plat_t *MainPlatPtr;     /* Pointer to the first plat in list */
 
@@ -290,7 +293,7 @@ void EV_StopPlat(line_t *line)
 
 **********************************/
 
-void ResetPlats(void)
-{
+void ResetPlats() {
+    // FIXME: DC: Investigate if this is a leak
     MainPlatPtr = 0;        /* Forget about the linked list */
 }

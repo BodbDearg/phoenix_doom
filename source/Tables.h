@@ -2,6 +2,14 @@
 
 #include "Doom.h"
 
+// Table related defines
+static constexpr uint32_t FINEANGLES        = 8192;             // Size of the fineangle table
+static constexpr uint32_t FINEMASK          = FINEANGLES - 1;   // Rounding mask for table
+static constexpr uint32_t ANGLETOFINESHIFT  = 19;               // Convert angle_t to fineangle table
+static constexpr uint32_t SLOPERANGE        = 2048;             // Number of entries in tantoangle table
+static constexpr uint32_t SLOPEBITS         = 11;               // Power of 2 for SLOPERANGE (2<<11)
+
+// The table data and other stuff
 extern Fixed        finetangent[4096];
 extern Fixed*       finecosine;
 extern Fixed        finesine[10240];

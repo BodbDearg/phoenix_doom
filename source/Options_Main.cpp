@@ -1,11 +1,14 @@
+#include "Options_Main.h"
+
 #include "Audio/Audio.h"
 #include "Data.h"
 #include "DoomRez.h"
 #include "Intermission_Main.h"
-#include "Player.h"
+#include "Render.h"
 #include "Resources.h"
+#include "Sound.h"
 #include "Sounds.h"
-#include <cstring>
+#include "ThreeDO.h"
 
 #define CURSORX 45      /* X coord for skulls */
 #define SLIDERX 106     /* X coord for slider bars */
@@ -74,12 +77,12 @@ static const char* const buttonc[NUMCONTROLOPTIONS] = {
 };
 
 static Word configuration[NUMCONTROLOPTIONS][3] = {
-    {PadA,PadB,PadC},
-    {PadA,PadC,PadB},
-    {PadB,PadA,PadC},
-    {PadC,PadA,PadB},
-    {PadB,PadC,PadA},
-    {PadC,PadB,PadA}
+    { PadA, PadB, PadC },
+    { PadA, PadC, PadB },
+    { PadB, PadA, PadC },
+    { PadC, PadA, PadB },
+    { PadB, PadC, PadA },
+    { PadC, PadB, PadA }
 };
 
 /**********************************

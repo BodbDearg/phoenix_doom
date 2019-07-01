@@ -1,20 +1,20 @@
+#include "ThreeDO.h"
+
 #include "Audio/Audio.h"
 #include "CelUtils.h"
 #include "Data.h"
+#include "Doom_Main.h"
 #include "Endian.h"
 #include "Macros.h"
 #include "MathUtils.h"
 #include "Mem.h"
-#include "Render_Main.h"
+#include "Render.h"
 #include "Resources.h"
+#include "Sprites.h"
 #include "Tables.h"
 #include "Textures.h"
 #include "Video.h"
 #include <algorithm>
-#include <cstdio>
-#include <ctime>
-#include <memory.h>
-#include <SDL.h>
 
 /* DC: headers from the 3DO SDK - leaving here for reference for now.
 
@@ -277,7 +277,7 @@ static Word HeightArray[1] = { 200 };   /* I want 200 lines for display memory *
 static char FileName[32];
 #endif
 
-void InitTools(void)
+void InitTools()
 {
     Word i;     /* Temp */
 
@@ -387,6 +387,18 @@ void InitTools(void)
     }
 }
 
+//---------------------------------------------------------------------------------------------------------------------
+// Main entry point for 3DO
+//---------------------------------------------------------------------------------------------------------------------
+void ThreeDOMain() {
+    InitTools();                // Init the 3DO tool system
+    Video::init();
+    UpdateAndPageFlip(true);    // Init the video display's vars    
+    ReadPrefsFile();            // Load defaults
+    D_DoomMain();               // Start doom
+    Video::shutdown();
+}
+
 /**********************************
 
     Read a file from NVRAM or a memory card into buf
@@ -450,7 +462,7 @@ int32_t StdReadFile(char *fName,char *buf)
 #define PREFWORD 0x4C57
 static char PrefsName[] = "/NVRAM/DoomPrefs";       /* Save game name */
 
-void WritePrefsFile(void)
+void WritePrefsFile()
 {
     Word PrefFile[10];      /* Must match what's in ReadPrefsFile!! */
     Word CheckSum;          /* Checksum total */
@@ -495,7 +507,7 @@ void ClearPrefsFile() {
 
 **********************************/
 
-void ReadPrefsFile(void)
+void ReadPrefsFile()
 {
     Word PrefFile[88];      /* Must match what's in WritePrefsFile!! */
     Word CheckSum;          /* Running checksum */
@@ -517,7 +529,7 @@ void ReadPrefsFile(void)
         return;
     }
     
-    StartSkill = (skill_t)PrefFile[1];
+    StartSkill = (skill_e)PrefFile[1];
     StartMap = PrefFile[2];
     audioSetSoundVolume(PrefFile[3]);
     audioSetMusicVolume(PrefFile[4]);
@@ -541,7 +553,7 @@ void ReadPrefsFile(void)
 
 **********************************/
 
-static void FlushCCBs(void)
+static void FlushCCBs()
 {
     // DC: 3DO specific code - disabling
     #if 0
@@ -617,7 +629,7 @@ void UpdateAndPageFlip(const bool bAllowDebugClear) {
 
 **********************************/
 
-void DrawPlaque(Word RezNum)
+void DrawPlaque(uint32_t RezNum)
 {
     Word PrevPage;
     PrevPage = WorkPage-1;
@@ -633,25 +645,13 @@ void DrawPlaque(Word RezNum)
     SetMyScreen(WorkPage);      /* Reset to normal */
 }
 
-//---------------------------------------------------------------------------------------------------------------------
-// Main entry point for 3DO
-//---------------------------------------------------------------------------------------------------------------------
-void ThreeDOMain() {
-    InitTools();                // Init the 3DO tool system
-    Video::init();
-    UpdateAndPageFlip(true);    // Init the video display's vars    
-    ReadPrefsFile();            // Load defaults
-    D_DoomMain();               // Start doom
-    Video::shutdown();
-}
-
 /**********************************
 
     Draw a scaled solid line
 
 **********************************/
 
-void AddCCB(Word x,Word y,MyCCB* NewCCB)
+void AddCCB(uint32_t x, uint32_t y, MyCCB* NewCCB)
 {
     // DC: FIXME: implement/replace
     #if 0
@@ -925,12 +925,12 @@ static Fixed getLightMultiplier(const uint32_t lightValue, const uint32_t maxLig
 **********************************/
 
 void DrawWallColumn(
-    const Word y,
-    const Word Colnum,
-    const Word ColY,
-    const Word TexHeight,
-    const Byte* const Source,
-    const Word Run
+    const uint32_t y,
+    const uint32_t Colnum,
+    const uint32_t ColY,
+    const uint32_t TexHeight,
+    const uint8_t* const Source,
+    const uint32_t Run
 )
 {
     // TODO: TEMP - CLEANUP
@@ -1027,9 +1027,15 @@ void DrawWallColumn(
     
 **********************************/
 
-void DrawFloorColumn(Word ds_y,Word ds_x1,Word Count,LongWord xfrac,
-    LongWord yfrac,Fixed ds_xstep,Fixed ds_ystep)
-{
+void DrawFloorColumn(
+    uint32_t ds_y,
+    uint32_t ds_x1,
+    uint32_t Count,
+    uint32_t xfrac,
+    uint32_t yfrac,
+    Fixed ds_xstep,
+    Fixed ds_ystep
+) {
     // TODO: TEMP - CLEANUP
     const uint16_t* const pPLUT = (const uint16_t*) PlaneSource;
     const Fixed lightMultiplier = getLightMultiplier(tx_texturelight, MAX_FLOOR_LIGHT_VALUE);
@@ -1221,9 +1227,9 @@ static Word SpritePRE1;
 static Byte *StartLinePtr;
 static Word SpriteWidth;
 
-static Byte* CalcLine(Fixed XFrac)
+static uint8_t* CalcLine(Fixed XFrac)
 {
-    Byte *DataPtr;
+    uint8_t *DataPtr;
     
     DataPtr = StartLinePtr;
     XFrac>>=FRACBITS;
@@ -1234,7 +1240,7 @@ static Byte* CalcLine(Fixed XFrac)
         XFrac=(int) SpriteWidth-1;
     }
     do {
-        Word Offset;
+        uint32_t Offset;
         Offset = DataPtr[0]+2;
         DataPtr = &DataPtr[Offset*4];
     } while (--XFrac);
@@ -1634,7 +1640,7 @@ static void OneSpriteClipLine(Word x1,Byte *SpriteLinePtr,int Clip,int Run)
 //-------------------------------------------------------------------------------------------------
 // Draws a clipped sprite to the screen
 //-------------------------------------------------------------------------------------------------
-void DrawSpriteClip(const Word x1, const Word x2, const vissprite_t* const pVisSprite) {
+void DrawSpriteClip(const uint32_t x1, const uint32_t x2, const vissprite_t* const pVisSprite) {
     SpriteYScale = pVisSprite->yscale << 4;                 // Get scale Y factor
     StartLinePtr = (Byte*) pVisSprite->pSprite->pTexture;   // Get pointer to first line of data
     SpriteWidth = pVisSprite->pSprite->width;
@@ -1779,7 +1785,7 @@ void DrawSpriteClip(const Word x1, const Word x2, const vissprite_t* const pVisS
 
 **********************************/
 
-void DrawSpriteCenter(Word SpriteNum)
+void DrawSpriteCenter(uint32_t SpriteNum)
 {
     // DC: FIXME: implement/replace
     #if 0
@@ -1819,7 +1825,7 @@ void DrawSpriteCenter(Word SpriteNum)
     
 **********************************/
 
-void EnableHardwareClipping(void)
+void EnableHardwareClipping()
 {
     // DC: FIXME: implement/replace
     #if 0
@@ -1836,7 +1842,7 @@ void EnableHardwareClipping(void)
     
 **********************************/
 
-void DisableHardwareClipping(void)
+void DisableHardwareClipping()
 {
     // DC: FIXME: implement/replace
     #if 0
@@ -1853,7 +1859,7 @@ void DisableHardwareClipping(void)
     
 **********************************/
 
-void DrawColors(void)
+void DrawColors()
 {
     // DC: FIXME: implement/replace
     #if 0

@@ -3,6 +3,13 @@
 #include "Doom.h"
 #include "PlayerSprites.h"
 
+struct sector_t;
+
+// Player constants
+static constexpr Fixed      PLAYERRADIUS    = 16 * FRACUNIT;    // Radius of the player
+static constexpr Fixed      USERANGE        = 70 * FRACUNIT;    // Range of pressing spacebar to activate something
+static constexpr uint32_t   MAXHEALTH       = 100;              // Normal health at start of game
+
 // Player automap flags
 static constexpr uint32_t AF_ACTIVE = 0x01;             // Automap active
 static constexpr uint32_t AF_FOLLOW = 0x02;             // Follow mode on
@@ -11,6 +18,58 @@ static constexpr uint32_t AF_ALLMOBJ = 0x08;            // All objects cheat
 static constexpr uint32_t AF_NOCLIP = 0x10;             // Can walk through walls
 static constexpr uint32_t AF_GODMODE = 0x20;            // No one can hurt me!
 static constexpr uint32_t AF_OPTIONSACTIVE = 0x80;      // Options screen running
+
+// Current state of the player
+enum playerstate_e {
+    PST_LIVE,       // Playing
+    PST_DEAD,       // Dead on the ground
+    PST_REBORN      // Ready to restart
+};
+
+// Current ammo type being used
+enum ammotype_e : uint8_t {      
+    am_clip,        // Pistol / chaingun
+    am_shell,       // shotgun
+    am_cell,        // BFG
+    am_misl,        // Missile launcher
+    NUMAMMO,        // Number of valid ammo types for array sizing
+    am_noammo       // Chainsaw / fist
+};
+
+// Power index flags
+enum powertype_e {
+    pw_invulnerability,     // God mode
+    pw_strength,            // Strength
+    pw_ironfeet,            // Radiation suit
+    pw_allmap,              // Mapping
+    pw_invisibility,        // Can't see me!
+    NUMPOWERS               // Number of powerups
+};
+
+// Item types for keycards or skulls
+enum card_e {
+    it_bluecard,
+    it_yellowcard,
+    it_redcard,
+    it_blueskull,
+    it_yellowskull,
+    it_redskull,
+    NUMCARDS            // Number of keys for array sizing
+};
+
+// Currently selected weapon
+enum weapontype_e : uint8_t {
+    wp_fist,
+    wp_pistol,
+    wp_shotgun,
+    wp_chaingun,
+    wp_missile,
+    wp_plasma,
+    wp_bfg,
+    wp_chainsaw,
+    NUMWEAPONS,     // Number of valid weapons for array sizing
+    wp_nochange     // Inbetween weapons (Can't fire)
+};
 
 // Player's current game state
 struct player_t {   
@@ -44,9 +103,9 @@ struct player_t {
     uint32_t        bonuscount;                 // Goldness factor
     uint32_t        powers[NUMPOWERS];          // invinc and invis are tic counters
     uint32_t        AutomapFlags;               // Bit flags for options and automap
-    weapontype_t    readyweapon;                // Weapon being used
-    weapontype_t    pendingweapon;              // wp_nochange if not changing
-    playerstate_t   playerstate;                // Alive/dead...
+    weapontype_e    readyweapon;                // Weapon being used
+    weapontype_e    pendingweapon;              // wp_nochange if not changing
+    playerstate_e   playerstate;                // Alive/dead...
     bool            cards[NUMCARDS];            // Keycards held
     bool            backpack;                   // Got the backpack?
     bool            attackdown;                 // Held the attack key if true

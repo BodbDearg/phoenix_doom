@@ -1,6 +1,7 @@
+#include "MapData.h"
 #include "MapUtil.h"
 #include "MathUtils.h"
-#include "Render_Main.h"
+#include "Render.h"
 #include "Tables.h"
 #include "Textures.h"
 
@@ -12,7 +13,7 @@
     
 **********************************/
 
-static sector_t emptysector = { 0,0,-2,-2,-2 }; /* -2 floorpic, ceilingpic, light */
+static sector_t emptysector = { 0,0,-2,-2,-2 }; // -2 floorpic, ceilingpic, light
 
 /**********************************
 
@@ -26,7 +27,7 @@ static Fixed ScaleFromGlobalAngle(Fixed rw_distance,angle_t anglea,angle_t angle
     Fixed num,den;
     Fixed *SineTbl;
 
-/* both sines are always positive */
+// both sines are always positive
 
     SineTbl = &finesine[ANG90>>ANGLETOFINESHIFT];
     den = SineTbl[anglea>>ANGLETOFINESHIFT];
@@ -36,15 +37,15 @@ static Fixed ScaleFromGlobalAngle(Fixed rw_distance,angle_t anglea,angle_t angle
     den = sfixedMul16_16(rw_distance, den);
 
     if (den > num>>16) {
-        num = sfixedDiv16_16(num, den);        /* Place scale in numerator */
+        num = sfixedDiv16_16(num, den);        // Place scale in numerator
         if (num < 64*FRACUNIT) {
             if (num >= 256) {
                 return num;
             }
-            return 256;     /* Minimum scale value */
+            return 256;     // Minimum scale value
         }
     }
-    return 64*FRACUNIT;     /* Maximum scale value */
+    return 64*FRACUNIT;     // Maximum scale value
 }
 
 /**********************************
@@ -55,8 +56,8 @@ static Fixed ScaleFromGlobalAngle(Fixed rw_distance,angle_t anglea,angle_t angle
 
 static void LatePrep(viswall_t *wc,seg_t *LineSeg,angle_t LeftAngle)
 {
-    angle_t normalangle;        /* Angle to wall */
-    Fixed PointDistance;        /* Distance to end wall point */
+    angle_t normalangle;        // Angle to wall
+    Fixed PointDistance;        // Distance to end wall point
     Fixed rw_distance;
     angle_t offsetangle;
     Fixed scalefrac;
@@ -107,14 +108,14 @@ static void LatePrep(viswall_t *wc,seg_t *LineSeg,angle_t LeftAngle)
     if (wc->WallActions & (AC_TOPTEXTURE|AC_BOTTOMTEXTURE) ) {
         offsetangle = normalangle - LeftAngle;
         if (offsetangle > ANG180) {
-            offsetangle = -offsetangle;     /* Force unsigned */
+            offsetangle = -offsetangle;     // Force unsigned
         }
         if (offsetangle > ANG90) {
-            offsetangle = ANG90;        /* Clip to maximum */           
+            offsetangle = ANG90;        // Clip to maximum           
         }
         scale2 = sfixedMul16_16(PointDistance, finesine[offsetangle >> ANGLETOFINESHIFT]);
         if (normalangle - LeftAngle < ANG180) {
-            scale2 = -scale2;       /* Reverse the texture anchor */
+            scale2 = -scale2;       // Reverse the texture anchor
         }
         wc->offset += scale2;
         wc->CenterAngle = ANG90 + viewangle - normalangle;
@@ -127,7 +128,7 @@ static void LatePrep(viswall_t *wc,seg_t *LineSeg,angle_t LeftAngle)
 
 **********************************/
 
-void WallPrep(Word LeftX, Word RightX, seg_t* LineSeg, angle_t LeftAngle)
+void WallPrep(uint32_t LeftX, uint32_t RightX, seg_t* LineSeg, angle_t LeftAngle)
 {
     viswall_t* CurWallPtr;  // Pointer to work record
     Word LineFlags;         // Render flags for current line

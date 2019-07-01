@@ -2,8 +2,6 @@
 
 #include "Endian.h"
 #include "Resources.h"
-#include <cstring>
-#include <ctime>
 #include <SDL.h>
 
 // DC: 3DO specific headers - remove

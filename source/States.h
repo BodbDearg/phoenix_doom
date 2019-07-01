@@ -434,7 +434,7 @@ enum statenum_t {
     S_RTORCHSHRT2,
     S_RTORCHSHRT3,
     S_RTORCHSHRT4,
-    NUMSTATES           // Number of animation states
+    NUMSTATES
 };
 
 // Generic object class for actors

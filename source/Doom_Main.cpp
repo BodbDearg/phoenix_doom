@@ -1,10 +1,16 @@
+#include "Doom_Main.h"
+
 #include "Data.h"
 #include "DoomRez.h"
 #include "Game.h"
-#include "Player.h"
-#include "Render_Main.h"
+#include "Menu_Main.h"
+#include "Options_Main.h"
+#include "Render.h"
 #include "Resources.h"
+#include "Setup.h"
+#include "Sound.h"
 #include "Sounds.h"
+#include "ThreeDO.h"
 
 // FIXME: DC: TEMP - REMOVE
 #include <SDL.h>
@@ -35,8 +41,8 @@ void AddToBox(Fixed* box, Fixed x, Fixed y) {
 // This is to compensate the fact that differant computers
 // have differant hot keys for motion control.
 //--------------------------------------------------------------------------------------------------
-static Word LocalToNet(Word cmd) {
-    Word NewCmd = 0;
+static uint32_t LocalToNet(uint32_t cmd) {
+    uint32_t NewCmd = 0;
 
     if (cmd & PadSpeed) {       // Was speed true?
         NewCmd = PadA;          // Save it
@@ -57,8 +63,8 @@ static Word LocalToNet(Word cmd) {
 // This is to compensate the fact that differant computers
 // have differant hot keys for motion control.
 //--------------------------------------------------------------------------------------------------
-static Word NetToLocal(Word cmd) {
-    Word NewCmd = 0;
+static uint32_t NetToLocal(uint32_t cmd) {
+    uint32_t NewCmd = 0;
 
     if (cmd & PadA) {
         NewCmd = PadSpeed;      // Set the speed bit
@@ -78,29 +84,29 @@ static Word NetToLocal(Word cmd) {
 //--------------------------------------------------------------------------------------------------
 // Read a joypad command byte from the demo data
 //--------------------------------------------------------------------------------------------------
-static Word GetDemoCmd() {
-    const Word cmd = DemoDataPtr[0];    // Get a joypad byte from the demo stream
-    ++DemoDataPtr;                      // Inc the state
-    return NetToLocal(cmd);             // Convert the network command to local
+static uint32_t GetDemoCmd() {
+    const uint32_t cmd = DemoDataPtr[0];    // Get a joypad byte from the demo stream
+    ++DemoDataPtr;                          // Inc the state
+    return NetToLocal(cmd);                 // Convert the network command to local
 }
 
 //--------------------------------------------------------------------------------------------------
 // Main loop processing for the game system
 //--------------------------------------------------------------------------------------------------
-Word MiniLoop(
+uint32_t MiniLoop(
     void (*start)(),
     void (*stop)(),
-    Word (*ticker)(),
+    uint32_t (*ticker)(),
     void (*drawer)()
 )
 {
     // Setup (cache graphics,etc)
     DoWipe = true;
     start();                    // Prepare the background task (Load data etc.)
-    Word exit = 0;              // I am running
+    uint32_t exit = 0;          // I am running
     gameaction = ga_nothing;    // Game is not in progress
     TotalGameTicks = 0;         // No vbls processed during game
-    gElapsedTime = 0;            // No time has elapsed yet
+    gElapsedTime = 0;           // No time has elapsed yet
 
     // Init the joypad states
     JoyPadButtons = PrevJoyPadButtons = NewJoyPadButtons = 0;
@@ -138,7 +144,7 @@ Word MiniLoop(
 
         // Get buttons for next tic
         PrevJoyPadButtons = JoyPadButtons;      // Pass through the latest keypad info
-        Word buttons = ReadJoyButtons(0);       // Read the controller
+        uint32_t buttons = ReadJoyButtons(0);   // Read the controller
         JoyPadButtons = buttons;                // Save it
         
         if (DemoPlayback) {                             // Playing back a demo?
@@ -182,8 +188,7 @@ Word MiniLoop(
 //--------------------------------------------------------------------------------------------------
 // If key's A,B or C was pressed or 8 seconds of demo was shown then abort the demo.
 //--------------------------------------------------------------------------------------------------
-static Word TIC_Abortable (void)
-{
+static uint32_t TIC_Abortable() {
     if (TotalGameTicks >= (8 * TICKSPERSEC)) {      // Time up?
         return ga_died;                             // Go on to next demo
     }
@@ -227,7 +232,7 @@ static void DRAW_Title() {
 //--------------------------------------------------------------------------------------------------
 // Load resources for the credits page
 //--------------------------------------------------------------------------------------------------
-static Word CreditRezNum;
+static uint32_t CreditRezNum;
 
 static void START_Credits() {
     CreditRezNum = rIDCREDITS;
@@ -242,7 +247,7 @@ static void STOP_Credits() {
 //--------------------------------------------------------------------------------------------------
 // Ticker code for the credits page
 //--------------------------------------------------------------------------------------------------
-static Word TIC_Credits() {
+static uint32_t TIC_Credits() {
     if (TotalGameTicks >= (30 * TICKSPERSEC)) {     // Time up?
         return ga_died;                             // Go on to next demo
     }
@@ -309,7 +314,7 @@ static void RunCredits() {
 //--------------------------------------------------------------------------------------------------
 // Run the game demo
 //--------------------------------------------------------------------------------------------------
-static void RunDemo(Word demoname) {
+static void RunDemo(uint32_t demoname) {
     // DC: This was disabled in the original 3DO source.
     // The 3DO version of the game did not ship with demos?
     #if 0

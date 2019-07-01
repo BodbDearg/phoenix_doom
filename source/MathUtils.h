@@ -1,6 +1,6 @@
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 
 //--------------------------------------------------------------------------------------------------
 // Multiply and divide 16.16 fixed point numbers

@@ -1,9 +1,12 @@
+#include "Finale_Main.h"
+
 #include "Data.h"
 #include "DoomRez.h"
 #include "Info.h"
 #include "Intermission_Main.h"
+#include "Sound.h"
 #include "Sounds.h"
-#include <cstring>
+#include "ThreeDO.h"
 
 #define CASTCOUNT 8
 

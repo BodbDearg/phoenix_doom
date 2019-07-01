@@ -1,14 +1,16 @@
 #include "Game.h"
 
 #include "Data.h"
+#include "Doom_Main.h"
+#include "Finale_Main.h"
 #include "Info.h"
 #include "Intermission_Main.h"
 #include "MapObj.h"
 #include "Mem.h"
-#include "Player.h"
 #include "Random.h"
-#include "Resources.h"
+#include "Setup.h"
 #include "Textures.h"
+#include "ThreeDO.h"
 #include "Tick.h"
 #include <cstring>
 
@@ -119,7 +121,7 @@ void G_SecretExitLevel()
 
 **********************************/
 
-void G_InitNew(skill_t skill, uint32_t map)
+void G_InitNew(skill_e skill, uint32_t map)
 {
     Random::init();        /* Reset the random number generator */
 
@@ -227,7 +229,7 @@ uint32_t G_PlayDemoPtr(uint32_t* demo)
     skill = demo[0];        /* Get the initial and map */
     map = demo[1];
     DemoDataPtr = &demo[2];     /* Init the pointer */
-    G_InitNew((skill_t)skill,map);  /* Init a game */
+    G_InitNew((skill_e)skill,map);  /* Init a game */
     DemoPlayback = true;    /* I am playing back data */
     exit = MiniLoop(P_Start,P_Stop,P_Ticker,P_Drawer);  /* Execute game */
     DemoPlayback = false;   /* End demo */

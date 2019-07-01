@@ -1,11 +1,10 @@
 #include "Data.h"
 #include "MathUtils.h"
 #include "Mem.h"
-#include "Resources.h"
+#include "Render.h"
 #include "Sprites.h"
 #include "Tables.h"
 #include "Textures.h"
-#include <cstring>
 
 #define STRETCH(WIDTH,HEIGHT) (Fixed)((160.0/(float)WIDTH)*((float)HEIGHT/180.0)*2.2*65536)     
 
@@ -28,8 +27,7 @@ static Fixed Stretchs[6] = {
     Called on powerup only.
 
 **********************************/
-
-void R_InitData(void) {
+void R_InitData() {
     texturesInit();
     spritesInit();
     
@@ -53,9 +51,7 @@ void R_InitData(void) {
     Create all the math tables for the current screen size
 
 **********************************/
-
-void InitMathTables(void)
-{
+void InitMathTables() {
     Fixed j;
     Word i;
     

@@ -1,14 +1,17 @@
 #include "Data.h"
-#include "Render_Main.h"
+#include "Render.h"
 #include "Tables.h"
 #include "Textures.h"
+#include "ThreeDO.h"
 
 #define OPENMARK ((MAXSCREENHEIGHT-1)<<8)
 
-Byte *PlaneSource;          /* Pointer to image of floor/ceiling texture */
-Fixed planey;       /* latched viewx / viewy for floor drawing */
-Fixed basexscale,baseyscale;
-Word PlaneDistance;
+uint8_t*    PlaneSource;
+Fixed       planey;
+Fixed       basexscale;
+Fixed       baseyscale;
+uint32_t    PlaneDistance;
+
 static Word PlaneHeight;
 static Word spanstart[MAXSCREENHEIGHT];
 
@@ -36,11 +39,11 @@ static void MapPlane(Word x2,Word y)
 // length is 11.5
 
     x1 = spanstart[y];
-    distance = (yslope[y]*PlaneHeight)>>12; /* Get the offset for the plane height */
+    distance = (yslope[y]*PlaneHeight)>>12; // Get the offset for the plane height
     length = (distscale[x1]*distance)>>14;
     angle = (xtoviewangle[x1]+viewangle)>>ANGLETOFINESHIFT;
 
-/* xfrac, yfrac, xstep, ystep */
+// xfrac, yfrac, xstep, ystep
 
     xfrac = (((finecosine[angle]>>1)*length)>>4)+viewx;
     yfrac = planey - (((finesine[angle]>>1)*length)>>4);
@@ -89,35 +92,35 @@ void DrawVisPlane(visplane_t *p)
     lightsub = lightsubs[stop];
     lightcoef = planelightcoef[stop];
     
-    stop = p->maxx+1;   /* Maximum x coord */
-    x = p->minx;        /* Starting x */
-    open = p->open;     /* Init the pointer to the open Y's */
-    oldtop = OPENMARK;  /* Get the top and bottom Y's */
-    open[stop] = oldtop;    /* Set posts to stop drawing */
+    stop = p->maxx+1;   // Maximum x coord
+    x = p->minx;        // Starting x
+    open = p->open;     // Init the pointer to the open Y's
+    oldtop = OPENMARK;  // Get the top and bottom Y's
+    open[stop] = oldtop;    // Set posts to stop drawing
 
     do {
         Word newtop;
-        newtop = open[x];       /* Fetch the NEW top and bottom */
+        newtop = open[x];       // Fetch the NEW top and bottom
         if (oldtop!=newtop) {
-            Word PrevTopY,NewTopY;      /* Previous and dest Y coords for top line */
-            Word PrevBottomY,NewBottomY;    /* Previous and dest Y coords for bottom line */
-            PrevTopY = oldtop>>8;       /* Starting Y coords */
+            Word PrevTopY,NewTopY;      // Previous and dest Y coords for top line
+            Word PrevBottomY,NewBottomY;    // Previous and dest Y coords for bottom line
+            PrevTopY = oldtop>>8;       // Starting Y coords
             PrevBottomY = oldtop&0xFF;
             NewTopY = newtop>>8;
             NewBottomY = newtop&0xff;
         
-            /* For lines on the top, check if the entry is going down */
+            // For lines on the top, check if the entry is going down
             
-            if (PrevTopY < NewTopY && PrevTopY<=PrevBottomY) {  /* Valid? */
+            if (PrevTopY < NewTopY && PrevTopY<=PrevBottomY) {  // Valid?
                 Word Count;
                     
-                Count = PrevBottomY+1;  /* Convert to < */
-                if (NewTopY<Count) {    /* Use the lower */
-                    Count = NewTopY;    /* This is smaller */
+                Count = PrevBottomY+1;  // Convert to <
+                if (NewTopY<Count) {    // Use the lower
+                    Count = NewTopY;    // This is smaller
                 }
                 do {
-                    MapPlane(x,PrevTopY);       /* Draw to this x */
-                } while (++PrevTopY<Count); /* Keep counting */
+                    MapPlane(x,PrevTopY);       // Draw to this x
+                } while (++PrevTopY<Count); // Keep counting
             }
             if (NewTopY < PrevTopY && NewTopY<=NewBottomY) {
                 Word Count;
@@ -126,7 +129,7 @@ void DrawVisPlane(visplane_t *p)
                     Count = PrevTopY;
                 }
                 do {
-                    spanstart[NewTopY] = x; /* Mark the starting x's */
+                    spanstart[NewTopY] = x; // Mark the starting x's
                 } while (++NewTopY<Count);
             }
         
@@ -137,7 +140,7 @@ void DrawVisPlane(visplane_t *p)
                     Count = NewBottomY;
                 }
                 do {
-                    MapPlane(x,PrevBottomY);    /* Draw to this x */
+                    MapPlane(x,PrevBottomY);    // Draw to this x
                 } while ((int)--PrevBottomY>Count);
             }
             if (NewBottomY > PrevBottomY && NewBottomY>=NewTopY) {
@@ -147,7 +150,7 @@ void DrawVisPlane(visplane_t *p)
                     Count = PrevBottomY;
                 }
                 do {
-                    spanstart[NewBottomY] = x;      /* Mark the starting x's */
+                    spanstart[NewBottomY] = x;      // Mark the starting x's
                 } while ((int)--NewBottomY>Count);
             }
             oldtop=newtop;

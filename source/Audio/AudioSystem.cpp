@@ -2,7 +2,6 @@
 
 #include "AudioDataMgr.h"
 #include "AudioOutputDevice.h"
-#include "Macros.h"
 
 AudioSystem::AudioSystem() noexcept
     : mbIsInitialized(false)

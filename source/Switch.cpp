@@ -1,8 +1,15 @@
+#include "Switch.h"
+
+#include "Ceiling.h"
 #include "Data.h"
 #include "DoomRez.h"
+#include "Doors.h"
 #include "Floor.h"
 #include "Game.h"
+#include "MapData.h"
 #include "MapObj.h"
+#include "Platforms.h"
+#include "Sound.h"
 #include "Sounds.h"
 #include "Tick.h"
 

@@ -1,18 +1,23 @@
 #include "Specials.h"
 
+#include "Ceiling.h"
 #include "Data.h"
 #include "DoomRez.h"
+#include "Doors.h"
 #include "Floor.h"
 #include "Game.h"
+#include "Interactions.h"
 #include "Lights.h"
+#include "Macros.h"
 #include "MapData.h"
 #include "MapObj.h"
 #include "Mem.h"
-#include "Player.h"
+#include "Platforms.h"
 #include "Random.h"
+#include "Switch.h"
+#include "Teleport.h"
 #include "Textures.h"
 #include "Tick.h"
-#include <cstring>
 
 Word NumFlatAnims;      /* Number of flat anims */
 

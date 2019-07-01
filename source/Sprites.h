@@ -1,39 +1,39 @@
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 
 //---------------------------------------------------------------------------------------------------------------------
 // Constants
 //---------------------------------------------------------------------------------------------------------------------
-#define NUM_SPRITE_DIRECTIONS 8
+static constexpr uint32_t NUM_SPRITE_DIRECTIONS = 8;
 
 //---------------------------------------------------------------------------------------------------------------------
 // Represents the image to use for one angle of one frame in a sprite
 //---------------------------------------------------------------------------------------------------------------------
-typedef struct SpriteFrameAngle {
+struct SpriteFrameAngle {
     uint16_t*   pTexture;       // The sprite texture to use for the frame. This texture is in RGBA5551 format and COLUMN MAJOR.
     uint16_t    width;          // Width of sprite texture
     uint16_t    height : 15;    // Height of sprite texture
     uint16_t    flipped : 1;    // If '1' then the frame is flipped horizontally when rendered
     int16_t     leftOffset;     // Where the first column of the sprite gets drawn, in pixels to the left of it's position.
     int16_t     topOffset;      // Where the first row of the sprite gets drawn, in pixels above it's position.    
-} SpriteFrameAngle;
+};
 
 //---------------------------------------------------------------------------------------------------------------------
 // Represents the images to use for all angles of all frames in a sprite
 //---------------------------------------------------------------------------------------------------------------------
-typedef struct SpriteFrame {
+struct SpriteFrame {
     SpriteFrameAngle    angles[NUM_SPRITE_DIRECTIONS];
-} SpriteFrame;
+};
 
 //---------------------------------------------------------------------------------------------------------------------
 // Represents the all of the frames in a particular sprite
 //---------------------------------------------------------------------------------------------------------------------
-typedef struct Sprite {
+struct Sprite {
     SpriteFrame*    pFrames;
     uint32_t        numFrames;
     uint32_t        resourceNum;
-} Sprite;
+};
 
 void spritesInit();
 void spritesShutdown();

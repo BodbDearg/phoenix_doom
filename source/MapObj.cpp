@@ -4,10 +4,12 @@
 #include "Game.h"
 #include "Info.h"
 #include "Map.h"
+#include "MapData.h"
 #include "MapUtil.h"
 #include "Mem.h"
-#include "Player.h"
 #include "Random.h"
+#include "Setup.h"
+#include "Sound.h"
 #include "Tables.h"
 #include "Tick.h"
 #include <cstring>

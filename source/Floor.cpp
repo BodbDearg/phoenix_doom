@@ -1,4 +1,8 @@
+#include "Floor.h"
+
+#include "Change.h"
 #include "MapData.h"
+#include "Sound.h"
 #include "Sounds.h"
 #include "Specials.h"
 #include "Textures.h"
@@ -31,10 +35,14 @@ typedef struct {        /* Describe a moving floor */
     the moving platform and it has to stop or bounce back.
 
 **********************************/
-
-result_e T_MovePlane(sector_t *sector, Fixed speed,
-            Fixed dest, bool crush, bool Ceiling, int direction)
-{
+result_e T_MovePlane(
+    sector_t* sector,
+    Fixed speed,
+    Fixed dest,
+    bool crush,
+    bool Ceiling,
+    int32_t direction
+) {
     Fixed lastpos;      /* Previous height */
 
     if (!Ceiling) {

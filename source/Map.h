@@ -2,6 +2,9 @@
 
 #include "Doom.h"
 
+struct mobj_t;
+struct player_t;
+
 extern mobj_t*  linetarget;         // Object that was targeted
 extern mobj_t*  tmthing;            // mobj_t to be checked
 extern Fixed    tmx;                // Temp x,y for a position to be checked

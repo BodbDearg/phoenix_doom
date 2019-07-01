@@ -1,8 +1,6 @@
 #pragma once
 
-#include <stdint.h>
-
-#include "Macros.h"
+#include <cstdint>
 
 //---------------------------------------------------------------------------------------------------------------------
 // Resource map for all data in DOOM

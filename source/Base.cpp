@@ -1,3 +1,5 @@
+#include "Base.h"
+
 #include "Data.h"
 #include "Enemy.h"
 #include "Info.h"
@@ -5,6 +7,7 @@
 #include "MapObj.h"
 #include "MapUtil.h"
 #include "MathUtils.h"
+#include "Sight.h"
 #include "Tick.h"
 
 static mobj_t *CheckThingMo;        /* Used for PB_CheckThing */
@@ -345,12 +348,12 @@ static Word PB_CheckPosition(mobj_t *mo) {
         yl = 0;
     }
     
-    if (xh >= gBlockMapWidth) {
-        xh = gBlockMapWidth - 1;
+    if (xh >= (int32_t) gBlockMapWidth) {
+        xh = (int32_t) gBlockMapWidth - 1;
     }
     
-    if (yh >= gBlockMapHeight) {
-        yh = gBlockMapHeight - 1;
+    if (yh >= (int32_t) gBlockMapHeight) {
+        yh = (int32_t) gBlockMapHeight - 1;
     }
     
     CheckThingMo = mo;  // Store for PB_CheckThing

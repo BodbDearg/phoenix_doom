@@ -1,6 +1,29 @@
-#include "Doom.h"
+#include "Player.h"
 
-extern ammotype_t       WeaponAmmos[NUMWEAPONS];    // Ammo types for all weapons
+//----------------------------------------------------------------------------------------------------------------------
+// Machine independent data for DOOM!
+//----------------------------------------------------------------------------------------------------------------------
+
+// Current game state setting
+enum gameaction_e : uint8_t {      
+    ga_nothing,
+    ga_died,
+    ga_completed,
+    ga_secretexit,
+    ga_warped,
+    ga_exitdemo
+};
+
+// Skill level settings
+enum skill_e : uint8_t {
+    sk_baby,
+    sk_easy,
+    sk_medium,
+    sk_hard,
+    sk_nightmare
+};
+
+extern ammotype_e       WeaponAmmos[NUMWEAPONS];    // Ammo types for all weapons
 extern uint32_t         maxammo[NUMAMMO];           // Max ammo for ammo types
 extern uint32_t         PadAttack;                  // Joypad bit for attack
 extern uint32_t         PadUse;                     // Joypad bit for use
@@ -14,7 +37,7 @@ extern uint32_t*        DemoBuffer;                 // Pointer to demo data
 extern uint32_t         JoyPadButtons;              // Current joypad
 extern uint32_t         PrevJoyPadButtons;          // Previous joypad
 extern uint32_t         NewJoyPadButtons;           // New joypad button downs
-extern skill_t          StartSkill;                 // Default skill level
+extern skill_e          StartSkill;                 // Default skill level
 extern uint32_t         StartMap;                   // Default map start
 extern const void*      BigNumFont;                 // Cached pointer to the big number font (rBIGNUMB)
 extern uint32_t         TotalKillsInLevel;          // Number of monsters killed
@@ -26,8 +49,8 @@ extern Fixed            lightcoef;
 extern Fixed            lightmin;
 extern Fixed            lightmax;
 extern player_t         players;                    // Current player stats
-extern gameaction_t     gameaction;                 // Current game state
-extern skill_t          gameskill;                  // Current skill level
+extern gameaction_e     gameaction;                 // Current game state
+extern skill_e          gameskill;                  // Current skill level
 extern uint32_t         gamemap;                    // Current game map #
 extern uint32_t         nextmap;                    // The map to go to after the stats
 extern uint32_t         ScreenSize;                 // Screen size to use

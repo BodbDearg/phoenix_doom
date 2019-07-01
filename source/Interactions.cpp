@@ -1,15 +1,21 @@
+#include "Interactions.h"
+
 #include "Data.h"
 #include "DoomRez.h"
 #include "Info.h"
 #include "MapObj.h"
 #include "MapUtil.h"
-#include "Player.h"
 #include "Random.h"
+#include "Sound.h"
 #include "Sounds.h"
+#include "StatusBar_Main.h"
 #include "Tables.h"
 
-#define BONUSADD 16     /* Time adder for bonus color */
-#define BASETHRESHOLD (7*TICKSPERSEC/4) /* Number of tics to exclusivly follow a target */
+static constexpr uint32_t   INVULNTICS      = 30 * TICKSPERSEC;         // Time for invulnerability
+static constexpr uint32_t   INVISTICS       = 60 * TICKSPERSEC;         // Time for invisibility
+static constexpr uint32_t   IRONTICS        = 60 * TICKSPERSEC;         // Time for rad suit
+static constexpr uint32_t   BONUSADD        = 16;                       // Time added for bonus color (ticks)
+static constexpr uint32_t   BASETHRESHOLD   = (7 * TICKSPERSEC) / 4;    // Number of tics to exclusivly follow a target
 
 /* A weapon is found with two clip loads, a big item has five clip loads */
 
@@ -24,7 +30,7 @@ static Word clipammo[NUMAMMO] = {10,4,20,1};    /* Ammo for a normal clip */
 
 **********************************/
 
-static Word GiveAmmo(player_t *player,ammotype_t ammo,Word numofclips)
+static Word GiveAmmo(player_t *player,ammotype_e ammo,Word numofclips)
 {
     Word oldammo;
     Word maxammo;
@@ -103,7 +109,7 @@ static Word GiveAmmo(player_t *player,ammotype_t ammo,Word numofclips)
 
 **********************************/
 
-static Word GiveWeapon(player_t *player,weapontype_t weapon,Word dropped)
+static Word GiveWeapon(player_t *player,weapontype_e weapon,Word dropped)
 {
     Word PickedUp;
 
@@ -172,7 +178,7 @@ static Word GiveArmor(player_t *player,Word armortype)
 
 **********************************/
 
-static void GiveCard(player_t *player,card_t card)
+static void GiveCard(player_t *player,card_e card)
 {
     if (!player->cards[card]) {     /* I don't have it already? */
         player->bonuscount = BONUSADD;  /* Add the bonus value for color */
@@ -186,7 +192,7 @@ static void GiveCard(player_t *player,card_t card)
 
 **********************************/
 
-static Word GivePower(player_t *player,powertype_t power)
+static Word GivePower(player_t *player,powertype_e power)
 {
     switch (power) {
     case pw_invulnerability:        /* God mode? */
@@ -457,7 +463,7 @@ Healthy:
         }
         i = 0;
         do {
-            GiveAmmo(player,(ammotype_t)i,1);   /* 1 clip of everything */
+            GiveAmmo(player,(ammotype_e)i,1);   /* 1 clip of everything */
         } while (++i<NUMAMMO);
         player->message = "Picked up a backpack full of ammo!";
         break;
@@ -593,7 +599,7 @@ static void KillMobj(mobj_t *target,Word Overkill)
 
 **********************************/
 
-void DamageMObj(mobj_t *target,mobj_t *inflictor,mobj_t *source,Word damage)
+void DamageMObj(mobj_t *target,mobj_t *inflictor,mobj_t *source, uint32_t damage)
 {
     angle_t ang;        /* Angle of impact */
     Word an;            /* Index to angle table */

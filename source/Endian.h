@@ -1,6 +1,6 @@
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 
 //---------------------------------------------------------------------------------------------------------------------
 // Utility functions for byte swapping.
@@ -32,8 +32,6 @@ static inline int32_t byteSwappedI32(const int32_t num) {
     return (int32_t) byteSwappedU32((uint32_t) num);
 }
 
-#ifdef __cplusplus
-
 static inline void byteSwapU16(uint16_t& num) noexcept {
     num = byteSwappedU16(num);
 }
@@ -49,5 +47,3 @@ static inline void byteSwapU32(uint32_t& num) noexcept {
 static inline void byteSwapI32(int32_t& num) noexcept {
     num = byteSwappedI32(num);
 }
-
-#endif  // #ifdef __cplusplus

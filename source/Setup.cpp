@@ -1,14 +1,19 @@
+#include "Setup.h"
+
 #include "Data.h"
+#include "Doom_Main.h"
 #include "DoomRez.h"
 #include "Endian.h"
 #include "MapData.h"
 #include "MapObj.h"
 #include "Mem.h"
-#include "Player.h"
 #include "Random.h"
 #include "Resources.h"
 #include "Specials.h"
+#include "Sprites.h"
+#include "Switch.h"
 #include "Textures.h"
+#include "ThreeDO.h"
 #include "Tick.h"
 #include <cstring>
 
@@ -79,8 +84,8 @@ static void GroupLines(void)
     i = gNumSectors;                /* Get the sector count */
     
     do {
-        bbox[BOXTOP] = bbox[BOXRIGHT] = MININT;     /* Invalidate the rect */
-        bbox[BOXBOTTOM] = bbox[BOXLEFT] = MAXINT;
+        bbox[BOXTOP] = bbox[BOXRIGHT] = FIXED_MIN;     /* Invalidate the rect */
+        bbox[BOXBOTTOM] = bbox[BOXLEFT] = FIXED_MAX;
         sector->lines = linebuffer;                 /* Get the current list entry */
         li = gpLines;                               /* Init the line array pointer */
         j = gNumLines;

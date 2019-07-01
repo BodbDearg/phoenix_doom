@@ -1,10 +1,6 @@
-#include "Player.h"
+#include "Data.h"
 
-//----------------------------------------------------------------------------------------------------------------------
-// Machine independent data for DOOM!
-//----------------------------------------------------------------------------------------------------------------------
-
-ammotype_t WeaponAmmos[NUMWEAPONS] = {  
+ammotype_e WeaponAmmos[NUMWEAPONS] = {  
     am_noammo,      // Fists
     am_clip,        // Pistol
     am_shell,       // Shotgun
@@ -34,7 +30,7 @@ uint32_t*       DemoBuffer;
 uint32_t        JoyPadButtons;
 uint32_t        PrevJoyPadButtons;
 uint32_t        NewJoyPadButtons;
-skill_t         StartSkill;
+skill_e         StartSkill;
 uint32_t        StartMap;
 const void*     BigNumFont;
 uint32_t        TotalKillsInLevel;
@@ -46,8 +42,8 @@ Fixed           lightcoef;
 Fixed           lightmin;
 Fixed           lightmax;
 player_t        players;
-gameaction_t    gameaction;
-skill_t         gameskill;
+gameaction_e    gameaction;
+skill_e         gameskill;
 uint32_t        gamemap;
 uint32_t        nextmap;
 uint32_t        ScreenSize;

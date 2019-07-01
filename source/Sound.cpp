@@ -1,9 +1,10 @@
+#include "Sound.h"
+
 #include "Audio/Audio.h"
 #include "Data.h"
 #include "MapObj.h"
 #include "MapUtil.h"
 #include "MathUtils.h"
-#include "Player.h"
 #include "Sounds.h"
 #include "Tables.h"
 

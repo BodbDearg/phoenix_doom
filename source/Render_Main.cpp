@@ -1,9 +1,8 @@
-#include "Render_Main.h"
-
 #include "Data.h"
 #include "MapObj.h"
-#include "Player.h"
+#include "Render.h"
 #include "Tables.h"
+#include "ThreeDO.h"
 
 viswall_t       viswalls[MAXWALLCMDS];
 viswall_t*      lastwallcmd;

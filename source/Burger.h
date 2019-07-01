@@ -16,8 +16,6 @@ typedef uint32_t    LongWord;   // DC: was 'unsigned long' in original 3DO sourc
 // DC: this is in the 3DO SDK - define for now to fix compile errors
 typedef int32_t Item;
 
-#define TICKSPERSEC 60
-
 /* In Graphics */
 extern uint8_t *VideoPointer;
 extern uint32_t FramebufferWidth;

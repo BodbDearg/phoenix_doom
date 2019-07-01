@@ -4,8 +4,8 @@
 #include "MapData.h"
 #include "MapObj.h"
 #include "MathUtils.h"
-#include "Player.h"
 #include "Tables.h"
+#include "ThreeDO.h"
 #include "Tick.h"
 #include "Video.h"
 #include <cstring>
@@ -225,17 +225,17 @@ static void DrawLine(
     int32_t xStep = 1;          // Assume positive step
     int32_t yStep = 1;
 
-    if (deltaX & 0x80000000) {  // Going left?
-        deltaX = -deltaX;       // Make positive
-        xStep = -1;             // Step to the left
+    if (deltaX & 0x80000000) {                      // Going left?
+        deltaX = (uint32_t) -(int32_t) deltaX;      // Make positive
+        xStep = -1;                                 // Step to the left
     }
 
-    if (deltaY & 0x80000000) {  // Going up?
-        deltaY = -deltaY;       // Make positive
-        yStep = -1;             // Step upwards
+    if (deltaY & 0x80000000) {                      // Going up?
+        deltaY = (uint32_t) -(int32_t) deltaY;      // Make positive
+        yStep = -1;                                 // Step upwards
     }
 
-    int32_t delta = 0;  // Init the fractional step
+    uint32_t delta = 0;     // Init the fractional step
 
     if (deltaX < deltaY) {              // Is the Y larger? (Step in Y)
         do {                            // Yes, make the Y step every pixel

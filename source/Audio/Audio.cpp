@@ -3,7 +3,7 @@
 #include "AudioDataMgr.h"
 #include "AudioOutputDevice.h"
 #include "AudioSystem.h"
-#include "sounds.h"
+#include "Sounds.h"
 
 static constexpr uint32_t MAX_SOUND_VOICES = 32;
 

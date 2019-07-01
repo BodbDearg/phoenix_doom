@@ -1,13 +1,17 @@
+#include "User.h"
+
 #include "Data.h"
 #include "Info.h"
 #include "Map.h"
+#include "MapData.h"
 #include "MapObj.h"
 #include "MapUtil.h"
 #include "MathUtils.h"
-#include "Player.h"
 #include "Slide.h"
+#include "Sound.h"
 #include "Sounds.h"
 #include "Specials.h"
+#include "StatusBar_Main.h"
 #include "Tables.h"
 
 #define MAXBOB (16<<FRACBITS)   /* 16 pixels of bobbing up and down */
@@ -496,10 +500,10 @@ DownDamage:
 static bool WeaponAllowed(player_t *player)
 {
     if (player->pendingweapon&0x8000) {     /* Handle wrap around for weapon */
-        player->pendingweapon=(weapontype_t)(NUMWEAPONS-1); /* Highest weapon allowed */
+        player->pendingweapon=(weapontype_e)(NUMWEAPONS-1); /* Highest weapon allowed */
     }
     if (player->pendingweapon>=NUMWEAPONS) {    /* Too high? */
-        player->pendingweapon = (weapontype_t)0;    /* Reset to the first */
+        player->pendingweapon = (weapontype_e)0;    /* Reset to the first */
     }
     if (player->weaponowned[player->pendingweapon]) {   /* Do I have this? */
         return true;        /* Yep! */
@@ -572,7 +576,7 @@ void P_PlayerThink(player_t *player)
                 player->pendingweapon=player->readyweapon;  /* Init the weapon */
                 do {
                             /* Cycle to next weapon */
-                    player->pendingweapon=(weapontype_t)(player->pendingweapon+i);
+                    player->pendingweapon=(weapontype_e)(player->pendingweapon+i);
                 } while (!WeaponAllowed(player));   /* Ok to keep? */
             }
         }

@@ -1,8 +1,9 @@
 #include "Data.h"
 #include "MathUtils.h"
-#include "Render_Main.h"
+#include "Render.h"
 #include "Tables.h"
 #include "Textures.h"
+#include "ThreeDO.h"
 
 #define OPENMARK ((MAXSCREENHEIGHT-1)<<8)
 
@@ -18,24 +19,24 @@
 
 **********************************/
 
-static Word clipboundtop[MAXSCREENWIDTH];       /* Bounds top y for vertical clipping */
-static Word clipboundbottom[MAXSCREENWIDTH];    /* Bounds bottom y for vertical clipping */
+static Word clipboundtop[MAXSCREENWIDTH];       // Bounds top y for vertical clipping
+static Word clipboundbottom[MAXSCREENWIDTH];    // Bounds bottom y for vertical clipping
 
 typedef struct {
-    const Byte* data;   /* Pointer to raw texture data */
-    Word width;         /* Width of texture in pixels */
-    Word height;        /* Height of texture in pixels */
-    int topheight;      /* Top texture height in global pixels */
-    int bottomheight;   /* Bottom texture height in global pixels */
-    Word texturemid;    /* Anchor point for texture */
+    const Byte* data;   // Pointer to raw texture data
+    Word width;         // Width of texture in pixels
+    Word height;        // Height of texture in pixels
+    int topheight;      // Top texture height in global pixels
+    int bottomheight;   // Bottom texture height in global pixels
+    Word texturemid;    // Anchor point for texture
 } drawtex_t;
 
-static drawtex_t toptex;        /* Describe the upper texture */
-static drawtex_t bottomtex;     /* Describe the lower texture */
+static drawtex_t toptex;        // Describe the upper texture
+static drawtex_t bottomtex;     // Describe the lower texture
 
-Word tx_x;          /* Screen x coord being drawn */
-int tx_scale;       /* True scale value 0-0x7FFF */
-static Word tx_texturecolumn;   /* Column offset into source image */
+Word tx_x;          // Screen x coord being drawn
+int tx_scale;       // True scale value 0-0x7FFF
+static Word tx_texturecolumn;   // Column offset into source image
 
 /**********************************
 
@@ -47,25 +48,25 @@ static void DrawTexture(drawtex_t *tex)
 {
     int top;
     Word Run;
-    Word colnum;    /* Column in the texture */
+    Word colnum;    // Column in the texture
     LongWord frac;
 
-    Run = (tex->topheight-tex->bottomheight)>>HEIGHTBITS;   /* Source image height */
-    if ((int)Run<=0) {      /* Invalid? */
+    Run = (tex->topheight-tex->bottomheight)>>HEIGHTBITS;   // Source image height
+    if ((int)Run<=0) {      // Invalid?
         return;
     }
-    top = CenterY-((tx_scale*tex->topheight)>>(HEIGHTBITS+SCALEBITS));  /* Screen Y */
+    top = CenterY-((tx_scale*tex->topheight)>>(HEIGHTBITS+SCALEBITS));  // Screen Y
 
-    colnum = tx_texturecolumn;  /* Get the starting column offset */
-    frac = tex->texturemid - (tex->topheight<<FIXEDTOHEIGHT);   /* Get the anchor point */
+    colnum = tx_texturecolumn;  // Get the starting column offset
+    frac = tex->texturemid - (tex->topheight<<FIXEDTOHEIGHT);   // Get the anchor point
     frac >>= FRACBITS;
     while (frac&0x8000) {
         --colnum;
-        frac += tex->height;        /* Make sure it's on the shape */
+        frac += tex->height;        // Make sure it's on the shape
     }
-    frac&=0x7f;                         /* Zap unneeded bits */
-    colnum &= (tex->width-1);           /* Wrap around the texture */
-    colnum = (colnum * tex->height);    /* Index to the shape */
+    frac&=0x7f;                         // Zap unneeded bits
+    colnum &= (tex->width-1);           // Wrap around the texture
+    colnum = (colnum * tex->height);    // Index to the shape
 
     // Project it
     DrawWallColumn(
@@ -186,38 +187,38 @@ static visplane_t* FindPlane(visplane_t *check, Fixed height, uint32_t PicHandle
     Word j;
     Word *set;
 
-    ++check;        /* Automatically skip to the next plane */
+    ++check;        // Automatically skip to the next plane
     if (check<lastvisplane) {
         do {
-            if (height == check->height &&      /* Same plane as before? */
+            if (height == check->height &&      // Same plane as before?
                 PicHandle == check->PicHandle &&
                 Light == check->PlaneLight &&
-                check->open[start] == OPENMARK) {   /* Not defined yet? */
-                if (start < check->minx) {  /* In range of the plane? */
-                    check->minx = start;    /* Mark the new edge */
+                check->open[start] == OPENMARK) {   // Not defined yet?
+                if (start < check->minx) {  // In range of the plane?
+                    check->minx = start;    // Mark the new edge
                 }
                 if (stop > check->maxx) {
-                    check->maxx = stop;     /* Mark the new edge */
+                    check->maxx = stop;     // Mark the new edge
                 }
-                return check;           /* Use the same one as before */
+                return check;           // Use the same one as before
             }
         } while (++check<lastvisplane);
     }
     
-/* make a new plane */
+// make a new plane
     
     check = lastvisplane;
     ++lastvisplane;
-    check->height = height;     /* Init all the vars in the visplane */
+    check->height = height;     // Init all the vars in the visplane
     check->PicHandle = PicHandle;
     check->minx = start;
     check->maxx = stop;
-    check->PlaneLight = Light;      /* Set the light level */
+    check->PlaneLight = Light;      // Set the light level
 
-/* Quickly fill in the visplane table */
+// Quickly fill in the visplane table
 
     i = OPENMARK;
-    set = check->open;  /* A brute force method to fill in the visplane record FAST! */
+    set = check->open;  // A brute force method to fill in the visplane record FAST!
     j = ScreenWidth/8;
     do {
         set[0] = i;
@@ -243,71 +244,71 @@ static visplane_t* FindPlane(visplane_t *check, Fixed height, uint32_t PicHandle
 
 static void SegLoop(viswall_t *segl)
 {
-    Word x;        /* Current x coord */
+    Word x;        // Current x coord
     int scale;
     int _scalefrac;
     Word ActionBits;
     visplane_t *FloorPlane,*CeilingPlane;
     int ceilingclipy,floorclipy;
     
-    _scalefrac = segl->LeftScale;       /* Init the scale fraction */
+    _scalefrac = segl->LeftScale;       // Init the scale fraction
 
-            /* visplanes[0] is zero to force a FindPlane on the first pass */
+            // visplanes[0] is zero to force a FindPlane on the first pass
             
-    FloorPlane = CeilingPlane = visplanes;      /* Reset the visplane pointers */
+    FloorPlane = CeilingPlane = visplanes;      // Reset the visplane pointers
     ActionBits = segl->WallActions;
-    x = segl->LeftX;                /* Init the x coord */
-    do {                            /* Loop for each X coord */
-        scale = _scalefrac>>FIXEDTOSCALE;   /* Current scaling factor */
-        if (scale >= 0x2000) {      /* Too large? */
-            scale = 0x1fff;         /* Fix the scale to maximum */
+    x = segl->LeftX;                // Init the x coord
+    do {                            // Loop for each X coord
+        scale = _scalefrac>>FIXEDTOSCALE;   // Current scaling factor
+        if (scale >= 0x2000) {      // Too large?
+            scale = 0x1fff;         // Fix the scale to maximum
         }
-        ceilingclipy = clipboundtop[x]; /* Get the top y clip */
-        floorclipy = clipboundbottom[x];    /* Get the bottom y clip */
+        ceilingclipy = clipboundtop[x]; // Get the top y clip
+        floorclipy = clipboundbottom[x];    // Get the bottom y clip
 
-/* Shall I add the floor? */
+// Shall I add the floor?
 
         if (ActionBits & AC_ADDFLOOR) {
             int top,bottom;
-            top = CenterY-((scale*segl->floorheight)>>(HEIGHTBITS+SCALEBITS));  /* Y coord of top of floor */
+            top = CenterY-((scale*segl->floorheight)>>(HEIGHTBITS+SCALEBITS));  // Y coord of top of floor
             if (top <= ceilingclipy) {
-                top = ceilingclipy+1;       /* Clip the top of floor to the bottom of the visible area */
+                top = ceilingclipy+1;       // Clip the top of floor to the bottom of the visible area
             }
-            bottom = floorclipy-1;      /* Draw to the bottom of the screen */
-            if (top <= bottom) {        /* Valid span? */
-                if (FloorPlane->open[x] != OPENMARK) {  /* Not already covered? */
+            bottom = floorclipy-1;      // Draw to the bottom of the screen
+            if (top <= bottom) {        // Valid span?
+                if (FloorPlane->open[x] != OPENMARK) {  // Not already covered?
                     FloorPlane = FindPlane(FloorPlane,segl->floorheight,
                         segl->FloorPic,x,segl->RightX,segl->seglightlevel);
                 }
                 if (top) {
                     --top;
                 }
-                FloorPlane->open[x] = (top<<8)+bottom;  /* Set the new vertical span */
+                FloorPlane->open[x] = (top<<8)+bottom;  // Set the new vertical span
             }
         }
 
-/* Handle ceilings */
+// Handle ceilings
 
         if (ActionBits & AC_ADDCEILING) {
             int top,bottom;
-            top = ceilingclipy+1;       /* Start from the ceiling */
-            bottom = CenterY-1-((scale*segl->ceilingheight)>>(HEIGHTBITS+SCALEBITS));   /* Bottom of the height */
-            if (bottom >= floorclipy) {     /* Clip the bottom? */
+            top = ceilingclipy+1;       // Start from the ceiling
+            bottom = CenterY-1-((scale*segl->ceilingheight)>>(HEIGHTBITS+SCALEBITS));   // Bottom of the height
+            if (bottom >= floorclipy) {     // Clip the bottom?
                 bottom = floorclipy-1;
             }
             if (top <= bottom) {
-                if (CeilingPlane->open[x] != OPENMARK) {        /* Already in use? */
+                if (CeilingPlane->open[x] != OPENMARK) {        // Already in use?
                     CeilingPlane = FindPlane(CeilingPlane,segl->ceilingheight,
                         segl->CeilingPic,x,segl->RightX,segl->seglightlevel);
                 }
                 if (top) {
                     --top;
                 }
-                CeilingPlane->open[x] = (top<<8)+bottom;        /* Set the vertical span */
+                CeilingPlane->open[x] = (top<<8)+bottom;        // Set the vertical span
             }
         }
 
-/* Sprite clip sils */
+// Sprite clip sils
 
         if (ActionBits & (AC_BOTTOMSIL|AC_NEWFLOOR)) {
             int low;
@@ -343,7 +344,7 @@ static void SegLoop(viswall_t *segl)
             }
         }
 
-/* I can draw the sky right now!! */
+// I can draw the sky right now!!
 
         if (ActionBits & AC_ADDSKY) {
             int bottom;
@@ -351,12 +352,12 @@ static void SegLoop(viswall_t *segl)
             if (bottom > floorclipy) {
                 bottom = floorclipy;
             }
-            if ((ceilingclipy+1) < bottom) {        /* Valid? */
-                tx_x = x;       /* Pass the X coord */
-                DrawSkyLine();  /* Draw the sky */
+            if ((ceilingclipy+1) < bottom) {        // Valid?
+                tx_x = x;       // Pass the X coord
+                DrawSkyLine();  // Draw the sky
             }
         }
-        _scalefrac += segl->ScaleStep;      /* Step to the next scale */
+        _scalefrac += segl->ScaleStep;      // Step to the next scale
     } while (++x<=segl->RightX);
 }
 
@@ -372,12 +373,12 @@ static void DrawSprites(void)
     Word *LocalPtr;
     vissprite_t *VisPtr;
     
-    i = SpriteTotal;    /* Init the count */
-    if (i) {        /* Any sprites to speak of? */
-        LocalPtr = SortedSprites;   /* Get the pointer to the sorted array */
-        VisPtr = vissprites;    /* Cache pointer to sprite array */
+    i = SpriteTotal;    // Init the count
+    if (i) {        // Any sprites to speak of?
+        LocalPtr = SortedSprites;   // Get the pointer to the sorted array
+        VisPtr = vissprites;    // Cache pointer to sprite array
         do {
-            DrawVisSprite(&VisPtr[*LocalPtr++&0x7F]);   /* Draw from back to front */
+            DrawVisSprite(&VisPtr[*LocalPtr++&0x7F]);   // Draw from back to front
         } while (--i);
     }
 } 
@@ -393,59 +394,59 @@ static void DrawSprites(void)
 void SegCommands(void)
 {
     {
-    Word i;     /* Temp index */
-    viswall_t *WallSegPtr;      /* Pointer to the current wall */
+    Word i;     // Temp index
+    viswall_t *WallSegPtr;      // Pointer to the current wall
     viswall_t *LastSegPtr;
     
     
-    WallSegPtr = viswalls;      /* Get the first wall segment to process */
-    LastSegPtr = lastwallcmd;   /* Last one to process */
-    if (LastSegPtr == WallSegPtr) { /* No walls to render? */
-        return;             /* Exit now!! */
+    WallSegPtr = viswalls;      // Get the first wall segment to process
+    LastSegPtr = lastwallcmd;   // Last one to process
+    if (LastSegPtr == WallSegPtr) { // No walls to render?
+        return;             // Exit now!!
     }
 
-    EnableHardwareClipping();       /* Turn on all hardware clipping to remove slop */
+    EnableHardwareClipping();       // Turn on all hardware clipping to remove slop
     
-    i = 0;      /* Init the vertical clipping records */
+    i = 0;      // Init the vertical clipping records
     do {
-        clipboundtop[i] = -1;       /* Allow to the ceiling */
-        clipboundbottom[i] = ScreenHeight;  /* Stop at the floor */
+        clipboundtop[i] = -1;       // Allow to the ceiling
+        clipboundbottom[i] = ScreenHeight;  // Stop at the floor
     } while (++i<ScreenWidth);
 
-    /* Process all the wall segments */
+    // Process all the wall segments
 
     do {
-        SegLoop(WallSegPtr);            /* Create the viswall records and draw the sky only */
-    } while (++WallSegPtr<LastSegPtr);  /* Next wall in chain */
+        SegLoop(WallSegPtr);            // Create the viswall records and draw the sky only
+    } while (++WallSegPtr<LastSegPtr);  // Next wall in chain
     
-    /* Now I actually draw the walls back to front to allow for clipping because of slop */
+    // Now I actually draw the walls back to front to allow for clipping because of slop
     
-    LastSegPtr = viswalls;      /* Stop at the last one */
+    LastSegPtr = viswalls;      // Stop at the last one
     do {
-        --WallSegPtr;           /* Last go backwards!! */
-        DrawSeg(WallSegPtr);        /* Draw the wall (Only if needed) */
-    } while (WallSegPtr!=LastSegPtr);   /* All done? */
+        --WallSegPtr;           // Last go backwards!!
+        DrawSeg(WallSegPtr);        // Draw the wall (Only if needed)
+    } while (WallSegPtr!=LastSegPtr);   // All done?
 }
 
-    /* Now we draw all the planes. They are already clipped and create no slop! */
+    // Now we draw all the planes. They are already clipped and create no slop!
 {   
     visplane_t *PlanePtr;
     visplane_t *LastPlanePtr;
     Word WallScale;
         
-    PlanePtr = visplanes+1;     /* Get the range of pointers */
+    PlanePtr = visplanes+1;     // Get the range of pointers
     LastPlanePtr = lastvisplane;
     
-    if (PlanePtr!=LastPlanePtr) {   /* No planes generated? */
-        planey = -viewy;        /* Get the Y coord for camera */
-        WallScale = (viewangle-ANG90)>>ANGLETOFINESHIFT;    /* left to right mapping */
+    if (PlanePtr!=LastPlanePtr) {   // No planes generated?
+        planey = -viewy;        // Get the Y coord for camera
+        WallScale = (viewangle-ANG90)>>ANGLETOFINESHIFT;    // left to right mapping
         basexscale = (finecosine[WallScale] / ((int)ScreenWidth/2));
         baseyscale = -(finesine[WallScale] / ((int)ScreenWidth/2));
         do {
-            DrawVisPlane(PlanePtr);     /* Convert the plane */
-        } while (++PlanePtr<LastPlanePtr);      /* Loop for all */
+            DrawVisPlane(PlanePtr);     // Convert the plane
+        } while (++PlanePtr<LastPlanePtr);      // Loop for all
     }
 }
-    DisableHardwareClipping();      /* Sprites require full screen management */
-    DrawSprites();                  /* Draw all the sprites (ZSorted and clipped) */
+    DisableHardwareClipping();      // Sprites require full screen management
+    DrawSprites();                  // Draw all the sprites (ZSorted and clipped)
 }

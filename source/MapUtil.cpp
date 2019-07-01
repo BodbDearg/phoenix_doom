@@ -3,7 +3,7 @@
 #include "Data.h"
 #include "MapData.h"
 #include "MapObj.h"
-#include "Render_Main.h"
+#include "Render.h"
 #include "Tables.h"
 
 /**********************************

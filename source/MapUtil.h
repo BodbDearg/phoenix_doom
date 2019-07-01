@@ -2,6 +2,11 @@
 
 #include "Doom.h"
 
+struct line_t;
+struct mobj_t;
+struct subsector_t;
+struct vector_t;
+
 angle_t SlopeAngle(uint32_t num, uint32_t den);
 angle_t PointToAngle(Fixed x1, Fixed y1, Fixed x2, Fixed y2);
 Fixed PointToDist(Fixed x, Fixed y);

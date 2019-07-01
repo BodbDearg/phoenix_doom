@@ -1,17 +1,17 @@
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 
 //---------------------------------------------------------------------------------------------------------------------
 // Describes a texture for a wall or flat (floor)
 //---------------------------------------------------------------------------------------------------------------------
-typedef struct Texture {
+struct Texture {
     uint32_t    width;
     uint32_t    height;
     uint32_t    resourceNum;    // What resource this came from
     uint32_t    animTexNum;     // Number of the texture to use in place of this one currently, if the texture is animated
     void*       pData;
-} Texture;
+};
 
 void texturesInit();
 void texturesShutdown();

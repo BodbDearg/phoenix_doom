@@ -1,7 +1,11 @@
+#include "Menu_Main.h"
+
 #include "Data.h"
 #include "DoomRez.h"
 #include "Intermission_Main.h"
+#include "Options_Main.h"
 #include "Resources.h"
+#include "ThreeDO.h"
 
 #define CURSORX 50      /* X coord of skull cursor */
 #define AREAY 66
@@ -81,7 +85,7 @@ Word M_Ticker(void)
         ((buttons & PadStart) ||        /* Start always works! */
         ((buttons & (PadA|PadB|PadC|PadStart)) && (cursorpos!=options)))) {
         StartMap = playermap;   /* set map number */
-        StartSkill = (skill_t)playerskill;  /* Set skill level */
+        StartSkill = (skill_e)playerskill;  /* Set skill level */
         return ga_completed;        /* done with menu */
     }
     

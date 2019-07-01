@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Doom.h"
-#include <cstdint>
 
 namespace Video {
     // DC: FIXME: DO NOT HARDCODE LIKE THIS!

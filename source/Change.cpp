@@ -1,10 +1,13 @@
+#include "Change.h"
+
 #include "Data.h"
 #include "Info.h"
+#include "Interactions.h"
 #include "Map.h"
+#include "MapData.h"
 #include "MapObj.h"
 #include "MapUtil.h"
 #include "Move.h"
-#include "Player.h"
 #include "Random.h"
 #include "Tick.h"
 

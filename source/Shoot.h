@@ -2,6 +2,10 @@
 
 #include "Doom.h"
 
+struct line_t;
+struct mobj_t;
+struct subsector_t;
+
 extern line_t*  shootline;
 extern mobj_t*  shootmobj;
 extern Fixed    shootslope;     // Between aimtop and aimbottom

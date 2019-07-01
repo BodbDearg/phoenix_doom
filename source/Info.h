@@ -1,8 +1,10 @@
 #pragma once
 
-#include "States.h"
 #include "Doom.h"
+#include "States.h"
 
+struct mobj_t;
+struct player_t;
 struct pspdef_t;
 
 // Think functions for a player sprite and map object
@@ -20,7 +22,7 @@ struct state_t {
         const PspActionFunc   pspAction;    // Used for player sprite actions
     };
     
-    struct state_t* nextstate;  // Index to state table for next state
+    state_t* nextstate;  // Index to state table for next state
 
     // Constructor for player sprite state
     constexpr inline state_t(
@@ -50,6 +52,11 @@ struct state_t {
     {
     }
 };
+
+// Constants relating to the sprite frame field in a state structure
+static constexpr uint32_t FF_FULLBRIGHT     = 0x00000100u;      // If set on then the sprite should be rendered at full brightness
+static constexpr uint32_t FF_FRAMEMASK      = 0x000000FFu;      // Mask to extract the actual frame number (upper 16-bits is resource num)
+static constexpr uint32_t FF_SPRITESHIFT    = 16;               // Bits to shift to get the actual sprite resource number
 
 // Describe an actor's basic variables
 struct mobjinfo_t {

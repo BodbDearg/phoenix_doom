@@ -1,8 +1,12 @@
+#include "Teleport.h"
+
 #include "Info.h"
+#include "Interactions.h"
 #include "Map.h"
 #include "MapData.h"
 #include "MapObj.h"
 #include "MapUtil.h"
+#include "Sound.h"
 #include "Sounds.h"
 #include "Tables.h"
 #include "Tick.h"

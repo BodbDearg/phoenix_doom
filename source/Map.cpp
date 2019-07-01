@@ -2,15 +2,17 @@
 
 #include "Data.h"
 #include "Info.h"
+#include "Interactions.h"
 #include "MapData.h"
 #include "MapObj.h"
 #include "MapUtil.h"
 #include "Move.h"
-#include "Player.h"
 #include "Random.h"
 #include "Shoot.h"
+#include "Sound.h"
 #include "Sounds.h"
 #include "Specials.h"
+#include "Switch.h"
 #include "Tables.h"
 #include <cstdlib>
 
@@ -299,7 +301,7 @@ Fixed AimLineAttack(mobj_t *t1,angle_t angle,Fixed distance)
 
     Actually perform an attack based off of the direction facing.
     Use by pistol, chain gun and shotguns.
-    If slope == MAXINT, use screen bounds for attacking
+    If slope == FIXED_MAX, use screen bounds for attacking
 
 **********************************/
 
@@ -312,7 +314,7 @@ void LineAttack(mobj_t *t1,angle_t angle,Fixed distance,Fixed slope,Word damage)
     attackrange = distance;
     attackangle = angle;
 
-    if (slope == MAXINT) {
+    if (slope == FIXED_MAX) {
         aimtopslope = 100*FRACUNIT/160; // can't shoot outside view angles
         aimbottomslope = -100*FRACUNIT/160;
     } else {

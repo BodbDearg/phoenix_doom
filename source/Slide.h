@@ -2,6 +2,9 @@
 
 #include "Doom.h"
 
+struct line_t;
+struct mobj_t;
+
 extern Fixed    slidex;         // The final position
 extern Fixed    slidey;
 extern line_t*  specialline;

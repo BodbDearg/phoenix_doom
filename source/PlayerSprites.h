@@ -6,6 +6,13 @@ struct mobj_t;
 struct player_t;
 struct state_t;
 
+// Sprites to draw on the playscreen
+enum psprnum_e {
+    ps_weapon,      // Currently selected weapon
+    ps_flash,       // Weapon muzzle flash
+    NUMPSPRITES     // Number of shapes for array sizing
+};
+
 // Describe the state for a player gun sprite
 struct pspdef_t {    
     state_t*    StatePtr;       // a NULL state means not active

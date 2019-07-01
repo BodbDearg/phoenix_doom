@@ -6,6 +6,7 @@
     - Need shape + animated shape manager
 - Cleanup and optimize render code
 - Intro logos
+- Fix sky warping
 - Intro videos? (maybe)
 - Fix view bob not working.
 - Fake contrast on walls

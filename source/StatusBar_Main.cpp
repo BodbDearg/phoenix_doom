@@ -1,9 +1,11 @@
+#include "StatusBar_Main.h"
+
 #include "Data.h"
 #include "DoomRez.h"
 #include "Intermission_Main.h"
-#include "Player.h"
 #include "Random.h"
 #include "Resources.h"
+#include "Sound.h"
 #include "Sounds.h"
 #include <cstring>
 
@@ -120,7 +122,7 @@ static void CycleFlash(sbflash_t *FlashPtr)
 
 **********************************/
 
-void ST_Start(void)
+void ST_Start()
 {
     SBObj = loadResourceData(rSBARSHP);             // Status bar shapes
     Faces = loadResourceData(rFACES);               // Load all the face frames
@@ -137,7 +139,7 @@ void ST_Start(void)
 
 **********************************/
 
-void ST_Stop(void)
+void ST_Stop()
 {
     releaseResource(rSBARSHP);  // Status bar shapes
     releaseResource(rFACES);    // All the face frames
@@ -151,7 +153,7 @@ void ST_Stop(void)
 
 **********************************/
 
-void ST_Ticker(void)
+void ST_Ticker()
 {
     Word ind;
     sbflash_t *FlashPtr;
@@ -211,7 +213,7 @@ static Word Frames;
 static Word CountVBL[TIMERSIZE];
 #endif
 
-void ST_Drawer (void)
+void ST_Drawer()
 {
     Word i;
     Word ind;

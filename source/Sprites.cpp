@@ -1,8 +1,9 @@
 #include "Sprites.h"
 
 #include "CelUtils.h"
-#include "doomrez.h"
+#include "DoomRez.h"
 #include "Endian.h"
+#include "Macros.h"
 #include "Mem.h"
 #include "Resources.h"
 #include <algorithm>

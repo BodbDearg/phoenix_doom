@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Doom.h"
+#include <cstdint>
 
 // Flags for PrintNumber
 static constexpr uint32_t PNFLAGS_PERCENT   = 1;    // Percent sign appended?

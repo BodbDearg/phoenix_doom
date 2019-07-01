@@ -1,9 +1,10 @@
 #include "MapData.h"
 
-#include "doomrez.h"
+#include "DoomRez.h"
 #include "Endian.h"
 #include "Macros.h"
 #include "Resources.h"
+#include "Tables.h"
 #include <vector>
 
 // On-disk versions of various map data structures.

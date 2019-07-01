@@ -2,6 +2,19 @@
 
 #include "Doom.h"
 
+struct line_t;
+struct mobj_t;
+struct player_t;
+struct sector_t;
+struct side_t;
+
+// Struct for animating textures
+struct anim_t {
+    uint32_t LastPicNum;    // Picture referance number
+    uint32_t BasePic;       // Base texture #
+    uint32_t CurrentPic;    // Current index
+};
+
 extern uint32_t NumFlatAnims;   // Number of flat anims
 extern anim_t   FlatAnims[];    // Array of flat animations
 

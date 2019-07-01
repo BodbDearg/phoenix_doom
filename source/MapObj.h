@@ -3,9 +3,27 @@
 #include "Doom.h"
 
 struct mobjinfo_t;
+struct player_t;
 struct state_t;
+struct subsector_t;
 
-// Struct defining a map object (thing)
+// Struct defining a thing or object in the map as it is defined in the level file
+struct mapthing_t {
+    Fixed       x;              // X,Y position (Signed)
+    Fixed       y;
+    angle_t     angle;          // Angle facing
+    uint32_t    type;           // Object type
+    uint32_t    ThingFlags;     // mapthing flags
+};
+
+// Flags for a map thing in the level file
+static constexpr uint32_t MTF_EASY          = 0x1;
+static constexpr uint32_t MTF_NORMAL        = 0x2;
+static constexpr uint32_t MTF_HARD          = 0x4;
+static constexpr uint32_t MTF_AMBUSH        = 0x8;
+static constexpr uint32_t MTF_DEATHMATCH    = 0x10;
+
+// Struct defining a runtime map object (thing)
 struct mobj_t { 
     mobj_t*     prev;       // Linked list entries
     mobj_t*     next;

@@ -3,9 +3,10 @@
 #include "CelUtils.h"
 #include "Data.h"
 #include "DoomRez.h"
-#include "Player.h"
 #include "Resources.h"
+#include "Sound.h"
 #include "Sounds.h"
+#include "ThreeDO.h"
 #include <cstring>
 
 #define KVALX   232

@@ -1,6 +1,8 @@
 #pragma once
 
-#include "Doom.h"
+#include <cstdint>
+
+struct mobj_t;
 
 extern bool     Tick4;          // True 4 times a second
 extern bool     Tick2;          // True 2 times a second

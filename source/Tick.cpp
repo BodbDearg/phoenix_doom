@@ -2,16 +2,24 @@
 
 #include "Audio/Audio.h"
 #include "Automap_Main.h"
+#include "Base.h"
+#include "Ceiling.h"
 #include "Data.h"
 #include "DoomRez.h"
 #include "Game.h"
 #include "MapObj.h"
 #include "Mem.h"
-#include "Player.h"
+#include "Options_Main.h"
+#include "Platforms.h"
 #include "Random.h"
-#include "Render_Main.h"
+#include "Render.h"
+#include "Setup.h"
+#include "Sound.h"
 #include "Sounds.h"
 #include "Specials.h"
+#include "StatusBar_Main.h"
+#include "ThreeDO.h"
+#include "User.h"
 #include <cstring>
 
 struct thinker_t {

@@ -1,5 +1,8 @@
+#include "Ceiling.h"
+
 #include "Floor.h"
 #include "MapData.h"
+#include "Sound.h"
 #include "Sounds.h"
 #include "Specials.h"
 #include "Tick.h"
