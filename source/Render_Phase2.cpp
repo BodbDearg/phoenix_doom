@@ -1,3 +1,4 @@
+#include "Burger.h"
 #include "MapData.h"
 #include "MapUtil.h"
 #include "MathUtils.h"
@@ -130,18 +131,18 @@ static void LatePrep(viswall_t *wc,seg_t *LineSeg,angle_t LeftAngle)
 
 void WallPrep(uint32_t LeftX, uint32_t RightX, seg_t* LineSeg, angle_t LeftAngle)
 {
-    viswall_t* CurWallPtr;  // Pointer to work record
-    Word LineFlags;         // Render flags for current line
-    side_t* SidePtr;        // Pointer to line side record
-    sector_t* FrontSecPtr;  // Pointer to front facing sector
-    sector_t* BackSecPtr;   // Pointer to rear sector (Or empty_sector if single sided)
-    Word actionbits;        // Flags
-    Word f_ceilingpic;      // Front sector ceiling image #
-    Word f_lightlevel;      // Front sector light level
-    Fixed f_floorheight;    // Front sector floor height - viewz
-    Fixed f_ceilingheight;  // Front sector ceiling height - viewz
-    Word b_ceilingpic;      // Back sector ceiling image #
-    Word b_lightlevel;      // Back sector light level
+    viswall_t* CurWallPtr;      // Pointer to work record
+    uint32_t LineFlags;         // Render flags for current line
+    side_t* SidePtr;            // Pointer to line side record
+    sector_t* FrontSecPtr;      // Pointer to front facing sector
+    sector_t* BackSecPtr;       // Pointer to rear sector (Or empty_sector if single sided)
+    uint32_t actionbits;        // Flags
+    uint32_t f_ceilingpic;      // Front sector ceiling image #
+    uint32_t f_lightlevel;      // Front sector light level
+    Fixed f_floorheight;        // Front sector floor height - viewz
+    Fixed f_ceilingheight;      // Front sector ceiling height - viewz
+    uint32_t b_ceilingpic;      // Back sector ceiling image #
+    uint32_t b_lightlevel;      // Back sector light level
     Fixed b_floorheight;
     Fixed b_ceilingheight;
     

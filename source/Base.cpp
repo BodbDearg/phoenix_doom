@@ -10,14 +10,14 @@
 #include "Sight.h"
 #include "Tick.h"
 
-static mobj_t *CheckThingMo;        /* Used for PB_CheckThing */
+static mobj_t *CheckThingMo;        // Used for PB_CheckThing 
 static Fixed testx, testy;
 static Fixed testfloorz, testceilingz, testdropoffz;
 static subsector_t *testsubsec;
 static line_t *ceilingline;
 
 static mobj_t *hitthing;
-static Fixed testbbox[4];       /* Bounding box for tests */
+static Fixed testbbox[4];       // Bounding box for tests 
 static int testflags;
 
 /**********************************
@@ -31,20 +31,20 @@ static void FloatChange(mobj_t *mo)
     mobj_t *Target;
     Fixed dist, delta;
     
-    Target = mo->target;        /* Get the target object */ 
-    delta = (Target->z + (mo->height>>1)) - mo->z;  /* Get the height differance */
+    Target = mo->target;        // Get the target object  
+    delta = (Target->z + (mo->height>>1)) - mo->z;  // Get the height differance 
 
-    dist = GetApproxDistance(Target->x - mo->x,Target->y - mo->y);  /* Distance to target */
-    delta = delta*3;        /* Mul by 3 for a fudge factor */
+    dist = GetApproxDistance(Target->x - mo->x,Target->y - mo->y);  // Distance to target 
+    delta = delta*3;        // Mul by 3 for a fudge factor 
     
-    if (delta<0) {      /* Delta is signed... */
-        if (dist < (-delta) ) {     /* Negate */
-            mo->z -= FLOATSPEED;    /* Adjust the height */
+    if (delta<0) {      // Delta is signed... 
+        if (dist < (-delta) ) {     // Negate 
+            mo->z -= FLOATSPEED;    // Adjust the height 
         }
         return;
     }    
-    if (dist < delta) {     /* Normal compare */
-        mo->z += FLOATSPEED;    /* Adjust the height */
+    if (dist < delta) {     // Normal compare 
+        mo->z += FLOATSPEED;    // Adjust the height 
     }
 }
 
@@ -54,15 +54,14 @@ static void FloatChange(mobj_t *mo)
     Move a critter in the Z axis
     
 **********************************/
-
-static Word P_ZMovement(mobj_t *mo)
+static uint32_t P_ZMovement(mobj_t *mo)
 {
     // DC: Note: added a division by 2 here to account for the move from a 35Hz timebase (PC) to a 60Hz timebase (3DO).
     // This fixes issues in the 3DO version with certain projectiles like imps fireballs moving too quickly.
 
     mo->z += sfixedDiv16_16(mo->momz, 2 * FRACUNIT);    // Apply basic z motion
 
-    if ( (mo->flags & MF_FLOAT) && mo->target) {    /* float down towards target if too close */
+    if ( (mo->flags & MF_FLOAT) && mo->target) {    // float down towards target if too close 
         FloatChange(mo);
     }
 
@@ -79,8 +78,8 @@ static Word P_ZMovement(mobj_t *mo)
             return true;
         }
     } else if (! (mo->flags & MF_NOGRAVITY) ) {
-        if (!mo->momz) {        /* Not falling */
-            mo->momz = -GRAVITY*2;  /* Fall faster */
+        if (!mo->momz) {        // Not falling 
+            mo->momz = -GRAVITY*2;  // Fall faster 
         } else {
             mo->momz -= GRAVITY;
         }
@@ -208,7 +207,7 @@ static bool PB_CheckLine (line_t *ld)
     return true;
 }
 
-static Word PB_CrossCheck(line_t *ld) 
+static uint32_t PB_CrossCheck(line_t *ld) 
 {
     if (PB_BoxCrossLine(ld)) {
         if (!PB_CheckLine(ld)) {
@@ -218,9 +217,6 @@ static Word PB_CrossCheck(line_t *ld)
     return true;
 }
 
-
-
-
 /*
 ==================
 =
@@ -229,7 +225,7 @@ static Word PB_CrossCheck(line_t *ld)
 ==================
 */
 
-static Word PB_CheckThing (mobj_t *thing)
+static uint32_t PB_CheckThing (mobj_t *thing)
 {
     Fixed       blockdist;
     int         delta;
@@ -312,7 +308,7 @@ hitthing
 
 ==================
 */
-static Word PB_CheckPosition(mobj_t *mo) {
+static uint32_t PB_CheckPosition(mobj_t *mo) {
     testflags = mo->flags;
 
     int r = mo->radius;
@@ -422,8 +418,7 @@ static bool PB_TryMove(int tryx,int tryy,mobj_t *mo)
 #define STOPSPEED       0x1000
 #define FRICTION        0xd240
 
-static Word P_XYMovement (mobj_t *mo)
-{
+static uint32_t P_XYMovement(mobj_t* mo) {
     Fixed xleft, yleft;
     Fixed xuse, yuse;
 
@@ -501,42 +496,42 @@ static Word P_XYMovement (mobj_t *mo)
 
 static void P_MobjThinker(mobj_t *mobj)
 {
-    Word Time;
-    Word SightFlag;
+    uint32_t Time;
+    uint32_t SightFlag;
 
-    if (mobj->momx || mobj->momy) {     /* Any horizontal momentum? */
-        if (P_XYMovement(mobj)) {   /* Move it */
-            return;         /* Exit if state change */
+    if (mobj->momx || mobj->momy) {     // Any horizontal momentum? 
+        if (P_XYMovement(mobj)) {   // Move it 
+            return;         // Exit if state change 
         }
     }
 
-    if ( (mobj->z != mobj->floorz) || mobj->momz) { /* Any z momentum? */
-        if (P_ZMovement(mobj)) {        /* Move it (Or fall) */
-            return;         /* Exit if state change */
+    if ( (mobj->z != mobj->floorz) || mobj->momz) { // Any z momentum? 
+        if (P_ZMovement(mobj)) {        // Move it (Or fall) 
+            return;         // Exit if state change 
         }
     }
 
     Time = gElapsedTime;
     SightFlag = true;
     do {
-        if (mobj->tics == -1) {     /* Never time out? */
+        if (mobj->tics == -1) {     // Never time out? 
             return;
         }
         if (mobj->tics>Time) {
-            mobj->tics-=Time;   /* Count down */
+            mobj->tics-=Time;   // Count down 
             return;
         }
-        if (SightFlag && mobj->flags & MF_COUNTKILL) {  /* Can it be killed? */
+        if (SightFlag && mobj->flags & MF_COUNTKILL) {  // Can it be killed? 
             SightFlag = false;
-            mobj->flags &= ~MF_SEETARGET;   /* Assume I don't see a target */
-            if (mobj->target) { /* Do I have a target? */
+            mobj->flags &= ~MF_SEETARGET;   // Assume I don't see a target 
+            if (mobj->target) { // Do I have a target? 
                 if (CheckSight(mobj,mobj->target)) {
                     mobj->flags |= MF_SEETARGET;
                 }
             }
         }
         Time-=mobj->tics;
-        if (!SetMObjState(mobj,mobj->state->nextstate)) {   /* Next object state */
+        if (!SetMObjState(mobj,mobj->state->nextstate)) {   // Next object state 
             return;
         }
     } while (Time);
@@ -554,13 +549,13 @@ void P_RunMobjBase(void)
     mobj_t *mo;
     mo = mobjhead.next;
     if (mo!=&mobjhead) {
-        do {    /* End of the list? */
-            mobj_t *NextMo;     /* In case it's deleted! */
+        do {    // End of the list? 
+            mobj_t *NextMo;     // In case it's deleted! 
             NextMo = mo->next;
-            if (!mo->player) {      /* Don't handle players */
-                P_MobjThinker(mo);  /* Execute the code */
+            if (!mo->player) {      // Don't handle players 
+                P_MobjThinker(mo);  // Execute the code 
             }
-            mo = NextMo;            /* Next in the list */
+            mo = NextMo;            // Next in the list 
         } while (mo!=&mobjhead);
     }
 }

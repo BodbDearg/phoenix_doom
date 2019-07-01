@@ -12,8 +12,8 @@ Fixed       basexscale;
 Fixed       baseyscale;
 uint32_t    PlaneDistance;
 
-static Word PlaneHeight;
-static Word spanstart[MAXSCREENHEIGHT];
+static uint32_t PlaneHeight;
+static uint32_t spanstart[MAXSCREENHEIGHT];
 
 /**********************************
 
@@ -25,13 +25,13 @@ planey
     
 **********************************/
 
-static void MapPlane(Word x2,Word y)
+static void MapPlane(uint32_t x2, uint32_t y)
 {
     angle_t angle;
-    Word distance;
+    uint32_t distance;
     Fixed length;
     Fixed xfrac,yfrac,xstep,ystep;
-    Word x1;
+    uint32_t x1;
 
 // planeheight is 10.6
 // yslope is 6.10, distscale is 1.15
@@ -73,12 +73,12 @@ static void MapPlane(Word x2,Word y)
 
 void DrawVisPlane(visplane_t *p)
 {
-    Word x;
-    Word stop;
-    Word oldtop;
-    Word *open;
+    uint32_t x;
+    uint32_t stop;
+    uint32_t oldtop;
+    uint32_t *open;
 
-    const Texture* const pTex = getFlatAnimTexture((Word) p->PicHandle);
+    const Texture* const pTex = getFlatAnimTexture((uint32_t) p->PicHandle);
     PlaneSource = (std::byte*) pTex->pData;
     x = p->height;
     if ((int)x<0) {
@@ -99,11 +99,11 @@ void DrawVisPlane(visplane_t *p)
     open[stop] = oldtop;    // Set posts to stop drawing
 
     do {
-        Word newtop;
+        uint32_t newtop;
         newtop = open[x];       // Fetch the NEW top and bottom
         if (oldtop!=newtop) {
-            Word PrevTopY,NewTopY;      // Previous and dest Y coords for top line
-            Word PrevBottomY,NewBottomY;    // Previous and dest Y coords for bottom line
+            uint32_t PrevTopY,NewTopY;      // Previous and dest Y coords for top line
+            uint32_t PrevBottomY,NewBottomY;    // Previous and dest Y coords for bottom line
             PrevTopY = oldtop>>8;       // Starting Y coords
             PrevBottomY = oldtop&0xFF;
             NewTopY = newtop>>8;
@@ -112,7 +112,7 @@ void DrawVisPlane(visplane_t *p)
             // For lines on the top, check if the entry is going down
             
             if (PrevTopY < NewTopY && PrevTopY<=PrevBottomY) {  // Valid?
-                Word Count;
+                uint32_t Count;
                     
                 Count = PrevBottomY+1;  // Convert to <
                 if (NewTopY<Count) {    // Use the lower
@@ -123,7 +123,7 @@ void DrawVisPlane(visplane_t *p)
                 } while (++PrevTopY<Count); // Keep counting
             }
             if (NewTopY < PrevTopY && NewTopY<=NewBottomY) {
-                Word Count;
+                uint32_t Count;
                 Count = NewBottomY+1;
                 if (PrevTopY<Count) {
                     Count = PrevTopY;

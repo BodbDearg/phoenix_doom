@@ -69,7 +69,7 @@ bool P_CheckPosition(mobj_t *thing, Fixed x, Fixed y)
 
 bool P_TryMove(mobj_t *thing, Fixed x, Fixed y)
 {
-    Word damage;
+    uint32_t damage;
     mobj_t *latchedmovething;
 
     tmthing = thing;        // Source xy
@@ -108,7 +108,7 @@ bool P_TryMove(mobj_t *thing, Fixed x, Fixed y)
 
 **********************************/
 
-static Word PIT_UseLines(line_t *li)
+static uint32_t PIT_UseLines(line_t *li)
 {
     vector_t dl;
     Fixed frac;
@@ -149,7 +149,7 @@ static Word PIT_UseLines(line_t *li)
 // Used when the player presses "Use" to open a door or such.
 //---------------------------------------------------------------------------------------------------------------------
 void P_UseLines(player_t* player) {
-    Word angle = player->mo->angle >> ANGLETOFINESHIFT;
+    uint32_t angle = player->mo->angle >> ANGLETOFINESHIFT;
     Fixed x1 = player->mo->x;                                       // Get the source x,y
     Fixed y1 = player->mo->y;
     Fixed x2 = x1 + (USERANGE >> FRACBITS) * finecosine[angle];     // Get the dest X,Y
@@ -217,7 +217,7 @@ void P_UseLines(player_t* player) {
 
 **********************************/
 
-static Word PIT_RadiusAttack(mobj_t *thing)
+static uint32_t PIT_RadiusAttack(mobj_t *thing)
 {
     Fixed dx,dy,dist;
 
@@ -242,13 +242,13 @@ static Word PIT_RadiusAttack(mobj_t *thing)
 // Inflict damage to all items within blast range.
 // Source is the creature that casued the explosion at spot.
 //---------------------------------------------------------------------------------------------------------------------
-void RadiusAttack(mobj_t* spot, mobj_t* source, Word damage) {
+void RadiusAttack(mobj_t* spot, mobj_t* source, uint32_t damage) {
     Fixed dist = damage << FRACBITS;    // Convert to fixed
     
-    Word yh = (spot->y + dist - gBlockMapOriginY) >> MAPBLOCKSHIFT;
-    Word yl = (spot->y - dist - gBlockMapOriginY) >> MAPBLOCKSHIFT;
-    Word xh = (spot->x + dist - gBlockMapOriginX) >> MAPBLOCKSHIFT;
-    Word xl = (spot->x - dist - gBlockMapOriginX) >> MAPBLOCKSHIFT;
+    uint32_t yh = (spot->y + dist - gBlockMapOriginY) >> MAPBLOCKSHIFT;
+    uint32_t yl = (spot->y - dist - gBlockMapOriginY) >> MAPBLOCKSHIFT;
+    uint32_t xh = (spot->x + dist - gBlockMapOriginX) >> MAPBLOCKSHIFT;
+    uint32_t xl = (spot->x - dist - gBlockMapOriginX) >> MAPBLOCKSHIFT;
     ++xh;
     ++yh;
     
@@ -258,9 +258,9 @@ void RadiusAttack(mobj_t* spot, mobj_t* source, Word damage) {
     
     // Damage all things in collision range
     {
-        Word y = yl;
+        uint32_t y = yl;
         do {
-            Word x = xl;
+            uint32_t x = xl;
             do {
                 BlockThingsIterator(x, y, PIT_RadiusAttack);
             } while (++x < xh);
@@ -305,7 +305,7 @@ Fixed AimLineAttack(mobj_t *t1,angle_t angle,Fixed distance)
 
 **********************************/
 
-void LineAttack(mobj_t *t1,angle_t angle,Fixed distance,Fixed slope,Word damage)
+void LineAttack(mobj_t *t1,angle_t angle,Fixed distance,Fixed slope, uint32_t damage)
 {
     line_t *shootline2;
     int shootx2, shooty2, shootz2;

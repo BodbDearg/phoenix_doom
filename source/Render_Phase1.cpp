@@ -41,7 +41,7 @@ static uint32_t     SortBuffer[MAXVISSPRITES*2];
 static seg_t*       curline;                        // Current line segment being processed
 static angle_t      lineangle1;                     // Angle to leftmost side of wall segment
 
-static Word checkcoord[9][4] = {
+static uint32_t checkcoord[9][4] = {
 {BOXRIGHT,BOXTOP,BOXLEFT,BOXBOTTOM},        // Above,Left
 {BOXRIGHT,BOXTOP,BOXLEFT,BOXTOP},           // Above,Center
 {BOXRIGHT,BOXBOTTOM,BOXLEFT,BOXTOP},        // Above,Right
@@ -66,8 +66,8 @@ static cliprange_t *newend;     // Pointer to the first free entry
 static void SortAllSprites(void)
 {
     vissprite_t *VisPtr;
-    Word i;
-    Word *LocalPtr;
+    uint32_t i;
+    uint32_t *LocalPtr;
     
     VisPtr = vissprites;
     SpriteTotal = vissprite_p - VisPtr;     // How many sprites to draw?
@@ -173,7 +173,7 @@ static void PrepMObj(const mobj_t* const pThing) {
     } else {
         x1 = pThing->subsector->sector->lightlevel;         // + extralight;
 
-        if ((Word) x1 >= 256) {
+        if ((uint32_t) x1 >= 256) {
             x1 = 255;                                       // Use maximum
         }
     }
@@ -226,7 +226,7 @@ static void SpritePrep(sector_t *se)
     
 **********************************/
 
-static void StoreWallRange(Word LeftX,Word RightX)
+static void StoreWallRange(uint32_t LeftX, uint32_t RightX)
 {
     WallPrep(LeftX,RightX,curline,lineangle1);  // Create the wall data
 }
@@ -446,7 +446,7 @@ static void AddLine(seg_t *line,sector_t *FrontSector)
 
 static void Subsector(const subsector_t* sub)
 {
-    Word count;
+    uint32_t count;
     seg_t *line;
     sector_t *CurrentSector;
     
@@ -469,14 +469,14 @@ static void Subsector(const subsector_t* sub)
     
 **********************************/
 
-static Word CheckBBox(const Fixed *bspcoord)
+static uint32_t CheckBBox(const Fixed *bspcoord)
 {
     angle_t angle1,angle2;  // Left and right angles for view
 
 // Find the corners of the box that define the edges from current viewpoint
     
     {       // Use BoxPtr
-    Word *BoxPtr;           // Pointer to bspcoord offset table
+    uint32_t *BoxPtr;           // Pointer to bspcoord offset table
     BoxPtr = &checkcoord[0][0];     // Init to the base of the table (Above)
     if (viewy < bspcoord[BOXTOP]) { // Off the top?
         BoxPtr+=12;                 // Index to center

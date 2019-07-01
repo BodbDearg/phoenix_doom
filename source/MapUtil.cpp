@@ -16,16 +16,16 @@
 
 angle_t SlopeAngle(uint32_t num, uint32_t den)
 {
-    num>>=(FRACBITS-3);         /* Leave in 3 extra bits for just a little more precision */
-    den>>=FRACBITS;             /* Must be an int */
+    num>>=(FRACBITS-3);         // Leave in 3 extra bits for just a little more precision 
+    den>>=FRACBITS;             // Must be an int 
 
-    num = num*(IDivTable[den]>>9);  /* Perform the divide using a recipocal mul */
-    num>>=((FRACBITS+3)-SLOPEBITS); /* Isolate the fraction for index to the angle table */
+    num = num*(IDivTable[den]>>9);  // Perform the divide using a recipocal mul 
+    num>>=((FRACBITS+3)-SLOPEBITS); // Isolate the fraction for index to the angle table 
 
-    if (num>SLOPERANGE) {           /* Out of range? */
-        num = SLOPERANGE;           /* Fix it */
+    if (num>SLOPERANGE) {           // Out of range? 
+        num = SLOPERANGE;           // Fix it 
     }   
-    return tantoangle[num];         /* Get the angle */
+    return tantoangle[num];         // Get the angle 
 }
 
 /**********************************
@@ -39,37 +39,37 @@ angle_t SlopeAngle(uint32_t num, uint32_t den)
 
 angle_t PointToAngle(Fixed x1, Fixed y1, Fixed x2, Fixed y2)
 {
-    x2 -= x1;   /* Convert the two points into a fractional slope */
+    x2 -= x1;   // Convert the two points into a fractional slope 
     y2 -= y1;
 
-    if (x2 || y2) {             /* Not 0,0? */
-        if (x2>=0) {                /* Positive x? */
-            if (y2>=0) {            /* Positive x, Positive y */
-                if (x2>y2) {        /* Octant 0? */
-                    return SlopeAngle(y2,x2);     /* Octant 0 */
+    if (x2 || y2) {             // Not 0,0? 
+        if (x2>=0) {                // Positive x? 
+            if (y2>=0) {            // Positive x, Positive y 
+                if (x2>y2) {        // Octant 0? 
+                    return SlopeAngle(y2,x2);     // Octant 0 
                 }
-                return (ANG90-1)-SlopeAngle(x2,y2);  /* Octant 1 */
+                return (ANG90-1)-SlopeAngle(x2,y2);  // Octant 1 
             }
-            y2 = -y2;       /* Get the absolute value of y (Was negative) */
-            if (x2>y2) {    /* Octant 6 */
-                return -SlopeAngle(y2,x2);      /* Octant 6 */
+            y2 = -y2;       // Get the absolute value of y (Was negative) 
+            if (x2>y2) {    // Octant 6 
+                return -SlopeAngle(y2,x2);      // Octant 6 
             }
-            return SlopeAngle(x2,y2)+ANG270;    /* Octant 7 */
+            return SlopeAngle(x2,y2)+ANG270;    // Octant 7 
         }
-        x2 = -x2;           /* Negate x (Make it positive) */
-        if (y2>=0) {        /* Positive y? */
-            if (x2>y2) {    /* Octant 3? */
-                return (ANG180-1)-SlopeAngle(y2,x2);    /* Octant 3 */
+        x2 = -x2;           // Negate x (Make it positive) 
+        if (y2>=0) {        // Positive y? 
+            if (x2>y2) {    // Octant 3? 
+                return (ANG180-1)-SlopeAngle(y2,x2);    // Octant 3 
             }
-            return SlopeAngle(x2,y2)+ANG90;     /* Octant 2 */
+            return SlopeAngle(x2,y2)+ANG90;     // Octant 2 
         }
-        y2 = -y2;       /* Negate y (Make it positive) */
+        y2 = -y2;       // Negate y (Make it positive) 
         if (x2>y2) {
-            return SlopeAngle(y2,x2)+ANG180;    /* Octant 4 */
+            return SlopeAngle(y2,x2)+ANG180;    // Octant 4 
         }
-        return (ANG270-1)-SlopeAngle(x2,y2);    /* Octant 5 */
+        return (ANG270-1)-SlopeAngle(x2,y2);    // Octant 5 
     }
-    return 0;       /* In case of 0,0, return an angle of 0 */
+    return 0;       // In case of 0,0, return an angle of 0 
 }
 
 /**********************************
@@ -85,13 +85,13 @@ Fixed PointToDist(Fixed x, Fixed y)
 {
     angle_t angle;
 
-    x-=viewx;       /* Get the point offset from the camera */
+    x-=viewx;       // Get the point offset from the camera 
     if (x<0) {
-        x=-x;       /* I only want the absolute value */
+        x=-x;       // I only want the absolute value 
     }
-    y-=viewy;       /* Adjust the Y */
+    y-=viewy;       // Adjust the Y 
     if (y<0) {
-        y=-y;       /* Abs value of Y */
+        y=-y;       // Abs value of Y 
     }
     if (y>x) {
         Fixed temp;
@@ -99,11 +99,11 @@ Fixed PointToDist(Fixed x, Fixed y)
         x = y;
         y = temp;
     }
-    angle = SlopeAngle(y,x)>>ANGLETOFINESHIFT;      /* x = denominator */
-    x = (x>>(FRACBITS-3))*finecosine[angle];        /* Rotate the x */
-    x += (y>>(FRACBITS-3))*finesine[angle];         /* Rotate the y and add it */
-    x >>= 3;        /* Convert to fixed (I added 3 extra bits of precision) */
-    return x;           /* This is the true distance */
+    angle = SlopeAngle(y,x)>>ANGLETOFINESHIFT;      // x = denominator 
+    x = (x>>(FRACBITS-3))*finecosine[angle];        // Rotate the x 
+    x += (y>>(FRACBITS-3))*finesine[angle];         // Rotate the y and add it 
+    x >>= 3;        // Convert to fixed (I added 3 extra bits of precision) 
+    return x;           // This is the true distance 
 }
 
 /**********************************
@@ -116,18 +116,18 @@ Fixed PointToDist(Fixed x, Fixed y)
 Fixed GetApproxDistance(Fixed dx, Fixed dy)
 {
     if (dx<0) {
-        dx = -dx;       /* Get the absolute value of the distance */
+        dx = -dx;       // Get the absolute value of the distance 
     }
     if (dy<0) {
         dy = -dy;
     }
-    if (dx < dy) {      /* Is the x smaller? */
-        dx>>=1;         /* Use half the x */
+    if (dx < dy) {      // Is the x smaller? 
+        dx>>=1;         // Use half the x 
     } else {
-        dy>>=1;         /* Or use half the y */
+        dy>>=1;         // Or use half the y 
     }
-    dx+=dy;             /* Add larger and half of the smaller for distance */           
-    return dx;          /* Return result */
+    dx+=dy;             // Add larger and half of the smaller for distance            
+    return dx;          // Return result 
 }
 
 /**********************************
@@ -141,60 +141,60 @@ Fixed GetApproxDistance(Fixed dx, Fixed dy)
 
 uint32_t PointOnVectorSide(Fixed x, Fixed y, const vector_t *line)
 {
-    Word Result;
+    uint32_t Result;
     Fixed dx,dy;
     
-    Result = true;          /* Assume I am on the back side */
+    Result = true;          // Assume I am on the back side 
 
-    /* Special case #1, vertical lines */
+    // Special case #1, vertical lines 
 
-    dx = line->dx;      /* Cache the line vector's delta x and y */
+    dx = line->dx;      // Cache the line vector's delta x and y 
     dy = line->dy;
     
-    x = x - line->x;    /* Get the offset from the base of the line */
-    if (!dx) {          /* Vertical line? (dy is base direction) */
-        if (x <= 0) {       /* Which side of the line am I? */
+    x = x - line->x;    // Get the offset from the base of the line 
+    if (!dx) {          // Vertical line? (dy is base direction) 
+        if (x <= 0) {       // Which side of the line am I? 
             dy = -dy;
         }
         if (dy>=0) {
-            Result = false; /* On the front side! */
+            Result = false; // On the front side! 
         }
         return Result;
     }
 
-    /* Special case #2, horizontal lines */
+    // Special case #2, horizontal lines 
     
-    y = y - line->y;    /* Get the offset for y */
-    if (!dy) {          /* Horizontal line? (dx is base direction) */
-        if (y <= 0) {       /* Which side of the line */
+    y = y - line->y;    // Get the offset for y 
+    if (!dy) {          // Horizontal line? (dx is base direction) 
+        if (y <= 0) {       // Which side of the line 
             dx = -dx;
         } 
         if (dx<=0) {
-            Result = false; /* On the front side! */
+            Result = false; // On the front side! 
         }
-        return Result;      /* Return the answer */
+        return Result;      // Return the answer 
     }
 
-    /* Special case #3, Sign compares */ 
+    // Special case #3, Sign compares  
     
-    if ( (dy^dx^x^y) & 0x80000000UL ) {     /* Negative compound sign? */
-        if (!((dy^x) & 0x80000000UL)) {     /* Positive cross product? */
-            Result = false; /* Front side is positive */
+    if ( (dy^dx^x^y) & 0x80000000UL ) {     // Negative compound sign? 
+        if (!((dy^x) & 0x80000000UL)) {     // Positive cross product? 
+            Result = false; // Front side is positive 
         }
         return Result;
     }
 
-    /* Case #4, do it the hard way with a cross product */
+    // Case #4, do it the hard way with a cross product 
     
-    x>>=FRACBITS;       /* Get the integer */
+    x>>=FRACBITS;       // Get the integer 
     y>>=FRACBITS;
-    x = (dy>>FRACBITS) * x; /* Create the cross product */
+    x = (dy>>FRACBITS) * x; // Create the cross product 
     y = (dx>>FRACBITS) * y;
 
-    if (y < x) {            /* Which side? */
-        Result = false;     /* Front side */
+    if (y < x) {            // Which side? 
+        Result = false;     // Front side 
     }
-    return Result;          /* Return the side */
+    return Result;          // Return the side 
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -227,11 +227,11 @@ subsector_t* PointInSubsector(Fixed x, Fixed y) {
 void MakeVector(line_t* li, vector_t* dl)
 {
     Fixed Temp;
-    Temp = li->v1.x;        /* Get the X of the vector */
-    dl->x = Temp;           /* Save the x */
-    dl->dx = li->v2.x-Temp; /* Get the X delta */
+    Temp = li->v1.x;        // Get the X of the vector 
+    dl->x = Temp;           // Save the x 
+    dl->dx = li->v2.x-Temp; // Get the X delta 
     
-    Temp = li->v1.y;        /* Do the same for the Y */
+    Temp = li->v1.y;        // Do the same for the Y 
     dl->y = Temp;
     dl->dy = li->v2.y-Temp;
 }
@@ -247,19 +247,19 @@ Fixed InterceptVector(vector_t* First, vector_t* Second)
     Fixed num,den;
     Fixed dx2,dy2;
 
-    dx2 = Second->dx>>FRACBITS; /* Get the integer of the second line */
+    dx2 = Second->dx>>FRACBITS; // Get the integer of the second line 
     dy2 = Second->dy>>FRACBITS;
     
-    den = (dy2*(First->dx>>FRACBITS));      /* Get the step slope of the first vector */
-    den -= (dx2*(First->dy>>FRACBITS));     /* Sub the step slope of the second vector */
-    if (!den) {     /* They are parallel vectors! */
-        return -1;      /* Infinity */
+    den = (dy2*(First->dx>>FRACBITS));      // Get the step slope of the first vector 
+    den -= (dx2*(First->dy>>FRACBITS));     // Sub the step slope of the second vector 
+    if (!den) {     // They are parallel vectors! 
+        return -1;      // Infinity 
     }
-    num = ((Second->x-First->x)>>FRACBITS) * dy2;       /* Get the slope to the start position */
+    num = ((Second->x-First->x)>>FRACBITS) * dy2;       // Get the slope to the start position 
     num += ((First->y-Second->y)>>FRACBITS) * dx2;
-    num <<= FRACBITS;       /* Convert to fixed point */
-    num = num / den;        /* How far to the intersection? */
-    return num;     /* Return the distance of intercept */
+    num <<= FRACBITS;       // Convert to fixed point 
+    num = num / den;        // How far to the intersection? 
+    return num;     // Return the distance of intercept 
 }
 
 /**********************************
@@ -268,27 +268,27 @@ Fixed InterceptVector(vector_t* First, vector_t* Second)
     
 **********************************/
 
-Word LineOpening(line_t* linedef)
+uint32_t LineOpening(line_t* linedef)
 {
     sector_t *front;
     sector_t *back;
     Fixed Top,Bottom;
 
     Top = 0;
-    back = linedef->backsector;     /* Get the back side */
-    if (back) {     /* Double sided line! */
-        front = linedef->frontsector;       /* Get the front sector */
-        Top = front->ceilingheight;         /* Assume front height */
+    back = linedef->backsector;     // Get the back side 
+    if (back) {     // Double sided line! 
+        front = linedef->frontsector;       // Get the front sector 
+        Top = front->ceilingheight;         // Assume front height 
         if (Top > back->ceilingheight) {
-            Top = back->ceilingheight;      /* Use the back height */
+            Top = back->ceilingheight;      // Use the back height 
         }
-        Bottom = front->floorheight;        /* Assume front height */
+        Bottom = front->floorheight;        // Assume front height 
         if (Bottom < back->floorheight) {   
-            Bottom = back->floorheight;     /* Use back sector height */
+            Bottom = back->floorheight;     // Use back sector height 
         }
-        Top-=Bottom;            /* Get the span (Zero for a closed door) */
+        Top-=Bottom;            // Get the span (Zero for a closed door) 
     }
-    return Top;     /* Return the span */
+    return Top;     // Return the span 
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -325,7 +325,7 @@ void UnsetThingPosition(mobj_t* thing) {
         if (prev) {     // Is there a previous link?
             prev->bnext = next;
         } else {
-            Word blockx,blocky;
+            uint32_t blockx,blocky;
             blockx = (thing->x - gBlockMapOriginX) >> MAPBLOCKSHIFT;    // Get the tile offsets
             blocky = (thing->y - gBlockMapOriginY) >> MAPBLOCKSHIFT;
             
@@ -367,8 +367,8 @@ void SetThingPosition(mobj_t* thing) {
         thing->bprev = 0;   // No previous link
         thing->bnext = 0;
         
-        Word blockx = (thing->x - gBlockMapOriginX) >> MAPBLOCKSHIFT;    // Get the tile index
-        Word blocky = (thing->y - gBlockMapOriginY) >> MAPBLOCKSHIFT;
+        uint32_t blockx = (thing->x - gBlockMapOriginX) >> MAPBLOCKSHIFT;   // Get the tile index
+        uint32_t blocky = (thing->y - gBlockMapOriginY) >> MAPBLOCKSHIFT;
         
         if (blockx < gBlockMapWidth && blocky < gBlockMapHeight) {  // Failsafe
             blocky = blocky * gBlockMapWidth;

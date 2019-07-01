@@ -19,7 +19,7 @@
 #include "Textures.h"
 #include "Tick.h"
 
-Word NumFlatAnims;      /* Number of flat anims */
+uint32_t NumFlatAnims;      /* Number of flat anims */
 
 anim_t FlatAnims[] = {
     { rNUKAGE3 - rF_START, rNUKAGE1 - rF_START, rNUKAGE1 - rF_START},
@@ -27,7 +27,7 @@ anim_t FlatAnims[] = {
     { rLAVA4 - rF_START, rLAVA1 - rF_START, rLAVA1 - rF_START}
 };
 
-static Word numlinespecials;        /* Number of line specials */
+static uint32_t numlinespecials;    /* Number of line specials */
 static line_t **linespeciallist;    /* Pointer to array of line pointers */
 
 /**********************************
@@ -106,7 +106,7 @@ sector_t *getNextSector(line_t *line, sector_t *sec)
 
 Fixed P_FindLowestFloorSurrounding(sector_t *sec)
 {
-    Word i;
+    uint32_t i;
     line_t **check;
     sector_t *other;
     Fixed floor;
@@ -136,7 +136,7 @@ Fixed P_FindLowestFloorSurrounding(sector_t *sec)
 
 Fixed P_FindHighestFloorSurrounding(sector_t *sec)
 {
-    Word i;
+    uint32_t i;
     line_t **check;
     sector_t *other;
     Fixed floor;
@@ -166,7 +166,7 @@ Fixed P_FindHighestFloorSurrounding(sector_t *sec)
 
 Fixed P_FindNextHighestFloor(sector_t* sec, Fixed currentheight)
 {
-    Word i;
+    uint32_t i;
     line_t **check;
     sector_t *other;
     Fixed height;       /* Value to return */
@@ -198,7 +198,7 @@ Fixed P_FindNextHighestFloor(sector_t* sec, Fixed currentheight)
 
 Fixed P_FindLowestCeilingSurrounding(sector_t* sec)
 {
-    Word i;
+    uint32_t i;
     line_t **check;
     sector_t *other;
     Fixed height;
@@ -228,7 +228,7 @@ Fixed P_FindLowestCeilingSurrounding(sector_t* sec)
 
 Fixed P_FindHighestCeilingSurrounding(sector_t *sec)
 {
-    Word i;
+    uint32_t i;
     line_t **check;
     sector_t *other;
     Fixed height;
@@ -256,9 +256,9 @@ Fixed P_FindHighestCeilingSurrounding(sector_t *sec)
 
 **********************************/
 
-Word P_FindSectorFromLineTag(line_t *line, uint32_t start)
+uint32_t P_FindSectorFromLineTag(line_t *line, uint32_t start)
 {
-    Word tag;
+    uint32_t tag;
     sector_t *sec;
     ++start;
     
@@ -282,10 +282,10 @@ Word P_FindSectorFromLineTag(line_t *line, uint32_t start)
 
 **********************************/
 
-Word P_FindMinSurroundingLight(sector_t& sector, uint32_t max)
+uint32_t P_FindMinSurroundingLight(sector_t& sector, uint32_t max)
 {
-    Word i;
-    Word min;
+    uint32_t i;
+    uint32_t min;
     line_t **check;
     sector_t *other;
 
@@ -589,7 +589,7 @@ void P_ShootSpecialLine(mobj_t *thing, line_t *line)
 
 void PlayerInSpecialSector(player_t *player, sector_t *sector)
 {
-    Word Damage;
+    uint32_t Damage;
 
     if (player->mo->z != sector->floorheight) {
         return;     /* not all the way down yet */
@@ -672,7 +672,7 @@ void SpawnSpecials()
     /* Init special SECTORs */
     PurgeLineSpecials();                /* Make SURE they are gone */
     sector_t* sector = gpSectors;
-    Word i = 0;
+    uint32_t i = 0;
     
     do {
         switch(sector->special) {

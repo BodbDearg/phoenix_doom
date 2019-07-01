@@ -8,8 +8,8 @@
 
 #define STRETCH(WIDTH,HEIGHT) (Fixed)((160.0/(float)WIDTH)*((float)HEIGHT/180.0)*2.2*65536)     
 
-static Word ScreenWidths[6] = { 280, 256, 224, 192, 160, 128};
-static Word ScreenHeights[6] = { 160, 144, 128, 112, 96, 80};
+static uint32_t ScreenWidths[6] = { 280, 256, 224, 192, 160, 128};
+static uint32_t ScreenHeights[6] = { 160, 144, 128, 112, 96, 80};
 static Fixed Stretchs[6] = {
     STRETCH(280,160),
     STRETCH(256,144),
@@ -40,7 +40,7 @@ void R_InitData() {
     
         do {
             IDivTable[i] = sfixedDiv16_16(512 << FRACBITS, i << FRACBITS);    // 512.0 / i
-        } while (++i < (sizeof(IDivTable) / sizeof(Word)));
+        } while (++i < (sizeof(IDivTable) / sizeof(uint32_t)));
     }
     
     InitMathTables();
@@ -53,7 +53,7 @@ void R_InitData() {
 **********************************/
 void InitMathTables() {
     Fixed j;
-    Word i;
+    uint32_t i;
     
     ScreenWidth = ScreenWidths[ScreenSize];
     ScreenHeight = ScreenHeights[ScreenSize];
@@ -93,7 +93,7 @@ void InitMathTables() {
         
     i = 0;
     do {
-        Word x;
+        uint32_t x;
         x = 0;
         while (viewangletox[x]>(int)i) {
             ++x;

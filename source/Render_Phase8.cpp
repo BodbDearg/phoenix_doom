@@ -1,3 +1,4 @@
+#include "Burger.h"
 #include "Data.h"
 #include "DoomRez.h"
 #include "Endian.h"
@@ -11,7 +12,7 @@
 
 #define SCREENGUNY -40      // Y offset to center the player's weapon properly
 
-Word spropening[MAXSCREENWIDTH];        // clipped range
+uint32_t spropening[MAXSCREENWIDTH];        // clipped range
 
 /**********************************
 
@@ -24,10 +25,10 @@ Word spropening[MAXSCREENWIDTH];        // clipped range
 
 **********************************/
 
-static void Merge(Word *Source1,Word Count1,Word *Source2,Word Count2,Word *Dest)
+static void Merge(uint32_t *Source1,uint32_t Count1,uint32_t *Source2,uint32_t Count2,uint32_t *Dest)
 {
-    Word Cache;
-    Word Cache2;
+    uint32_t Cache;
+    uint32_t Cache2;
     
     if (*Source1 < *Source2) {      // Do the initial compare for the sort
 mergefrom1:
@@ -84,8 +85,8 @@ Finish1:            // List #2 is empty, so I will copy the rest of list #1
 
 uint32_t* SortWords(uint32_t* Before, uint32_t* After, uint32_t Total)
 {
-    Word ChunkSize;     // Number of elements to sort
-    Word LoopCount;     // Number of times loop has executed
+    uint32_t ChunkSize;     // Number of elements to sort
+    uint32_t LoopCount;     // Number of times loop has executed
     
     if (Total<2) {          // Already sorted?
         return Before;      // Exit now
@@ -94,11 +95,11 @@ uint32_t* SortWords(uint32_t* Before, uint32_t* After, uint32_t Total)
     LoopCount = 1;      // Number of times executed
         
     for (;;) {
-        Word *List1Ptr;     // First list pointer
-        Word *List2Ptr;     // Second list pointer
-        Word *DestPtr;      // Dest buffer pointer
+        uint32_t *List1Ptr;     // First list pointer
+        uint32_t *List2Ptr;     // Second list pointer
+        uint32_t *DestPtr;      // Dest buffer pointer
         {
-        Word ChunkCount;    // Number of large chunks to merge
+        uint32_t ChunkCount;    // Number of large chunks to merge
         ChunkCount = Total>>LoopCount;  // Number of chunks
                 
         List1Ptr = Before;  // First list
@@ -120,7 +121,7 @@ uint32_t* SortWords(uint32_t* Before, uint32_t* After, uint32_t Total)
         // Copy or merge the remaining chunk fragment
         
         {
-        Word Remainder;
+        uint32_t Remainder;
         Remainder = Total&((ChunkSize<<1)-1);
         if (Remainder) {
             if (Remainder > ChunkSize) {    
@@ -141,7 +142,7 @@ uint32_t* SortWords(uint32_t* Before, uint32_t* After, uint32_t Total)
         }
         ++LoopCount;        // Next loop count
         {
-        Word *Temp;
+        uint32_t *Temp;
         Temp = Before;      // Swap the pointers to the buffers
         Before = After;
         After = Temp;
@@ -156,7 +157,7 @@ uint32_t* SortWords(uint32_t* Before, uint32_t* After, uint32_t Total)
     
 **********************************/
 
-static Word SegBehindPoint(viswall_t *ds,Fixed dx,Fixed dy)
+static uint32_t SegBehindPoint(viswall_t *ds,Fixed dx,Fixed dy)
 {
     Fixed x1,y1;
     Fixed sdx,sdy;
@@ -195,10 +196,10 @@ void DrawVisSprite(const vissprite_t* const pVisSprite) {
     int silhouette;
     int x1, x2;
     uint8_t* topsil,*bottomsil;
-    Word opening;
+    uint32_t opening;
     int top, bottom;
-    Word scalefrac;
-    Word Clipped;
+    uint32_t scalefrac;
+    uint32_t Clipped;
 
     x1 = pVisSprite->x1;        // Get the sprite's screen posts
     x2 = pVisSprite->x2;
@@ -334,10 +335,10 @@ void DrawVisSprite(const vissprite_t* const pVisSprite) {
 
 **********************************/
 
-static void DrawAWeapon(pspdef_t *psp,Word Shadow)
+static void DrawAWeapon(pspdef_t *psp,uint32_t Shadow)
 {
     const state_t* const StatePtr = psp->StatePtr;                                      // Get the state struct pointer
-    const Word RezNum = StatePtr->SpriteFrame >> FF_SPRITESHIFT;                        // Get the file
+    const uint32_t RezNum = StatePtr->SpriteFrame >> FF_SPRITESHIFT;                        // Get the file
     const uint16_t* Input = (uint16_t*)loadResourceData(RezNum);                        // Get the main pointer
     Input = (uint16_t*) GetShapeIndexPtr(Input,StatePtr->SpriteFrame & FF_FRAMEMASK);   // Pointer to the xy offset'd shape
     
@@ -378,8 +379,8 @@ static void DrawAWeapon(pspdef_t *psp,Word Shadow)
 
 void DrawWeapons(void)
 {
-    Word i;
-    Word Shadow;        // Flag for shadowing
+    uint32_t i;
+    uint32_t Shadow;        // Flag for shadowing
     pspdef_t *psp;
     
     psp = players.psprites; // Get the first sprite in the array 

@@ -1,5 +1,6 @@
 #include "Finale_Main.h"
 
+#include "Burger.h"
 #include "Data.h"
 #include "DoomRez.h"
 #include "Info.h"
@@ -15,7 +16,7 @@ typedef enum {
     fin_charcast
 } final_e;
 
-static const char* const CastNames[] = {        /* Names of all the critters */
+static const char* const CastNames[] = {        // Names of all the critters 
     "Zombieman",
     "Shotgun Guy",
     "Imp",
@@ -26,7 +27,7 @@ static const char* const CastNames[] = {        /* Names of all the critters */
     "Our Hero"
 };
 
-static mobjinfo_t *CastOrder[] = {  /* Pointer to the critter's base information */
+static mobjinfo_t *CastOrder[] = {  // Pointer to the critter's base information 
     &mobjinfo[MT_POSSESSED],
     &mobjinfo[MT_SHOTGUY],
     &mobjinfo[MT_TROOP],
@@ -37,21 +38,21 @@ static mobjinfo_t *CastOrder[] = {  /* Pointer to the critter's base information
     &mobjinfo[MT_PLAYER]
 };
 
-static mobjinfo_t *CastInfo;    /* Info for the current cast member */
-static Word CastNum;        /* Which cast member is being displayed */
-static Word CastTics;       /* Speed to animate the cast members */
-static state_t *CastState;  /* Pointer to current state */
-static Word CastFrames;     /* Number of frames of animation played */
-static final_e status;      /* State of the display? */
+static mobjinfo_t *CastInfo;    // Info for the current cast member 
+static uint32_t CastNum;        // Which cast member is being displayed 
+static uint32_t CastTics;       // Speed to animate the cast members 
+static state_t *CastState;      // Pointer to current state 
+static uint32_t CastFrames;     // Number of frames of animation played 
+static final_e status;          // State of the display? 
 
-#define TEXTTIME (TICKSPERSEC/10)       /* Tics to display letters */
-#define STARTX 8            /* Starting x and y */
+#define TEXTTIME (TICKSPERSEC/10)       // Tics to display letters 
+#define STARTX 8            // Starting x and y 
 #define STARTY 8
-static bool CastAttacking;  /* Currently attacking? */
-static bool CastDeath;      /* Playing the death scene? */
-static bool CastonMelee;    /* Type of attack to play */
-static Word TextIndex;      /* Index to the opening text */
-static Word TextDelay;      /* Delay before next char */
+static bool CastAttacking;  // Currently attacking? 
+static bool CastDeath;      // Playing the death scene? 
+static bool CastonMelee;    // Type of attack to play 
+static uint32_t TextIndex;      // Index to the opening text 
+static uint32_t TextDelay;      // Delay before next char 
 
 static char EndTextString[] =
     "     id software\n"
@@ -74,24 +75,24 @@ static char EndTextString[] =
 
 **********************************/
 
-static void F_PrintString(Word text_x,Word text_y, char* string)
+static void F_PrintString(uint32_t text_x, uint32_t text_y, char* string)
 {
-    Word index;
-    Word val;
+    uint32_t index;
+    uint32_t val;
 
-    index = 0;      /* Index into the string */
-    for (;;) {      /* Stay forever */
-        val = string[index];        /* Get first char */
-        if (!val || val=='\n') {    /* End of line? */
-            string[index] = 0;      /* Mark end of line */
-            PrintBigFont(text_x,text_y,string); /* Draw the string without newline */
-            if (!val) {         /* Done now? */
+    index = 0;      // Index into the string 
+    for (;;) {      // Stay forever 
+        val = string[index];        // Get first char 
+        if (!val || val=='\n') {    // End of line? 
+            string[index] = 0;      // Mark end of line 
+            PrintBigFont(text_x,text_y,string); // Draw the string without newline 
+            if (!val) {         // Done now? 
                 break;
             }
-            string[index] = val;    /* Restore the string */
-            string+=index+1;        /* Set the new start */
-            index=-1;           /* Reset the start index */
-            text_y += 15;       /* Next line down */
+            string[index] = val;    // Restore the string 
+            string+=index+1;        // Set the new start 
+            index=-1;           // Reset the start index 
+            text_y += 15;       // Next line down 
         }
         ++index;
     }
@@ -107,15 +108,15 @@ void F_Start(void)
 {
     S_StartSong(Song_final);    // Play the end game music
 
-    status = fin_endtext;       /* END TEXT PRINTS FIRST */
-    TextIndex = 0;              /* At the beginning */
-    TextDelay = 0;              /* Init the delay */
-    CastNum = 0;        /* Start at the first monster */
+    status = fin_endtext;       // END TEXT PRINTS FIRST 
+    TextIndex = 0;              // At the beginning 
+    TextDelay = 0;              // Init the delay 
+    CastNum = 0;        // Start at the first monster 
     CastInfo = CastOrder[CastNum];
     CastState = CastInfo->seestate;
-    CastTics = CastState->Time;     /* Init the time */
-    CastDeath = false;      /* Not dead */
-    CastFrames = 0;         /* No frames shown */
+    CastTics = CastState->Time;     // Init the time 
+    CastDeath = false;      // Not dead 
+    CastFrames = 0;         // No frames shown 
     CastonMelee = false;
     CastAttacking = false;
 }
@@ -136,26 +137,26 @@ void F_Stop(void)
 
 **********************************/
 
-Word F_Ticker(void)
+uint32_t F_Ticker(void)
 {
-    Word Temp;
-/* Check for press a key to kill actor */
+    uint32_t Temp;
+// Check for press a key to kill actor 
 
-    if (status == fin_endtext) {        /* Am I printing text? */
+    if (status == fin_endtext) {        // Am I printing text? 
         if (NewJoyPadButtons&(PadA|PadB|PadC) && (TotalGameTicks >= (3*TICKSPERSEC))) {
-            status = fin_charcast;      /* Continue to the second state */
-            S_StartSound(0,CastInfo->seesound); /* Ohhh.. */
+            status = fin_charcast;      // Continue to the second state 
+            S_StartSound(0,CastInfo->seesound); // Ohhh.. 
         }
-        return ga_nothing;      /* Don't exit */
+        return ga_nothing;      // Don't exit 
     }
 
-    if (!CastDeath) {           /* Not dead? */
-        if (NewJoyPadButtons&(PadA|PadB|PadC)) {    /* go into death frame */
-            Temp = CastInfo->deathsound;        /* Get the sound when the actor is killed */
+    if (!CastDeath) {           // Not dead? 
+        if (NewJoyPadButtons&(PadA|PadB|PadC)) {    // go into death frame 
+            Temp = CastInfo->deathsound;        // Get the sound when the actor is killed 
             if (Temp) {
                 S_StartSound(0,Temp);
             }
-            CastDeath = true;       /* Death state */
+            CastDeath = true;       // Death state 
             CastState = CastInfo->deathstate;
             CastTics = CastState->Time;
             CastFrames = 0;
@@ -163,15 +164,15 @@ Word F_Ticker(void)
         }
     }
 
-/* Advance state */
+// Advance state 
 
     if (CastTics>gElapsedTime) {
         CastTics-=gElapsedTime;
-        return ga_nothing;      /* Not time to change state yet */
+        return ga_nothing;      // Not time to change state yet 
     }
 
     if (CastState->Time == -1 || !CastState->nextstate) {
-        /* switch from deathstate to next monster */
+        // switch from deathstate to next monster 
         ++CastNum;
         if (CastNum>=CASTCOUNT) {
             CastNum = 0;
@@ -184,17 +185,17 @@ Word F_Ticker(void)
         }
         CastState = CastInfo->seestate;
         CastFrames = 0;
-    } else {    /* just advance to next state in animation */
+    } else {    // just advance to next state in animation 
         if (CastState == &states[S_PLAY_ATK1]) {
             goto stopattack;    // Oh, gross hack!
         }
         CastState = CastState->nextstate;
         ++CastFrames;
 
-/* sound hacks.... */
+// sound hacks.... 
 
         {
-            Word st;
+            uint32_t st;
             st = CastState - states;
 
             switch (st) {
@@ -226,14 +227,14 @@ Word F_Ticker(void)
         }
     }
 
-    if (CastFrames == 12) {     /* go into attack frame */
+    if (CastFrames == 12) {     // go into attack frame 
         CastAttacking = true;
         if (CastonMelee) {
             CastState=CastInfo->meleestate;
         } else {
             CastState=CastInfo->missilestate;
         }
-        CastonMelee ^= true;        /* Toggle the melee state */
+        CastonMelee ^= true;        // Toggle the melee state 
         if (!CastState) {
             if (CastonMelee) {
                 CastState=CastInfo->meleestate;
@@ -253,11 +254,11 @@ stopattack:
         }
     }
 
-    CastTics = CastState->Time;     /* Get the next time */
+    CastTics = CastState->Time;     // Get the next time 
     if (CastTics == -1) {
-        CastTics = (TICKSPERSEC/4);     /* 1 second timer */
+        CastTics = (TICKSPERSEC/4);     // 1 second timer 
     }
-    return ga_nothing;      /* finale never exits */
+    return ga_nothing;      // finale never exits 
 }
 
 /**********************************
@@ -268,24 +269,24 @@ stopattack:
 
 void F_Drawer(void)
 {
-    DrawRezShape(0,0,rBACKGRNDBROWN);       /* Draw the background */
+    DrawRezShape(0,0,rBACKGRNDBROWN);       // Draw the background 
     
     if (status==fin_endtext) {
-        Word Temp;
-        Temp = EndTextString[TextIndex];        /* Get the final char */
-        EndTextString[TextIndex] = 0;           /* End the string here */
-        F_PrintString(STARTX,STARTY,EndTextString); /* Print the string */
-        EndTextString[TextIndex] = Temp;    /* Restore the string */
-        TextDelay+=gElapsedTime;     /* How much time has gone by? */
+        uint32_t Temp;
+        Temp = EndTextString[TextIndex];        // Get the final char 
+        EndTextString[TextIndex] = 0;           // End the string here 
+        F_PrintString(STARTX,STARTY,EndTextString); // Print the string 
+        EndTextString[TextIndex] = Temp;    // Restore the string 
+        TextDelay+=gElapsedTime;     // How much time has gone by? 
         if (TextDelay>=TEXTTIME) {
-            TextDelay -= TEXTTIME;      /* Adjust the time */
-            if (Temp) {     /* Already at the end? */
+            TextDelay -= TEXTTIME;      // Adjust the time 
+            if (Temp) {     // Already at the end? 
                 ++TextIndex;
             }
         } 
     } else {
-        PrintBigFontCenter(160,20, CastNames[CastNum]);  /* Print the name */
-        DrawSpriteCenter(CastState->SpriteFrame);       /* Draw the sprite */
+        PrintBigFontCenter(160,20, CastNames[CastNum]);  // Print the name 
+        DrawSpriteCenter(CastState->SpriteFrame);       // Draw the sprite 
     }
-    UpdateAndPageFlip(true);        /* Show the frame */
+    UpdateAndPageFlip(true);        // Show the frame 
 }

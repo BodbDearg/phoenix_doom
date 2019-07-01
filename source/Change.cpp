@@ -26,8 +26,8 @@
 
 **********************************/
 
-static Word crushchange;        /* If true, then crush bodies to blood */
-static Word nofit;              /* Set to true if something is blocking */
+static uint32_t crushchange;        // If true, then crush bodies to blood 
+static uint32_t nofit;              // Set to true if something is blocking 
 
 /**********************************
 
@@ -41,33 +41,32 @@ static Word nofit;              /* Set to true if something is blocking */
 
 **********************************/
 
-static Word ThingHeightClip(mobj_t *thing)
+static uint32_t ThingHeightClip(mobj_t *thing)
 {
-    Word onfloor;
+    uint32_t onfloor;
+    onfloor = (thing->z == thing->floorz);  // Already on the floor? 
 
-    onfloor = (thing->z == thing->floorz);  /* Already on the floor? */
-
-    /* Get the floor and ceilingz from the monsters position */
+    // Get the floor and ceilingz from the monsters position 
 
     P_CheckPosition(thing,thing->x,thing->y);
 
-    /* What about stranding a monster partially off an edge? */
+    // What about stranding a monster partially off an edge? 
 
-    thing->floorz = tmfloorz;       /* Save off the variables */
+    thing->floorz = tmfloorz;       // Save off the variables 
     thing->ceilingz = tmceilingz;
 
-    if (onfloor) {  /* walking monsters rise and fall with the floor */
-        thing->z = thing->floorz;   /* Pin to the floor */
-    } else {    /* don't adjust a floating monster unless forced to */
+    if (onfloor) {  // walking monsters rise and fall with the floor 
+        thing->z = thing->floorz;   // Pin to the floor 
+    } else {    // don't adjust a floating monster unless forced to 
         if ((thing->z+thing->height) > thing->ceilingz) {
             thing->z = thing->ceilingz - thing->height;
         }
     }
 
     if ((thing->ceilingz - thing->floorz) < thing->height) {
-        return false;       /* Can't fit!! */
+        return false;       // Can't fit!! 
     }
-    return true;        /* I can fit! */
+    return true;        // I can fit! 
 }
 
 /**********************************
@@ -76,41 +75,41 @@ static Word ThingHeightClip(mobj_t *thing)
 
 **********************************/
 
-static Word PIT_ChangeSector(mobj_t *thing)
+static uint32_t PIT_ChangeSector(mobj_t *thing)
 {
-    if (ThingHeightClip(thing)) {       /* Too small? */
-        return true;        /* Keep checking */
+    if (ThingHeightClip(thing)) {       // Too small? 
+        return true;        // Keep checking 
     }
 
-    /* crunch bodies to giblets */
-    if (!thing->MObjHealth) {           /* No health... */
-        SetMObjState(thing,&states[S_GIBS]);    /* Change to goo */
-        thing->height = 0;  /* No height */
-        thing->radius = 0;  /* No radius */
-        return true;        /* keep checking */
+    // crunch bodies to giblets 
+    if (!thing->MObjHealth) {           // No health... 
+        SetMObjState(thing,&states[S_GIBS]);    // Change to goo 
+        thing->height = 0;  // No height 
+        thing->radius = 0;  // No radius 
+        return true;        // keep checking 
     }
 
-    /* crunch dropped items */
+    // crunch dropped items 
 
     if (thing->flags & MF_DROPPED) {
-        P_RemoveMobj(thing);        /* Get rid of it */
-        return true;        /* keep checking */
+        P_RemoveMobj(thing);        // Get rid of it 
+        return true;        // keep checking 
     }
 
-    if (!(thing->flags & MF_SHOOTABLE)) {   /* Don't squash critters */
-        return true;                /* assume it is bloody gibs or something */
+    if (!(thing->flags & MF_SHOOTABLE)) {   // Don't squash critters 
+        return true;                // assume it is bloody gibs or something 
     }
 
-    nofit = true;       /* Can't fit */
-    if (crushchange && Tick4) {     /* Crush it? */
+    nofit = true;       // Can't fit 
+    if (crushchange && Tick4) {     // Crush it? 
         mobj_t *mo;
-        DamageMObj(thing,0,0,10);       /* Take some damage */
-        /* spray blood in a random direction */
+        DamageMObj(thing,0,0,10);       // Take some damage 
+        // spray blood in a random direction 
         mo = SpawnMObj(thing->x,thing->y,thing->z + thing->height/2,&mobjinfo[MT_BLOOD]);
-        mo->momx = (255 - (Fixed) Random::nextU32(511)) << (FRACBITS - 4);  /* Have it jump out */
+        mo->momx = (255 - (Fixed) Random::nextU32(511)) << (FRACBITS - 4);  // Have it jump out 
         mo->momy = (255 - (Fixed) Random::nextU32(511)) << (FRACBITS - 4);
     }
-    return true;        /* keep checking (crush other things) */
+    return true;        // keep checking (crush other things) 
 }
 
 /**********************************
@@ -120,20 +119,20 @@ static Word PIT_ChangeSector(mobj_t *thing)
 
 **********************************/
 
-Word ChangeSector(sector_t *sector,Word crunch)
+uint32_t ChangeSector(sector_t *sector, uint32_t crunch)
 {
-    Word x,y;
-    Word x2,y2;
+    uint32_t x,y;
+    uint32_t x2,y2;
 
-/* force next sound to reflood */
+// force next sound to reflood 
 
 
     players.lastsoundsector = 0;
 
-    nofit = false;          /* Assume that it's ok */
-    crushchange = crunch;   /* Can I crush bodies */
+    nofit = false;          // Assume that it's ok 
+    crushchange = crunch;   // Can I crush bodies 
 
-/* recheck heights for all things near the moving sector */
+// recheck heights for all things near the moving sector 
 
     x2 = sector->blockbox[BOXRIGHT];
     y2 = sector->blockbox[BOXTOP];
@@ -141,8 +140,8 @@ Word ChangeSector(sector_t *sector,Word crunch)
     do {
         y = sector->blockbox[BOXBOTTOM];
         do {
-            BlockThingsIterator(x,y,PIT_ChangeSector);  /* Test everything */
+            BlockThingsIterator(x,y,PIT_ChangeSector);  // Test everything 
         } while (++y<y2);
     } while (++x<x2);
-    return nofit;       /* Return flag */
+    return nofit;       // Return flag 
 }

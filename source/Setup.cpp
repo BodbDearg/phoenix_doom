@@ -55,9 +55,9 @@ mapthing_t playerstarts;    /* Starting position for players */
 static void GroupLines(void)
 {
     line_t **linebuffer;    /* Pointer to linebuffer array */
-    Word total;             /* Number of entries needed for linebuffer array */
+    uint32_t total;             /* Number of entries needed for linebuffer array */
     line_t *li;             /* Pointer to a work line record */
-    Word i,j;
+    uint32_t i,j;
     sector_t *sector;       /* Work sector pointer */
     Fixed block;            /* Clipped bounding box value */
     Fixed bbox[4];
@@ -278,7 +278,7 @@ static void PreloadWalls() {
 //---------------------------------------------------------------------------------------------------------------------
 // Load and prepare the game level
 //---------------------------------------------------------------------------------------------------------------------
-void SetupLevel(Word map) {
+void SetupLevel(uint32_t map) {
     Random::init();         // Reset the random number generator
     LoadingPlaque();        // Display "Loading"
 

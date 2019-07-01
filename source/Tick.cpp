@@ -3,6 +3,7 @@
 #include "Audio/Audio.h"
 #include "Automap_Main.h"
 #include "Base.h"
+#include "Burger.h"
 #include "Ceiling.h"
 #include "Data.h"
 #include "DoomRez.h"
@@ -28,9 +29,9 @@ struct thinker_t {
     void (*function)(thinker_t*);
 };
 
-static Word         TimeMark1;      // Timer for ticks
-static Word         TimeMark2;      // Timer for ticks
-static Word         TimeMark4;      // Timer for ticks
+static uint32_t     TimeMark1;      // Timer for ticks
+static uint32_t     TimeMark2;      // Timer for ticks
+static uint32_t     TimeMark4;      // Timer for ticks
 static thinker_t    thinkercap;     // Both the head and tail of the thinker list
 static bool         refreshdrawn;   // Used to refresh "Paused"
 

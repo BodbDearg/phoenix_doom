@@ -1,5 +1,6 @@
 #include "Intermission_Main.h"
 
+#include "Burger.h"
 #include "CelUtils.h"
 #include "Data.h"
 #include "DoomRez.h"
@@ -17,7 +18,7 @@
 #define SVALY   130
 #define INTERTIME (TICKSPERSEC/30)
 
-enum {      /* Intermission shape group */
+enum {      // Intermission shape group 
     KillShape,
     ItemsShape,
     SecretsShape
@@ -59,12 +60,12 @@ static const char* mapnames[] = {
 static const char* const Finished = "Finished";
 static const char* const Entering = "Entering";
 
-static Word killpercent;        /* Percent to attain */
-static Word itempercent;
-static Word secretpercent;
-static Word killvalue,itemvalue,secretvalue;    /* Displayed percent value */
-static Word INDelay;            /* Delay before next inc */
-static Word BangCount;          /* Delay for gunshot sound */
+static uint32_t killpercent;        // Percent to attain 
+static uint32_t itempercent;
+static uint32_t secretpercent;
+static uint32_t killvalue,itemvalue,secretvalue;    // Displayed percent value 
+static uint32_t INDelay;            // Delay before next inc 
+static uint32_t BangCount;          // Delay for gunshot sound 
 
 /**********************************
 
@@ -74,54 +75,54 @@ static Word BangCount;          /* Delay for gunshot sound */
 **********************************/
 
 void PrintBigFont(uint32_t x, uint32_t y, const char* string) {
-    Word y2,c;
+    uint32_t y2,c;
     const void *ucharx;
     const void *Current;
 
-    c = string[0];      /* Get the first char */
-   if (!c) {            /* No string to print? */
-        return;         /* Exit now */
+    c = string[0];      // Get the first char 
+   if (!c) {            // No string to print? 
+        return;         // Exit now 
     }
-    ucharx = 0;         /* Assume ASCII font is NOT loaded */
+    ucharx = 0;         // Assume ASCII font is NOT loaded 
     do {
-        ++string;       /* Place here so "continue" will work */
-        y2 = y;         /* Assume normal y coord */
-        Current = BigNumFont;   /* Assume numeric font */
+        ++string;       // Place here so "continue" will work 
+        y2 = y;         // Assume normal y coord 
+        Current = BigNumFont;   // Assume numeric font 
         if (c >= '0' && c<='9') {
             c-= '0';    
-        } else if (c=='%') {        /* Percent */
+        } else if (c=='%') {        // Percent 
             c = 10;
-        } else if (c=='-') {        /* Minus */
+        } else if (c=='-') {        // Minus 
             c = 11;
         } else {
-            Current = ucharx;   /* Assume I use the ASCII set */
-            if (c >= 'A' && c <= 'Z') { /* Upper case? */
+            Current = ucharx;   // Assume I use the ASCII set 
+            if (c >= 'A' && c <= 'Z') { // Upper case? 
                 c-='A';
             } else if (c >= 'a' && c <= 'z') {
-                c -= ('a'-26);      /* Index to lower case text */
+                c -= ('a'-26);      // Index to lower case text 
                 y2+=3;
-            } else if (c=='.') {        /* Period */
+            } else if (c=='.') {        // Period 
                 c = 52;
                 y2+=3;
-            } else if (c=='!') {    /* Exclaimation point */
+            } else if (c=='!') {    // Exclaimation point 
                 c = 53;
                 y2+=3;
-            } else {        /* Hmmm, not supported! */
-                x+=6;       /* Fake space */
+            } else {        // Hmmm, not supported! 
+                x+=6;       // Fake space 
                 continue;
             }
         }
-        if (!Current) {                             /* Do I need the ASCII set? */
-            ucharx = loadResourceData(rCHARSET);    /* Make sure I have the text font */
+        if (!Current) {                             // Do I need the ASCII set? 
+            ucharx = loadResourceData(rCHARSET);    // Make sure I have the text font 
             Current = ucharx;
         }
-        const CelControlBlock* const pShape = GetShapeIndexPtr(Current,c);  /* Get the shape pointer */
-        DrawMShape(x, y2, pShape);      /* Draw the char */
-        x+=getCCBWidth(pShape)+1;       /* Get the width to tab */
-    } while ((c = string[0])!=0);       /* Next index */
+        const CelControlBlock* const pShape = GetShapeIndexPtr(Current,c);  // Get the shape pointer 
+        DrawMShape(x, y2, pShape);      // Draw the char 
+        x+=getCCBWidth(pShape)+1;       // Get the width to tab 
+    } while ((c = string[0])!=0);       // Next index 
     
-    if (ucharx) {                       /* Did I load the ASCII font? */
-        releaseResource(rCHARSET);      /* Release the ASCII font */
+    if (ucharx) {                       // Did I load the ASCII font? 
+        releaseResource(rCHARSET);      // Release the ASCII font 
     }
 }
 
@@ -133,49 +134,49 @@ void PrintBigFont(uint32_t x, uint32_t y, const char* string) {
 **********************************/
 
 uint32_t GetBigStringWidth(const char* string) {
-    Word c,Width;
+    uint32_t c,Width;
     const void* ucharx;
     const void* Current;
 
-    c = string[0];      /* Get a char */
-    if (!c) {           /* No string to print? */
+    c = string[0];      // Get a char 
+    if (!c) {           // No string to print? 
         return 0;
     }
-    ucharx = 0; /* Only load in the ASCII set if I really need it */
+    ucharx = 0; // Only load in the ASCII set if I really need it 
     Width = 0;
     do {
         ++string;
-        Current = BigNumFont;   /* Assume numeric font */
+        Current = BigNumFont;   // Assume numeric font 
         if (c >= '0' && c<='9') {
             c-= '0';    
-        } else if (c=='%') {        /* Percent */
+        } else if (c=='%') {        // Percent 
             c = 10;
-        } else if (c=='-') {        /* Minus */
+        } else if (c=='-') {        // Minus 
             c = 11;
         } else {
-            Current = ucharx;   /* Assume I use the ASCII set */
-            if (c >= 'A' && c <= 'Z') { /* Upper case? */
+            Current = ucharx;   // Assume I use the ASCII set 
+            if (c >= 'A' && c <= 'Z') { // Upper case? 
                 c-='A';
             } else if (c >= 'a' && c <= 'z') {
-                c -= ('a'-26);      /* Index to lower case text */
-            } else if (c=='.') {        /* Period */
+                c -= ('a'-26);      // Index to lower case text 
+            } else if (c=='.') {        // Period 
                 c = 52;
-            } else if (c=='!') {    /* Exclaimation point */
+            } else if (c=='!') {    // Exclaimation point 
                 c = 53;
-            } else {        /* Hmmm, not supported! */
-                Width+=6;       /* Fake space */
+            } else {        // Hmmm, not supported! 
+                Width+=6;       // Fake space 
                 continue;
             }
         }
-        if (!Current) {                             /* Do I need ucharx? */
-            ucharx = loadResourceData(rCHARSET);    /* Load it in */
-            Current = ucharx;                       /* Set the pointer */
+        if (!Current) {                             // Do I need ucharx? 
+            ucharx = loadResourceData(rCHARSET);    // Load it in 
+            Current = ucharx;                       // Set the pointer 
         }
-        const CelControlBlock* const pShape = GetShapeIndexPtr(Current,c);  /* Get the shape pointer */
-        Width+=getCCBWidth(pShape)+1;          /* Get the width to tab */
-    } while ((c = string[0])!=0);       /* Next index */
-    if (ucharx) {                       /* Did I load in the ASCII font? */
-        releaseResource(rCHARSET);      /* Release the text font */
+        const CelControlBlock* const pShape = GetShapeIndexPtr(Current,c);  // Get the shape pointer 
+        Width+=getCCBWidth(pShape)+1;          // Get the width to tab 
+    } while ((c = string[0])!=0);       // Next index 
+    if (ucharx) {                       // Did I load in the ASCII font? 
+        releaseResource(rCHARSET);      // Release the text font 
     }
     return Width;
 }
@@ -189,23 +190,23 @@ uint32_t GetBigStringWidth(const char* string) {
 **********************************/
 
 void PrintNumber(uint32_t x, uint32_t y, uint32_t value, uint32_t Flags) {
-    char v[16];     /* Buffer for text string */
+    char v[16];     // Buffer for text string 
 
-    LongWordToAscii(value, v);      /* Convert to string */
-    value = strlen((char*) v);      /* Get the length in chars */
-    if (Flags& PNFLAGS_PERCENT) {          /* Append a percent sign? */
-        v[value] = '%';             /* Append it */
+    LongWordToAscii(value, v);      // Convert to string 
+    value = strlen((char*) v);      // Get the length in chars 
+    if (Flags& PNFLAGS_PERCENT) {          // Append a percent sign? 
+        v[value] = '%';             // Append it 
         ++value;
-        v[value] = 0;               /* Make sure it's zero terminated */
+        v[value] = 0;               // Make sure it's zero terminated 
     }
-    if (Flags & PNFLAGS_CENTER) {           /* Center it? */
+    if (Flags & PNFLAGS_CENTER) {           // Center it? 
         PrintBigFontCenter(x, y, v);
         return;
     }
-    if (Flags & PNFLAGS_RIGHT) {        /* Right justified? */
+    if (Flags & PNFLAGS_RIGHT) {        // Right justified? 
         x-=GetBigStringWidth(v);
     }
-    PrintBigFont(x,y,v);    /* Print the string */
+    PrintBigFont(x,y,v);    // Print the string 
 }
 
 /**********************************
@@ -227,9 +228,9 @@ void PrintBigFontCenter(uint32_t x, uint32_t y, const char* String) {
 void IN_Start() {
     INDelay = 0;
     BangCount = 0;
-    killvalue = itemvalue = secretvalue = 0;    /* All values shown are zero */
-    killpercent = itempercent = secretpercent = 100;    /* Init in case of divide by zero */
-    if (TotalKillsInLevel) {            /* Prevent divide by zeros */
+    killvalue = itemvalue = secretvalue = 0;    // All values shown are zero 
+    killpercent = itempercent = secretpercent = 100;    // Init in case of divide by zero 
+    if (TotalKillsInLevel) {            // Prevent divide by zeros 
         killpercent = (players.killcount * 100) / TotalKillsInLevel;
     }
     if (ItemsFoundInLevel) {
@@ -247,7 +248,7 @@ void IN_Start() {
 
 **********************************/
 void IN_Stop() {
-    S_StopSong();       /* Kill the music */
+    S_StopSong();       // Kill the music 
 }
 
 /**********************************
@@ -256,23 +257,23 @@ void IN_Stop() {
 
 **********************************/
 uint32_t IN_Ticker() {
-    Word Bang;
-    if (TotalGameTicks < (TICKSPERSEC/2)) { /* Initial wait before I begin */
-        return ga_nothing;      /* Do nothing */
+    uint32_t Bang;
+    if (TotalGameTicks < (TICKSPERSEC/2)) { // Initial wait before I begin 
+        return ga_nothing;      // Do nothing 
     }
 
-    if (NewJoyPadButtons & (PadA|PadB|PadC)) {  /* Pressed a button? */
-        killvalue = killpercent;        /* Set to maximums */
+    if (NewJoyPadButtons & (PadA|PadB|PadC)) {  // Pressed a button? 
+        killvalue = killpercent;        // Set to maximums 
         itemvalue = itempercent;
         secretvalue = secretpercent;
-        return ga_died;     /* Exit after drawing */
+        return ga_died;     // Exit after drawing 
     }
 
     INDelay+=gElapsedTime;
     if (INDelay>=INTERTIME) {
         Bang = false;
         INDelay-=INTERTIME;
-        if (killvalue < killpercent) {      /* Is it too high? */
+        if (killvalue < killpercent) {      // Is it too high? 
             ++killvalue;
             Bang = true;
         }
@@ -291,7 +292,7 @@ uint32_t IN_Ticker() {
             }
         }
     }
-    return ga_nothing;      /* Still here! */
+    return ga_nothing;      // Still here! 
 }
 
 /**********************************
@@ -300,25 +301,25 @@ uint32_t IN_Ticker() {
     
 **********************************/
 void IN_Drawer() {
-    const void* IntermisShapes;         /* Cached pointer */
-    DrawRezShape(0,0,rBACKGRNDBROWN);   /* Load and draw the skulls */
+    const void* IntermisShapes;         // Cached pointer 
+    DrawRezShape(0,0,rBACKGRNDBROWN);   // Load and draw the skulls 
     
-    IntermisShapes = loadResourceData(rINTERMIS);       /* Load the intermission shapes */
-    PrintBigFontCenter(160,10,mapnames[gamemap-1]);     /* Print the current map name */
-    PrintBigFontCenter(160,34,Finished);                /* Print "Finished" */
+    IntermisShapes = loadResourceData(rINTERMIS);       // Load the intermission shapes 
+    PrintBigFontCenter(160,10,mapnames[gamemap-1]);     // Print the current map name 
+    PrintBigFontCenter(160,34,Finished);                // Print "Finished" 
     
     if (nextmap != 23) {
         PrintBigFontCenter(160,162,Entering);
         PrintBigFontCenter(160,182,mapnames[nextmap-1]);
     }
     
-    DrawMShape(71,KVALY, GetShapeIndexPtr(IntermisShapes,KillShape));    /* Draw the shapes */
+    DrawMShape(71,KVALY, GetShapeIndexPtr(IntermisShapes,KillShape));    // Draw the shapes 
     DrawMShape(65,IVALY, GetShapeIndexPtr(IntermisShapes,ItemsShape));
     DrawMShape(27,SVALY, GetShapeIndexPtr(IntermisShapes,SecretsShape));
 
-    PrintNumber(KVALX,KVALY,killvalue, PNFLAGS_PERCENT|PNFLAGS_RIGHT);   /* Print the numbers */
+    PrintNumber(KVALX,KVALY,killvalue, PNFLAGS_PERCENT|PNFLAGS_RIGHT);   // Print the numbers 
     PrintNumber(IVALX,IVALY,itemvalue, PNFLAGS_PERCENT|PNFLAGS_RIGHT);
     PrintNumber(SVALX,SVALY,secretvalue ,PNFLAGS_PERCENT|PNFLAGS_RIGHT);
     releaseResource(rINTERMIS);
-    UpdateAndPageFlip(true);                /* Show the screen */
+    UpdateAndPageFlip(true);                // Show the screen 
 }

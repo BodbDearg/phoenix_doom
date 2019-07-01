@@ -1,5 +1,6 @@
 #include "Automap_Main.h"
 
+#include "Burger.h"
 #include "Data.h"
 #include "MapData.h"
 #include "MapObj.h"
@@ -30,15 +31,15 @@ static constexpr uint16_t COLOR_LILAC       = 0x6A9Eu;
 static constexpr uint16_t COLOR_LIGHTGREY   = 0x6318u;
 
 // Used to restore the view if the screen goes blank
-static Fixed    gOldPlayerX;        // X coord of the player previously
-static Fixed    gOldPlayerY;        // Y coord of the player previously
-static Fixed    gOldScale;          // Previous scale value
+static Fixed        gOldPlayerX;        // X coord of the player previously
+static Fixed        gOldPlayerY;        // Y coord of the player previously
+static Fixed        gOldScale;          // Previous scale value
 
-static Fixed    gMapScale;          // Scaling constant for the automap
-static Word     gTrueOldButtons;    // Previous buttons for joypad downs
-static bool     gFollowMode;        // Follow mode active if true
-static bool     gShowAllThings;     // If true, show all objects
-static bool     gShowAllLines;      // If true, show all lines
+static Fixed        gMapScale;          // Scaling constant for the automap
+static uint32_t     gTrueOldButtons;    // Previous buttons for joypad downs
+static bool         gFollowMode;        // Follow mode active if true
+static bool         gShowAllThings;     // If true, show all objects
+static bool         gShowAllLines;      // If true, show all lines
 
 static constexpr Fixed NOSELENGTH = 0x200000;   // Player's triangle
 static constexpr Fixed MOBJLENGTH = 0x100000;   // Object's triangle
@@ -65,7 +66,7 @@ static char CheatStrings[ch_maxcheats][10] = {
 #define CHEATLETTERS 9
 
 // Masks for the joypad
-static Word codes[CHEATLETTERS] = {
+static uint32_t codes[CHEATLETTERS] = {
     PadA,
     PadB,
     PadC,
@@ -115,7 +116,7 @@ void AM_Start() noexcept {
 // Check for cheat codes for automap fun stuff!
 // Pass to me all the new joypad downs.
 //--------------------------------------------------------------------------------------------------
-static cheat_e AM_CheckCheat(Word NewButtons) noexcept {
+static cheat_e AM_CheckCheat(uint32_t NewButtons) noexcept {
     // FIXME: temp cheats - DC
     SDL_PumpEvents();
     static Uint8 oldKBState[SDL_NUM_SCANCODES] = {};

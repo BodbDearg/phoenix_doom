@@ -27,15 +27,15 @@ typedef enum {      /* Positions for the button */
     bottom          /* Bottom button */
 } bwhere_e;
 
-typedef struct {        /* Struct to describe a switch */
-    line_t *line;       /* Line that the button is on */
-    Word btexture;      /* Texture # */
-    Word btimer;        /* Time before switching back */
-    bwhere_e where;     /* Vertical position of the button */
+typedef struct {            /* Struct to describe a switch */
+    line_t *line;           /* Line that the button is on */
+    uint32_t btexture;      /* Texture # */
+    uint32_t btimer;        /* Time before switching back */
+    bwhere_e where;         /* Vertical position of the button */
 } button_t;
 
-Word NumSwitches;       /* Number of switches * 2 */
-Word SwitchList[] = {
+uint32_t NumSwitches;       /* Number of switches * 2 */
+uint32_t SwitchList[] = {
     rSW1BRN1-rT_START,rSW2BRN1-rT_START,            /* Before,After */
     rSW1GARG-rT_START,rSW2GARG-rT_START,
     rSW1GSTON-rT_START,rSW2GSTON-rT_START,
@@ -87,7 +87,7 @@ static void T_Button(button_t *button)
 
 void P_InitSwitchList(void)
 {
-    NumSwitches = sizeof(SwitchList)/sizeof(Word);
+    NumSwitches = sizeof(SwitchList)/sizeof(uint32_t);
 }
 
 /**********************************
@@ -96,7 +96,7 @@ void P_InitSwitchList(void)
 
 **********************************/
 
-static void P_StartButton(line_t *line,bwhere_e w,Word texture,Word time)
+static void P_StartButton(line_t *line,bwhere_e w,uint32_t texture,uint32_t time)
 {
     button_t *button;
 
@@ -116,11 +116,11 @@ static void P_StartButton(line_t *line,bwhere_e w,Word texture,Word time)
 
 void P_ChangeSwitchTexture(line_t *line, bool useAgain)
 {
-    Word texTop;        /* Cached texture numbers */
-    Word texMid;
-    Word texBot;
-    Word i;
-    Word sound;     /* Sound effect to play */
+    uint32_t texTop;        /* Cached texture numbers */
+    uint32_t texMid;
+    uint32_t texBot;
+    uint32_t i;
+    uint32_t sound;     /* Sound effect to play */
     side_t *MySide; /* Pointer to the side struct */
     Fixed *SoundOrg;
 

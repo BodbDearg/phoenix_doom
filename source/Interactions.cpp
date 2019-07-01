@@ -17,9 +17,9 @@ static constexpr uint32_t   IRONTICS        = 60 * TICKSPERSEC;         // Time 
 static constexpr uint32_t   BONUSADD        = 16;                       // Time added for bonus color (ticks)
 static constexpr uint32_t   BASETHRESHOLD   = (7 * TICKSPERSEC) / 4;    // Number of tics to exclusivly follow a target
 
-/* A weapon is found with two clip loads, a big item has five clip loads */
+// A weapon is found with two clip loads, a big item has five clip loads 
 
-static Word clipammo[NUMAMMO] = {10,4,20,1};    /* Ammo for a normal clip */
+static uint32_t clipammo[NUMAMMO] = {10,4,20,1};    // Ammo for a normal clip 
 
 /**********************************
 
@@ -30,47 +30,47 @@ static Word clipammo[NUMAMMO] = {10,4,20,1};    /* Ammo for a normal clip */
 
 **********************************/
 
-static Word GiveAmmo(player_t *player,ammotype_e ammo,Word numofclips)
+static uint32_t GiveAmmo(player_t *player,ammotype_e ammo,uint32_t numofclips)
 {
-    Word oldammo;
-    Word maxammo;
+    uint32_t oldammo;
+    uint32_t maxammo;
 
-    if (ammo == am_noammo || ammo>=NUMAMMO) {       /* Is this not ammo? */
-        return false;           /* Can't pick it up */
+    if (ammo == am_noammo || ammo>=NUMAMMO) {       // Is this not ammo? 
+        return false;           // Can't pick it up 
     }
 
-    oldammo = player->ammo[ammo];       /* Get the current ammo */
-    maxammo = player->maxammo[ammo];    /* Get the maximum */
+    oldammo = player->ammo[ammo];       // Get the current ammo 
+    maxammo = player->maxammo[ammo];    // Get the maximum 
 
-    if (oldammo >= maxammo) {   /* Full already? */
-        return false;       /* Can't pick it up */
+    if (oldammo >= maxammo) {   // Full already? 
+        return false;       // Can't pick it up 
     }
 
-    if (numofclips) {           /* Valid ammo count? */
-        numofclips *= clipammo[ammo];       /* Get the ammo adder */
+    if (numofclips) {           // Valid ammo count? 
+        numofclips *= clipammo[ammo];       // Get the ammo adder 
     } else {
-        numofclips = clipammo[ammo]/2;      /* Give a half ration */
+        numofclips = clipammo[ammo]/2;      // Give a half ration 
     }
     if (gameskill == sk_baby) {
-        numofclips <<= 1;           /* give double ammo in wimp mode */
+        numofclips <<= 1;           // give double ammo in wimp mode 
     }
-    oldammo += numofclips;          /* Add in the new ammo */
+    oldammo += numofclips;          // Add in the new ammo 
     if (oldammo >= maxammo) {
-        oldammo = maxammo;      /* Max it out */
+        oldammo = maxammo;      // Max it out 
     }
-    player->ammo[ammo] = oldammo;       /* Save the new ammo count */
+    player->ammo[ammo] = oldammo;       // Save the new ammo count 
 
-    if (oldammo!=numofclips) {  /* Only possible if oldammo == 0 */
-        return true;        /* Don't change up weapons, player was lower on */
-    }                       /* purpose */
+    if (oldammo!=numofclips) {  // Only possible if oldammo == 0 
+        return true;        // Don't change up weapons, player was lower on 
+    }                       // purpose 
 
-    switch (ammo) {     /* Which type was picked up */
+    switch (ammo) {     // Which type was picked up 
         case am_clip:
-            if (player->readyweapon == wp_fist) {   /* I have fists up? */
-                if (player->weaponowned[wp_chaingun]) { /* Start the chaingun */
+            if (player->readyweapon == wp_fist) {   // I have fists up? 
+                if (player->weaponowned[wp_chaingun]) { // Start the chaingun 
                     player->pendingweapon = wp_chaingun;
                 } else {
-                    player->pendingweapon = wp_pistol;  /* Try the pistol */
+                    player->pendingweapon = wp_pistol;  // Try the pistol 
                 }
             }
             break;
@@ -89,16 +89,16 @@ static Word GiveAmmo(player_t *player,ammotype_e ammo,Word numofclips)
             }
             break;
         case am_misl:
-            if (player->readyweapon == wp_fist) {       /* Only using fists? */
+            if (player->readyweapon == wp_fist) {       // Only using fists? 
                 if (player->weaponowned[wp_missile]) {
-                    player->pendingweapon = wp_missile; /* Use rocket launcher */
+                    player->pendingweapon = wp_missile; // Use rocket launcher 
                 }
             }
         case am_noammo:
         case NUMAMMO:
             break;
     }
-    return true;            /* I picked it up! */
+    return true;            // I picked it up! 
 }
 
 /**********************************
@@ -109,26 +109,26 @@ static Word GiveAmmo(player_t *player,ammotype_e ammo,Word numofclips)
 
 **********************************/
 
-static Word GiveWeapon(player_t *player,weapontype_e weapon,Word dropped)
+static uint32_t GiveWeapon(player_t *player,weapontype_e weapon,uint32_t dropped)
 {
-    Word PickedUp;
+    uint32_t PickedUp;
 
-    PickedUp = false;       /* Init my vars */
+    PickedUp = false;       // Init my vars 
 
-    /* Give one clip with a dropped weapon, two clips with a found weapon */
+    // Give one clip with a dropped weapon, two clips with a found weapon 
 
-    if (WeaponAmmos[weapon] != am_noammo) {     /* Any ammo inside? */
-        dropped = dropped ? 1 : 2;      /* 1 or 2 clips */
+    if (WeaponAmmos[weapon] != am_noammo) {     // Any ammo inside? 
+        dropped = dropped ? 1 : 2;      // 1 or 2 clips 
         PickedUp = GiveAmmo(player,WeaponAmmos[weapon],dropped);
     }
 
-    if (!player->weaponowned[weapon]) {     /* Already had such a weapon? */
+    if (!player->weaponowned[weapon]) {     // Already had such a weapon? 
         PickedUp = true;
-        player->weaponowned[weapon] = true;     /* I have it now */
-        player->pendingweapon = weapon;         /* Use this weapon */
-        stbar.specialFace = f_gotgat;       /* He he he! Evil grin! */  
+        player->weaponowned[weapon] = true;     // I have it now 
+        player->pendingweapon = weapon;         // Use this weapon 
+        stbar.specialFace = f_gotgat;       // He he he! Evil grin!   
     }
-    return PickedUp;        /* Did you pick it up? */
+    return PickedUp;        // Did you pick it up? 
 }
 
 /**********************************
@@ -138,18 +138,18 @@ static Word GiveWeapon(player_t *player,weapontype_e weapon,Word dropped)
 
 **********************************/
 
-static Word GiveBody(player_t *player,Word num)
+static uint32_t GiveBody(player_t *player,uint32_t num)
 {
-    if (player->health >= MAXHEALTH) {      /* Already maxxed out? */
-        return false;       /* Don't get anymore */
+    if (player->health >= MAXHEALTH) {      // Already maxxed out? 
+        return false;       // Don't get anymore 
     }
-    num += player->health;      /* Make new health */
+    num += player->health;      // Make new health 
     if (num >= MAXHEALTH) {
-        num = MAXHEALTH;        /* Set to maximum */
+        num = MAXHEALTH;        // Set to maximum 
     }
-    player->health = num;       /* Save the new health */
-    player->mo->MObjHealth = num;   /* Save in MObj record as well */
-    return true;                /* Pick it up */
+    player->health = num;       // Save the new health 
+    player->mo->MObjHealth = num;   // Save in MObj record as well 
+    return true;                // Pick it up 
 }
 
 /**********************************
@@ -159,17 +159,17 @@ static Word GiveBody(player_t *player,Word num)
 
 **********************************/
 
-static Word GiveArmor(player_t *player,Word armortype)
+static uint32_t GiveArmor(player_t *player,uint32_t armortype)
 {
-    Word hits;
+    uint32_t hits;
 
-    hits = armortype*100;       /* 100 or 200% */
-    if (player->armorpoints >= hits) {  /* Already has this armor? */
-        return false;       /* Don't pick up */
+    hits = armortype*100;       // 100 or 200% 
+    if (player->armorpoints >= hits) {  // Already has this armor? 
+        return false;       // Don't pick up 
     }
-    player->armortype = armortype;  /* Set the type */
-    player->armorpoints = hits;     /* Set the new value */
-    return true;            /* Pick it up */
+    player->armortype = armortype;  // Set the type 
+    player->armorpoints = hits;     // Set the new value 
+    return true;            // Pick it up 
 }
 
 /**********************************
@@ -180,9 +180,9 @@ static Word GiveArmor(player_t *player,Word armortype)
 
 static void GiveCard(player_t *player,card_e card)
 {
-    if (!player->cards[card]) {     /* I don't have it already? */
-        player->bonuscount = BONUSADD;  /* Add the bonus value for color */
-        player->cards[card] = true;     /* I have it now! */
+    if (!player->cards[card]) {     // I don't have it already? 
+        player->bonuscount = BONUSADD;  // Add the bonus value for color 
+        player->cards[card] = true;     // I have it now! 
     }
 }
 
@@ -192,30 +192,30 @@ static void GiveCard(player_t *player,card_e card)
 
 **********************************/
 
-static Word GivePower(player_t *player,powertype_e power)
+static uint32_t GivePower(player_t *player,powertype_e power)
 {
     switch (power) {
-    case pw_invulnerability:        /* God mode? */
-        player->powers[power] = INVULNTICS; /* Set the time */
+    case pw_invulnerability:        // God mode? 
+        player->powers[power] = INVULNTICS; // Set the time 
         break;
     case pw_invisibility:
-        player->powers[power] = INVISTICS;  /* I am invisible! */
+        player->powers[power] = INVISTICS;  // I am invisible! 
         player->mo->flags |= MF_SHADOW;
         break;
-    case pw_ironfeet:           /* Radiation suit? */
-        player->powers[power] = IRONTICS;   /* Set the time */
+    case pw_ironfeet:           // Radiation suit? 
+        player->powers[power] = IRONTICS;   // Set the time 
         break;
-    case pw_strength:           /* Berzerker pack */
-        GiveBody(player,100);               /* Full health */
-        player->powers[power] = true;       /* I have the power */
+    case pw_strength:           // Berzerker pack 
+        GiveBody(player,100);               // Full health 
+        player->powers[power] = true;       // I have the power 
         break;
     default:
-        if (player->powers[power]) {            /* Already have the power up? */
-            return false;       /* Already got it, don't get it again */
+        if (player->powers[power]) {            // Already have the power up? 
+            return false;       // Already got it, don't get it again 
         }
-        player->powers[power] = true;       /* Award the power up */
+        player->powers[power] = true;       // Award the power up 
     }
-    return true;            /* Pick it up */
+    return true;            // Pick it up 
 }
 
 /**********************************
@@ -225,28 +225,28 @@ static Word GivePower(player_t *player,powertype_e power)
 
 **********************************/
 
-static Word TouchSpecialThing2(mobj_t *toucher,Word Sprite)
+static uint32_t TouchSpecialThing2(mobj_t *toucher, uint32_t Sprite)
 {
     player_t *player;
 
     player = toucher->player;
 
     switch (Sprite) {
-    case rSPR_GREENARMOR:           /* Green armor */
+    case rSPR_GREENARMOR:           // Green armor 
         if (!GiveArmor(player,1)) {
             return -1;
         }
         player->message = "You pick up the armor.";
         break;
 
-    case rSPR_BLUEARMOR:            /* Blue armor */
+    case rSPR_BLUEARMOR:            // Blue armor 
         if (!GiveArmor(player,2)) {
             return -1;
         }
         player->message = "You got the MegaArmor!";
         break;
 
-/* Cards, leave cards for everyone */
+// Cards, leave cards for everyone 
 
     case rSPR_BLUEKEYCARD:
         if (!player->cards[it_bluecard]) {
@@ -287,16 +287,16 @@ CardSound:
         GiveCard(player,it_redskull);
         goto CardSound;
 
-/* Heals */
+// Heals 
 
-    case rSPR_STIMPACK:         /* Stim pack */
+    case rSPR_STIMPACK:         // Stim pack 
         if (!GiveBody(player,10)) {
             return -1;
         }
         player->message = "You pick up a stimpack.";
         break;
     case rSPR_MEDIKIT:
-        if (!GiveBody(player,25)) {     /* Medkit */
+        if (!GiveBody(player,25)) {     // Medkit 
             return -1;
         }
         if (player->health<50) {
@@ -306,45 +306,45 @@ CardSound:
         }
         break;
 
-/* Power ups */
+// Power ups 
 
-    case rSPR_INVULNERABILITY:      /* God mode!! */
+    case rSPR_INVULNERABILITY:      // God mode!! 
         if (!GivePower(player,pw_invulnerability)) {
             return -1;
         }
         player->message = "Invulnerability!";
         break;
-    case rSPR_BERZERKER:        /* Berserker pack */
+    case rSPR_BERZERKER:        // Berserker pack 
         if (!GivePower(player,pw_strength)) {
             return -1;
         }
         player->message = "Berserk!";
-        if (player->readyweapon != wp_fist) {   /* Already fists? */
-            player->pendingweapon = wp_fist;    /* Set to fists */
+        if (player->readyweapon != wp_fist) {   // Already fists? 
+            player->pendingweapon = wp_fist;    // Set to fists 
         }
         break;
-    case rSPR_INVISIBILITY:         /* Invisibility */
+    case rSPR_INVISIBILITY:         // Invisibility 
         if (!GivePower(player,pw_invisibility)) {
             return -1;
         }
         player->message = "Invisibility!";
         break;
-    case rSPR_RADIATIONSUIT:            /* Radiation suit */
+    case rSPR_RADIATIONSUIT:            // Radiation suit 
         if (!GivePower(player,pw_ironfeet)) {
             return -1;
         }
         player->message = "Radiation Shielding Suit";
         break;
-    case rSPR_COMPUTERMAP:          /* Computer map */
+    case rSPR_COMPUTERMAP:          // Computer map 
         if (!GivePower(player,pw_allmap)) {
             return -1;
         }
         player->message = "Computer Area Map";
         break;
-    case rSPR_IRGOGGLES:                /* Light amplification visor */
+    case rSPR_IRGOGGLES:                // Light amplification visor 
         break;
     }
-    return sfx_itemup;          /* Return the sound effect */
+    return sfx_itemup;          // Return the sound effect 
 }
 
 /**********************************
@@ -356,175 +356,175 @@ CardSound:
 void TouchSpecialThing(mobj_t *special,mobj_t *toucher)
 {
     player_t *player;
-    Word i;
+    uint32_t i;
     Fixed delta;
-    Word sound;
+    uint32_t sound;
 
-    delta = special->z - toucher->z;    /* Differances between z's */
+    delta = special->z - toucher->z;    // Differances between z's 
     if (delta > toucher->height || (delta < (-8*FRACUNIT))) {
-        return;         /* Out of reach */
+        return;         // Out of reach 
     }
 
     player = toucher->player;
-    if (!toucher->MObjHealth) {     /* Dead player shape? */
-        return;     /* Can happen with a sliding player corpse */
+    if (!toucher->MObjHealth) {     // Dead player shape? 
+        return;     // Can happen with a sliding player corpse 
     }
-    sound = sfx_itemup;     /* Get item sound */
+    sound = sfx_itemup;     // Get item sound 
     i = special->state->SpriteFrame>>FF_SPRITESHIFT;
     switch (i) {
 
-/* bonus items */
+// bonus items 
 
-    case rSPR_HEALTHBONUS:          /* Health bonus */
+    case rSPR_HEALTHBONUS:          // Health bonus 
         player->message = "You pick up a health bonus.";
-        i = 2;              /* Award size */
+        i = 2;              // Award size 
 Healthy:
-        i += player->health;    /* Can go over 100% */
+        i += player->health;    // Can go over 100% 
         if (i >= 201) {
             i = 200;
         }
-        player->health = i;     /* Save new health */
+        player->health = i;     // Save new health 
         player->mo->MObjHealth = i;
         break;
-    case rSPR_SOULSPHERE:       /* Supercharge sphere */
+    case rSPR_SOULSPHERE:       // Supercharge sphere 
         player->message = "Supercharge!";
-        i = 100;        /* Award 100 points */
+        i = 100;        // Award 100 points 
         goto Healthy;
-    case rSPR_ARMORBONUS:       /* Armor bonus */
-        i = player->armorpoints+2;      /* Can go over 100% */
+    case rSPR_ARMORBONUS:       // Armor bonus 
+        i = player->armorpoints+2;      // Can go over 100% 
         if (i >= 201) {
-            i = 200;            /* But not 200%! */
+            i = 200;            // But not 200%! 
         }
         player->armorpoints = i;
-        if (!player->armortype) {   /* Any armor? */
-            player->armortype = 1;  /* Set to green type */
+        if (!player->armortype) {   // Any armor? 
+            player->armortype = 1;  // Set to green type 
         }
         player->message = "You pick up an armor bonus.";
         break;
 
-/* ammo */
+// ammo 
 
     case rSPR_CLIP:
-        i = (special->flags & MF_DROPPED) ? 0 : 1;  /* Half or full clip */
-        if (!GiveAmmo(player,am_clip,i)) {  /* Give the ammo */
+        i = (special->flags & MF_DROPPED) ? 0 : 1;  // Half or full clip 
+        if (!GiveAmmo(player,am_clip,i)) {  // Give the ammo 
             return;
         }
         player->message = "Picked up a clip.";
         break;
     case rSPR_BOXAMMO:
-        if (!GiveAmmo(player,am_clip,5)) {  /* Give 5 clips worth */
+        if (!GiveAmmo(player,am_clip,5)) {  // Give 5 clips worth 
             return;
         }
         player->message = "Picked up a box of bullets.";
         break;
     case rSPR_ROCKET:
-        if (!GiveAmmo(player,am_misl,1)) {      /* 1 clip of rockets */
+        if (!GiveAmmo(player,am_misl,1)) {      // 1 clip of rockets 
             return;
         }
         player->message = "Picked up a rocket.";
         break;
     case rSPR_BOXROCKETS:
-        if (!GiveAmmo(player,am_misl,5)) {      /* 5 rockets */
+        if (!GiveAmmo(player,am_misl,5)) {      // 5 rockets 
             return;
         }
         player->message = "Picked up a box of rockets.";
         break;
     case rSPR_CELL:
-        if (!GiveAmmo(player,am_cell,1)) {      /* Single charge cell */
+        if (!GiveAmmo(player,am_cell,1)) {      // Single charge cell 
             return;
         }
         player->message = "Picked up an energy cell.";
         break;
     case rSPR_CELLPACK:
-        if (!GiveAmmo(player,am_cell,5)) {  /* Big energy cell */
+        if (!GiveAmmo(player,am_cell,5)) {  // Big energy cell 
             return;
         }
         player->message = "Picked up an energy cell pack.";
         break;
     case rSPR_SHELLS:
-        if (!GiveAmmo(player,am_shell,1)) { /* Clip of shells */
+        if (!GiveAmmo(player,am_shell,1)) { // Clip of shells 
             return;
         }
         player->message = "Picked up 4 shotgun shells.";
         break;
     case rSPR_BOXSHELLS:
-        if (!GiveAmmo(player,am_shell,5)) { /* Box of shells */
+        if (!GiveAmmo(player,am_shell,5)) { // Box of shells 
             return;
         }
         player->message = "Picked up a box of shotgun shells.";
         break;
     case rSPR_BACKPACK:
-        if (!player->backpack) {        /* Already got a backpack? */
+        if (!player->backpack) {        // Already got a backpack? 
             i = 0;
             do {
-                player->maxammo[i] *= 2;    /* Double the max ammo */
+                player->maxammo[i] *= 2;    // Double the max ammo 
             } while (++i<NUMAMMO);
-            player->backpack = true;        /* I have a backpack now */
+            player->backpack = true;        // I have a backpack now 
         }
         i = 0;
         do {
-            GiveAmmo(player,(ammotype_e)i,1);   /* 1 clip of everything */
+            GiveAmmo(player,(ammotype_e)i,1);   // 1 clip of everything 
         } while (++i<NUMAMMO);
         player->message = "Picked up a backpack full of ammo!";
         break;
 
-/* weapons */
+// weapons 
 
-    case rSPR_BFG9000:      /* BFG 9000 */
+    case rSPR_BFG9000:      // BFG 9000 
         if (!GiveWeapon(player,wp_bfg,false) ) {
             return;
         }
         player->message = "You got the BFG9000!  Oh, yes.";
         sound = sfx_wpnup;
         break;
-    case rSPR_CHAINGUN:     /* Chain gun */
+    case rSPR_CHAINGUN:     // Chain gun 
         if (!GiveWeapon(player,wp_chaingun,false) ) {
             return;
         }
         player->message = "You got the chaingun!";
         sound = sfx_wpnup;
         break;
-    case rSPR_CHAINSAW:     /* Chainsaw */
+    case rSPR_CHAINSAW:     // Chainsaw 
         if (!GiveWeapon(player,wp_chainsaw,false) ) {
             return;
         }
         player->message = "A chainsaw!  Find some meat!";
         sound = sfx_wpnup;
         break;
-    case rSPR_ROCKETLAUNCHER:       /* Rocket launcher */
+    case rSPR_ROCKETLAUNCHER:       // Rocket launcher 
         if (!GiveWeapon(player,wp_missile,false) ) {
             return;
         }
         player->message = "You got the rocket launcher!";
         sound = sfx_wpnup;
         break;
-    case rSPR_PLASMARIFLE:      /* Plasma rifle */
+    case rSPR_PLASMARIFLE:      // Plasma rifle 
         if (!GiveWeapon(player,wp_plasma,false)) {
             return;
         }
         player->message = "You got the plasma gun!";
         sound = sfx_wpnup;
         break;
-    case rSPR_SHOTGUN:      /* Shotgun */
+    case rSPR_SHOTGUN:      // Shotgun 
         if (!GiveWeapon(player,wp_shotgun,(special->flags&MF_DROPPED) ? true : false)) {
             return;
         }
         player->message = "You got the shotgun!";
         sound = sfx_wpnup;
         break;
-    default:        /* None of the above? */
-        sound = TouchSpecialThing2(toucher,i);  /* Try extra code */
-        if (sound == -1) {  /* No good? */
-            return;     /* Exit */
+    default:        // None of the above? 
+        sound = TouchSpecialThing2(toucher,i);  // Try extra code 
+        if (sound == -1) {  // No good? 
+            return;     // Exit 
         }
     }
 
-    if (special->flags & MF_COUNTITEM) {    /* Bonus items? */
-        ++player->itemcount;            /* Add to the item count */
+    if (special->flags & MF_COUNTITEM) {    // Bonus items? 
+        ++player->itemcount;            // Add to the item count 
     }
-    P_RemoveMobj(special);              /* Remove the item */
-    player->bonuscount += BONUSADD;     /* Add to the bonus count color */
-    S_StartSound(&toucher->x,sound);        /* Play the sound */
+    P_RemoveMobj(special);              // Remove the item 
+    player->bonuscount += BONUSADD;     // Add to the bonus count color 
+    S_StartSound(&toucher->x,sound);        // Play the sound 
 }
 
 /**********************************
@@ -534,47 +534,47 @@ Healthy:
 
 **********************************/
 
-static void KillMobj(mobj_t *target,Word Overkill)
+static void KillMobj(mobj_t *target, uint32_t Overkill)
 {
     mobjinfo_t *InfoPtr;
     mobj_t *mo;
 
     InfoPtr = target->InfoPtr;
     
-    target->flags &= ~(MF_SHOOTABLE|MF_FLOAT|MF_SKULLFLY);  /* Clear flags */
-    if (InfoPtr != &mobjinfo[MT_SKULL]) {       /* Skulls can stay in the air */
-        target->flags &= ~MF_NOGRAVITY; /* Make eye creatures fall */
+    target->flags &= ~(MF_SHOOTABLE|MF_FLOAT|MF_SKULLFLY);  // Clear flags 
+    if (InfoPtr != &mobjinfo[MT_SKULL]) {       // Skulls can stay in the air 
+        target->flags &= ~MF_NOGRAVITY; // Make eye creatures fall 
     }
-    target->flags |= MF_CORPSE|MF_DROPOFF;      /* It's dead and can fall */
-    target->height >>= 2;           /* Reduce the height a lot */
+    target->flags |= MF_CORPSE|MF_DROPOFF;      // It's dead and can fall 
+    target->height >>= 2;           // Reduce the height a lot 
 
     if (target->flags & MF_COUNTKILL) {
-        ++players.killcount;            /* Count all monster deaths, even */
-    }                                   /* those caused by other monsters */
+        ++players.killcount;            // Count all monster deaths, even 
+    }                                   // those caused by other monsters 
 
-    if (target->player) {           /* Was the dead one a player? */
-        target->flags &= ~MF_SOLID;     /* Walk over the body! */
-        target->player->playerstate = PST_DEAD; /* You are dead! */
-        LowerPlayerWeapon(target->player);      /* Drop current weapon on screen */
+    if (target->player) {           // Was the dead one a player? 
+        target->flags &= ~MF_SOLID;     // Walk over the body! 
+        target->player->playerstate = PST_DEAD; // You are dead! 
+        LowerPlayerWeapon(target->player);      // Drop current weapon on screen 
         if (target->player == &players) {
-            stbar.gotgibbed = true;     /* Gooey! */
+            stbar.gotgibbed = true;     // Gooey! 
         }
-        if (Overkill>=50) {         /* Were you a real mess? */
-            S_StartSound(&target->x,sfx_slop);  /* Juicy, gorey death! */
+        if (Overkill>=50) {         // Were you a real mess? 
+            S_StartSound(&target->x,sfx_slop);  // Juicy, gorey death! 
         } else {
-            S_StartSound(&target->x,sfx_pldeth);    /* Arrrgh!! */
+            S_StartSound(&target->x,sfx_pldeth);    // Arrrgh!! 
         }
     }
 
-    if (Overkill >= InfoPtr->spawnhealth        /* Horrible death? */
+    if (Overkill >= InfoPtr->spawnhealth        // Horrible death? 
         && InfoPtr->xdeathstate) {
-        SetMObjState(target,InfoPtr->xdeathstate);  /* Death state */
+        SetMObjState(target,InfoPtr->xdeathstate);  // Death state 
     } else {
-        SetMObjState(target,InfoPtr->deathstate);   /* Boring death */
+        SetMObjState(target,InfoPtr->deathstate);   // Boring death 
     }
-    Sub1RandomTick(target);     /* Add a little randomness to the gibbing time */
+    Sub1RandomTick(target);     // Add a little randomness to the gibbing time 
 
-/* Drop stuff */
+// Drop stuff 
 
     if (InfoPtr == &mobjinfo[MT_POSSESSED]) {
         InfoPtr = &mobjinfo[MT_CLIP];
@@ -583,8 +583,8 @@ static void KillMobj(mobj_t *target,Word Overkill)
     } else {
         return;
     }
-    mo = SpawnMObj(target->x,target->y,ONFLOORZ,InfoPtr);   /* Drop it */
-    mo->flags |= MF_DROPPED;        /* Avoid respawning! */
+    mo = SpawnMObj(target->x,target->y,ONFLOORZ,InfoPtr);   // Drop it 
+    mo->flags |= MF_DROPPED;        // Avoid respawning! 
 }
 
 /**********************************
@@ -601,119 +601,119 @@ static void KillMobj(mobj_t *target,Word Overkill)
 
 void DamageMObj(mobj_t *target,mobj_t *inflictor,mobj_t *source, uint32_t damage)
 {
-    angle_t ang;        /* Angle of impact */
-    Word an;            /* Index to angle table */
-    player_t *player;   /* Player record of killer */
-    Fixed thrust;       /* Thrust of death motion */
-    Word saved;         /* Damage armor prevented */
+    angle_t ang;        // Angle of impact 
+    uint32_t an;            // Index to angle table 
+    player_t *player;   // Player record of killer 
+    Fixed thrust;       // Thrust of death motion 
+    uint32_t saved;         // Damage armor prevented 
 
-    if ( !(target->flags & MF_SHOOTABLE) ) { /* Failsafe */
+    if ( !(target->flags & MF_SHOOTABLE) ) { // Failsafe 
         return;
     }
 
-    if (!target->MObjHealth) {      /* Already dead? */
+    if (!target->MObjHealth) {      // Already dead? 
         return;
     }
 
-    if (target->flags & MF_SKULLFLY) {      /* Stop a skull from flying */
+    if (target->flags & MF_SKULLFLY) {      // Stop a skull from flying 
         target->momx = target->momy = target->momz = 0;
     }
 
     player = target->player;
-    if (player) {           /* Handle player damage */
+    if (player) {           // Handle player damage 
         if (gameskill == sk_baby) {
-            damage >>= 1;               /* take half damage in trainer mode */
+            damage >>= 1;               // take half damage in trainer mode 
         }
         if ((damage >= 31) && player == &players) {
-            stbar.specialFace = f_hurtbad;      /* Ouch face */
+            stbar.specialFace = f_hurtbad;      // Ouch face 
         }
     }
 
-/* Kick away unless using the chainsaw */
+// Kick away unless using the chainsaw 
 
     if (inflictor && (!source || !source->player
     || source->player->readyweapon != wp_chainsaw)) {
         ang = PointToAngle(inflictor->x,inflictor->y,target->x,target->y);
         thrust = (damage*(25*FRACUNIT))/target->InfoPtr->mass;
 
-        /* make fall forwards sometimes */
+        // make fall forwards sometimes 
         if (damage<40 && damage>target->MObjHealth &&
              ((target->z - inflictor->z) > 64*FRACUNIT) && Random::nextBool() ) {
-            ang += ANG180;      /* Do a 180 degree turn */
-            thrust *= 4;        /* Move a little faster */
+            ang += ANG180;      // Do a 180 degree turn 
+            thrust *= 4;        // Move a little faster 
         }
-        an = ang>>ANGLETOFINESHIFT;     /* Convert to sine table value */
-        thrust >>= FRACBITS;            /* Get the integer */
-        target->momx += thrust * finecosine[an];    /* Get some momentum */
+        an = ang>>ANGLETOFINESHIFT;     // Convert to sine table value 
+        thrust >>= FRACBITS;            // Get the integer 
+        target->momx += thrust * finecosine[an];    // Get some momentum 
         target->momy += thrust * finesine[an];
     } else {
-        ang = target->angle;        /* Get facing */
+        ang = target->angle;        // Get facing 
     }
 
-/* player specific */
+// player specific 
 
     if (player) {
         if ( (player->AutomapFlags&AF_GODMODE)||player->powers[pw_invulnerability] ) {
-            return;     /* Don't hurt in god mode */
+            return;     // Don't hurt in god mode 
         }
-            /* Where did the attack come from? */
+            // Where did the attack come from? 
         if (player == &players) {
-            ang -= target->angle;       /* Get angle differance */
+            ang -= target->angle;       // Get angle differance 
             if (ang >= 0x30000000UL && ang < 0x80000000UL) {
-                stbar.specialFace = f_faceright;        /* Face toward attacker */
+                stbar.specialFace = f_faceright;        // Face toward attacker 
             } else if (ang >= 0x80000000UL && ang < 0xD0000000UL) {
                 stbar.specialFace = f_faceleft;
             }
         }
-        if (player->armortype) {        /* Remove damage using armor */
-            if (player->armortype == 1) {   /* Normal armor */
+        if (player->armortype) {        // Remove damage using armor 
+            if (player->armortype == 1) {   // Normal armor 
                 saved = damage/3;
             } else {
-                saved = damage/2;       /* Mega armor */
+                saved = damage/2;       // Mega armor 
             }
-            if (player->armorpoints <= saved) { /* Armor is used up */
-                saved = player->armorpoints;    /* Use the maximum from armor */
-                player->armortype = 0;      /* Remove the previous armor */
+            if (player->armorpoints <= saved) { // Armor is used up 
+                saved = player->armorpoints;    // Use the maximum from armor 
+                player->armortype = 0;      // Remove the previous armor 
             }
-            player->armorpoints -= saved;   /* Deduct from armor */
-            damage -= saved;            /* Deduct damage from armor */
+            player->armorpoints -= saved;   // Deduct from armor 
+            damage -= saved;            // Deduct damage from armor 
         }
-        S_StartSound(&target->x,sfx_plpain);    /* Ouch! */
-        if (player->health <= damage) { /* Mirror mobj health here for Dave */
-            player->health = 0;     /* You died! */
+        S_StartSound(&target->x,sfx_plpain);    // Ouch! 
+        if (player->health <= damage) { // Mirror mobj health here for Dave 
+            player->health = 0;     // You died! 
         } else {
-            player->health -= damage;   /* Remove health */
+            player->health -= damage;   // Remove health 
         }
-        player->attacker = source;      /* Mark the source of the attack */
-        player->damagecount += (damage<<1); /* Add damage after armor / invuln */
+        player->attacker = source;      // Mark the source of the attack 
+        player->damagecount += (damage<<1); // Add damage after armor / invuln 
     }
 
-/* Do the damage */
+// Do the damage 
 
-    if (target->MObjHealth <= damage) { /* Killed? */
-        Word Ouch;          /* Get the overkill factor */
+    if (target->MObjHealth <= damage) { // Killed? 
+        uint32_t Ouch;          // Get the overkill factor 
         Ouch = damage-target->MObjHealth;
-        target->MObjHealth = 0;     /* Zap the health */
-        KillMobj(target,Ouch);  /* Perform death animation */
-        return;         /* Exit now */
+        target->MObjHealth = 0;     // Zap the health 
+        KillMobj(target,Ouch);  // Perform death animation 
+        return;         // Exit now 
     }
-    target->MObjHealth -= damage;   /* Remove damage from target */
+    target->MObjHealth -= damage;   // Remove damage from target 
 
-    if ( (Random::nextU32(255)<target->InfoPtr->painchance) &&    /* Should it react in pain? */
+    if ( (Random::nextU32(255)<target->InfoPtr->painchance) &&    // Should it react in pain? 
         !(target->flags&MF_SKULLFLY) ) {
-        target->flags |= MF_JUSTHIT;        /* fight back! */
+        target->flags |= MF_JUSTHIT;        // fight back! 
         SetMObjState(target,target->InfoPtr->painstate);
     }
-    target->reactiontime = 0;       /* We're awake now... */
+    target->reactiontime = 0;       // We're awake now... 
 
-/* If not intent on another player, chase after this one */
+// If not intent on another player, chase after this one 
 
     if (!target->threshold && source) {
-        target->target = source;        /* Target the attacker */
-        target->threshold = BASETHRESHOLD;      /* Reset the threshold */
+        target->target = source;        // Target the attacker 
+        target->threshold = BASETHRESHOLD;      // Reset the threshold 
         if (target->state == target->InfoPtr->spawnstate
         && target->InfoPtr->seestate) {
-            SetMObjState(target,target->InfoPtr->seestate); /* Reset actor */
+            SetMObjState(target,target->InfoPtr->seestate); // Reset actor 
         }
     }
 }

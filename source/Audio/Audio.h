@@ -1,6 +1,6 @@
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 
 //--------------------------------------------------------------------------------------------------
 // Functionality for playing music and sound

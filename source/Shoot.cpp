@@ -53,7 +53,7 @@ static bool PA_CrossBSPNode(const node_t* pNode) {
     }
     
     // Decide which side the start point is on and cross the starting side
-    const Word side = PointOnVectorSide(shootdiv.x, shootdiv.y, &pNode->Line);
+    const uint32_t side = PointOnVectorSide(shootdiv.x, shootdiv.y, &pNode->Line);
     
     if (!PA_CrossBSPNode((const node_t*) pNode->Children[side])) {
         return false;

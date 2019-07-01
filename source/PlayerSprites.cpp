@@ -94,9 +94,9 @@ static state_t* WeaponFlashStates[NUMWEAPONS] = {
 
 static mobj_t *SoundTarget;     // Player object to track (Make global to avoid passing it)
 
-static void RecursiveSound(sector_t *sec,Word soundblocks)
+static void RecursiveSound(sector_t *sec, uint32_t soundblocks)
 {
-    Word Count;
+    uint32_t Count;
     line_t **checker;
     line_t *check;
     sector_t *front,*back;
@@ -219,7 +219,7 @@ static bool CheckAmmo(player_t *player)
 {
     ammotype_e ammo;    // Ammo type
     weapontype_e Weapon;
-    Word Count;         // Minimum ammo to fire with
+    uint32_t Count;         // Minimum ammo to fire with
 
     ammo = WeaponAmmos[player->readyweapon];    // What ammo type to use?
     Count = 1;              // Assume 1 round
@@ -292,7 +292,7 @@ void LowerPlayerWeapon(player_t *player)
 void A_WeaponReady(player_t *player,pspdef_t *psp)
 {
     int BobValue;   // Must be signed!!
-    Word angle;     // Angle for weapon bobbing
+    uint32_t angle;     // Angle for weapon bobbing
 
     // Special case for chainsaw's idle sound
 
@@ -409,7 +409,7 @@ void A_Punch(player_t *player,pspdef_t *psp)
 {
     angle_t angle;
     mobj_t *mo,*target;
-    Word damage;
+    uint32_t damage;
 
     damage = (Random::nextU32(7)+1)*3;        // 1D8 * 3
     if (player->powers[pw_strength]) {  // Are you a berserker?
@@ -436,7 +436,7 @@ void A_Saw(player_t *player,pspdef_t *psp)
 {
     angle_t angle;      // Angle of attack
     long testangle;     // Must be SIGNED!
-    Word damage;
+    uint32_t damage;
     mobj_t *mo,*target;
 
     damage = (Random::nextU32(7)+1)*3;        // 1D8 * 3
@@ -522,7 +522,7 @@ void A_FirePlasma(player_t *player,pspdef_t *psp)
 static void GunShot(mobj_t *mo, bool accurate)
 {
     angle_t angle;      // Angle of fire
-    Word damage;        // Damage done
+    uint32_t damage;        // Damage done
 
     damage = (Random::nextU32(3)+1)*4;        // 1D4 * 4
     angle = mo->angle;              // Get the angle
@@ -556,8 +556,8 @@ void A_FirePistol(player_t *player,pspdef_t *psp)
 void A_FireShotgun(player_t *player, pspdef_t *psp)
 {
     angle_t angle;
-    Word damage;
-    Word i;
+    uint32_t damage;
+    uint32_t i;
     int slope;
     mobj_t *mo;
 
@@ -644,7 +644,7 @@ void A_Light2(player_t *player,pspdef_t *psp)
 
 void A_BFGSpray(mobj_t *mo)
 {
-    Word i,j,damage;
+    uint32_t i,j,damage;
     angle_t an;
     mobj_t *target;
 
@@ -687,7 +687,7 @@ void A_BFGsound(player_t *player,pspdef_t *psp)
 
 void SetupPSprites(player_t *player)
 {
-    Word i;
+    uint32_t i;
     pspdef_t *psp;
 
 // Remove all psprites
@@ -715,13 +715,13 @@ void SetupPSprites(player_t *player)
 
 void MovePSprites(player_t *player)
 {
-    Word i;
+    uint32_t i;
     pspdef_t *psp;
 
     psp = player->psprites;     // Index to the player's sprite records
     i = 0;              // How many to process? (Must go from 0-NUMPSPRITES)
     do {
-        Word Remainder;
+        uint32_t Remainder;
         Remainder = gElapsedTime;    // Get the atomic count
         while (psp->Time!=-1) { // Never change state?
             if (psp->Time>Remainder) {  // Has enough time elapsed?

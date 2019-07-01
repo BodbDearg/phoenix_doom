@@ -172,7 +172,7 @@ static bool PS_CrossBSPNode(const node_t* pNode) {
     }
     
     // Decide which side the start point is on
-    const Word side = PointOnVectorSide(strace.x, strace.y, &pNode->Line);
+    const uint32_t side = PointOnVectorSide(strace.x, strace.y, &pNode->Line);
 
     // Cross the starting side
     if (!PS_CrossBSPNode((const node_t*) pNode->Children[side]))
@@ -192,7 +192,7 @@ static bool PS_CrossBSPNode(const node_t* pNode) {
 
 **********************************/
 
-Word CheckSight(mobj_t *t1,mobj_t *t2)
+uint32_t CheckSight(mobj_t *t1,mobj_t *t2)
 {
     int s1, s2;
     int pnum, bytenum, bitnum;

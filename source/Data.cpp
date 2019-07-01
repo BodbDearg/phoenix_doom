@@ -1,5 +1,7 @@
 #include "Data.h"
 
+#include "Burger.h"
+
 ammotype_e WeaponAmmos[NUMWEAPONS] = {  
     am_noammo,      // Fists
     am_clip,        // Pistol

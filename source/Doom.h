@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Burger.h"
+#include <cstdint>
 
 //----------------------------------------------------------------------------------------------------------------------
 // Fixed point defines: Doom uses 16.16 signed fixed point numbers throughout a lot of the game.

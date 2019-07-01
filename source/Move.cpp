@@ -17,7 +17,7 @@ line_t*     blockline;      // Might be a door that can be opened
 static Fixed            oldx;
 static Fixed            oldy;
 static Fixed            tmbbox[4];
-static Word             tmflags;
+static uint32_t         tmflags;
 static Fixed            tmdropoffz;     // Lowest point contacted
 static subsector_t*     newsubsec;      // Dest subsector
 

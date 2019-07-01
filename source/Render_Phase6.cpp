@@ -21,24 +21,24 @@
 
 **********************************/
 
-static Word clipboundtop[MAXSCREENWIDTH];       // Bounds top y for vertical clipping
-static Word clipboundbottom[MAXSCREENWIDTH];    // Bounds bottom y for vertical clipping
+static uint32_t clipboundtop[MAXSCREENWIDTH];       // Bounds top y for vertical clipping
+static uint32_t clipboundbottom[MAXSCREENWIDTH];    // Bounds bottom y for vertical clipping
 
 typedef struct {
     const std::byte* data;      // Pointer to raw texture data
-    Word width;                 // Width of texture in pixels
-    Word height;                // Height of texture in pixels
+    uint32_t width;             // Width of texture in pixels
+    uint32_t height;            // Height of texture in pixels
     int topheight;              // Top texture height in global pixels
     int bottomheight;           // Bottom texture height in global pixels
-    Word texturemid;            // Anchor point for texture
+    uint32_t texturemid;        // Anchor point for texture
 } drawtex_t;
 
 static drawtex_t toptex;        // Describe the upper texture
 static drawtex_t bottomtex;     // Describe the lower texture
 
-Word tx_x;          // Screen x coord being drawn
-int tx_scale;       // True scale value 0-0x7FFF
-static Word tx_texturecolumn;   // Column offset into source image
+uint32_t tx_x;                      // Screen x coord being drawn
+int tx_scale;                       // True scale value 0-0x7FFF
+static uint32_t tx_texturecolumn;   // Column offset into source image
 
 /**********************************
 
@@ -49,8 +49,8 @@ static Word tx_texturecolumn;   // Column offset into source image
 static void DrawTexture(drawtex_t *tex)
 {
     int top;
-    Word Run;
-    Word colnum;    // Column in the texture
+    uint32_t Run;
+    uint32_t colnum;    // Column in the texture
     uint32_t frac;
 
     Run = (tex->topheight-tex->bottomheight)>>HEIGHTBITS;   // Source image height
@@ -90,10 +90,10 @@ static void DrawTexture(drawtex_t *tex)
 
 static void DrawSeg(viswall_t *segl)
 {
-    Word x;        // Current x coord
+    uint32_t x;        // Current x coord
     int scale;
     int _scalefrac;
-    Word ActionBits;
+    uint32_t ActionBits;
     ActionBits = segl->WallActions;
     
     if (ActionBits & (AC_TOPTEXTURE|AC_BOTTOMTEXTURE)) {
@@ -183,11 +183,11 @@ static void DrawSeg(viswall_t *segl)
 
 **********************************/
 
-static visplane_t* FindPlane(visplane_t *check, Fixed height, uint32_t PicHandle, int start, int stop, Word Light)
+static visplane_t* FindPlane(visplane_t *check, Fixed height, uint32_t PicHandle, int start, int stop, uint32_t Light)
 {
-    Word i;
-    Word j;
-    Word *set;
+    uint32_t i;
+    uint32_t j;
+    uint32_t *set;
 
     ++check;        // Automatically skip to the next plane
     if (check<lastvisplane) {
@@ -246,10 +246,10 @@ static visplane_t* FindPlane(visplane_t *check, Fixed height, uint32_t PicHandle
 
 static void SegLoop(viswall_t *segl)
 {
-    Word x;        // Current x coord
+    uint32_t x;        // Current x coord
     int scale;
     int _scalefrac;
-    Word ActionBits;
+    uint32_t ActionBits;
     visplane_t *FloorPlane,*CeilingPlane;
     int ceilingclipy,floorclipy;
     
@@ -371,8 +371,8 @@ static void SegLoop(viswall_t *segl)
 
 static void DrawSprites(void)
 {
-    Word i;
-    Word *LocalPtr;
+    uint32_t i;
+    uint32_t *LocalPtr;
     vissprite_t *VisPtr;
     
     i = SpriteTotal;    // Init the count
@@ -396,59 +396,60 @@ static void DrawSprites(void)
 void SegCommands(void)
 {
     {
-    Word i;     // Temp index
-    viswall_t *WallSegPtr;      // Pointer to the current wall
-    viswall_t *LastSegPtr;
+        uint32_t i;     // Temp index
+        viswall_t *WallSegPtr;      // Pointer to the current wall
+        viswall_t *LastSegPtr;
     
     
-    WallSegPtr = viswalls;      // Get the first wall segment to process
-    LastSegPtr = lastwallcmd;   // Last one to process
-    if (LastSegPtr == WallSegPtr) { // No walls to render?
-        return;             // Exit now!!
+        WallSegPtr = viswalls;      // Get the first wall segment to process
+        LastSegPtr = lastwallcmd;   // Last one to process
+        if (LastSegPtr == WallSegPtr) { // No walls to render?
+            return;             // Exit now!!
+        }
+
+        EnableHardwareClipping();       // Turn on all hardware clipping to remove slop
+    
+        i = 0;      // Init the vertical clipping records
+        do {
+            clipboundtop[i] = -1;       // Allow to the ceiling
+            clipboundbottom[i] = ScreenHeight;  // Stop at the floor
+        } while (++i<ScreenWidth);
+
+        // Process all the wall segments
+
+        do {
+            SegLoop(WallSegPtr);            // Create the viswall records and draw the sky only
+        } while (++WallSegPtr<LastSegPtr);  // Next wall in chain
+    
+        // Now I actually draw the walls back to front to allow for clipping because of slop
+    
+        LastSegPtr = viswalls;      // Stop at the last one
+        do {
+            --WallSegPtr;           // Last go backwards!!
+            DrawSeg(WallSegPtr);        // Draw the wall (Only if needed)
+        } while (WallSegPtr!=LastSegPtr);   // All done?
     }
-
-    EnableHardwareClipping();       // Turn on all hardware clipping to remove slop
-    
-    i = 0;      // Init the vertical clipping records
-    do {
-        clipboundtop[i] = -1;       // Allow to the ceiling
-        clipboundbottom[i] = ScreenHeight;  // Stop at the floor
-    } while (++i<ScreenWidth);
-
-    // Process all the wall segments
-
-    do {
-        SegLoop(WallSegPtr);            // Create the viswall records and draw the sky only
-    } while (++WallSegPtr<LastSegPtr);  // Next wall in chain
-    
-    // Now I actually draw the walls back to front to allow for clipping because of slop
-    
-    LastSegPtr = viswalls;      // Stop at the last one
-    do {
-        --WallSegPtr;           // Last go backwards!!
-        DrawSeg(WallSegPtr);        // Draw the wall (Only if needed)
-    } while (WallSegPtr!=LastSegPtr);   // All done?
-}
 
     // Now we draw all the planes. They are already clipped and create no slop!
-{   
-    visplane_t *PlanePtr;
-    visplane_t *LastPlanePtr;
-    Word WallScale;
+    {   
+        visplane_t *PlanePtr;
+        visplane_t *LastPlanePtr;
+        uint32_t WallScale;
         
-    PlanePtr = visplanes+1;     // Get the range of pointers
-    LastPlanePtr = lastvisplane;
+        PlanePtr = visplanes+1;     // Get the range of pointers
+        LastPlanePtr = lastvisplane;
     
-    if (PlanePtr!=LastPlanePtr) {   // No planes generated?
-        planey = -viewy;        // Get the Y coord for camera
-        WallScale = (viewangle-ANG90)>>ANGLETOFINESHIFT;    // left to right mapping
-        basexscale = (finecosine[WallScale] / ((int)ScreenWidth/2));
-        baseyscale = -(finesine[WallScale] / ((int)ScreenWidth/2));
-        do {
-            DrawVisPlane(PlanePtr);     // Convert the plane
-        } while (++PlanePtr<LastPlanePtr);      // Loop for all
+        if (PlanePtr!=LastPlanePtr) {   // No planes generated?
+            planey = -viewy;        // Get the Y coord for camera
+            WallScale = (viewangle-ANG90)>>ANGLETOFINESHIFT;    // left to right mapping
+            basexscale = (finecosine[WallScale] / ((int)ScreenWidth/2));
+            baseyscale = -(finesine[WallScale] / ((int)ScreenWidth/2));
+            do {
+                DrawVisPlane(PlanePtr);     // Convert the plane
+            } while (++PlanePtr<LastPlanePtr);      // Loop for all
+        }
     }
-}
+
     DisableHardwareClipping();      // Sprites require full screen management
     DrawSprites();                  // Draw all the sprites (ZSorted and clipped)
 }

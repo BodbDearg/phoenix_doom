@@ -1,5 +1,6 @@
 #include "Menu_Main.h"
 
+#include "Burger.h"
 #include "Data.h"
 #include "DoomRez.h"
 #include "Intermission_Main.h"
@@ -7,7 +8,7 @@
 #include "Resources.h"
 #include "ThreeDO.h"
 
-#define CURSORX 50      /* X coord of skull cursor */
+#define CURSORX 50      // X coord of skull cursor 
 #define AREAY 66
 #define DIFFICULTYY 116
 #define OPTIONSY 166
@@ -19,7 +20,7 @@ typedef enum {
     NUMMENUITEMS
 } menu_t;
 
-enum {      /* Enum to index to the shapes */
+enum {      // Enum to index to the shapes 
     DIFFSHAPE1,
     DIFFSHAPE2,
     DIFFSHAPE3,
@@ -29,15 +30,15 @@ enum {      /* Enum to index to the shapes */
     DIFFSHAPE
 };
 
-static Word cursorframe;    /* Skull animation frame */
-static Word cursorcount;    /* Time mark to animate the skull */
-static Word cursorpos;      /* Y position of the skull */
-static Word movecount;      /* Time mark to move the skull */
-static Word playermap;      /* Map requested */
-static Word playerskill;    /* Requested skill */
-static uint32_t SleepMark;  /* Time from last access */
-static Word CursorYs[NUMMENUITEMS] = {AREAY-2,DIFFICULTYY-2,OPTIONSY-2};
-static Word OptionActive;
+static uint32_t cursorframe;    // Skull animation frame 
+static uint32_t cursorcount;    // Time mark to animate the skull 
+static uint32_t cursorpos;      // Y position of the skull 
+static uint32_t movecount;      // Time mark to move the skull 
+static uint32_t playermap;      // Map requested 
+static uint32_t playerskill;    // Requested skill 
+static uint32_t SleepMark;  // Time from last access 
+static uint32_t CursorYs[NUMMENUITEMS] = {AREAY-2,DIFFICULTYY-2,OPTIONSY-2};
+static uint32_t OptionActive;
 
 /**********************************
 
@@ -47,13 +48,13 @@ static Word OptionActive;
 
 void M_Start(void)
 {
-    cursorcount = 0;        /* Init the animation timer */
-    cursorframe = 0;        /* Init the animation frame */
-    cursorpos = 0;          /* Topmost y position */
-    playerskill = StartSkill;   /* Init the skill level */
-    playermap = StartMap;   /* Init the starting map */
+    cursorcount = 0;        // Init the animation timer 
+    cursorframe = 0;        // Init the animation frame 
+    cursorpos = 0;          // Topmost y position 
+    playerskill = StartSkill;   // Init the skill level 
+    playermap = StartMap;   // Init the starting map 
     SleepMark = ReadTick();
-    OptionActive = false;   /* Option screen on */
+    OptionActive = false;   // Option screen on 
 }
 
 /**********************************
@@ -64,7 +65,7 @@ void M_Start(void)
 
 void M_Stop(void)
 {
-    WritePrefsFile();       /* Save the current prefs */
+    WritePrefsFile();       // Save the current prefs 
 }
 
 /**********************************
@@ -73,23 +74,23 @@ void M_Stop(void)
 
 **********************************/
 
-Word M_Ticker(void)
+uint32_t M_Ticker(void)
 {
-    Word buttons;
+    uint32_t buttons;
 
-    buttons = JoyPadButtons;    /* Get the joypad buttons */
+    buttons = JoyPadButtons;    // Get the joypad buttons 
 
-/* Exit menu if button press */
+// Exit menu if button press 
 
-    if (TotalGameTicks > (TICKSPERSEC/2) &&     /* Minimum time... */
-        ((buttons & PadStart) ||        /* Start always works! */
+    if (TotalGameTicks > (TICKSPERSEC/2) &&     // Minimum time... 
+        ((buttons & PadStart) ||        // Start always works! 
         ((buttons & (PadA|PadB|PadC|PadStart)) && (cursorpos!=options)))) {
-        StartMap = playermap;   /* set map number */
-        StartSkill = (skill_e)playerskill;  /* Set skill level */
-        return ga_completed;        /* done with menu */
+        StartMap = playermap;   // set map number 
+        StartSkill = (skill_e)playerskill;  // Set skill level 
+        return ga_completed;        // done with menu 
     }
     
-    if (buttons) {          /* If buttons are held down then reset the timer */
+    if (buttons) {          // If buttons are held down then reset the timer 
         SleepMark = ReadTick();
     }
     
@@ -101,43 +102,43 @@ Word M_Ticker(void)
         return ga_nothing;
     }
     
-    if ((NewJoyPadButtons&PadX) ||      /* Pressed abort? */
+    if ((NewJoyPadButtons&PadX) ||      // Pressed abort? 
         ((ReadTick()-SleepMark)>=(TICKSPERSEC*15))) {
-        return ga_died;                 /* Exit now */
+        return ga_died;                 // Exit now 
     }
 
-/* Animate skull */
+// Animate skull 
 
-    cursorcount += gElapsedTime;     /* Add time */
-    if (cursorcount>=(TICKSPERSEC/4)) { /* Time to toggle the shape? */
+    cursorcount += gElapsedTime;     // Add time 
+    if (cursorcount>=(TICKSPERSEC/4)) { // Time to toggle the shape? 
         cursorframe ^= 1;
-        cursorcount = 0;        /* Reset the count */
+        cursorcount = 0;        // Reset the count 
     }
 
-/* Check for movement */
+// Check for movement 
 
     if (! (buttons & (PadUp|PadDown|PadLeft|PadRight|PadA|PadB|PadC|PadD) ) ) {
-        movecount = TICKSPERSEC;    /* Move immediately on next press */
+        movecount = TICKSPERSEC;    // Move immediately on next press 
     } else {
-        movecount += gElapsedTime;   /* Time unit */
-        if ( (movecount >= (TICKSPERSEC/3)) ||      /* Allow slow */
-            (cursorpos == level && movecount >= (TICKSPERSEC/5))) { /* Fast? */
-            movecount = 0;      /* Reset the timer */
+        movecount += gElapsedTime;   // Time unit 
+        if ( (movecount >= (TICKSPERSEC/3)) ||      // Allow slow 
+            (cursorpos == level && movecount >= (TICKSPERSEC/5))) { // Fast? 
+            movecount = 0;      // Reset the timer 
             if (buttons & PadDown) {
                 ++cursorpos;
-                if (cursorpos>=NUMMENUITEMS) {      /* Off the bottom? */
+                if (cursorpos>=NUMMENUITEMS) {      // Off the bottom? 
                     cursorpos = 0;
                 }
             }
-            if (buttons & PadUp) {      /* Going up? */
-                if (!cursorpos) {       /* At the top already? */
+            if (buttons & PadUp) {      // Going up? 
+                if (!cursorpos) {       // At the top already? 
                     cursorpos = NUMMENUITEMS;
                 }
                 --cursorpos;
             }
 
             switch (cursorpos) {
-            case level:             /* Select level to start with */
+            case level:             // Select level to start with 
                 if (buttons & PadRight) {
                     if (playermap < MaxLevel) {
                         ++playermap;
@@ -149,7 +150,7 @@ Word M_Ticker(void)
                     }
                 }
                 break;
-            case difficulty:        /* Select game difficulty */
+            case difficulty:        // Select game difficulty 
                 if (buttons & PadRight) {
                     if (playerskill < sk_nightmare) {
                         ++playerskill;
@@ -168,7 +169,7 @@ Word M_Ticker(void)
             }
         }
     }
-    return ga_nothing;      /* Don't quit! */
+    return ga_nothing;      // Don't quit! 
 }
 
 //--------------------------------------------------------------------------------------------------
