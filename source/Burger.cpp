@@ -2,6 +2,7 @@
 
 #include "Endian.h"
 #include "Resources.h"
+#include <cstddef>
 #include <SDL.h>
 
 // DC: 3DO specific headers - remove
@@ -66,7 +67,7 @@ const struct CelControlBlock* GetShapeIndexPtr(const void* ShapeArrayPtr, uint32
 {
     const uint32_t* const pShapeArrayOffsets = (const uint32_t*) ShapeArrayPtr;
     const uint32_t shapeArrayOffset = byteSwappedU32(pShapeArrayOffsets[Index]);
-    return (const CelControlBlock*) &((Byte*) ShapeArrayPtr)[shapeArrayOffset];
+    return (const CelControlBlock*) &((std::byte*) ShapeArrayPtr)[shapeArrayOffset];
 }
 
 
@@ -244,7 +245,7 @@ void LongWordToAscii(uint32_t Val, char* AsciiPtr) noexcept
 
 **********************************/
 
-uint32_t SaveAFile(Byte *name, void *data, uint32_t dataSize) noexcept
+uint32_t SaveAFile(const char* FileName, void *data, uint32_t dataSize) noexcept
 {
     // DC: FIXME: reimplement/replace
     return -1;

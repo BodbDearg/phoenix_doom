@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -10,7 +11,7 @@ struct Texture {
     uint32_t    height;
     uint32_t    resourceNum;    // What resource this came from
     uint32_t    animTexNum;     // Number of the texture to use in place of this one currently, if the texture is animated
-    void*       pData;
+    std::byte*  pData;
 };
 
 void texturesInit();

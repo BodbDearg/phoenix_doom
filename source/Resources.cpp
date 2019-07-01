@@ -17,7 +17,7 @@ const Resource* getResource(const uint32_t num) {
     return gResourceMgr.getResource(num);
 }
 
-void* getResourceData(const uint32_t num) {
+std::byte* getResourceData(const uint32_t num) {
     const Resource* pResource = getResource(num);
     return (pResource != nullptr) ? pResource->pData : nullptr;
 }
@@ -26,7 +26,7 @@ const Resource* loadResource(const uint32_t num) {
     return gResourceMgr.loadResource(num);
 }
 
-void* loadResourceData(const uint32_t num) {
+std::byte* loadResourceData(const uint32_t num) {
     const Resource* pResource = loadResource(num);
     return (pResource != nullptr) ? pResource->pData : nullptr;
 }

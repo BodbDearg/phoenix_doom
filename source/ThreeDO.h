@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Doom.h"
+#include <cstddef>
 
 struct vissprite_t;
 
@@ -19,7 +20,7 @@ extern void DrawWallColumn(
     const uint32_t Colnum,
     const uint32_t ColY,
     const uint32_t TexHeight,
-    const uint8_t* const Source,
+    const std::byte* const Source,
     const uint32_t Run
 );
 

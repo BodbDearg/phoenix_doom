@@ -79,8 +79,14 @@ static void FlushCCBs(void);
 static void WipeDoom(LongWord *OldScreen,LongWord *NewScreen);
 #endif
 
-extern void DrawASpan(Word Count,LongWord xfrac,LongWord yfrac,Fixed ds_xstep,Fixed ds_ystep,
-    Byte *Dest);
+extern void DrawASpan(
+    Word Count,
+    LongWord xfrac,
+    LongWord yfrac,
+    Fixed ds_xstep,
+    Fixed ds_ystep,
+    std::byte* Dest
+);
 
 #define CCBTotal 0x200
 
@@ -100,8 +106,8 @@ Word WorkPage;                              /* Which frame is not being displaye
 static Byte *CelLine190;
 #endif
 
-Byte SpanArray[MAXSCREENWIDTH*MAXSCREENHEIGHT]; /* Buffer for floor textures */
-Byte *SpanPtr = SpanArray;      /* Pointer to empty buffer */
+uint8_t SpanArray[MAXSCREENWIDTH*MAXSCREENHEIGHT]; /* Buffer for floor textures */
+uint8_t* SpanPtr = SpanArray;      /* Pointer to empty buffer */
 
 #define SKYSCALE(x) (Fixed)(1048576.0*(x/160.0))
 
@@ -484,7 +490,7 @@ void WritePrefsFile()
         CheckSum += PrefFile[i];        /* Make a simple checksum */
     } while (++i<10);
     PrefFile[9] = CheckSum;
-    SaveAFile((Byte *)PrefsName,&PrefFile,sizeof(PrefFile));    /* Save the game file */
+    SaveAFile(PrefsName, &PrefFile, sizeof(PrefFile));    /* Save the game file */
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -862,7 +868,7 @@ void DrawSkyLine()
     // TODO: don't keep doing this for each column
     const Texture* const pTexture = (const Texture*) getWallTexture(getCurrentSkyTexNum());
     const uint32_t texHeight = pTexture->height;
-    DrawWallColumn(0, colNum * texHeight, 0, texHeight, (Byte*) pTexture->pData, texHeight);
+    DrawWallColumn(0, colNum * texHeight, 0, texHeight, pTexture->pData, texHeight);
     
     // DC: FIXME: implement/replace
     #if 0
@@ -929,7 +935,7 @@ void DrawWallColumn(
     const uint32_t Colnum,
     const uint32_t ColY,
     const uint32_t TexHeight,
-    const uint8_t* const Source,
+    const std::byte* const Source,
     const uint32_t Run
 )
 {
@@ -949,7 +955,7 @@ void DrawWallColumn(
             const uint32_t texYOffset = (ColY + pixTexYOffset) % (TexHeight);
             const uint32_t texOffset = Colnum + texYOffset;
             
-            const uint8_t colorByte = Source[32 + texOffset / 2];
+            const uint8_t colorByte = (uint8_t) Source[32 + texOffset / 2];
             const uint8_t colorIdx = (texOffset & 1) != 0 ? (colorByte & 0x0F) : (colorByte & 0xF0) >> 4;
             
             const uint16_t color = byteSwappedU16(pPLUT[colorIdx]);
@@ -1045,7 +1051,7 @@ void DrawFloorColumn(
         Fixed ty = ((yfrac + ds_ystep * pixelNum) >> FRACBITS) & 63;    // assumes 64x64
 
         Fixed offset = ty * 64 + tx;
-        const Byte lutByte = PlaneSource[64 + offset] & 31;
+        const uint8_t lutByte = ((uint8_t) PlaneSource[64 + offset]) & 31;
         ASSERT(lutByte < 32);
         uint8_t colorIdx = lutByte;
 
@@ -1218,25 +1224,26 @@ void WipeDoom(LongWord *OldScreen,LongWord *NewScreen)
 }
 #endif
 
-static Byte *SpritePLUT;
+static std::byte* SpritePLUT;
 static Word SpriteY;
 static Word SpriteYScale;
 static Word SpritePIXC;
 static Word SpritePRE0;
 static Word SpritePRE1;
-static Byte *StartLinePtr;
+static std::byte* StartLinePtr;
 static Word SpriteWidth;
 
+/*
 static uint8_t* CalcLine(Fixed XFrac)
 {
     uint8_t *DataPtr;
     
     DataPtr = StartLinePtr;
     XFrac>>=FRACBITS;
-    if (XFrac<=0) {     /* Left clip failsafe */
+    if (XFrac<=0) {     // Left clip failsafe
         return DataPtr;
     }
-    if (XFrac>= (int) SpriteWidth) {   /* Clipping failsafe */
+    if (XFrac>= (int) SpriteWidth) {   // Clipping failsafe
         XFrac=(int) SpriteWidth-1;
     }
     do {
@@ -1246,6 +1253,7 @@ static uint8_t* CalcLine(Fixed XFrac)
     } while (--XFrac);
     return DataPtr;
 }
+*/
 
 //-------------------------------------------------------------------------------------------------
 // Get the pointer to the first pixel in a particular column of a sprite.
@@ -1641,8 +1649,8 @@ static void OneSpriteClipLine(Word x1,Byte *SpriteLinePtr,int Clip,int Run)
 // Draws a clipped sprite to the screen
 //-------------------------------------------------------------------------------------------------
 void DrawSpriteClip(const uint32_t x1, const uint32_t x2, const vissprite_t* const pVisSprite) {
-    SpriteYScale = pVisSprite->yscale << 4;                 // Get scale Y factor
-    StartLinePtr = (Byte*) pVisSprite->pSprite->pTexture;   // Get pointer to first line of data
+    SpriteYScale = pVisSprite->yscale << 4;                     // Get scale Y factor
+    StartLinePtr = (std::byte*) pVisSprite->pSprite->pTexture;  // Get pointer to first line of data
     SpriteWidth = pVisSprite->pSprite->width;
     SpritePIXC = (pVisSprite->colormap & 0x8000) ? 0x9C81 : LightTable[(pVisSprite->colormap & 0xFF) >> LIGHTSCALESHIFT];
     Word y = pVisSprite->y1;

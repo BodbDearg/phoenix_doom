@@ -412,7 +412,7 @@ static void loadNodes(const uint32_t lumpResourceNum) noexcept {
 
 static void loadReject(const uint32_t lumpResourceNum) noexcept {
     // Note: this one is easy!
-    gpRejectMatrix = (const Byte*) loadResourceData(lumpResourceNum);
+    gpRejectMatrix = (const uint8_t*) loadResourceData(lumpResourceNum);
     gLoadedRejectMatrixResourceNum = lumpResourceNum;
 }
 
@@ -513,7 +513,7 @@ uint32_t            gNumLineSegs;
 const subsector_t*  gpSubSectors;
 uint32_t            gNumSubSectors;
 const node_t*       gpBSPTreeRoot;
-const Byte*         gpRejectMatrix;
+const uint8_t*      gpRejectMatrix;
 line_t***           gpBlockMapLineLists;
 mobj_t**            gpBlockMapThingLists;
 uint32_t            gBlockMapWidth;

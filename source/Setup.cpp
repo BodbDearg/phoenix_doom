@@ -132,7 +132,7 @@ static void GroupLines(void)
 static void LoadThings(const uint32_t lumpResourceNum) {
     // Load the things resource
     const Resource* const pResource = loadResource(lumpResourceNum);
-    const Byte* const pResourceData = (const Byte*) pResource->pData;
+    const std::byte* const pResourceData = pResource->pData;
     
     // Get the number of things first (first u32)
     const uint32_t numThings = byteSwappedU32(((const uint32_t*) pResourceData)[0]);

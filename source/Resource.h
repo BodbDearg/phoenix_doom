@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -10,5 +11,5 @@ struct Resource {
     uint32_t    type;
     uint32_t    offset;     // Offset within the resource file
     uint32_t    size;       // Size of the resource
-    void*       pData;      // Non null if the resource is loaded
+    std::byte*  pData;      // Non null if the resource is loaded
 };

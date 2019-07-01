@@ -194,7 +194,7 @@ void DrawVisSprite(const vissprite_t* const pVisSprite) {
     int x, r1, r2;
     int silhouette;
     int x1, x2;
-    Byte *topsil,*bottomsil;
+    uint8_t* topsil,*bottomsil;
     Word opening;
     int top, bottom;
     Word scalefrac;

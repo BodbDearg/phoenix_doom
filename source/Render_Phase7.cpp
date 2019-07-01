@@ -6,7 +6,7 @@
 
 #define OPENMARK ((MAXSCREENHEIGHT-1)<<8)
 
-uint8_t*    PlaneSource;
+std::byte*  PlaneSource;
 Fixed       planey;
 Fixed       basexscale;
 Fixed       baseyscale;
@@ -79,7 +79,7 @@ void DrawVisPlane(visplane_t *p)
     Word *open;
 
     const Texture* const pTex = getFlatAnimTexture((Word) p->PicHandle);
-    PlaneSource = (Byte*) pTex->pData;
+    PlaneSource = (std::byte*) pTex->pData;
     x = p->height;
     if ((int)x<0) {
         x = -x;

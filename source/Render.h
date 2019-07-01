@@ -1,5 +1,7 @@
 #include "Doom.h"
 
+#include <cstddef>
+
 struct seg_t;
 struct SpriteFrameAngle;
 struct Texture;
@@ -114,8 +116,8 @@ extern visplane_t       visplanes[MAXVISPLANES];        // Visible floor array
 extern visplane_t*      lastvisplane;                   // Pointer to free floor entry
 extern vissprite_t      vissprites[MAXVISSPRITES];      // Visible sprite array
 extern vissprite_t*     vissprite_p;                    // Pointer to free sprite entry
-extern Byte             openings[MAXOPENINGS];
-extern Byte*            lastopening;
+extern uint8_t          openings[MAXOPENINGS];
+extern uint8_t*         lastopening;
 extern Fixed            viewx;                          // Camera x,y,z
 extern Fixed            viewy;
 extern Fixed            viewz;
@@ -151,7 +153,7 @@ void SegCommands();
 //----------------------------------------------------------------------------------------------------------------------
 // Render - 'phase 7'
 //----------------------------------------------------------------------------------------------------------------------
-extern uint8_t*     PlaneSource;        // Pointer to floor shape
+extern std::byte*   PlaneSource;        // Pointer to floor shape
 extern Fixed        planey;             // Latched viewx / viewy for floor drawing
 extern Fixed        basexscale;
 extern Fixed        baseyscale;

@@ -10,7 +10,6 @@
 */
 
 typedef uint32_t    Word;       // DC: was 'unsigned int' in original 3DO source
-typedef uint8_t     Byte;       // DC: was 'unsigned char' in original 3DO source
 typedef uint32_t    LongWord;   // DC: was 'unsigned long' in original 3DO source
 
 // DC: this is in the 3DO SDK - define for now to fix compile errors
@@ -47,7 +46,7 @@ extern uint32_t ReadJoyButtons(uint32_t Which) noexcept;
 
 /* Misc routines */
 extern void LongWordToAscii(uint32_t Input, char* AsciiPtr) noexcept;
-extern uint32_t SaveAFile(uint8_t* FileName, void* data, uint32_t Length) noexcept;
+extern uint32_t SaveAFile(const char* FileName, void* data, uint32_t Length) noexcept;
 
 /* Time and Events */
 extern uint32_t LastTick;

@@ -5,6 +5,8 @@
 #include "Textures.h"
 #include "ThreeDO.h"
 
+#include <cstddef>
+
 #define OPENMARK ((MAXSCREENHEIGHT-1)<<8)
 
 /**********************************
@@ -23,12 +25,12 @@ static Word clipboundtop[MAXSCREENWIDTH];       // Bounds top y for vertical cli
 static Word clipboundbottom[MAXSCREENWIDTH];    // Bounds bottom y for vertical clipping
 
 typedef struct {
-    const Byte* data;   // Pointer to raw texture data
-    Word width;         // Width of texture in pixels
-    Word height;        // Height of texture in pixels
-    int topheight;      // Top texture height in global pixels
-    int bottomheight;   // Bottom texture height in global pixels
-    Word texturemid;    // Anchor point for texture
+    const std::byte* data;      // Pointer to raw texture data
+    Word width;                 // Width of texture in pixels
+    Word height;                // Height of texture in pixels
+    int topheight;              // Top texture height in global pixels
+    int bottomheight;           // Bottom texture height in global pixels
+    Word texturemid;            // Anchor point for texture
 } drawtex_t;
 
 static drawtex_t toptex;        // Describe the upper texture
@@ -109,7 +111,7 @@ static void DrawSeg(viswall_t *segl)
             const Texture* const pTex = segl->t_texture;
             toptex.width = pTex->width;
             toptex.height = pTex->height;
-            toptex.data = (const Byte*) pTex->pData;
+            toptex.data = pTex->pData;
         }
         
         if (ActionBits & AC_BOTTOMTEXTURE) {  // Is there a bottom wall?
@@ -120,7 +122,7 @@ static void DrawSeg(viswall_t *segl)
             const Texture* const pTex = segl->b_texture;
             bottomtex.width = pTex->width;
             bottomtex.height = pTex->height;
-            bottomtex.data = (const Byte*) pTex->pData;
+            bottomtex.data = pTex->pData;
         }
         
         _scalefrac = segl->LeftScale;   // Init the scale fraction
