@@ -80,9 +80,9 @@ static void WipeDoom(LongWord *OldScreen,LongWord *NewScreen);
 #endif
 
 extern void DrawASpan(
-    Word Count,
-    LongWord xfrac,
-    LongWord yfrac,
+    uint32_t Count,
+    uint32_t xfrac,
+    uint32_t yfrac,
     Fixed ds_xstep,
     Fixed ds_ystep,
     std::byte* Dest
@@ -98,8 +98,8 @@ static MyCCB *CurrentCCB = &CCBArray[0];    /* Pointer to empty CCB */
 static LongWord LastTicCount;               /* Time mark for page flipping */
 #endif
 
-LongWord LastTics;                          /* Time elapsed since last page flip */
-Word WorkPage;                              /* Which frame is not being displayed */
+uint32_t LastTics;                          /* Time elapsed since last page flip */
+uint32_t WorkPage;                              /* Which frame is not being displayed */
 
 // DC: TODO: unused currently
 #if 0
@@ -1667,7 +1667,7 @@ void DrawSpriteClip(const uint32_t x1, const uint32_t x2, const vissprite_t* con
     }
     
     Fixed XFrac = 0;
-    Fixed XStep = 0xFFFFFFFFUL / (LongWord) pVisSprite->xscale;   // Get the recipocal for the X scale
+    Fixed XStep = 0xFFFFFFFFUL / (uint32_t) pVisSprite->xscale;   // Get the recipocal for the X scale
     
     if (pVisSprite->colormap & 0x4000) {
         XStep = -XStep; // Step in the opposite direction

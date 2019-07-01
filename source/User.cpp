@@ -19,8 +19,8 @@
 
 static bool onground;        /* True if the player is on the ground */
 
-static LongWord forwardmove[2] = {0x38000>>2,0x60000>>2};
-static LongWord sidemove[2] = {0x38000>>2,0x58000>>2};
+static uint32_t forwardmove[2] = {0x38000>>2,0x60000>>2};
+static uint32_t sidemove[2] = {0x38000>>2,0x58000>>2};
 
 static Fixed angleturn[] = {
     600 << FRACBITS, 

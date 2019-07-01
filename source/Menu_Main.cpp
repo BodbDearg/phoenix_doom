@@ -35,7 +35,7 @@ static Word cursorpos;      /* Y position of the skull */
 static Word movecount;      /* Time mark to move the skull */
 static Word playermap;      /* Map requested */
 static Word playerskill;    /* Requested skill */
-static LongWord SleepMark;  /* Time from last access */
+static uint32_t SleepMark;  /* Time from last access */
 static Word CursorYs[NUMMENUITEMS] = {AREAY-2,DIFFICULTYY-2,OPTIONSY-2};
 static Word OptionActive;
 

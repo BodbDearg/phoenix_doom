@@ -51,7 +51,7 @@ static void DrawTexture(drawtex_t *tex)
     int top;
     Word Run;
     Word colnum;    // Column in the texture
-    LongWord frac;
+    uint32_t frac;
 
     Run = (tex->topheight-tex->bottomheight)>>HEIGHTBITS;   // Source image height
     if ((int)Run<=0) {      // Invalid?

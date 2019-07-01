@@ -9,8 +9,7 @@
 #endif
 */
 
-typedef uint32_t    Word;       // DC: was 'unsigned int' in original 3DO source
-typedef uint32_t    LongWord;   // DC: was 'unsigned long' in original 3DO source
+typedef uint32_t Word;  // DC: was 'unsigned int' in original 3DO source
 
 // DC: this is in the 3DO SDK - define for now to fix compile errors
 typedef int32_t Item;
