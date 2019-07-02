@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Doom.h"
+#include "Game/Doom.h"
 #include <cstddef>
 
 struct vissprite_t;

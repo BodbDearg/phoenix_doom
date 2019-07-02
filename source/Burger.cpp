@@ -1,7 +1,7 @@
 #include "Burger.h"
 
-#include "Endian.h"
-#include "Resources.h"
+#include "Base/Endian.h"
+#include "Game/Resources.h"
 #include <cstddef>
 #include <SDL.h>
 

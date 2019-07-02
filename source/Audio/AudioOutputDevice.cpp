@@ -1,7 +1,7 @@
 #include "AudioOutputDevice.h"
 
 #include "AudioSystem.h"
-#include "Macros.h"
+#include "Base/Macros.h"
 #include <SDL.h>
 
 AudioOutputDevice::AudioOutputDevice() noexcept

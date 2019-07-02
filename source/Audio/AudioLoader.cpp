@@ -1,8 +1,8 @@
 #include "AudioLoader.h"
 
 #include "AudioData.h"
-#include "Endian.h"
-#include "Finally.h"
+#include "Base/Endian.h"
+#include "Base/Finally.h"
 #include <cstdio>
 #include <cstring>
 #include <memory>
