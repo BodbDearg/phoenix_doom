@@ -5,6 +5,7 @@
 #include "Audio/Sounds.h"
 #include "Burger.h"
 #include "Game/Data.h"
+#include "Game/DoomDefines.h"
 #include "Game/DoomRez.h"
 #include "Game/Resources.h"
 #include "GFX/Render.h"

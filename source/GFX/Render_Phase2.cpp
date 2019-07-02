@@ -1,4 +1,3 @@
-#include "Base/MathUtils.h"
 #include "Base/Tables.h"
 #include "Burger.h"
 #include "Map/MapData.h"
@@ -34,11 +33,11 @@ static Fixed ScaleFromGlobalAngle(Fixed rw_distance,angle_t anglea,angle_t angle
     den = SineTbl[anglea>>ANGLETOFINESHIFT];
     num = SineTbl[angleb>>ANGLETOFINESHIFT];
     
-    num = sfixedMul16_16(StretchWidth ,num);
-    den = sfixedMul16_16(rw_distance, den);
+    num = fixedMul(StretchWidth ,num);
+    den = fixedMul(rw_distance, den);
 
     if (den > num>>16) {
-        num = sfixedDiv16_16(num, den);        // Place scale in numerator
+        num = fixedDiv(num, den);       // Place scale in numerator
         if (num < 64*FRACUNIT) {
             if (num >= 256) {
                 return num;
@@ -78,7 +77,7 @@ static void LatePrep(viswall_t *wc,seg_t *LineSeg,angle_t LeftAngle)
         offsetangle = ANG90;
     }
     PointDistance = PointToDist(LineSeg->v1.x, LineSeg->v1.y);
-    wc->distance = rw_distance = sfixedMul16_16(
+    wc->distance = rw_distance = fixedMul(
         PointDistance,
         finesine[(ANG90 - offsetangle)>>ANGLETOFINESHIFT]
     );
@@ -114,7 +113,7 @@ static void LatePrep(viswall_t *wc,seg_t *LineSeg,angle_t LeftAngle)
         if (offsetangle > ANG90) {
             offsetangle = ANG90;        // Clip to maximum           
         }
-        scale2 = sfixedMul16_16(PointDistance, finesine[offsetangle >> ANGLETOFINESHIFT]);
+        scale2 = fixedMul(PointDistance, finesine[offsetangle >> ANGLETOFINESHIFT]);
         if (normalangle - LeftAngle < ANG180) {
             scale2 = -scale2;       // Reverse the texture anchor
         }

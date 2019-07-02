@@ -1,6 +1,5 @@
 #include "Automap_Main.h"
 
-#include "Base/MathUtils.h"
 #include "Base/Tables.h"
 #include "Burger.h"
 #include "Game/Data.h"
@@ -94,7 +93,7 @@ static inline int32_t MulByMapScale(const Fixed mapCoord) noexcept {
 // Multiply two fixed point numbers but return an INTEGER result!
 //--------------------------------------------------------------------------------------------------
 static inline int IMFixMulGetInt(const Fixed a, const Fixed b) noexcept {
-    return sfixedMul16_16(a,b) >> FRACBITS;
+    return fixedMul(a,b) >> FRACBITS;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -363,7 +362,7 @@ void AM_Control(player_t& player) noexcept {
     // If follow mode if off, then I intercept the joypad motion to move the map anywhere on the screen.
     if (!gFollowMode) {
         Fixed step = STEPVALUE * gElapsedTime;      // Multiplier for joypad motion: mul by integer
-        step = sfixedDiv16_16(step, gMapScale);     // Adjust for scale factor
+        step = fixedDiv(step, gMapScale);           // Adjust for scale factor
 
         if (buttons & PadRight) {
             player.automapx += step;    // Step to the right
@@ -384,25 +383,25 @@ void AM_Control(player_t& player) noexcept {
         // Scaling is tricky, I cannot use a simple multiply to adjust the scale factor to the
         // timebase since the formula is ZOOM to the ElapsedTime power times scale.
         if (buttons & PadRightShift) {
-            NewButtons = 0;                                         // Init the count
+            NewButtons = 0;                                     // Init the count
             do {
-                gMapScale = sfixedMul16_16(gMapScale, ZOOMOUT);     // Perform the scale
-                if (gMapScale < MINSCALES) {                        // Too small?
-                    gMapScale = MINSCALES;                          // Set to smallest allowable
-                    break;                                          // Leave now!
+                gMapScale = fixedMul(gMapScale, ZOOMOUT);       // Perform the scale
+                if (gMapScale < MINSCALES) {                    // Too small?
+                    gMapScale = MINSCALES;                      // Set to smallest allowable
+                    break;                                      // Leave now!
                 }
-            } while (++NewButtons < gElapsedTime);                  // All done?
+            } while (++NewButtons < gElapsedTime);              // All done?
         }
 
         if (buttons & PadLeftShift) {
             NewButtons = 0;         // Init the count
             do {
-                gMapScale = sfixedMul16_16(gMapScale, ZOOMIN);      // Perform the scale
-                if (gMapScale >= MAXSCALES) {                       // Too large?
-                    gMapScale = MAXSCALES;                          // Set to maximum
+                gMapScale = fixedMul(gMapScale, ZOOMIN);        // Perform the scale
+                if (gMapScale >= MAXSCALES) {                   // Too large?
+                    gMapScale = MAXSCALES;                      // Set to maximum
                     break;
                 }
-            } while (++NewButtons < gElapsedTime);                  // All done?
+            } while (++NewButtons < gElapsedTime);              // All done?
         }
 
         // Eat the direction keys if not in follow mode
@@ -479,7 +478,7 @@ void AM_Drawer() noexcept {
     // Draw the position of the player
     {
         // Get the size of the triangle into a cached local
-        const Fixed noseScale = sfixedMul16_16(NOSELENGTH, gMapScale);
+        const Fixed noseScale = fixedMul(NOSELENGTH, gMapScale);
         mobj_t* const pMapObj = players.mo;
 
         int32_t x1 = MulByMapScale(pMapObj->x - ox);            // Get the screen

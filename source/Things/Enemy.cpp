@@ -3,7 +3,6 @@
 #include "Audio/Sound.h"
 #include "Audio/Sounds.h"
 #include "Base/Macros.h"
-#include "Base/MathUtils.h"
 #include "Base/Random.h"
 #include "Base/Tables.h"
 #include "Game/Data.h"
@@ -624,8 +623,8 @@ void A_SkullAttack(mobj_t* const pActor) noexcept {
 
         // Speed for distance
         const angle_t angle = pActor->angle >> ANGLETOFINESHIFT;
-        pActor->momx = sfixedMul16_16(SKULLSPEED, finecosine[angle]);
-        pActor->momy = sfixedMul16_16(SKULLSPEED, finesine[angle]);
+        pActor->momx = fixedMul(SKULLSPEED, finecosine[angle]);
+        pActor->momy = fixedMul(SKULLSPEED, finesine[angle]);
 
         uint32_t dist = GetApproxDistance(pDest->x - pActor->x, pDest->y - pActor->y);
         dist = dist / SKULLSPEED;   // Speed to hit target

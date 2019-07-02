@@ -1,7 +1,6 @@
 #include "Sound.h"
 
 #include "Audio.h"
-#include "Base/MathUtils.h"
 #include "Base/Tables.h"
 #include "Game/Data.h"
 #include "Map/MapUtil.h"
@@ -52,7 +51,7 @@ void S_StartSound(const Fixed* const pOriginXY, const uint32_t soundId) {
                 if (vol <= 0)   // Too quiet?
                     return;
                 
-                const int sep = 128 - (sfixedMul16_16(S_STEREO_SWING, finesine[angle]) >> FRACBITS);
+                const int sep = 128 - (fixedMul(S_STEREO_SWING, finesine[angle]) >> FRACBITS);
                 rightVolume = (sep * vol) >> 8;
                 leftVolume = ((256 - sep) * vol) >> 8;
             }

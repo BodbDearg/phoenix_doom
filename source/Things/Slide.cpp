@@ -1,6 +1,5 @@
 #include "Slide.h"
 
-#include "Base/MathUtils.h"
 #include "Base/Tables.h"
 #include "Game/Data.h"
 #include "Map/MapData.h"
@@ -49,8 +48,8 @@ static int SL_PointOnSide2(int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32
     nx = (y3-y2);
     ny = (x2-x3);
 
-    dist = sfixedMul16_16(x1, nx);
-    dist += sfixedMul16_16(y1, ny);
+    dist = fixedMul(x1, nx);
+    dist += fixedMul(y1, ny);
 
     if (dist < 0)
         return SIDE_BACK;
@@ -88,8 +87,8 @@ void P_SlideMove(mobj_t* mo)
         if (frac < 0)
             frac = 0;
 
-        rx = sfixedMul16_16(frac, dx);
-        ry = sfixedMul16_16(frac, dy);
+        rx = fixedMul(frac, dx);
+        ry = fixedMul(frac, dy);
         slidex += rx;
         slidey += ry;
 
@@ -109,10 +108,10 @@ void P_SlideMove(mobj_t* mo)
     //
         dx -= rx;
         dy -= ry;
-        slide = sfixedMul16_16(dx, blocknvx);
-        slide += sfixedMul16_16(dy, blocknvy);
-        dx = sfixedMul16_16(slide, blocknvx);
-        dy = sfixedMul16_16(slide, blocknvy);
+        slide = fixedMul(dx, blocknvx);
+        slide += fixedMul(dy, blocknvy);
+        dx = fixedMul(slide, blocknvx);
+        dy = fixedMul(slide, blocknvy);
     }
 
 //
@@ -199,8 +198,8 @@ int32_t SL_PointOnSide(int32_t x, int32_t y)
     dx = x - p1x;
     dy = y - p1y;
 
-    dist = sfixedMul16_16(dx, nvx);
-    dist += sfixedMul16_16(dy, nvy);
+    dist = fixedMul(dx, nvx);
+    dist += fixedMul(dy, nvy);
 
     if (dist > FRACUNIT)
         return SIDE_FRONT;
@@ -218,20 +217,19 @@ Fixed SL_CrossFrac()
     dx = p3x - p1x;
     dy = p3y - p1y;
 
-    dist1 = sfixedMul16_16(dx, nvx);
-    dist1 += sfixedMul16_16(dy, nvy);
+    dist1 = fixedMul(dx, nvx);
+    dist1 += fixedMul(dy, nvy);
 
     dx = p4x - p1x;
     dy = p4y - p1y;
 
-    dist2 = sfixedMul16_16(dx, nvx);
-    dist2 += sfixedMul16_16(dy, nvy);
+    dist2 = fixedMul(dx, nvx);
+    dist2 += fixedMul(dy, nvy);
 
     if ( (dist1 < 0) == (dist2 < 0) )
         return FRACUNIT;        // doesn't cross
 
-    frac = sfixedDiv16_16(dist1, dist1 - dist2);
-
+    frac = fixedDiv(dist1, dist1 - dist2);
     return frac;
 }
 
@@ -247,14 +245,14 @@ bool CheckLineEnds()
     dx = p1x - p3x;
     dy = p1y - p3y;
 
-    dist1 = sfixedMul16_16(dx, snx);
-    dist1 += sfixedMul16_16(dy, sny);
+    dist1 = fixedMul(dx, snx);
+    dist1 += fixedMul(dy, sny);
 
     dx = p2x - p3x;
     dy = p2y - p3y;
 
-    dist2 = sfixedMul16_16(dx, snx);
-    dist2 += sfixedMul16_16(dy, sny);
+    dist2 = fixedMul(dx, snx);
+    dist2 += fixedMul(dy, sny);
 
     if ( (dist1<0) == (dist2<0) )
         return true;

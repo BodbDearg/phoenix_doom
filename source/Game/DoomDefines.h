@@ -1,32 +1,9 @@
 #pragma once
 
-#include <cstdint>
+#include "Base/Fixed.h"
 
 //----------------------------------------------------------------------------------------------------------------------
-// Fixed point defines: Doom uses 16.16 signed fixed point numbers throughout a lot of the game.
-//----------------------------------------------------------------------------------------------------------------------
-
-typedef int32_t Fixed;      // Typedef for a 16.16 fixed point number
-
-static constexpr uint32_t   FRACBITS    = 16;                   // Number of fraction bits in Fixed
-static constexpr Fixed      FRACUNIT    = 1 << FRACBITS;        // 1.0 in fixed point
-static constexpr Fixed      FIXED_MIN   = INT32_MIN;            // Min and max value for a 16.16 fixed point number
-static constexpr Fixed      FIXED_MAX   = INT32_MAX;
-
-//----------------------------------------------------------------------------------------------------------------------
-// Angle related defines: Doom uses binary angle measurement, where the entire range of a 32-bit unsigned integer is
-// used to represent 0-360 degrees. This format also naturally wraps around.
-//----------------------------------------------------------------------------------------------------------------------
-
-typedef uint32_t angle_t;       // 32-bit BAM angle (uses the full 32-bits to represent 360 degrees)
-
-static constexpr angle_t ANG45  = 0x20000000u;      // 45 degrees in angle_t
-static constexpr angle_t ANG90  = 0x40000000u;      // 90 degrees in angle_t
-static constexpr angle_t ANG180 = 0x80000000u;      // 180 degrees in angle_t
-static constexpr angle_t ANG270 = 0xC0000000u;      // 270 degrees in angle_t
-
-//----------------------------------------------------------------------------------------------------------------------
-// Global defines
+// Global defines for Doom
 //----------------------------------------------------------------------------------------------------------------------
 
 // View related
@@ -59,3 +36,25 @@ enum {
     BOXRIGHT,
     BOXCOUNT
 };
+
+//----------------------------------------------------------------------------------------------------------------------
+// A utility to convert a tick count from PC Doom's original 35Hz timebase to the timebase used by this game version.
+// Tries to round so the answer is as close as possible.
+//----------------------------------------------------------------------------------------------------------------------
+static inline constexpr uint32_t convertPcTicks(const uint32_t ticks35Hz) noexcept {
+    // Get the tick count in 31.1 fixed point format by multiplying by TICKSPERSEC/35 (in 31.1 format).
+    // When returning the integer answer round up if the fractional part is '.5':
+    const uint32_t tickCountFixed = ((ticks35Hz * uint32_t(TICKSPERSEC)) << 2) / (uint32_t(35) << 1);
+    return (tickCountFixed & 1) ? (tickCountFixed >> 1) + 1 : (tickCountFixed >> 1);
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+// Convert an uint32 speed defined in the PC 35Hz timebase to the 60Hz timebase used by used by this game version.
+// Tries to round so the answer is as close as possible.
+//----------------------------------------------------------------------------------------------------------------------
+static inline constexpr uint32_t convertPcUintSpeed(const uint32_t speed35Hz) noexcept {
+    // Get the tick count in 31.1 fixed point format by multiplying by 35/TICKSPERSEC (in 31.1 format).
+    // When returning the integer answer round up if the fractional part is '.5':
+    const uint32_t speedFixed = ((speed35Hz * uint32_t(35)) << 2) / (uint32_t(TICKSPERSEC) << 1);    
+    return (speedFixed & 1) ? (speedFixed >> 1) + 1 : (speedFixed >> 1);
+}

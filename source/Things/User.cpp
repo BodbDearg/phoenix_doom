@@ -2,7 +2,6 @@
 
 #include "Audio/Sound.h"
 #include "Audio/Sounds.h"
-#include "Base/MathUtils.h"
 #include "Base/Tables.h"
 #include "Burger.h"
 #include "Game/Data.h"
@@ -137,8 +136,8 @@ static void P_PlayerXYMovement(mobj_t *mo)
             mo->momx = 0;       // Kill momentum 
             mo->momy = 0;
         } else {
-            mo->momx = sfixedMul16_16(mo->momx, FRICTION);   // Slow down 
-            mo->momy = sfixedMul16_16(mo->momy, FRICTION);
+            mo->momx = fixedMul(mo->momx, FRICTION);   // Slow down 
+            mo->momy = fixedMul(mo->momy, FRICTION);
         }
     }
 }
@@ -351,7 +350,7 @@ static void PlayerCalcHeight(player_t *player)
 
     bob = player->mo->momx;     // Get the momentum constant 
     top = player->mo->momy;
-    bob = (sfixedMul16_16(bob, bob) + sfixedMul16_16(top, top)) >> 4;
+    bob = (fixedMul(bob, bob) + fixedMul(top, top)) >> 4;
 
     if (bob>MAXBOB) {
         bob = MAXBOB;       // Use the maximum 

@@ -1,9 +1,10 @@
-#include "Doom_Main.h"
+#include "DoomMain.h"
 
 #include "Audio/Sound.h"
 #include "Audio/Sounds.h"
 #include "Burger.h"
 #include "Data.h"
+#include "DoomDefines.h"
 #include "DoomRez.h"
 #include "Game.h"
 #include "GFX/Render.h"

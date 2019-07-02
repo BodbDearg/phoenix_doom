@@ -1,6 +1,5 @@
 #include "Shoot.h"
 
-#include "Base/MathUtils.h"
 #include "Base/Tables.h"
 #include "Game/Data.h"
 #include "Map/Map.h"
@@ -123,11 +122,11 @@ void P_Shoot2()
     // Calculate the intercept point for the first line hit
     //
     // position a bit closer
-    firstlinefrac -= sfixedDiv16_16(4 * FRACUNIT, attackrange);
+    firstlinefrac -= fixedDiv(4 * FRACUNIT, attackrange);
 
-    shootx = shootdiv.x + sfixedMul16_16(shootdiv.dx, firstlinefrac);
-    shooty = shootdiv.y + sfixedMul16_16(shootdiv.dy, firstlinefrac);
-    shootz = shootz + sfixedMul16_16(aimmidslope, sfixedMul16_16(firstlinefrac, attackrange));
+    shootx = shootdiv.x + fixedMul(shootdiv.dx, firstlinefrac);
+    shooty = shootdiv.y + fixedMul(shootdiv.dy, firstlinefrac);
+    shootz = shootz + fixedMul(aimmidslope, fixedMul(firstlinefrac, attackrange));
 }
 
 
@@ -206,11 +205,11 @@ bool PA_ShootLine(line_t* li, Fixed interceptfrac)
     else
         openbottom = back->floorheight;
 
-    dist = sfixedMul16_16(attackrange, interceptfrac);
+    dist = fixedMul(attackrange, interceptfrac);
 
     if (li->frontsector->floorheight != li->backsector->floorheight)
     {
-        slope = sfixedDiv16_16(openbottom - shootz, dist);
+        slope = fixedDiv(openbottom - shootz, dist);
         if (slope >= aimmidslope && !shootline)
         {
             shootline = li;
@@ -222,7 +221,7 @@ bool PA_ShootLine(line_t* li, Fixed interceptfrac)
 
     if (li->frontsector->ceilingheight != li->backsector->ceilingheight)
     {
-        slope = sfixedDiv16_16(opentop - shootz, dist);
+        slope = fixedDiv(opentop - shootz, dist);
         if (slope <= aimmidslope && !shootline)
         {
             shootline = li;
@@ -257,13 +256,13 @@ bool PA_ShootThing(mobj_t* th, Fixed interceptfrac) {
         return true;        // corpse or something
 
 // check angles to see if the thing can be aimed at
-    dist = sfixedMul16_16(attackrange, interceptfrac);
-    thingaimtopslope = sfixedDiv16_16(th->z + th->height - shootz, dist);
+    dist = fixedMul(attackrange, interceptfrac);
+    thingaimtopslope = fixedDiv(th->z + th->height - shootz, dist);
 
     if (thingaimtopslope < aimbottomslope)
         return true;        // shot over the thing
 
-    thingaimbottomslope = sfixedDiv16_16(th->z - shootz, dist);
+    thingaimbottomslope = fixedDiv(th->z - shootz, dist);
 
     if (thingaimbottomslope > aimtopslope)
         return true;        // shot under the thing
@@ -282,10 +281,10 @@ bool PA_ShootThing(mobj_t* th, Fixed interceptfrac) {
     shootmobj = th;
 
     // position a bit closer
-    frac = interceptfrac - sfixedDiv16_16(10 * FRACUNIT, attackrange);
-    shootx = shootdiv.x + sfixedMul16_16(shootdiv.dx, frac);
-    shooty = shootdiv.y + sfixedMul16_16(shootdiv.dy, frac);
-    shootz = shootz + sfixedMul16_16(shootslope, sfixedMul16_16(frac, attackrange));
+    frac = interceptfrac - fixedDiv(10 * FRACUNIT, attackrange);
+    shootx = shootdiv.x + fixedMul(shootdiv.dx, frac);
+    shooty = shootdiv.y + fixedMul(shootdiv.dy, frac);
+    shootz = shootz + fixedMul(shootslope, fixedMul(frac, attackrange));
 
     return false;   // Don't go any farther
 }
@@ -346,7 +345,7 @@ Fixed PA_SightCrossLine(line_t* line) {
 
     s2 = ndx*dx + ndy*dy;   // distance projected onto normal
 
-    s2 = sfixedDiv16_16(s1, s1 + s2);
+    s2 = fixedDiv(s1, s1 + s2);
 
     return s2;
 }

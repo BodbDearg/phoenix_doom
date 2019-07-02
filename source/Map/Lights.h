@@ -1,11 +1,11 @@
 #pragma once
 
-#include "Base/MathUtils.h"
+#include "Game/DoomDefines.h"
 
 struct line_t;
 struct sector_t;
 
-static constexpr uint32_t GLOWSPEED = convertPcUint32Speed(8);      // Steps for a glowing light
+static constexpr uint32_t GLOWSPEED = convertPcUintSpeed(8);        // Steps for a glowing light
 static constexpr uint32_t STROBEBRIGHT = convertPcTicks(5);         // Time to increase brightness for strobe
 static constexpr uint32_t FASTDARK = convertPcTicks(15);            // Ticks to glow quickly
 static constexpr uint32_t SLOWDARK = convertPcTicks(35);            // Ticks to glow slowly

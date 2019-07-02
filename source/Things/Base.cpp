@@ -1,6 +1,5 @@
 #include "Base.h"
 
-#include "Base/MathUtils.h"
 #include "Enemy.h"
 #include "Game/Data.h"
 #include "Game/Tick.h"
@@ -59,7 +58,7 @@ static uint32_t P_ZMovement(mobj_t *mo)
     // DC: Note: added a division by 2 here to account for the move from a 35Hz timebase (PC) to a 60Hz timebase (3DO).
     // This fixes issues in the 3DO version with certain projectiles like imps fireballs moving too quickly.
 
-    mo->z += sfixedDiv16_16(mo->momz, 2 * FRACUNIT);    // Apply basic z motion
+    mo->z += fixedDiv(mo->momz, 2 * FRACUNIT);      // Apply basic z motion
 
     if ( (mo->flags & MF_FLOAT) && mo->target) {    // float down towards target if too close 
         FloatChange(mo);
@@ -428,8 +427,8 @@ static uint32_t P_XYMovement(mobj_t* mo) {
 
     // DC: Note: added a division by 2 here to account for the move from a 35Hz timebase (PC) to a 60Hz timebase (3DO).
     // This fixes issues in the 3DO version with certain projectiles like imps fireballs moving too quickly.
-    xleft = xuse = sfixedDiv16_16(mo->momx, 2 * FRACUNIT);
-    yleft = yuse = sfixedDiv16_16(mo->momy, 2 * FRACUNIT);
+    xleft = xuse = fixedDiv(mo->momx, 2 * FRACUNIT);
+    yleft = yuse = fixedDiv(mo->momy, 2 * FRACUNIT);
 
     while (xuse > MAXMOVE || xuse < -MAXMOVE
     || yuse > MAXMOVE || yuse < -MAXMOVE)

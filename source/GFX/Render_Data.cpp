@@ -1,4 +1,3 @@
-#include "Base/MathUtils.h"
 #include "Base/Mem.h"
 #include "Base/Tables.h"
 #include "Game/Data.h"
@@ -39,7 +38,7 @@ void R_InitData() {
         uint32_t i = 1;
     
         do {
-            IDivTable[i] = sfixedDiv16_16(512 << FRACBITS, i << FRACBITS);    // 512.0 / i
+            IDivTable[i] = fixedDiv(512 << FRACBITS, i << FRACBITS);    // 512.0 / i
         } while (++i < (sizeof(IDivTable) / sizeof(uint32_t)));
     }
     
@@ -68,7 +67,7 @@ void InitMathTables() {
     StretchWidth = Stretch*((int)ScreenWidth/2);
 
     // Create the viewangletox table     
-    j = sfixedDiv16_16(CenterX << FRACBITS, finetangent[FINEANGLES / 4 + FIELDOFVIEW / 2]);
+    j = fixedDiv(CenterX << FRACBITS, finetangent[FINEANGLES / 4 + FIELDOFVIEW / 2]);
     i = 0;
     do {
         Fixed t;
@@ -77,7 +76,7 @@ void InitMathTables() {
         } else if (finetangent[i]< -FRACUNIT*2) {
             t = ScreenWidth+1;
         } else {
-            t = sfixedMul16_16(finetangent[i] , j);
+            t = fixedMul(finetangent[i] , j);
             t = ((CenterX<<FRACBITS)-t+FRACUNIT-1)>>FRACBITS;
             if (t<-1) {
                 t = -1;
@@ -116,7 +115,7 @@ void InitMathTables() {
     i = 0;
     do {
         j = (((int)i-(int)ScreenHeight/2)*FRACUNIT)+FRACUNIT/2;
-        j = sfixedDiv16_16(StretchWidth, abs(j));
+        j = fixedDiv(StretchWidth, abs(j));
         j >>= 6;
         if (j>0xFFFF) {
             j = 0xFFFF;
@@ -129,7 +128,7 @@ void InitMathTables() {
     i = 0;
     do {
         j = abs(finecosine[xtoviewangle[i]>>ANGLETOFINESHIFT]);
-        distscale[i] = sfixedDiv16_16(FRACUNIT, j) >> 1;
+        distscale[i] = fixedDiv(FRACUNIT, j) >> 1;
     } while (++i<ScreenWidth);
 
     // Create the lighting tables 

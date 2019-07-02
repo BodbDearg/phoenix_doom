@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Doom.h"
+#include <cstdint>
 
 enum skill_e : uint8_t;
 

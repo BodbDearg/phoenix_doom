@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Game/Doom.h"
+#include "Base/Fixed.h"
 
 void S_Clear();
 void S_StartSound(const Fixed* const pOriginXY, const uint32_t soundId);

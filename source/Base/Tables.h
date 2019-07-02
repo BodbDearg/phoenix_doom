@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Game/Doom.h"
+#include "Angle.h"
+#include "Game/DoomDefines.h"   // FIXME: DC - Break the dependency on 'DoomDefines.h'
 
 // Table related defines
 static constexpr uint32_t FINEANGLES        = 8192;             // Size of the fineangle table

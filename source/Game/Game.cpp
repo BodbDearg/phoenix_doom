@@ -3,7 +3,7 @@
 #include "Base/Mem.h"
 #include "Base/Random.h"
 #include "Data.h"
-#include "Doom_Main.h"
+#include "DoomMain.h"
 #include "GFX/Textures.h"
 #include "Map/Setup.h"
 #include "Things/Info.h"

@@ -1,5 +1,4 @@
 #include "Base/Macros.h"
-#include "Base/MathUtils.h"
 #include "Base/Tables.h"
 #include "CelUtils.h"
 #include "Game/Data.h"
@@ -109,10 +108,10 @@ static void PrepMObj(const mobj_t* const pThing) {
     }
 
     // Transform the origin point
-    Fixed Trx = pThing->x - viewx;              // Get the point in 3 Space
+    Fixed Trx = pThing->x - viewx;          // Get the point in 3 Space
     Fixed Try = pThing->y - viewy;
-    Fixed Trz = sfixedMul16_16(Trx, viewcos);   // Rotate around the camera
-    Trz += sfixedMul16_16(Try, viewsin);        // Add together
+    Fixed Trz = fixedMul(Trx, viewcos);     // Rotate around the camera
+    Trz += fixedMul(Try, viewsin);          // Add together
 
     // Ignore sprite if too close to the camera (too large)
     if (Trz < MINZ) {
@@ -120,8 +119,8 @@ static void PrepMObj(const mobj_t* const pThing) {
     }
     
     // Calc the 3Space x coord
-    Trx = sfixedMul16_16(Trx, viewsin);
-    Trx -= sfixedMul16_16(Try, viewcos);
+    Trx = fixedMul(Trx, viewsin);
+    Trx -= fixedMul(Try, viewcos);
     
     // Ignore sprite if greater than 45 degrees off the side
     if (Trx > (Trz << 2) || Trx < -(Trz << 2)) {
@@ -143,26 +142,26 @@ static void PrepMObj(const mobj_t* const pThing) {
 
     // Store information in a vissprite.
     // I also will clip to screen coords.
-    const Fixed xScale = sfixedDiv16_16(CenterX << FRACBITS, Trz);  // Get the scale factor
+    const Fixed xScale = fixedDiv(CenterX << FRACBITS, Trz);        // Get the scale factor
     vis->xscale = xScale;                                           // Save it
     Trx -= (Fixed) pSpriteFrameAngle->leftOffset << FRACBITS;       // Adjust the x to the sprite's x
-    int x1 = (sfixedMul16_16(Trx, xScale) >> FRACBITS) + CenterX;   // Scale to screen coords
+    int x1 = (fixedMul(Trx, xScale) >> FRACBITS) + CenterX;         // Scale to screen coords
 
     if (x1 > (int) ScreenWidth) {
         return;     // Off the right side, don't draw!
     }
 
-    int x2 = sfixedMul16_16(pSpriteFrameAngle->width, xScale) + x1;
+    int x2 = fixedMul(pSpriteFrameAngle->width, xScale) + x1;
 
     if (x2 <= 0) {
         return;     // Off the left side, don't draw!
     }
     
     // Get light level
-    const Fixed yScale = sfixedMul16_16(xScale, Stretch);   // Adjust for aspect ratio
+    const Fixed yScale = fixedMul(xScale, Stretch);     // Adjust for aspect ratio
     vis->yscale = yScale;
     vis->pSprite = pSpriteFrameAngle;
-    vis->x1 = x1;                                           // Save the edge coords
+    vis->x1 = x1;                                       // Save the edge coords
     vis->x2 = x2;
     vis->thing = pThing;
 
@@ -187,8 +186,8 @@ static void PrepMObj(const mobj_t* const pThing) {
     Trz += (((Fixed) pSpriteFrameAngle->topOffset) << FRACBITS);    // Height offset
 
     // Determine screen top and bottom Y for the sprite
-    const Fixed topY = (CenterY << FRACBITS) - sfixedMul16_16(Trz, yScale);
-    const Fixed botY = topY + sfixedMul16_16(pSpriteFrameAngle->height << FRACBITS, yScale);
+    const Fixed topY = (CenterY << FRACBITS) - fixedMul(Trz, yScale);
+    const Fixed botY = topY + fixedMul(pSpriteFrameAngle->height << FRACBITS, yScale);
     vis->y1 = topY >> FRACBITS;
     vis->y2 = botY >> FRACBITS;
 

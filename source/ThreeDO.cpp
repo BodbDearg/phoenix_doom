@@ -3,12 +3,11 @@
 #include "Audio/Audio.h"
 #include "Base/Endian.h"
 #include "Base/Macros.h"
-#include "Base/MathUtils.h"
 #include "Base/Mem.h"
 #include "Base/Tables.h"
 #include "Burger.h"
 #include "Game/Data.h"
-#include "Game/Doom_Main.h"
+#include "Game/DoomMain.h"
 #include "Game/Resources.h"
 #include "GFX/CelUtils.h"
 #include "GFX/Render.h"
@@ -909,9 +908,9 @@ void DrawSkyLine()
 // This can be used to scale RGB values due to lighting.
 //---------------------------------------------------------------------------------------------------------------------
 static Fixed getLightMultiplier(const uint32_t lightValue, const uint32_t maxLightValue) {
-    const Fixed maxLightValueFrac = int32ToSFixed16_16(maxLightValue);
+    const Fixed maxLightValueFrac = intToFixed(maxLightValue);
     const Fixed textureLightFrac = lightValue << (FRACBITS - LIGHTSCALESHIFT);
-    const Fixed lightMultiplier = sfixedDiv16_16(textureLightFrac, maxLightValueFrac);
+    const Fixed lightMultiplier = fixedDiv(textureLightFrac, maxLightValueFrac);
     return (lightMultiplier > FRACUNIT) ? FRACUNIT : lightMultiplier;
 }
 
@@ -964,12 +963,12 @@ void DrawWallColumn(
             const uint16_t texG = (color & 0b0000001111100000) >> 5;
             const uint16_t texB = (color & 0b0000000000011111) >> 0;
             
-            const Fixed texRFrac = int32ToSFixed16_16(texR);
-            const Fixed texGFrac = int32ToSFixed16_16(texG);
-            const Fixed texBFrac = int32ToSFixed16_16(texB);
-            const Fixed darkenedR = sfixedMul16_16(texRFrac, lightMultiplier);
-            const Fixed darkenedG = sfixedMul16_16(texGFrac, lightMultiplier);
-            const Fixed darkenedB = sfixedMul16_16(texBFrac, lightMultiplier);
+            const Fixed texRFrac = intToFixed(texR);
+            const Fixed texGFrac = intToFixed(texG);
+            const Fixed texBFrac = intToFixed(texB);
+            const Fixed darkenedR = fixedMul(texRFrac, lightMultiplier);
+            const Fixed darkenedG = fixedMul(texGFrac, lightMultiplier);
+            const Fixed darkenedB = fixedMul(texBFrac, lightMultiplier);
 
             const uint32_t finalColor = Video::fixedRgbToScreenCol(darkenedR, darkenedG, darkenedB);
             const uint32_t screenX = tx_x + ScreenXOffset;
@@ -1061,13 +1060,13 @@ void DrawFloorColumn(
         const uint16_t texG = (color & 0b0000001111100000) >> 5;
         const uint16_t texB = (color & 0b0000000000011111) >> 0;
 
-        const Fixed texRFrac = int32ToSFixed16_16(texR);
-        const Fixed texGFrac = int32ToSFixed16_16(texG);
-        const Fixed texBFrac = int32ToSFixed16_16(texB);
+        const Fixed texRFrac = intToFixed(texR);
+        const Fixed texGFrac = intToFixed(texG);
+        const Fixed texBFrac = intToFixed(texB);
 
-        const Fixed darkenedR = sfixedMul16_16(texRFrac, lightMultiplier);
-        const Fixed darkenedG = sfixedMul16_16(texGFrac, lightMultiplier);
-        const Fixed darkenedB = sfixedMul16_16(texBFrac, lightMultiplier);
+        const Fixed darkenedR = fixedMul(texRFrac, lightMultiplier);
+        const Fixed darkenedG = fixedMul(texGFrac, lightMultiplier);
+        const Fixed darkenedB = fixedMul(texBFrac, lightMultiplier);
 
         const uint32_t finalColor = Video::fixedRgbToScreenCol(darkenedR, darkenedG, darkenedB);        
         const uint32_t screenX = ds_x1 + pixelNum + ScreenXOffset;
@@ -1261,7 +1260,7 @@ static uint8_t* CalcLine(Fixed XFrac)
 // The input x coordinate is in 16.16 fixed point format and the output is clamped to sprite bounds.
 //-------------------------------------------------------------------------------------------------
 static const uint16_t* getSpriteColumn(const vissprite_t* const pVisSprite, const Fixed xFrac) {
-    const int32_t x = sfixed16_16ToInt32(xFrac);
+    const int32_t x = fixedToInt(xFrac);
     const SpriteFrameAngle* const pSprite = pVisSprite->pSprite;
     const int32_t xClamped = (x < 0) ? 0 : ((x >= pSprite->width) ? pSprite->width - 1 : x);
     return &pSprite->pTexture[pSprite->height * xClamped];
@@ -1280,9 +1279,9 @@ static Fixed determineTexelStep(const uint32_t textureSize, const uint32_t rende
     // of the texture. This ensures that edges/borders around sprites etc. don't seem to vanish... 
     // I used to have issues with the bottom rows of the explosive barrels cutting out before adopting this method.
     const int32_t numPixelSteps = (int32_t) renderSize - 1;
-    const Fixed step = sfixedDiv16_16(
-        int32ToSFixed16_16(textureSize) - 1,    // N.B: never let it reach 'textureSize' - keep below, as that is an out of bounds index!
-        int32ToSFixed16_16(numPixelSteps)
+    const Fixed step = fixedDiv(
+        intToFixed(textureSize) - 1,    // N.B: never let it reach 'textureSize' - keep below, as that is an out of bounds index!
+        intToFixed(numPixelSteps)
     );
 
     return step;
@@ -1337,7 +1336,7 @@ void DrawSpriteNoClip(const vissprite_t* const pVisSprite) {
 
     if (pSpriteFrame->flipped != 0) {
         texelStepX = -texelStepX_NoFlip;
-        startTexelX = int32ToSFixed16_16(spriteW) - 1;    // Start from the furthest reaches of the end pixel, only want texel to change if nearly 1 unit has been passed!
+        startTexelX = intToFixed(spriteW) - 1;      // Start from the furthest reaches of the end pixel, only want texel to change if nearly 1 unit has been passed!
     }
     else {
         texelStepX = texelStepX_NoFlip;
@@ -1347,10 +1346,10 @@ void DrawSpriteNoClip(const vissprite_t* const pVisSprite) {
     // Sanity check in debug that we won't go out of bounds of the texture (shouldn't)
     #if ASSERTS_ENABLED == 1
     {
-        const Fixed endXFrac = startTexelX + sfixedMul16_16(texelStepX, int32ToSFixed16_16(renderW - 1));
-        const Fixed endYFrac = sfixedMul16_16(texelStepY, int32ToSFixed16_16(renderH - 1));
-        const int32_t endX = sfixed16_16ToInt32(endXFrac);
-        const int32_t endY = sfixed16_16ToInt32(endYFrac);
+        const Fixed endXFrac = startTexelX + fixedMul(texelStepX, intToFixed(renderW - 1));
+        const Fixed endYFrac = fixedMul(texelStepY, intToFixed(renderH - 1));
+        const int32_t endX = fixedToInt(endXFrac);
+        const int32_t endY = fixedToInt(endYFrac);
 
         ASSERT(endX >= 0 && endX < spriteW);
         ASSERT(endY >= 0 && endY < spriteH);
@@ -1384,7 +1383,7 @@ void DrawSpriteNoClip(const vissprite_t* const pVisSprite) {
     Fixed texelXFrac = startTexelX;
 
     for (int x = x1; x <= x2; ++x) {
-        const int texelXInt = sfixed16_16ToInt32(texelXFrac);
+        const int texelXInt = fixedToInt(texelXFrac);
         Fixed texelYFrac = startTexelY;
         
         const uint16_t* const pImageCol = pImage + texelXInt * spriteH;
@@ -1392,7 +1391,7 @@ void DrawSpriteNoClip(const vissprite_t* const pVisSprite) {
 
         for (int y = y1; y <= y2; ++y) {
             // Grab this pixels color from the sprite image and skip if alpha 0
-            const int texelYInt = sfixed16_16ToInt32(texelYFrac);
+            const int texelYInt = fixedToInt(texelYFrac);
 
             const uint16_t color = pImageCol[texelYInt];
             const uint16_t texA = (color & 0b1000000000000000) >> 15;
@@ -1402,13 +1401,13 @@ void DrawSpriteNoClip(const vissprite_t* const pVisSprite) {
 
             if (texA != 0) {
                 // Do light diminishing
-                const Fixed texRFrac = int32ToSFixed16_16(texR);
-                const Fixed texGFrac = int32ToSFixed16_16(texG);
-                const Fixed texBFrac = int32ToSFixed16_16(texB);
+                const Fixed texRFrac = intToFixed(texR);
+                const Fixed texGFrac = intToFixed(texG);
+                const Fixed texBFrac = intToFixed(texB);
 
-                const Fixed darkenedR = sfixedMul16_16(texRFrac, lightMultiplier);
-                const Fixed darkenedG = sfixedMul16_16(texGFrac, lightMultiplier);
-                const Fixed darkenedB = sfixedMul16_16(texBFrac, lightMultiplier);
+                const Fixed darkenedR = fixedMul(texRFrac, lightMultiplier);
+                const Fixed darkenedG = fixedMul(texGFrac, lightMultiplier);
+                const Fixed darkenedB = fixedMul(texBFrac, lightMultiplier);
 
                 // Save the final output color
                 const uint32_t finalColor = Video::fixedRgbToScreenCol(darkenedR, darkenedG, darkenedB);
@@ -1502,8 +1501,8 @@ static void OneSpriteLine(
     // Sanity check in debug that we won't go out of bounds of the texture (shouldn't)
     #if ASSERTS_ENABLED == 1
     {
-        const Fixed endYFrac = sfixedMul16_16(texelStepY, int32ToSFixed16_16(renderH - 1));
-        const int32_t endY = sfixed16_16ToInt32(endYFrac);
+        const Fixed endYFrac = fixedMul(texelStepY, intToFixed(renderH - 1));
+        const int32_t endY = fixedToInt(endYFrac);
         ASSERT(endY >= 0 && endY < spriteH);
     }
     #endif
@@ -1529,7 +1528,7 @@ static void OneSpriteLine(
 
     for (int y = y1; y <= y2; ++y) {
         // Grab this pixels color from the sprite image and skip if alpha 0
-        const int texelYInt = sfixed16_16ToInt32(texelYFrac);
+        const int texelYInt = fixedToInt(texelYFrac);
         
         const uint16_t color = pImageCol[texelYInt];
         const uint16_t texA = (color & 0b1000000000000000) >> 15;
@@ -1539,13 +1538,13 @@ static void OneSpriteLine(
 
         if (texA != 0) {
             // Do light diminishing
-            const Fixed texRFrac = int32ToSFixed16_16(texR);
-            const Fixed texGFrac = int32ToSFixed16_16(texG);
-            const Fixed texBFrac = int32ToSFixed16_16(texB);
+            const Fixed texRFrac = intToFixed(texR);
+            const Fixed texGFrac = intToFixed(texG);
+            const Fixed texBFrac = intToFixed(texB);
 
-            const Fixed darkenedR = sfixedMul16_16(texRFrac, lightMultiplier);
-            const Fixed darkenedG = sfixedMul16_16(texGFrac, lightMultiplier);
-            const Fixed darkenedB = sfixedMul16_16(texBFrac, lightMultiplier);
+            const Fixed darkenedR = fixedMul(texRFrac, lightMultiplier);
+            const Fixed darkenedG = fixedMul(texGFrac, lightMultiplier);
+            const Fixed darkenedB = fixedMul(texBFrac, lightMultiplier);
             
             // Save the final output color
             const uint32_t finalColor = Video::fixedRgbToScreenCol(darkenedR, darkenedG, darkenedB);

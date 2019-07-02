@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Game/Doom.h"
+#include "Base/Fixed.h"
 #include "States.h"
 
 struct mobj_t;

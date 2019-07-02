@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Game/Doom.h"
+#include <cstdint>
 
 struct line_t;
 struct mobj_t;

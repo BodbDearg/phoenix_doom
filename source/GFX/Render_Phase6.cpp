@@ -1,4 +1,3 @@
-#include "Base/MathUtils.h"
 #include "Base/Tables.h"
 #include "Game/Data.h"
 #include "Render.h"
@@ -139,7 +138,7 @@ static void DrawSeg(viswall_t *segl)
 
             // Calculate texture offset into shape
             tx_texturecolumn = (
-                segl->offset - sfixedMul16_16(
+                segl->offset - fixedMul(
                     finetangent[(segl->CenterAngle + xtoviewangle[x]) >> ANGLETOFINESHIFT],
                     segl->distance
                 )

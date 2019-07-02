@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Game/Doom.h"
+#include "Base/Angle.h"
+#include "Base/Fixed.h"
 #include "PlayerSprites.h"
 
 struct sector_t;

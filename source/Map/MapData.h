@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Game/Doom.h"
+#include "Base/Angle.h"
+#include "Game/DoomDefines.h"
 
 struct line_t;
 struct mobj_t;

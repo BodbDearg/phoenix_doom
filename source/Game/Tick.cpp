@@ -7,6 +7,7 @@
 #include "Base/Random.h"
 #include "Burger.h"
 #include "Data.h"
+#include "DoomDefines.h"
 #include "DoomRez.h"
 #include "Game.h"
 #include "GFX/Render.h"

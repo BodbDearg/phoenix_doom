@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Doom.h"
+#include "Base/Fixed.h"
 
 void AddToBox(Fixed* box, Fixed x, Fixed y);
 

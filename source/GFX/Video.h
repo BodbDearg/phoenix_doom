@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Game/Doom.h"
+#include "Base/Fixed.h"
 
 namespace Video {
     // DC: FIXME: DO NOT HARDCODE LIKE THIS!
