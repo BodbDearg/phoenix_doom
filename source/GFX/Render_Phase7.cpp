@@ -51,13 +51,17 @@ static void MapPlane(uint32_t x2, uint32_t y)
     xstep = ((Fixed)distance*gBaseXScale)>>4;
     ystep = ((Fixed)distance*gBaseYScale)>>4;
 
-    length = gLightCoef/(Fixed)distance - gLightSub;
+    distance = (distance > 0) ? distance : 1;               // DC: fix division by zero when using the noclip cheat
+    length = gLightCoef / (Fixed) distance - gLightSub;
+
     if (length < gLightMin) {
         length = gLightMin;
     }
+    
     if (length > gLightMax) {
         length = gLightMax;
     }
+
     gTxTextureLight = length;
     DrawFloorColumn(y,x1,x2-x1,xfrac,yfrac,xstep,ystep);
 }
