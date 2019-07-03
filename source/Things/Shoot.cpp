@@ -18,10 +18,12 @@
 // that blocks the midpoint of the shootdiv will be hit.
 //===================
 
-line_t *shootline;
-mobj_t *shootmobj;
-Fixed shootslope;                   // between aimtop and aimbottom
-Fixed shootx, shooty, shootz;       // location for puff/blood
+line_t*     gShootLine;
+mobj_t*     gShootMObj;
+Fixed       gShootSlope;        // between aimtop and aimbottom
+Fixed       gShootX;
+Fixed       gShootY;
+Fixed       gShootZ;            // location for puff/blood
 
 //===================
 //
@@ -29,17 +31,19 @@ Fixed shootx, shooty, shootz;       // location for puff/blood
 //
 //===================
 
-static Fixed aimmidslope;               // for detecting first wall hit
-static vector_t shootdiv;
-static Fixed shootx2, shooty2;
-static Fixed firstlinefrac;
-
-static int shootdivpositive;
-
-static Fixed old_frac;
-static void *old_value;
-static bool old_isline;
-static int ssx1,ssy1,ssx2,ssy2;
+static Fixed        gAimMidSlope;               // for detecting first wall hit
+static vector_t     gShootDiv;
+static Fixed        gShootX2;
+static Fixed        gShootY2;
+static Fixed        gFirstLineFrac;
+static int          gShootDivPositive;
+static Fixed        gOldFrac;
+static void*        gOldValue;
+static bool         gOldIsLine;
+static int          gSsx1;
+static int          gSsy1;
+static int          gSsx2;
+static int          gSsy2;
 
 //---------------------------------------------------------------------------------------------------------------------
 // Returns true if strace crosses the given node successfuly
@@ -52,14 +56,14 @@ static bool PA_CrossBSPNode(const node_t* pNode) {
     }
     
     // Decide which side the start point is on and cross the starting side
-    const uint32_t side = PointOnVectorSide(shootdiv.x, shootdiv.y, &pNode->Line);
+    const uint32_t side = PointOnVectorSide(gShootDiv.x, gShootDiv.y, &pNode->Line);
     
     if (!PA_CrossBSPNode((const node_t*) pNode->Children[side])) {
         return false;
     }
 
     // The partition plane is crossed here
-    if (side == PointOnVectorSide(shootx2, shooty2, &pNode->Line)) {
+    if (side == PointOnVectorSide(gShootX2, gShootY2, &pNode->Line)) {
         return true;    // The line doesn't touch the other side
     }
     
@@ -79,54 +83,54 @@ void P_Shoot2()
     mobj_t      *t1;
     unsigned    angle;
 
-    t1 = shooter;
+    t1 = gShooter;
 
-    shootline = 0;
-    shootmobj = 0;
+    gShootLine = 0;
+    gShootMObj = 0;
 
-    angle = attackangle >> ANGLETOFINESHIFT;
+    angle = gAttackAngle >> ANGLETOFINESHIFT;
 
-    shootdiv.x = t1->x;
-    shootdiv.y = t1->y;
-    shootx2 = t1->x + (attackrange >> FRACBITS) * finecosine[angle];
-    shooty2 = t1->y + (attackrange >> FRACBITS) * finesine[angle];
-    shootdiv.dx = shootx2 - shootdiv.x;
-    shootdiv.dy = shooty2 - shootdiv.y;
-    shootz = t1->z + (t1->height>>1) + 8 * FRACUNIT;
+    gShootDiv.x = t1->x;
+    gShootDiv.y = t1->y;
+    gShootX2 = t1->x + (gAttackRange >> FRACBITS) * gFineCosine[angle];
+    gShootY2 = t1->y + (gAttackRange >> FRACBITS) * gFineSine[angle];
+    gShootDiv.dx = gShootX2 - gShootDiv.x;
+    gShootDiv.dy = gShootY2 - gShootDiv.y;
+    gShootZ = t1->z + (t1->height>>1) + 8 * FRACUNIT;
 
-    shootdivpositive = (shootdiv.dx ^ shootdiv.dy)>0;
+    gShootDivPositive = (gShootDiv.dx ^ gShootDiv.dy)>0;
 
-    ssx1 = shootdiv.x >> 16;
-    ssy1 = shootdiv.y >> 16;
-    ssx2 = shootx2 >> 16;
-    ssy2 = shooty2 >> 16;
+    gSsx1 = gShootDiv.x >> 16;
+    gSsy1 = gShootDiv.y >> 16;
+    gSsx2 = gShootX2 >> 16;
+    gSsy2 = gShootY2 >> 16;
 
-    aimmidslope = (aimtopslope + aimbottomslope)>>1;
+    gAimMidSlope = (gAimTopSlope + gAimBottomSlope)>>1;
 
     // Cross everything
-    old_frac = 0;
+    gOldFrac = 0;
     PA_CrossBSPNode(gpBSPTreeRoot);
 
     // Check the last intercept if needed
-    if (!shootmobj) {
+    if (!gShootMObj) {
         PA_DoIntercept(0, false, FRACUNIT);
     }
 
     // post process
-    if (shootmobj)
+    if (gShootMObj)
         return;
 
-    if (!shootline)
+    if (!gShootLine)
         return;
     
     // Calculate the intercept point for the first line hit
     //
     // position a bit closer
-    firstlinefrac -= fixedDiv(4 * FRACUNIT, attackrange);
+    gFirstLineFrac -= fixedDiv(4 * FRACUNIT, gAttackRange);
 
-    shootx = shootdiv.x + fixedMul(shootdiv.dx, firstlinefrac);
-    shooty = shootdiv.y + fixedMul(shootdiv.dy, firstlinefrac);
-    shootz = shootz + fixedMul(aimmidslope, fixedMul(firstlinefrac, attackrange));
+    gShootX = gShootDiv.x + fixedMul(gShootDiv.dx, gFirstLineFrac);
+    gShootY = gShootDiv.y + fixedMul(gShootDiv.dy, gFirstLineFrac);
+    gShootZ = gShootZ + fixedMul(gAimMidSlope, fixedMul(gFirstLineFrac, gAttackRange));
 }
 
 
@@ -140,18 +144,18 @@ void P_Shoot2()
 bool PA_DoIntercept(void *value, bool isline, Fixed frac) {
     intptr_t temp;
 
-    if (old_frac < frac)
+    if (gOldFrac < frac)
     {
-        temp = (intptr_t)old_value;
-        old_value = value;
+        temp = (intptr_t) gOldValue;
+        gOldValue = value;
         value = (void *)temp;
 
-        temp = old_isline;
-        old_isline = isline;
+        temp = gOldIsLine;
+        gOldIsLine = isline;
         isline = temp;
 
-        temp = old_frac;
-        old_frac = frac;
+        temp = gOldFrac;
+        gOldFrac = frac;
         frac = temp;
     }
 
@@ -181,12 +185,12 @@ bool PA_ShootLine(line_t* li, Fixed interceptfrac)
 
     if ( !(li->flags & ML_TWOSIDED) )
     {
-        if (!shootline)
+        if (!gShootLine)
         {
-            shootline = li;
-            firstlinefrac = interceptfrac;
+            gShootLine = li;
+            gFirstLineFrac = interceptfrac;
         }
-        old_frac = 0;   // don't shoot anything past this
+        gOldFrac = 0;   // don't shoot anything past this
         return false;
     }
 
@@ -196,45 +200,51 @@ bool PA_ShootLine(line_t* li, Fixed interceptfrac)
     front = li->frontsector;
     back = li->backsector;
 
-    if (front->ceilingheight < back->ceilingheight)
+    if (front->ceilingheight < back->ceilingheight) {
         opentop = front->ceilingheight;
-    else
+    }
+    else {
         opentop = back->ceilingheight;
-    if (front->floorheight > back->floorheight)
+    }
+
+    if (front->floorheight > back->floorheight) {
         openbottom = front->floorheight;
-    else
+    }
+    else {
         openbottom = back->floorheight;
-
-    dist = fixedMul(attackrange, interceptfrac);
-
-    if (li->frontsector->floorheight != li->backsector->floorheight)
-    {
-        slope = fixedDiv(openbottom - shootz, dist);
-        if (slope >= aimmidslope && !shootline)
-        {
-            shootline = li;
-            firstlinefrac = interceptfrac;
-        }
-        if (slope > aimbottomslope)
-            aimbottomslope = slope;
     }
 
-    if (li->frontsector->ceilingheight != li->backsector->ceilingheight)
-    {
-        slope = fixedDiv(opentop - shootz, dist);
-        if (slope <= aimmidslope && !shootline)
-        {
-            shootline = li;
-            firstlinefrac = interceptfrac;
+    dist = fixedMul(gAttackRange, interceptfrac);
+
+    if (li->frontsector->floorheight != li->backsector->floorheight) {
+        slope = fixedDiv(openbottom - gShootZ, dist);
+
+        if (slope >= gAimMidSlope && !gShootLine) {
+            gShootLine = li;
+            gFirstLineFrac = interceptfrac;
         }
-        if (slope < aimtopslope)
-            aimtopslope = slope;
+
+        if (slope > gAimBottomSlope) {
+            gAimBottomSlope = slope;
+        }
     }
 
-    if (aimtopslope <= aimbottomslope)
+    if (li->frontsector->ceilingheight != li->backsector->ceilingheight) {
+        slope = fixedDiv(opentop - gShootZ, dist);
+
+        if (slope <= gAimMidSlope && !gShootLine) {
+            gShootLine = li;
+            gFirstLineFrac = interceptfrac;
+        }
+
+        if (slope < gAimTopSlope) {
+            gAimTopSlope = slope;
+        }
+    }
+
+    if (gAimTopSlope <= gAimBottomSlope)
         return false;       // stop
-
-
+    
     return true;        // shot continues
 }
 
@@ -250,41 +260,40 @@ bool PA_ShootThing(mobj_t* th, Fixed interceptfrac) {
     Fixed       dist;
     Fixed       thingaimtopslope, thingaimbottomslope;
 
-    if (th == shooter)
+    if (th == gShooter)
         return true;        // can't shoot self
     if (!(th->flags&MF_SHOOTABLE))
         return true;        // corpse or something
 
 // check angles to see if the thing can be aimed at
-    dist = fixedMul(attackrange, interceptfrac);
-    thingaimtopslope = fixedDiv(th->z + th->height - shootz, dist);
+    dist = fixedMul(gAttackRange, interceptfrac);
+    thingaimtopslope = fixedDiv(th->z + th->height - gShootZ, dist);
 
-    if (thingaimtopslope < aimbottomslope)
+    if (thingaimtopslope < gAimBottomSlope)
         return true;        // shot over the thing
 
-    thingaimbottomslope = fixedDiv(th->z - shootz, dist);
+    thingaimbottomslope = fixedDiv(th->z - gShootZ, dist);
 
-    if (thingaimbottomslope > aimtopslope)
+    if (thingaimbottomslope > gAimTopSlope)
         return true;        // shot under the thing
 
 //
 // this thing can be hit!
 //
-    if (thingaimtopslope > aimtopslope)
-        thingaimtopslope = aimtopslope;
-    if (thingaimbottomslope < aimbottomslope)
-        thingaimbottomslope = aimbottomslope;
+    if (thingaimtopslope > gAimTopSlope)
+        thingaimtopslope = gAimTopSlope;
+    if (thingaimbottomslope < gAimBottomSlope)
+        thingaimbottomslope = gAimBottomSlope;
 
     // shoot midway in the visible part of the thing
-    shootslope = (thingaimtopslope+thingaimbottomslope)/2;
-
-    shootmobj = th;
+    gShootSlope = (thingaimtopslope+thingaimbottomslope)/2;
+    gShootMObj = th;
 
     // position a bit closer
-    frac = interceptfrac - fixedDiv(10 * FRACUNIT, attackrange);
-    shootx = shootdiv.x + fixedMul(shootdiv.dx, frac);
-    shooty = shootdiv.y + fixedMul(shootdiv.dy, frac);
-    shootz = shootz + fixedMul(shootslope, fixedMul(frac, attackrange));
+    frac = interceptfrac - fixedDiv(10 * FRACUNIT, gAttackRange);
+    gShootX = gShootDiv.x + fixedMul(gShootDiv.dx, frac);
+    gShootY = gShootDiv.y + fixedMul(gShootDiv.dy, frac);
+    gShootZ = gShootZ + fixedMul(gShootSlope, fixedMul(frac, gAttackRange));
 
     return false;   // Don't go any farther
 }
@@ -314,10 +323,10 @@ Fixed PA_SightCrossLine(line_t* line) {
     p2y = line->v2.y >> 16;
 
 // p3, p4 are sight endpoints
-    p3x = ssx1;
-    p3y = ssy1;
-    p4x = ssx2;
-    p4y = ssy2;
+    p3x = gSsx1;
+    p3y = gSsy1;
+    p4x = gSsx2;
+    p4y = gSsy2;
 
     dx = p2x - p3x;
     dy = p2y - p3y;
@@ -381,7 +390,7 @@ bool PA_CrossSubsector(const subsector_t* sub) {
 
         // check a corner to corner crossection for hit
 
-        if (shootdivpositive) {
+        if (gShootDivPositive) {
             thingline.tv1.x = thing->x - thing->radius;
             thingline.tv1.y = thing->y + thing->radius;
 
@@ -415,9 +424,9 @@ bool PA_CrossSubsector(const subsector_t* sub) {
     {
         line = seg->linedef;
 
-        if (line->validcount == validcount)
+        if (line->validcount == gValidCount)
             continue;       // already checked other side
-        line->validcount = validcount;
+        line->validcount = gValidCount;
 
         frac = PA_SightCrossLine (line);
 

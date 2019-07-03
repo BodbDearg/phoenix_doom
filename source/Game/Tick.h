@@ -3,14 +3,15 @@
 #include <cstdint>
 
 struct mobj_t;
+struct thinker_t;
 
-extern bool     Tick4;          // True 4 times a second
-extern bool     Tick2;          // True 2 times a second
-extern bool     Tick1;          // True 1 time a second
-extern bool     gamepaused;     // True if the game is currently paused
-extern mobj_t   mobjhead;       // Head and tail of mobj list
+extern bool     gTick4;         // True 4 times a second
+extern bool     gTick2;         // True 2 times a second
+extern bool     gTick1;         // True 1 time a second
+extern bool     gGamePaused;    // True if the game is currently paused
+extern mobj_t   gMObjHead;      // Head and tail of mobj list
 
-typedef void (*ThinkerFunc)(struct thinker_t*);
+typedef void (*ThinkerFunc)(thinker_t*);
 
 void InitThinkers();
 void* AddThinker(ThinkerFunc FuncProc, uint32_t MemSize);

@@ -1,6 +1,6 @@
 #include "Tables.h"
 
-Fixed finetangent[4096] = {
+Fixed gFineTangent[4096] = {
 -170892070,-56963832,-34178252,-24413002,-18987858,-15535488,-13145381,-11392632,
 -10052290,-8994122,-8137507,-7429866,-6835444,-6329082,-5892562,-5512364,
 -5178249,-4882316,-4618374,-4381502,-4167737,-3973856,-3797208,-3635592,
@@ -516,9 +516,9 @@ Fixed finetangent[4096] = {
 
 };
 
-Fixed *finecosine = &finesine[FINEANGLES/4];
+Fixed* gFineCosine = &gFineSine[FINEANGLES/4];
 
-Fixed finesine[10240] = {
+Fixed gFineSine[10240] = {
 25,75,125,175,226,276,326,376,
 427,477,527,578,628,678,728,779,
 829,879,929,980,1030,1080,1130,1181,
@@ -1802,7 +1802,7 @@ Fixed finesine[10240] = {
 
 };
 
-angle_t tantoangle[2049] = {
+angle_t gTanToAngle[2049] = {
 0,333772,667544,1001315,1335086,1668857,2002626,2336395,
 2670163,3003929,3337694,3671457,4005219,4338979,4672736,5006492,
 5340245,5673995,6007743,6341488,6675229,7008968,7342703,7676435,
@@ -2062,22 +2062,22 @@ angle_t tantoangle[2049] = {
 536870911
 };
 
-int32_t     viewangletox[FINEANGLES/4];
-angle_t     xtoviewangle[MAXSCREENWIDTH+1];
-uint32_t    yslope[MAXSCREENHEIGHT];
-uint32_t    distscale[MAXSCREENWIDTH];
-uint32_t    IDivTable[8192];
-uint32_t    CenterX;
-uint32_t    CenterY;
-uint32_t    ScreenWidth;
-uint32_t    ScreenHeight;
-Fixed       Stretch;
-Fixed       StretchWidth;
-uint32_t    ScreenXOffset;
-uint32_t    ScreenYOffset;
-uint32_t    GunXScale;
-uint32_t    GunYScale;
-Fixed       lightmins[256];
-Fixed       lightsubs[256];
-Fixed       lightcoefs[256];
-Fixed       planelightcoef[256];
+int32_t     gViewAngleToX[FINEANGLES/4];
+angle_t     gXToViewAngle[MAXSCREENWIDTH+1];
+uint32_t    gYSlope[MAXSCREENHEIGHT];
+uint32_t    gDistScale[MAXSCREENWIDTH];
+uint32_t    gIDivTable[8192];
+uint32_t    gCenterX;
+uint32_t    gCenterY;
+uint32_t    gScreenWidth;
+uint32_t    gScreenHeight;
+Fixed       gStretch;
+Fixed       gStretchWidth;
+uint32_t    gScreenXOffset;
+uint32_t    gScreenYOffset;
+uint32_t    gGunXScale;
+uint32_t    gGunYScale;
+Fixed       gLightMins[256];
+Fixed       gLightSubs[256];
+Fixed       gLightCoefs[256];
+Fixed       gPlaneLightCoef[256];

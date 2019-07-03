@@ -7,19 +7,19 @@
 #include "Map/MapUtil.h"
 #include "MapObj.h"
 
-bool        trymove2;       // Result from P_TryMove2
-bool        floatok;        // If true, move would be ok if within tmfloorz - tmceilingz
-Fixed       tmfloorz;       // Current floor z for P_TryMove2
-Fixed       tmceilingz;     // Current ceiling z for P_TryMove2
-mobj_t*     movething;      // Either a skull/missile target or a special pickup
-line_t*     blockline;      // Might be a door that can be opened
+bool        gTryMove2;      // Result from P_TryMove2
+bool        gFloatOk;       // If true, move would be ok if within tmfloorz - tmceilingz
+Fixed       gTmpFloorZ;     // Current floor z for P_TryMove2
+Fixed       gTmpCeilingZ;   // Current ceiling z for P_TryMove2
+mobj_t*     gMoveThing;     // Either a skull/missile target or a special pickup
+line_t*     gBlockLine;     // Might be a door that can be opened
 
-static Fixed            oldx;
-static Fixed            oldy;
-static Fixed            tmbbox[4];
-static uint32_t         tmflags;
-static Fixed            tmdropoffz;     // Lowest point contacted
-static subsector_t*     newsubsec;      // Dest subsector
+static Fixed            gOldX;
+static Fixed            gOldY;
+static Fixed            gTmpBBox[4];
+static uint32_t         gTmpFlags;
+static Fixed            gTmpDropoffZ;       // Lowest point contacted
+static subsector_t*     gNewSubSec;         // Dest subsector
 
 /*
 ===================
@@ -33,52 +33,52 @@ static subsector_t*     newsubsec;      // Dest subsector
 */
 void P_TryMove2()
 {
-    trymove2 = false;       // until proven otherwise
-    floatok = false;
+    gTryMove2 = false;       // until proven otherwise
+    gFloatOk = false;
 
-    oldx = tmthing->x;
-    oldy = tmthing->y;
+    gOldX = gTmpThing->x;
+    gOldY = gTmpThing->y;
 
     PM_CheckPosition();
 
-    if (checkposonly) {
-        checkposonly = false;
+    if (gCheckPosOnly) {
+        gCheckPosOnly = false;
         return;
     }
 
-    if (!trymove2)
+    if (!gTryMove2)
         return;
 
-    if ( !(tmthing->flags & MF_NOCLIP) ) {
-        trymove2 = false;
+    if ( !(gTmpThing->flags & MF_NOCLIP) ) {
+        gTryMove2 = false;
 
-        if (tmceilingz - tmfloorz < tmthing->height)
+        if (gTmpCeilingZ - gTmpFloorZ < gTmpThing->height)
             return;         // doesn't fit
-        floatok = true;
-        if ( !(tmthing->flags&MF_TELEPORT)
-            &&tmceilingz - tmthing->z < tmthing->height)
+        gFloatOk = true;
+        if ( !(gTmpThing->flags&MF_TELEPORT)
+            &&gTmpCeilingZ - gTmpThing->z < gTmpThing->height)
             return;         // mobj must lower itself to fit
-        if ( !(tmthing->flags&MF_TELEPORT)
-            && tmfloorz - tmthing->z > 24*FRACUNIT )
+        if ( !(gTmpThing->flags&MF_TELEPORT)
+            && gTmpFloorZ - gTmpThing->z > 24*FRACUNIT )
             return;         // too big a step up
-        if ( !(tmthing->flags&(MF_DROPOFF|MF_FLOAT))
-            && tmfloorz - tmdropoffz > 24*FRACUNIT )
+        if ( !(gTmpThing->flags&(MF_DROPOFF|MF_FLOAT))
+            && gTmpFloorZ - gTmpDropoffZ > 24*FRACUNIT )
             return;         // don't stand over a dropoff
     }
 
     //
     // the move is ok, so link the thing into its new position
     //
-    UnsetThingPosition(tmthing);
+    UnsetThingPosition(gTmpThing);
 
-    tmthing->floorz = tmfloorz;
-    tmthing->ceilingz = tmceilingz;
-    tmthing->x = tmx;
-    tmthing->y = tmy;
+    gTmpThing->floorz = gTmpFloorZ;
+    gTmpThing->ceilingz = gTmpCeilingZ;
+    gTmpThing->x = gTmpX;
+    gTmpThing->y = gTmpY;
 
-    SetThingPosition (tmthing);
+    SetThingPosition(gTmpThing);
 
-    trymove2 = true;
+    gTryMove2 = true;
 
     return;
 }
@@ -115,37 +115,37 @@ movething
 ==================
 */
 void PM_CheckPosition() {
-    tmflags = tmthing->flags;
+    gTmpFlags = gTmpThing->flags;
     
-    tmbbox[BOXTOP] = tmy + tmthing->radius;
-    tmbbox[BOXBOTTOM] = tmy - tmthing->radius;
-    tmbbox[BOXRIGHT] = tmx + tmthing->radius;
-    tmbbox[BOXLEFT] = tmx - tmthing->radius;
+    gTmpBBox[BOXTOP] = gTmpY + gTmpThing->radius;
+    gTmpBBox[BOXBOTTOM] = gTmpY - gTmpThing->radius;
+    gTmpBBox[BOXRIGHT] = gTmpX + gTmpThing->radius;
+    gTmpBBox[BOXLEFT] = gTmpX - gTmpThing->radius;
     
-    newsubsec = PointInSubsector(tmx,tmy);
+    gNewSubSec = PointInSubsector(gTmpX,gTmpY);
 
     // The base floor / ceiling is from the subsector that contains the point.
     // Any contacted lines the step closer together will adjust them.
-    tmfloorz = tmdropoffz = newsubsec->sector->floorheight;
-    tmceilingz = newsubsec->sector->ceilingheight;
+    gTmpFloorZ = gTmpDropoffZ = gNewSubSec->sector->floorheight;
+    gTmpCeilingZ = gNewSubSec->sector->ceilingheight;
 
-    ++validcount;
+    ++gValidCount;
     
-    movething = 0;
-    blockline = 0;
+    gMoveThing = 0;
+    gBlockLine = 0;
 
-    if (tmflags & MF_NOCLIP) {
-        trymove2 = true;
+    if (gTmpFlags & MF_NOCLIP) {
+        gTryMove2 = true;
         return;
     }
     
     // Check things first, possibly picking things up.
     // The bounding box is extended by MAXRADIUS because mobj_ts are grouped into mapblocks based
     // on their origin point, and can overlap into adjacent blocks by up to MAXRADIUS units.
-    int32_t xl = (tmbbox[BOXLEFT] - gBlockMapOriginX - MAXRADIUS) >> MAPBLOCKSHIFT;
-    int32_t xh = (tmbbox[BOXRIGHT] - gBlockMapOriginX + MAXRADIUS) >> MAPBLOCKSHIFT;
-    int32_t yl = (tmbbox[BOXBOTTOM] - gBlockMapOriginY - MAXRADIUS) >> MAPBLOCKSHIFT;
-    int32_t yh = (tmbbox[BOXTOP] - gBlockMapOriginY + MAXRADIUS) >> MAPBLOCKSHIFT;
+    int32_t xl = (gTmpBBox[BOXLEFT] - gBlockMapOriginX - MAXRADIUS) >> MAPBLOCKSHIFT;
+    int32_t xh = (gTmpBBox[BOXRIGHT] - gBlockMapOriginX + MAXRADIUS) >> MAPBLOCKSHIFT;
+    int32_t yl = (gTmpBBox[BOXBOTTOM] - gBlockMapOriginY - MAXRADIUS) >> MAPBLOCKSHIFT;
+    int32_t yh = (gTmpBBox[BOXTOP] - gBlockMapOriginY + MAXRADIUS) >> MAPBLOCKSHIFT;
     
     if (xl < 0) {
         xl = 0;
@@ -166,17 +166,17 @@ void PM_CheckPosition() {
     for (int bx = xl; bx <= xh; bx++) {
         for (int by = yl; by <= yh; by++) {
             if (!BlockThingsIterator(bx,by,PIT_CheckThing)) {
-                trymove2 = false;
+                gTryMove2 = false;
                 return;
             }
         }
     }
     
     // Check lines
-    xl = (tmbbox[BOXLEFT] - gBlockMapOriginX) >> MAPBLOCKSHIFT;
-    xh = (tmbbox[BOXRIGHT] - gBlockMapOriginX) >> MAPBLOCKSHIFT;
-    yl = (tmbbox[BOXBOTTOM] - gBlockMapOriginY) >> MAPBLOCKSHIFT;
-    yh = (tmbbox[BOXTOP] - gBlockMapOriginY) >> MAPBLOCKSHIFT;
+    xl = (gTmpBBox[BOXLEFT] - gBlockMapOriginX) >> MAPBLOCKSHIFT;
+    xh = (gTmpBBox[BOXRIGHT] - gBlockMapOriginX) >> MAPBLOCKSHIFT;
+    yl = (gTmpBBox[BOXBOTTOM] - gBlockMapOriginY) >> MAPBLOCKSHIFT;
+    yh = (gTmpBBox[BOXTOP] - gBlockMapOriginY) >> MAPBLOCKSHIFT;
 
     if (xl < 0) {
         xl = 0;
@@ -197,13 +197,13 @@ void PM_CheckPosition() {
     for (int bx = xl; bx <= xh; bx++) {
         for (int by = yl; by <= yh; by++) {
             if (!BlockLinesIterator(bx, by, PM_CrossCheck)) {
-                trymove2 = false;
+                gTryMove2 = false;
                 return;
             }
         }
     }
 
-    trymove2 = true;
+    gTryMove2 = true;
     return;
 }
 
@@ -226,21 +226,21 @@ bool PM_BoxCrossLine(line_t* ld)
     Fixed       dx2,dy2;
     bool        side1, side2;
 
-    if (tmbbox[BOXRIGHT] <= ld->bbox[BOXLEFT]
-    ||  tmbbox[BOXLEFT] >= ld->bbox[BOXRIGHT]
-    ||  tmbbox[BOXTOP] <= ld->bbox[BOXBOTTOM]
-    ||  tmbbox[BOXBOTTOM] >= ld->bbox[BOXTOP] )
+    if (gTmpBBox[BOXRIGHT] <= ld->bbox[BOXLEFT]
+    ||  gTmpBBox[BOXLEFT] >= ld->bbox[BOXRIGHT]
+    ||  gTmpBBox[BOXTOP] <= ld->bbox[BOXBOTTOM]
+    ||  gTmpBBox[BOXBOTTOM] >= ld->bbox[BOXTOP] )
         return false;
 
-    y1 = tmbbox[BOXTOP];
-    y2 = tmbbox[BOXBOTTOM];
+    y1 = gTmpBBox[BOXTOP];
+    y2 = gTmpBBox[BOXBOTTOM];
 
     if (ld->slopetype == ST_POSITIVE) {
-        x1 = tmbbox[BOXLEFT];
-        x2 = tmbbox[BOXRIGHT];
+        x1 = gTmpBBox[BOXLEFT];
+        x2 = gTmpBBox[BOXRIGHT];
     } else {
-        x1 = tmbbox[BOXRIGHT];
-        x2 = tmbbox[BOXLEFT];
+        x1 = gTmpBBox[BOXRIGHT];
+        x2 = gTmpBBox[BOXLEFT];
     }
 
     lx = ld->v1.x;
@@ -286,11 +286,11 @@ bool PIT_CheckLine(line_t* ld)
     if (!ld->backsector)
         return false;       // one sided line
 
-    if (!(tmthing->flags & MF_MISSILE) )
+    if (!(gTmpThing->flags & MF_MISSILE) )
     {
         if ( ld->flags & ML_BLOCKING )
             return false;       // explicitly blocking everything
-        if ( !tmthing->player && ld->flags & ML_BLOCKMONSTERS )
+        if ( !gTmpThing->player && ld->flags & ML_BLOCKMONSTERS )
             return false;       // block monsters only
     }
 
@@ -301,7 +301,7 @@ bool PIT_CheckLine(line_t* ld)
     if (front->ceilingheight == front->floorheight
     || back->ceilingheight == back->floorheight)
     {
-        blockline = ld;
+        gBlockLine = ld;
         return false;           // probably a closed door
     }
 
@@ -321,12 +321,12 @@ bool PIT_CheckLine(line_t* ld)
     }
 
     // adjust floor / ceiling heights
-    if (pm_opentop < tmceilingz)
-        tmceilingz = pm_opentop;
-    if (pm_openbottom > tmfloorz)
-        tmfloorz = pm_openbottom;
-    if (pm_lowfloor < tmdropoffz)
-        tmdropoffz = pm_lowfloor;
+    if (pm_opentop < gTmpCeilingZ)
+        gTmpCeilingZ = pm_opentop;
+    if (pm_openbottom > gTmpFloorZ)
+        gTmpFloorZ = pm_openbottom;
+    if (pm_lowfloor < gTmpDropoffZ)
+        gTmpDropoffZ = pm_lowfloor;
 
     return true;
 }
@@ -345,46 +345,46 @@ uint32_t PIT_CheckThing(mobj_t* thing)
 
     if (!(thing->flags & (MF_SOLID|MF_SPECIAL|MF_SHOOTABLE) ))
         return true;
-    blockdist = thing->radius + tmthing->radius;
+    blockdist = thing->radius + gTmpThing->radius;
 
-    delta = thing->x - tmx;
+    delta = thing->x - gTmpX;
     if (delta < 0)
         delta = -delta;
     if (delta >= blockdist)
         return true;        // didn't hit it
-    delta = thing->y - tmy;
+    delta = thing->y - gTmpY;
     if (delta < 0)
         delta = -delta;
     if (delta >= blockdist)
         return true;        // didn't hit it
 
-    if (thing == tmthing)
+    if (thing == gTmpThing)
         return true;        // don't clip against self
 
     //
     // check for skulls slamming into things
     //
-    if (tmthing->flags & MF_SKULLFLY)
+    if (gTmpThing->flags & MF_SKULLFLY)
     {
-        movething = thing;
+        gMoveThing = thing;
         return false;       // stop moving
     }
     
     //
     // missiles can hit other things
     //
-    if (tmthing->flags & MF_MISSILE)
+    if (gTmpThing->flags & MF_MISSILE)
     {
     // see if it went over / under
-        if (tmthing->z > thing->z + thing->height)
+        if (gTmpThing->z > thing->z + thing->height)
             return true;        // overhead
-        if (tmthing->z+tmthing->height < thing->z)
+        if (gTmpThing->z+gTmpThing->height < thing->z)
             return true;        // underneath
-        if (tmthing->target->InfoPtr == thing->InfoPtr)
+        if (gTmpThing->target->InfoPtr == thing->InfoPtr)
         {       // don't hit same species as originator
-            if (thing == tmthing->target)
+            if (thing == gTmpThing->target)
                 return true;
-            if (thing->InfoPtr != &mobjinfo[MT_PLAYER])
+            if (thing->InfoPtr != &gMObjInfo[MT_PLAYER])
                 return false;   // explode, but do no damage
             // let players missile other players
         }
@@ -392,16 +392,16 @@ uint32_t PIT_CheckThing(mobj_t* thing)
             return !(thing->flags & MF_SOLID);      // didn't do any damage
 
     // damage / explode
-        movething = thing;
+        gMoveThing = thing;
         return false;           // don't traverse any more
     }
 
     //
     // check for special pickup
     //
-    if ( (thing->flags&MF_SPECIAL) && (tmflags&MF_PICKUP) )
+    if ( (thing->flags&MF_SPECIAL) && (gTmpFlags&MF_PICKUP) )
     {
-        movething = thing;
+        gMoveThing = thing;
         return true;
     }
 

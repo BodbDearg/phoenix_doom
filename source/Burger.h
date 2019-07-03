@@ -13,9 +13,9 @@
 typedef int32_t Item;
 
 // In Graphics 
-extern uint8_t *VideoPointer;
-extern uint32_t FramebufferWidth;
-extern uint32_t FramebufferHeight;
+extern uint8_t* gVideoPointer;
+extern uint32_t gFramebufferWidth;
+extern uint32_t gFramebufferHeight;
 extern void DrawShape(const uint32_t x1, const uint32_t y1, const struct CelControlBlock* const pShape) noexcept;
 extern void DrawMShape(const uint32_t x1, const uint32_t y1, const struct CelControlBlock* const pShape) noexcept;
 extern void DrawARect(const uint32_t x, const uint32_t y, const uint32_t width, const uint32_t height, const uint16_t color) noexcept;
@@ -38,7 +38,7 @@ extern void DrawRezShape(uint32_t x, uint32_t y, uint32_t RezNum) noexcept;
 #define PadXLeft        0x00100000
 #define PadXRight       0x00080000
 
-extern uint32_t LastJoyButtons[4];      // Save the previous joypad bits 
+extern uint32_t gLastJoyButtons[4];      // Save the previous joypad bits 
 extern uint32_t ReadJoyButtons(uint32_t Which) noexcept;
 
 // Misc routines 
@@ -46,9 +46,9 @@ extern void LongWordToAscii(uint32_t Input, char* AsciiPtr) noexcept;
 extern uint32_t SaveAFile(const char* FileName, void* data, uint32_t Length) noexcept;
 
 // Time and Events 
-extern uint32_t LastTick;
+extern uint32_t gLastTick;
 extern uint32_t ReadTick() noexcept;
 
 // Misc 
-extern Item VideoItem;          // 3DO Specific! 
-extern Item VideoScreen;        // 3DO Specific! 
+extern Item gVideoItem;         // 3DO Specific! 
+extern Item gVideoScreen;       // 3DO Specific! 

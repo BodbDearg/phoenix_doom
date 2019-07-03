@@ -105,8 +105,8 @@ void AM_Start() noexcept {
     gShowAllThings = false;                 // Turn off the cheat
     gShowAllLines = false;                  // Turn off the cheat
     gFollowMode = true;                     // Follow the player
-    players.AutomapFlags &= ~AF_ACTIVE;     // Automap off
-    gTrueOldButtons = JoyPadButtons;        // Get the current state
+    gPlayers.AutomapFlags &= ~AF_ACTIVE;    // Automap off
+    gTrueOldButtons = gJoyPadButtons;       // Get the current state
 
     memset((char*) CurrentCheat, 0, sizeof(CurrentCheat));
 }
@@ -269,14 +269,14 @@ static void DrawLine(
 // the UNFILTERED JoyPadButtons and pass through a filtered NewPadButtons and JoyPadButtons.
 //--------------------------------------------------------------------------------------------------
 void AM_Control(player_t& player) noexcept {
-    uint32_t buttons = JoyPadButtons;                               // Get the joypad
+    uint32_t buttons = gJoyPadButtons;                              // Get the joypad
     uint32_t NewButtons = (gTrueOldButtons ^ buttons) & buttons;    // Get the UNFILTERED joypad
     gTrueOldButtons = buttons;                                      // Set the previous joypad UNFILTERED
 
-    if (NewButtons & (PadUse|PadStart)) {                           // Shift down event?
-        if ((buttons & (PadUse|PadStart)) == (PadUse|PadStart)) {
-            if (!(player.AutomapFlags & AF_OPTIONSACTIVE)) {        // Can't toggle in option mode!
-                player.AutomapFlags ^= AF_ACTIVE;                   // Swap the automap state if both held
+    if (NewButtons & (gPadUse|PadStart)) {                              // Shift down event?
+        if ((buttons & (gPadUse|PadStart)) == (gPadUse|PadStart)) {
+            if (!(player.AutomapFlags & AF_OPTIONSACTIVE)) {            // Can't toggle in option mode!
+                player.AutomapFlags ^= AF_ACTIVE;                       // Swap the automap state if both held
             }
         }
     }
@@ -337,7 +337,7 @@ void AM_Control(player_t& player) noexcept {
         }   break;
 
         case ch_levelaccess:
-            MaxLevel = 23;
+            gMaxLevel = 23;
             WritePrefsFile();
             break;
 
@@ -408,8 +408,8 @@ void AM_Control(player_t& player) noexcept {
         buttons &= ~(PadUp|PadLeft|PadRight|PadDown|PadRightShift|PadLeftShift);
     }
 
-    JoyPadButtons = buttons;                                        // Save the filtered joypad value
-    NewJoyPadButtons = (PrevJoyPadButtons ^ buttons) & buttons;     // Filter the joydowns
+    gJoyPadButtons = buttons;                                       // Save the filtered joypad value
+    gNewJoyPadButtons = (gPrevJoyPadButtons ^ buttons) & buttons;   // Filter the joydowns
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -418,7 +418,7 @@ void AM_Control(player_t& player) noexcept {
 void AM_Drawer() noexcept {
     DrawARect(0, 0, 320, 160, COLOR_BLACK);     // Black out the screen
 
-    player_t* const pPlayer = &players;     // Get pointer to the player
+    player_t* const pPlayer = &gPlayers;    // Get pointer to the player
     Fixed ox = pPlayer->automapx;           // Get the x and y to draw from
     Fixed oy = pPlayer->automapy;
     line_t* pLine = gpLines;                // Init the list pointer to the line segment array
@@ -479,22 +479,22 @@ void AM_Drawer() noexcept {
     {
         // Get the size of the triangle into a cached local
         const Fixed noseScale = fixedMul(NOSELENGTH, gMapScale);
-        mobj_t* const pMapObj = players.mo;
+        mobj_t* const pMapObj = gPlayers.mo;
 
         int32_t x1 = MulByMapScale(pMapObj->x - ox);            // Get the screen
         int32_t y1 = MulByMapScale(pMapObj->y - oy);            // coords
         angle_t angle = pMapObj->angle >> ANGLETOFINESHIFT;     // Get angle of view
 
-        const int32_t nx3 = IMFixMulGetInt(finecosine[angle], noseScale) + x1;  // Other points for the triangle
-        const int32_t ny3 = IMFixMulGetInt(finesine[angle], noseScale) + y1;
+        const int32_t nx3 = IMFixMulGetInt(gFineCosine[angle], noseScale) + x1;     // Other points for the triangle
+        const int32_t ny3 = IMFixMulGetInt(gFineSine[angle], noseScale) + y1;
 
         angle = (angle - ((ANG90 + ANG45) >> ANGLETOFINESHIFT)) & FINEMASK;
-        const int32_t x2 = IMFixMulGetInt(finecosine[angle], noseScale) + x1;
-        const int32_t y2 = IMFixMulGetInt(finesine[angle], noseScale) + y1;
+        const int32_t x2 = IMFixMulGetInt(gFineCosine[angle], noseScale) + x1;
+        const int32_t y2 = IMFixMulGetInt(gFineSine[angle], noseScale) + y1;
 
         angle = (angle + (((ANG90 + ANG45) >> ANGLETOFINESHIFT) * 2)) & FINEMASK;
-        x1 = IMFixMulGetInt(finecosine[angle], noseScale)+x1;
-        y1 = IMFixMulGetInt(finesine[angle], noseScale)+y1;
+        x1 = IMFixMulGetInt(gFineCosine[angle], noseScale)+x1;
+        y1 = IMFixMulGetInt(gFineSine[angle], noseScale)+y1;
 
         DrawLine(x1, y1, x2, y2, COLOR_GREEN);      // Draw the triangle
         DrawLine(x2, y2, nx3, ny3, COLOR_GREEN);
@@ -504,10 +504,10 @@ void AM_Drawer() noexcept {
     // Show all map things (cheat)
     if (gShowAllThings) {
         const int32_t objScale = MulByMapScale(MOBJLENGTH);   // Get the triangle size
-        mobj_t* pMapObj = mobjhead.next;
+        mobj_t* pMapObj = gMObjHead.next;
         const mobj_t* const pPlayerMapObj = pPlayer->mo;
 
-        while (pMapObj != &mobjhead) {          // Wrapped around?
+        while (pMapObj != &gMObjHead) {         // Wrapped around?
             if (pMapObj != pPlayerMapObj) {     // Not the player?
                 const int32_t x1 = MulByMapScale(pMapObj->x-ox);
                 int32_t y1 = MulByMapScale(pMapObj->y-oy);

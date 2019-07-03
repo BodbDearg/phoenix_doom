@@ -16,24 +16,24 @@
 #include "Things/Shoot.h"
 #include <cstdlib>
 
-mobj_t*     linetarget;
-mobj_t*     tmthing;
-Fixed       tmx;
-Fixed       tmy;
-bool        checkposonly;
-mobj_t*     shooter;
-angle_t     attackangle;
-Fixed       attackrange;
-Fixed       aimtopslope;
-Fixed       aimbottomslope;
+mobj_t*     gLineTarget;
+mobj_t*     gTmpThing;
+Fixed       gTmpX;
+Fixed       gTmpY;
+bool        gCheckPosOnly;
+mobj_t*     gShooter;
+angle_t     gAttackAngle;
+Fixed       gAttackRange;
+Fixed       gAimTopSlope;
+Fixed       gAimBottomSlope;
 
-static int32_t      usebbox[4];     // Local box for BSP traversing
-static vector_t     useline;        // Temp subdivided line for targeting
-static line_t*      closeline;      // Line to target
-static Fixed        closedist;      // Distance to target
-static mobj_t*      bombsource;     // Explosion source
-static mobj_t*      bombspot;       // Explosion position
-static uint32_t     bombdamage;     // Damage done by explosion
+static int32_t      gUseBBox[4];    // Local box for BSP traversing
+static vector_t     gUseLine;       // Temp subdivided line for targeting
+static line_t*      gCloseLine;     // Line to target
+static Fixed        gCloseDist;     // Distance to target
+static mobj_t*      gBombSource;    // Explosion source
+static mobj_t*      gBombSpot;      // Explosion position
+static uint32_t     gBombDamage;    // Damage done by explosion
 
 /**********************************
 
@@ -53,12 +53,12 @@ movething   thing collision
 
 bool P_CheckPosition(mobj_t *thing, Fixed x, Fixed y)
 {
-    tmthing = thing;        // Copy parms to globals
-    tmx = x;
-    tmy = y;
-    checkposonly = true;    // Only check the position
-    P_TryMove2();           // See if I can move there...
-    return trymove2;        // Return the result
+    gTmpThing = thing;          // Copy parms to globals
+    gTmpX = x;
+    gTmpY = y;
+    gCheckPosOnly = true;       // Only check the position
+    P_TryMove2();               // See if I can move there...
+    return gTryMove2;           // Return the result
 }
 
 /**********************************
@@ -72,14 +72,14 @@ bool P_TryMove(mobj_t *thing, Fixed x, Fixed y)
     uint32_t damage;
     mobj_t *latchedmovething;
 
-    tmthing = thing;        // Source xy
-    tmx = x;                // New x,y
-    tmy = y;
+    gTmpThing = thing;        // Source xy
+    gTmpX = x;                // New x,y
+    gTmpY = y;
     P_TryMove2();           // Move to the new spot
 
 // Pick up the specials
 
-    latchedmovething = movething;       // Hit something?
+    latchedmovething = gMoveThing;      // Hit something?
 
     if (latchedmovething) {
         // missile bash into a monster
@@ -98,7 +98,7 @@ bool P_TryMove(mobj_t *thing, Fixed x, Fixed y)
             TouchSpecialThing(latchedmovething,thing);
         }
     }
-    return trymove2;        // Return result
+    return gTryMove2;       // Return result
 }
 
 /**********************************
@@ -115,19 +115,19 @@ static uint32_t PIT_UseLines(line_t *li)
 
 // check bounding box first
 
-    if (usebbox[BOXRIGHT] <= li->bbox[BOXLEFT]  // Within the bounding box?
-    ||  usebbox[BOXLEFT] >= li->bbox[BOXRIGHT]
-    ||  usebbox[BOXTOP] <= li->bbox[BOXBOTTOM]
-    ||  usebbox[BOXBOTTOM] >= li->bbox[BOXTOP] ) {
+    if (gUseBBox[BOXRIGHT] <= li->bbox[BOXLEFT]  // Within the bounding box?
+    ||  gUseBBox[BOXLEFT] >= li->bbox[BOXRIGHT]
+    ||  gUseBBox[BOXTOP] <= li->bbox[BOXBOTTOM]
+    ||  gUseBBox[BOXBOTTOM] >= li->bbox[BOXTOP] ) {
         return true;            // Nope, they don't collide
     }
 
 // find distance along usetrace
 
     MakeVector(li,&dl);         // Convert true line to a divline struct
-    frac = InterceptVector(&useline,&dl);       // How much do they intercept
+    frac = InterceptVector(&gUseLine,&dl);       // How much do they intercept
     if ((frac < 0) ||           // Behind source?
-        (frac > closedist)) {   // Too far away?
+        (frac > gCloseDist)) {   // Too far away?
         return true;        // No collision
     }
 
@@ -138,9 +138,8 @@ static uint32_t PIT_UseLines(line_t *li)
             return true;    // keep going
         }
     }
-    closeline = li;     // This is the line of travel
-    closedist = frac;   // This is the length of the line
-
+    gCloseLine = li;     // This is the line of travel
+    gCloseDist = frac;   // This is the length of the line
     return true;        // Can't use for than one special line in a row
 }
 
@@ -152,41 +151,41 @@ void P_UseLines(player_t* player) {
     uint32_t angle = player->mo->angle >> ANGLETOFINESHIFT;
     Fixed x1 = player->mo->x;                                       // Get the source x,y
     Fixed y1 = player->mo->y;
-    Fixed x2 = x1 + (USERANGE >> FRACBITS) * finecosine[angle];     // Get the dest X,Y
-    Fixed y2 = y1 + (USERANGE >> FRACBITS) * finesine[angle];
+    Fixed x2 = x1 + (USERANGE >> FRACBITS) * gFineCosine[angle];    // Get the dest X,Y
+    Fixed y2 = y1 + (USERANGE >> FRACBITS) * gFineSine[angle];
     
-    useline.x = x1;         // Create the useline record
-    useline.y = y1;
-    useline.dx = x2-x1;     // Delta x and y
-    useline.dy = y2-y1;
+    gUseLine.x = x1;        // Create the useline record
+    gUseLine.y = y1;
+    gUseLine.dx = x2-x1;    // Delta x and y
+    gUseLine.dy = y2-y1;
 
-    if (useline.dx >= 0) {
-        usebbox[BOXRIGHT] = x2;     // Create the bounding box
-        usebbox[BOXLEFT] = x1;
+    if (gUseLine.dx >= 0) {
+        gUseBBox[BOXRIGHT] = x2;    // Create the bounding box
+        gUseBBox[BOXLEFT] = x1;
     } else {
-        usebbox[BOXRIGHT] = x1;
-        usebbox[BOXLEFT] = x2;
+        gUseBBox[BOXRIGHT] = x1;
+        gUseBBox[BOXLEFT] = x2;
     }
 
-    if (useline.dy >= 0) {          // Create the bounding box
-        usebbox[BOXTOP] = y2;
-        usebbox[BOXBOTTOM] = y1;
+    if (gUseLine.dy >= 0) {         // Create the bounding box
+        gUseBBox[BOXTOP] = y2;
+        gUseBBox[BOXBOTTOM] = y1;
     } else {
-        usebbox[BOXTOP] = y1;
-        usebbox[BOXBOTTOM] = y2;
+        gUseBBox[BOXTOP] = y1;
+        gUseBBox[BOXBOTTOM] = y2;
     }
 
-    int yh = (usebbox[BOXTOP] - gBlockMapOriginY) >> MAPBLOCKSHIFT;     // Bounding box
-    int yl = (usebbox[BOXBOTTOM] - gBlockMapOriginY) >> MAPBLOCKSHIFT;
-    int xh = (usebbox[BOXRIGHT] - gBlockMapOriginX) >> MAPBLOCKSHIFT;
-    int xl = (usebbox[BOXLEFT] - gBlockMapOriginX) >> MAPBLOCKSHIFT;
+    int yh = (gUseBBox[BOXTOP] - gBlockMapOriginY) >> MAPBLOCKSHIFT;        // Bounding box
+    int yl = (gUseBBox[BOXBOTTOM] - gBlockMapOriginY) >> MAPBLOCKSHIFT;
+    int xh = (gUseBBox[BOXRIGHT] - gBlockMapOriginX) >> MAPBLOCKSHIFT;
+    int xl = (gUseBBox[BOXLEFT] - gBlockMapOriginX) >> MAPBLOCKSHIFT;
     
     ++xh;   // For < compare later
     ++yh;
 
-    closeline = 0;          // No line found
-    closedist = FRACUNIT;   // 1.0 units distance
-    ++validcount;           // Make unique sector mark
+    gCloseLine = 0;             // No line found
+    gCloseDist = FRACUNIT;      // 1.0 units distance
+    ++gValidCount;              // Make unique sector mark
     
     {
         int y = yl;
@@ -199,11 +198,11 @@ void P_UseLines(player_t* player) {
     }
     
     // Check closest line
-    if (closeline) {                                    // Line nearby?
-        if (!closeline->special) {                      // Is it special?
+    if (gCloseLine) {                                   // Line nearby?
+        if (!gCloseLine->special) {                     // Is it special?
             S_StartSound(&player->mo->x, sfx_noway);    // Make the grunt sound
         } else {
-            P_UseSpecialLine(player->mo, closeline);    // Activate the special
+            P_UseSpecialLine(player->mo, gCloseLine);   // Activate the special
         }
     }
 }
@@ -225,15 +224,15 @@ static uint32_t PIT_RadiusAttack(mobj_t *thing)
         return true;            // Next thing...
     }
 
-    dx = abs(thing->x - bombspot->x);       // Absolute distance from BOOM
-    dy = abs(thing->y - bombspot->y);
+    dx = abs(thing->x - gBombSpot->x);      // Absolute distance from BOOM
+    dy = abs(thing->y - gBombSpot->y);
     dist = dx>=dy ? dx : dy;        // Get the greater of the two
     dist = (dist - thing->radius) >> FRACBITS;
     if (dist < 0) {     // Within the blast?
         dist = 0;       // Fix the distance
     }
-    if (dist < bombdamage) {        // Within blast range?
-        DamageMObj(thing,bombspot,bombsource,bombdamage-dist);
+    if (dist < gBombDamage) {        // Within blast range?
+        DamageMObj(thing,gBombSpot,gBombSource,gBombDamage-dist);
     }
     return true;        // Continue
 }
@@ -252,9 +251,9 @@ void RadiusAttack(mobj_t* spot, mobj_t* source, uint32_t damage) {
     ++xh;
     ++yh;
     
-    bombspot = spot;        // Copy to globals so PIT_Radius can see it
-    bombsource = source;
-    bombdamage = damage;
+    gBombSpot = spot;           // Copy to globals so PIT_Radius can see it
+    gBombSource = source;
+    gBombDamage = damage;
     
     // Damage all things in collision range
     {
@@ -281,18 +280,18 @@ void RadiusAttack(mobj_t* spot, mobj_t* source, uint32_t damage) {
 
 Fixed AimLineAttack(mobj_t *t1,angle_t angle,Fixed distance)
 {
-    shooter = t1;
-    attackrange = distance;
-    attackangle = angle;
-    aimtopslope = 100*FRACUNIT/160; // Can't shoot outside view angles
-    aimbottomslope = -100*FRACUNIT/160;
+    gShooter = t1;
+    gAttackRange = distance;
+    gAttackAngle = angle;
+    gAimTopSlope = 100*FRACUNIT/160; // Can't shoot outside view angles
+    gAimBottomSlope = -100*FRACUNIT/160;
 
-    ++validcount;
+    ++gValidCount;
 
     P_Shoot2();         // Call other code
-    linetarget = shootmobj;
-    if (linetarget) {       // Was there a valid hit?
-        return shootslope;  // Return the slope of target
+    gLineTarget = gShootMObj;
+    if (gLineTarget) {       // Was there a valid hit?
+        return gShootSlope;  // Return the slope of target
     }
     return 0;       // No target
 }
@@ -310,33 +309,33 @@ void LineAttack(mobj_t *t1,angle_t angle,Fixed distance,Fixed slope, uint32_t da
     line_t *shootline2;
     int shootx2, shooty2, shootz2;
 
-    shooter = t1;
-    attackrange = distance;
-    attackangle = angle;
+    gShooter = t1;
+    gAttackRange = distance;
+    gAttackAngle = angle;
 
     if (slope == FIXED_MAX) {
-        aimtopslope = 100*FRACUNIT/160; // can't shoot outside view angles
-        aimbottomslope = -100*FRACUNIT/160;
+        gAimTopSlope = 100*FRACUNIT/160; // can't shoot outside view angles
+        gAimBottomSlope = -100*FRACUNIT/160;
     } else {
-        aimtopslope = slope+1;
-        aimbottomslope = slope-1;
+        gAimTopSlope = slope+1;
+        gAimBottomSlope = slope-1;
     }
-    ++validcount;
+    ++gValidCount;
     P_Shoot2();         // Perform the calculations
-    linetarget = shootmobj;     // Get the result
-    shootline2 = shootline;
-    shootx2 = shootx;
-    shooty2 = shooty;
-    shootz2 = shootz;
+    gLineTarget = gShootMObj;     // Get the result
+    shootline2 = gShootLine;
+    shootx2 = gShootX;
+    shooty2 = gShootY;
+    shootz2 = gShootZ;
 
 // Shoot thing
-    if (linetarget) {           // Did you hit?
-        if (linetarget->flags & MF_NOBLOOD) {
+    if (gLineTarget) {           // Did you hit?
+        if (gLineTarget->flags & MF_NOBLOOD) {
             P_SpawnPuff(shootx2,shooty2,shootz2);   // Make a spark on the target
         } else {
             P_SpawnBlood(shootx2,shooty2,shootz2,damage);   // Squirt some blood!
         }
-        DamageMObj(linetarget,t1,t1,damage);        // Do the damage
+        DamageMObj(gLineTarget,t1,t1,damage);        // Do the damage
         return;
     }
 

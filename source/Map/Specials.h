@@ -15,8 +15,8 @@ struct anim_t {
     uint32_t CurrentPic;    // Current index
 };
 
-extern uint32_t NumFlatAnims;   // Number of flat anims
-extern anim_t   FlatAnims[];    // Array of flat animations
+extern uint32_t gNumFlatAnims;      // Number of flat anims
+extern anim_t   gFlatAnims[];       // Array of flat animations
 
 void P_InitPicAnims();
 side_t* getSide(sector_t* sec, uint32_t line, uint32_t side);

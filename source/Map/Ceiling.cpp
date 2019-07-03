@@ -28,7 +28,7 @@ typedef struct ceiling_t {
     bool crush;         // Can it crush? 
 } ceiling_t;
 
-static ceiling_t *MainCeilingPtr;   // Pointer to the first ceiling in list 
+static ceiling_t* gMainCeilingPtr;   // Pointer to the first ceiling in list 
 
 /**********************************
 
@@ -39,8 +39,8 @@ static ceiling_t *MainCeilingPtr;   // Pointer to the first ceiling in list
 
 static void AddActiveCeiling(ceiling_t *CeilingPtr)
 {
-    CeilingPtr->next = MainCeilingPtr;  // Insert into the chain 
-    MainCeilingPtr = CeilingPtr;        // Set this one as the first 
+    CeilingPtr->next = gMainCeilingPtr;  // Insert into the chain 
+    gMainCeilingPtr = CeilingPtr;        // Set this one as the first 
 }
 
 /**********************************
@@ -57,12 +57,12 @@ static void RemoveActiveCeiling(ceiling_t *CeilingPtrKill)
     ceiling_t *PrevPtr;     // Previous pointer (For linked list) 
 
     PrevPtr = 0;            // Init the previous pointer 
-    CeilingPtr = MainCeilingPtr;    // Get the main list entry 
+    CeilingPtr = gMainCeilingPtr;    // Get the main list entry 
     while (CeilingPtr) {        // Failsafe! 
         if (CeilingPtr==CeilingPtrKill) {   // Master pointer matches? 
             CeilingPtr = CeilingPtr->next;  // Get the next link 
             if (!PrevPtr) {             // First one in chain? 
-                MainCeilingPtr = CeilingPtr;    // Make the next one the new head 
+                gMainCeilingPtr = CeilingPtr;    // Make the next one the new head 
             } else {
                 PrevPtr->next = CeilingPtr; // Remove the link 
             }
@@ -90,7 +90,7 @@ static void T_MoveCeiling(ceiling_t *ceiling)
         res = T_MovePlane(ceiling->sector,ceiling->speed,   // Move it 
                 ceiling->topheight,false,true,ceiling->direction);
         
-        if (Tick2) {    // Sound? 
+        if (gTick2) {   // Sound? 
             S_StartSound(&ceiling->sector->SoundX,sfx_stnmov);
         }
         
@@ -111,7 +111,7 @@ static void T_MoveCeiling(ceiling_t *ceiling)
         res = T_MovePlane(ceiling->sector,ceiling->speed,   // Move it 
             ceiling->bottomheight,ceiling->crush,true,ceiling->direction);
         
-        if (Tick2) {    // Time for sound? 
+        if (gTick2) {   // Time for sound? 
             S_StartSound(&ceiling->sector->SoundX,sfx_stnmov);
         }
         
@@ -153,7 +153,7 @@ static void ActivateInStasisCeiling(uint32_t tag)
 {
     ceiling_t *CeilingPtr;      // Temp pointer 
 
-    CeilingPtr = MainCeilingPtr;    // Get the main list entry 
+    CeilingPtr = gMainCeilingPtr;    // Get the main list entry 
     if (CeilingPtr) {       // Scan all entries in the thinker list 
         do {
             if (CeilingPtr->tag == tag && !CeilingPtr->direction) { // Match? 
@@ -251,7 +251,7 @@ bool EV_CeilingCrushStop(line_t *line)
 
     rtn = false;
     tag = line->tag;            // Get the tag to look for 
-    CeilingPtr = MainCeilingPtr;    // Get the main list entry 
+    CeilingPtr = gMainCeilingPtr;    // Get the main list entry 
     while (CeilingPtr) {        // Scan all entries in the thinker list 
         if (CeilingPtr->tag == tag && CeilingPtr->direction) {  // Match? 
             CeilingPtr->olddirection = CeilingPtr->direction;   // Save the platform's state 
@@ -273,5 +273,5 @@ bool EV_CeilingCrushStop(line_t *line)
 
 void ResetCeilings(void)
 {
-    MainCeilingPtr = 0;     // Discard the links 
+    gMainCeilingPtr = 0;     // Discard the links 
 }

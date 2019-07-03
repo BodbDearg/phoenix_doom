@@ -19,13 +19,13 @@ angle_t SlopeAngle(uint32_t num, uint32_t den)
     num>>=(FRACBITS-3);         // Leave in 3 extra bits for just a little more precision 
     den>>=FRACBITS;             // Must be an int 
 
-    num = num*(IDivTable[den]>>9);  // Perform the divide using a recipocal mul 
+    num = num*(gIDivTable[den]>>9);  // Perform the divide using a recipocal mul 
     num>>=((FRACBITS+3)-SLOPEBITS); // Isolate the fraction for index to the angle table 
 
     if (num>SLOPERANGE) {           // Out of range? 
         num = SLOPERANGE;           // Fix it 
     }   
-    return tantoangle[num];         // Get the angle 
+    return gTanToAngle[num];         // Get the angle 
 }
 
 /**********************************
@@ -85,11 +85,11 @@ Fixed PointToDist(Fixed x, Fixed y)
 {
     angle_t angle;
 
-    x-=viewx;       // Get the point offset from the camera 
+    x-=gViewX;       // Get the point offset from the camera 
     if (x<0) {
         x=-x;       // I only want the absolute value 
     }
-    y-=viewy;       // Adjust the Y 
+    y-=gViewY;       // Adjust the Y 
     if (y<0) {
         y=-y;       // Abs value of Y 
     }
@@ -100,8 +100,8 @@ Fixed PointToDist(Fixed x, Fixed y)
         y = temp;
     }
     angle = SlopeAngle(y,x)>>ANGLETOFINESHIFT;      // x = denominator 
-    x = (x>>(FRACBITS-3))*finecosine[angle];        // Rotate the x 
-    x += (y>>(FRACBITS-3))*finesine[angle];         // Rotate the y and add it 
+    x = (x>>(FRACBITS-3))*gFineCosine[angle];        // Rotate the x 
+    x += (y>>(FRACBITS-3))*gFineSine[angle];         // Rotate the y and add it 
     x >>= 3;        // Convert to fixed (I added 3 extra bits of precision) 
     return x;           // This is the true distance 
 }
@@ -401,8 +401,8 @@ uint32_t BlockLinesIterator(uint32_t x, uint32_t y, uint32_t(*func)(line_t*)) {
                 break;              // Get out of the loop
             }
             
-            if (ld->validcount != validcount) {     // Line not checked?
-                ld->validcount = validcount;        // Mark it
+            if (ld->validcount != gValidCount) {    // Line not checked?
+                ld->validcount = gValidCount;       // Mark it
                 if (!func(ld)) {                    // Call the line proc
                     return false;                   // I have a match?
                 }

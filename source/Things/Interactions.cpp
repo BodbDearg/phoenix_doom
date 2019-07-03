@@ -19,7 +19,7 @@ static constexpr uint32_t   BASETHRESHOLD   = (7 * TICKSPERSEC) / 4;    // Numbe
 
 // A weapon is found with two clip loads, a big item has five clip loads 
 
-static uint32_t clipammo[NUMAMMO] = {10,4,20,1};    // Ammo for a normal clip 
+static constexpr uint32_t CLIP_AMMO[NUMAMMO] = { 10, 4, 20, 1 };    // Ammo for a normal clip 
 
 /**********************************
 
@@ -47,11 +47,11 @@ static uint32_t GiveAmmo(player_t *player,ammotype_e ammo,uint32_t numofclips)
     }
 
     if (numofclips) {           // Valid ammo count? 
-        numofclips *= clipammo[ammo];       // Get the ammo adder 
+        numofclips *= CLIP_AMMO[ammo];       // Get the ammo adder 
     } else {
-        numofclips = clipammo[ammo]/2;      // Give a half ration 
+        numofclips = CLIP_AMMO[ammo]/2;      // Give a half ration 
     }
-    if (gameskill == sk_baby) {
+    if (gGameSkill == sk_baby) {
         numofclips <<= 1;           // give double ammo in wimp mode 
     }
     oldammo += numofclips;          // Add in the new ammo 
@@ -117,16 +117,16 @@ static uint32_t GiveWeapon(player_t *player,weapontype_e weapon,uint32_t dropped
 
     // Give one clip with a dropped weapon, two clips with a found weapon 
 
-    if (WeaponAmmos[weapon] != am_noammo) {     // Any ammo inside? 
+    if (gWeaponAmmos[weapon] != am_noammo) {     // Any ammo inside? 
         dropped = dropped ? 1 : 2;      // 1 or 2 clips 
-        PickedUp = GiveAmmo(player,WeaponAmmos[weapon],dropped);
+        PickedUp = GiveAmmo(player,gWeaponAmmos[weapon],dropped);
     }
 
     if (!player->weaponowned[weapon]) {     // Already had such a weapon? 
         PickedUp = true;
         player->weaponowned[weapon] = true;     // I have it now 
         player->pendingweapon = weapon;         // Use this weapon 
-        stbar.specialFace = f_gotgat;       // He he he! Evil grin!   
+        gStBar.specialFace = f_gotgat;       // He he he! Evil grin!   
     }
     return PickedUp;        // Did you pick it up? 
 }
@@ -536,28 +536,28 @@ Healthy:
 
 static void KillMobj(mobj_t *target, uint32_t Overkill)
 {
-    mobjinfo_t *InfoPtr;
+    const mobjinfo_t *InfoPtr;
     mobj_t *mo;
 
     InfoPtr = target->InfoPtr;
     
     target->flags &= ~(MF_SHOOTABLE|MF_FLOAT|MF_SKULLFLY);  // Clear flags 
-    if (InfoPtr != &mobjinfo[MT_SKULL]) {       // Skulls can stay in the air 
+    if (InfoPtr != &gMObjInfo[MT_SKULL]) {       // Skulls can stay in the air 
         target->flags &= ~MF_NOGRAVITY; // Make eye creatures fall 
     }
     target->flags |= MF_CORPSE|MF_DROPOFF;      // It's dead and can fall 
     target->height >>= 2;           // Reduce the height a lot 
 
     if (target->flags & MF_COUNTKILL) {
-        ++players.killcount;            // Count all monster deaths, even 
+        ++gPlayers.killcount;            // Count all monster deaths, even 
     }                                   // those caused by other monsters 
 
     if (target->player) {           // Was the dead one a player? 
         target->flags &= ~MF_SOLID;     // Walk over the body! 
         target->player->playerstate = PST_DEAD; // You are dead! 
         LowerPlayerWeapon(target->player);      // Drop current weapon on screen 
-        if (target->player == &players) {
-            stbar.gotgibbed = true;     // Gooey! 
+        if (target->player == &gPlayers) {
+            gStBar.gotgibbed = true;     // Gooey! 
         }
         if (Overkill>=50) {         // Were you a real mess? 
             S_StartSound(&target->x,sfx_slop);  // Juicy, gorey death! 
@@ -576,10 +576,10 @@ static void KillMobj(mobj_t *target, uint32_t Overkill)
 
 // Drop stuff 
 
-    if (InfoPtr == &mobjinfo[MT_POSSESSED]) {
-        InfoPtr = &mobjinfo[MT_CLIP];
-    } else if (InfoPtr == &mobjinfo[MT_SHOTGUY]) {
-        InfoPtr = &mobjinfo[MT_SHOTGUN];
+    if (InfoPtr == &gMObjInfo[MT_POSSESSED]) {
+        InfoPtr = &gMObjInfo[MT_CLIP];
+    } else if (InfoPtr == &gMObjInfo[MT_SHOTGUY]) {
+        InfoPtr = &gMObjInfo[MT_SHOTGUN];
     } else {
         return;
     }
@@ -621,11 +621,11 @@ void DamageMObj(mobj_t *target,mobj_t *inflictor,mobj_t *source, uint32_t damage
 
     player = target->player;
     if (player) {           // Handle player damage 
-        if (gameskill == sk_baby) {
+        if (gGameSkill == sk_baby) {
             damage >>= 1;               // take half damage in trainer mode 
         }
-        if ((damage >= 31) && player == &players) {
-            stbar.specialFace = f_hurtbad;      // Ouch face 
+        if ((damage >= 31) && player == &gPlayers) {
+            gStBar.specialFace = f_hurtbad;      // Ouch face 
         }
     }
 
@@ -644,8 +644,8 @@ void DamageMObj(mobj_t *target,mobj_t *inflictor,mobj_t *source, uint32_t damage
         }
         an = ang>>ANGLETOFINESHIFT;     // Convert to sine table value 
         thrust >>= FRACBITS;            // Get the integer 
-        target->momx += thrust * finecosine[an];    // Get some momentum 
-        target->momy += thrust * finesine[an];
+        target->momx += thrust * gFineCosine[an];    // Get some momentum 
+        target->momy += thrust * gFineSine[an];
     } else {
         ang = target->angle;        // Get facing 
     }
@@ -657,12 +657,12 @@ void DamageMObj(mobj_t *target,mobj_t *inflictor,mobj_t *source, uint32_t damage
             return;     // Don't hurt in god mode 
         }
             // Where did the attack come from? 
-        if (player == &players) {
+        if (player == &gPlayers) {
             ang -= target->angle;       // Get angle differance 
             if (ang >= 0x30000000UL && ang < 0x80000000UL) {
-                stbar.specialFace = f_faceright;        // Face toward attacker 
+                gStBar.specialFace = f_faceright;        // Face toward attacker 
             } else if (ang >= 0x80000000UL && ang < 0xD0000000UL) {
-                stbar.specialFace = f_faceleft;
+                gStBar.specialFace = f_faceleft;
             }
         }
         if (player->armortype) {        // Remove damage using armor 

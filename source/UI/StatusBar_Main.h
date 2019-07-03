@@ -20,7 +20,7 @@ struct stbar_t {
     bool        tryopen[NUMCARDS];      // Tried to open a card or skull door
 };
 
-extern stbar_t stbar;   // Pass messages to the status bar
+extern stbar_t gStBar;   // Pass messages to the status bar
 
 void ST_Start();
 void ST_Stop();

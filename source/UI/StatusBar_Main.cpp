@@ -46,7 +46,8 @@
 #define FIRSTSPLAT 42       // First gibbed face 
 #define GIBTIME (TICKSPERSEC/6)         // Time for gibbed animation 
 
-enum {              // Shape group rSBARSHP 
+// Shape group rSBARSHP
+enum {
     sb_card_b,      // Blue card 
     sb_card_y,      // Yellow card 
     sb_card_r,      // Red card 
@@ -56,7 +57,8 @@ enum {              // Shape group rSBARSHP
     sb_micro        // The 6 small weapons 
 };
 
-enum {      // Indexs for face array 
+// Indexs for face array
+enum {
     sbf_lookfwd,    // Look ahead 
     sbf_lookrgt,    // Look right 
     sbf_looklft,    // Look left 
@@ -67,25 +69,8 @@ enum {      // Indexs for face array
     sbf_mowdown     // Mowing down opponents 
 };
 
-typedef struct {
-    uint32_t    delay;     // Time delay 
-    uint32_t    times;     // Number of times to flash 
-    bool        doDraw;    // True if I draw now 
-} sbflash_t;
-
-stbar_t stbar;      // Current state of the status bar 
-
-static void *StatusBarShape;   // Handle to current status bar shape 
-static void *SBObj;    // Cached handle to the status bar sub shapes 
-static void *Faces;    // Cached handle to the faces 
-static uint32_t micronums_x[NUMMICROS] = {237,249,261,237,249,261}; // X's 
-static uint32_t micronums_y[NUMMICROS] = {175,175,175,185,185,185}; // Y's 
-static uint32_t card_x[NUMCARDS] = {KEYX,KEYX,KEYX,KEYX+3,KEYX+3,KEYX+3};
-static uint32_t card_y[NUMCARDS] = {BLUKEYY,YELKEYY,REDKEYY,BLUKEYY,YELKEYY,REDKEYY};
-static uint32_t facetics;       // Time before animating the face 
-static uint32_t newface;        // Which normal face to show 
 // Special face to shape # 
-static uint32_t spclfaceSprite[NUMSPCLFACES] = {
+static constexpr uint32_t SPECIAL_FACE_SPRITE[NUMSPCLFACES] = {
     sbf_lookfwd,
     sbf_facelft,
     sbf_facergt,
@@ -94,10 +79,28 @@ static uint32_t spclfaceSprite[NUMSPCLFACES] = {
     sbf_mowdown
 };
 
-static sbflash_t flashCards[NUMCARDS];  // Info for flashing cards & Skulls 
-static bool gibdraw;        // Got gibbed? 
-static uint32_t gibframe;       // Which gib frame 
-static uint32_t gibdelay;       // Delay for gibbing 
+static constexpr uint32_t CARD_X[NUMCARDS] = { KEYX, KEYX, KEYX, KEYX + 3, KEYX + 3, KEYX + 3 };
+static constexpr uint32_t CARD_Y[NUMCARDS] = { BLUKEYY, YELKEYY, REDKEYY, BLUKEYY, YELKEYY, REDKEYY };
+static constexpr uint32_t MICRO_NUMS_X[NUMMICROS] = { 237, 249, 261, 237, 249, 261 };
+static constexpr uint32_t MICRO_NUMS_Y[NUMMICROS] = { 175, 175, 175, 185, 185, 185 };
+
+typedef struct {
+    uint32_t    delay;     // Time delay 
+    uint32_t    times;     // Number of times to flash 
+    bool        doDraw;    // True if I draw now 
+} sbflash_t;
+
+stbar_t gStBar;      // Current state of the status bar 
+
+static void*        gStatusBarShape;            // Handle to current status bar shape 
+static void*        gSBObj;                     // Cached handle to the status bar sub shapes 
+static void*        gFaces;                     // Cached handle to the faces 
+static uint32_t     gFaceTics;                  // Time before animating the face 
+static uint32_t     gNewFace;                   // Which normal face to show
+static sbflash_t    gFlashCards[NUMCARDS];      // Info for flashing cards & Skulls 
+static bool         gGibDraw;                   // Got gibbed? 
+static uint32_t     gGibFrame;                  // Which gib frame 
+static uint32_t     gGibDelay;                  // Delay for gibbing 
 
 /**********************************
 
@@ -134,13 +137,13 @@ static void CycleFlash(sbflash_t *FlashPtr)
 
 void ST_Start()
 {
-    SBObj = loadResourceData(rSBARSHP);             // Status bar shapes
-    Faces = loadResourceData(rFACES);               // Load all the face frames
-    StatusBarShape = loadResourceData(rSTBAR);      // Load the status bar
-    memset(&stbar,0,sizeof(stbar));                 // Reset the status bar
-    facetics = 0;                                   // Reset the face tic count
-    gibdraw = false;                                // Don't draw gibbed head sequence
-    memset(&flashCards,0,sizeof(flashCards));
+    gSBObj = loadResourceData(rSBARSHP);            // Status bar shapes
+    gFaces = loadResourceData(rFACES);              // Load all the face frames
+    gStatusBarShape = loadResourceData(rSTBAR);     // Load the status bar
+    memset(&gStBar, 0, sizeof(gStBar));             // Reset the status bar
+    gFaceTics = 0;                                  // Reset the face tic count
+    gGibDraw = false;                               // Don't draw gibbed head sequence
+    memset(&gFlashCards, 0, sizeof(gFlashCards));
 }
 
 /**********************************
@@ -169,37 +172,33 @@ void ST_Ticker()
     sbflash_t *FlashPtr;
 
     // Animate face 
-
-    facetics -= gElapsedTime;        // Count down 
-    if (facetics & 0x8000) {        // Negative? 
-        facetics = Random::nextU32(15)*4;     // New random value 
-        newface = Random::nextU32(2);     // Which face 0-2 
+    gFaceTics -= gElapsedTime;        // Count down 
+    if (gFaceTics & 0x8000) {        // Negative? 
+        gFaceTics = Random::nextU32(15)*4;     // New random value 
+        gNewFace = Random::nextU32(2);     // Which face 0-2 
     }
 
-    // Draw special face? 
-
-    if (stbar.specialFace) {
-        newface = spclfaceSprite[stbar.specialFace];    // Get the face shape 
-        facetics = TICKSPERSEC;     // 1 second 
-        stbar.specialFace = f_none; // Ack the shape 
+    // Draw special face?
+    if (gStBar.specialFace) {
+        gNewFace = SPECIAL_FACE_SPRITE[gStBar.specialFace];    // Get the face shape 
+        gFaceTics = TICKSPERSEC;     // 1 second 
+        gStBar.specialFace = f_none; // Ack the shape 
     }
 
-    // Did we get gibbed? 
-
-    if (stbar.gotgibbed && !gibdraw) {  // In progress? 
-        gibdraw = true;     // In progress... 
-        gibframe = 0;
-        gibdelay = GIBTIME;
-        stbar.gotgibbed = false;
+    // Did we get gibbed?
+    if (gStBar.gotgibbed && !gGibDraw) {  // In progress? 
+        gGibDraw = true;     // In progress... 
+        gGibFrame = 0;
+        gGibDelay = GIBTIME;
+        gStBar.gotgibbed = false;
     }
 
-    // Tried to open a CARD or SKULL door? 
-
+    // Tried to open a CARD or SKULL door?
     ind = 0;
-    FlashPtr = flashCards;
+    FlashPtr = gFlashCards;
     do {    // Check for initalization 
-        if (stbar.tryopen[ind]) {       // Did the user ask to flash the card? 
-            stbar.tryopen[ind] = false; // Ack the flag 
+        if (gStBar.tryopen[ind]) {       // Did the user ask to flash the card? 
+            gStBar.tryopen[ind] = false; // Ack the flag 
             FlashPtr->delay = FLASHDELAY;
             FlashPtr->times = FLASHTIMES+1;
             FlashPtr->doDraw = false;
@@ -230,7 +229,7 @@ void ST_Drawer()
     player_t *p;
     sbflash_t *FlashPtr;
 
-    DrawShape(0,160, (const CelControlBlock*) StatusBarShape);           // Draw the status bar 
+    DrawShape(0,160, (const CelControlBlock*) gStatusBarShape);           // Draw the status bar 
 
 #if VBLTIMER
     ++Frames;
@@ -248,12 +247,12 @@ void ST_Drawer()
     PrintNumber(100,80,ind,0);
 #endif
     
-    p = &players;
+    p = &gPlayers;
 
     // Ammo 
 
     if (p->readyweapon != wp_nochange) {        // No weapon? 
-        ind = WeaponAmmos[p->readyweapon];
+        ind = gWeaponAmmos[p->readyweapon];
         if (ind != am_noammo) {     // No ammo needed? 
             i = p->ammo[ind];
             PrintNumber(AMMOX,AMMOY,i,PNFLAGS_RIGHT);     // Draw ammo 
@@ -261,16 +260,16 @@ void ST_Drawer()
     }
     PrintNumber(HEALTHX,HEALTHY,p->health,PNFLAGS_RIGHT|PNFLAGS_PERCENT);   // Draw the health 
     PrintNumber(ARMORX,ARMORY,p->armorpoints,PNFLAGS_RIGHT|PNFLAGS_PERCENT);    // Draw armor 
-    PrintNumber(MAPX,MAPY,gamemap,PNFLAGS_CENTER);        // Draw AREA 
+    PrintNumber(MAPX,MAPY,gGameMap,PNFLAGS_CENTER);        // Draw AREA 
 
     // Cards & skulls 
 
     ind = 0;
-    FlashPtr = flashCards;
+    FlashPtr = gFlashCards;
     do {
         if (p->cards[ind] || FlashPtr->doDraw) {    // Flashing? 
             DrawMShape(
-                card_x[ind],card_y[ind],GetShapeIndexPtr(SBObj,sb_card_b+ind));
+                CARD_X[ind], CARD_Y[ind],GetShapeIndexPtr(gSBObj,sb_card_b+ind));
         }
         ++FlashPtr;
     } while (++ind<NUMCARDS);
@@ -280,29 +279,28 @@ void ST_Drawer()
     ind = 0;
     do {
         if (p->weaponowned[ind+1]) {
-            DrawMShape(micronums_x[ind],micronums_y[ind],GetShapeIndexPtr(SBObj,sb_micro+ind));
+            DrawMShape(MICRO_NUMS_X[ind], MICRO_NUMS_Y[ind], GetShapeIndexPtr(gSBObj,sb_micro+ind));
         }
     } while (++ind<NUMMICROS);
     
-    // Face change 
-
+    // Face change
     if ((p->AutomapFlags & AF_GODMODE) || p->powers[pw_invulnerability]) {      // In god mode? 
         i = GODFACE;        // God mode 
-        gibframe = 0;
-    } else if (gibdraw) {       // Got gibbed 
-        gibdelay-=gElapsedTime;      // Time down gibbing 
-        i = FIRSTSPLAT+gibframe;
-        if (gibdelay&0x8000) {
-            ++gibframe;
-            gibdelay = GIBTIME;
-            if (gibframe >= 7) {        // All frames shown? 
-                gibdraw = false;        // Shut it off 
+        gGibFrame = 0;
+    } else if (gGibDraw) {       // Got gibbed 
+        gGibDelay-=gElapsedTime;      // Time down gibbing 
+        i = FIRSTSPLAT+gGibFrame;
+        if (gGibDelay&0x8000) {
+            ++gGibFrame;
+            gGibDelay = GIBTIME;
+            if (gGibFrame >= 7) {        // All frames shown? 
+                gGibDraw = false;        // Shut it off 
             }
         }
     } else if (!p->health) {
-        i = FIRSTSPLAT+gibframe;    // Dead man 
+        i = FIRSTSPLAT+gGibFrame;    // Dead man 
     } else {
-        gibframe = 0;
+        gGibFrame = 0;
         i = p->health;      // Get the health 
         if (i>=80) {    // Div by 20 without a real divide (Saves time) 
             i = 0;
@@ -315,7 +313,7 @@ void ST_Drawer()
         } else {
             i = 32; // Bad shape... 
         }
-        i = i+newface;  // Get shape requested 
+        i = i+gNewFace;  // Get shape requested 
     }
-    DrawMShape(FACEX,FACEY,GetShapeIndexPtr(Faces,i)); // Dead man 
+    DrawMShape(FACEX,FACEY,GetShapeIndexPtr(gFaces,i)); // Dead man 
 }

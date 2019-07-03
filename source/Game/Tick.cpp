@@ -30,17 +30,17 @@ struct thinker_t {
     void (*function)(thinker_t*);
 };
 
-static uint32_t     TimeMark1;      // Timer for ticks
-static uint32_t     TimeMark2;      // Timer for ticks
-static uint32_t     TimeMark4;      // Timer for ticks
-static thinker_t    thinkercap;     // Both the head and tail of the thinker list
-static bool         refreshdrawn;   // Used to refresh "Paused"
+static uint32_t     gTimeMark1;         // Timer for ticks
+static uint32_t     gTimeMark2;         // Timer for ticks
+static uint32_t     gTimeMark4;         // Timer for ticks
+static thinker_t    gThinkerCap;        // Both the head and tail of the thinker list
+static bool         gRefreshDrawn;      // Used to refresh "Paused"
 
-mobj_t  mobjhead;
-bool    Tick4;
-bool    Tick2;
-bool    Tick1;
-bool    gamepaused;
+mobj_t  gMObjHead;
+bool    gTick4;
+bool    gTick2;
+bool    gTick1;
+bool    gGamePaused;
 
 /**********************************
 
@@ -77,28 +77,28 @@ void InitThinkers()
     ResetPlats();               // Reset the platforms
     ResetCeilings();            // Reset the ceilings
     
-    if (mobjhead.next) {    // Initialized before?
+    if (gMObjHead.next) {    // Initialized before?
         mobj_t *m,*NextM;
-        m=mobjhead.next;
-        while (m!=&mobjhead) {      // Any player object
+        m=gMObjHead.next;
+        while (m!=&gMObjHead) {     // Any player object
             NextM = m->next;        // Get the next record
             MemFree(m);             // Delete the object from the list
             m=NextM;
         }
     }
     
-    if (thinkercap.next) {
+    if (gThinkerCap.next) {
         thinker_t *t,*NextT;
-        t = thinkercap.next;
-        while (t!=&thinkercap) {    // Is there a think struct here?
+        t = gThinkerCap.next;
+        while (t!=&gThinkerCap) {   // Is there a think struct here?
             NextT = t->next;
             MemFree(t);             // Delete it from memory
             t = NextT;
         }
     }
     
-    thinkercap.prev = thinkercap.next  = &thinkercap;   // Loop around
-    mobjhead.next = mobjhead.prev = &mobjhead;          // Loop around
+    gThinkerCap.prev = gThinkerCap.next  = &gThinkerCap;    // Loop around
+    gMObjHead.next = gMObjHead.prev = &gMObjHead;           // Loop around
 }
 
 /**********************************
@@ -116,12 +116,12 @@ void* AddThinker(ThinkerFunc FuncProc, uint32_t MemSize)
     MemSize += sizeof(thinker_t);               // Add size for the thinker prestructure
     thinker = (thinker_t*) MemAlloc(MemSize);   // Get memory
     memset(thinker,0,MemSize);                  // Blank it out
-    Prev = thinkercap.prev;                     // Get the last thinker in the list
-    thinker->next = &thinkercap;                // Mark as last entry in list
+    Prev = gThinkerCap.prev;                    // Get the last thinker in the list
+    thinker->next = &gThinkerCap;               // Mark as last entry in list
     thinker->prev = Prev;                       // Set prev link to final entry
     thinker->function = FuncProc;
     Prev->next = thinker;                       // Next link to the new link
-    thinkercap.prev = thinker;                  // Mark the reverse link
+    gThinkerCap.prev = thinker;                 // Mark the reverse link
     return thinker+1;                           // Index AFTER the thinker structure
 }
 
@@ -160,8 +160,8 @@ void RunThinkers()
     thinker_t *currentthinker;
     thinker_t *NextThinker;
 
-    currentthinker = thinkercap.next;       // Get the first entry
-    while (currentthinker != &thinkercap) { // Looped back?
+    currentthinker = gThinkerCap.next;       // Get the first entry
+    while (currentthinker != &gThinkerCap) { // Looped back?
         // Get the next entry (In case of change or removal)
         NextThinker = currentthinker->next;
         if (currentthinker->function) {     // Is the function ptr ok?
@@ -181,11 +181,11 @@ void RunThinkers()
 
 static void CheckCheats()
 {
-    if ((NewJoyPadButtons & PadStart) && !(players.AutomapFlags & AF_OPTIONSACTIVE)) {      // Pressed pause?
-        if (gamepaused || !(JoyPadButtons&PadUse)) {
-            gamepaused ^= 1;        // Toggle the pause flag
+    if ((gNewJoyPadButtons & PadStart) && !(gPlayers.AutomapFlags & AF_OPTIONSACTIVE)) {      // Pressed pause?
+        if (gGamePaused || !(gJoyPadButtons&gPadUse)) {
+            gGamePaused ^= 1;   // Toggle the pause flag
 
-            if (gamepaused) {
+            if (gGamePaused) {
                 audioPauseSound();
                 audioPauseMusic();
             } else {
@@ -209,39 +209,41 @@ uint32_t P_Ticker()
     // wait for refresh to latch all needed data before
     // running the next tick
 
-    gameaction = ga_nothing;        // Game in progress
-    Tick1 = false;          // Reset the flags
-    Tick2 = false;
-    Tick4 = false;
+    gGameAction = ga_nothing;   // Game in progress
+    gTick1 = false;             // Reset the flags
+    gTick2 = false;
+    gTick4 = false;
 
-    TimeMark1+=gElapsedTime; // Timer for ticks
-    TimeMark2+=gElapsedTime;
-    TimeMark4+=gElapsedTime;
+    gTimeMark1 += gElapsedTime;     // Timer for ticks
+    gTimeMark2 += gElapsedTime;
+    gTimeMark4 += gElapsedTime;
 
-    if (TimeMark1>=TICKSPERSEC) {   // Now see if the time has passed...
-        TimeMark1-=TICKSPERSEC;
-        Tick1 = true;
+    if (gTimeMark1 >= TICKSPERSEC) {    // Now see if the time has passed...
+        gTimeMark1 -= TICKSPERSEC;
+        gTick1 = true;
     }
-    if (TimeMark2>=(TICKSPERSEC/2)) {
-        TimeMark2-=(TICKSPERSEC/2);
-        Tick2 = true;
+
+    if (gTimeMark2 >= TICKSPERSEC / 2) {
+        gTimeMark2 -= TICKSPERSEC / 2;
+        gTick2 = true;
     }
-    if (TimeMark4>=(TICKSPERSEC/4)) {
-        TimeMark4-=(TICKSPERSEC/4);
-        Tick4 = true;
+
+    if (gTimeMark4 >= TICKSPERSEC / 4) {
+        gTimeMark4 -= TICKSPERSEC / 4;
+        gTick4 = true;
     }
 
     CheckCheats();      // Handle pause and cheats
 
 // Do option screen processing and control reading
 
-    if (gamepaused) {       // If in pause mode, then don't do any game logic
-        return gameaction;
+    if (gGamePaused) {       // If in pause mode, then don't do any game logic
+        return gGameAction;
     }
 
 // Run player actions
 
-    pl = &players;
+    pl = &gPlayers;
     
     if (pl->playerstate == PST_REBORN) {    // Restart player?
         G_DoReborn();       // Poof!!
@@ -250,13 +252,13 @@ uint32_t P_Ticker()
     O_Control(pl);      // Handle option controls
     P_PlayerThink(pl);  // Process player in the game
         
-    if (!(players.AutomapFlags & AF_OPTIONSACTIVE)) {
+    if (!(gPlayers.AutomapFlags & AF_OPTIONSACTIVE)) {
         RunThinkers();      // Handle logic for doors, walls etc...
         P_RunMobjBase();    // Handle critter think logic
     }
     P_UpdateSpecials(); // Handle wall and floor animations
     ST_Ticker();        // Update status bar
-    return gameaction;  // may have been set to ga_died, ga_completed,
+    return gGameAction; // may have been set to ga_died, ga_completed,
                         // or ga_secretexit
 }
 
@@ -264,26 +266,26 @@ uint32_t P_Ticker()
 // Draw current display
 //--------------------------------------------------------------------------------------------------
 void P_Drawer() {
-    bool bAllowDebugClear = (!gamepaused);
+    bool bAllowDebugClear = (!gGamePaused);
 
-    if (gamepaused && refreshdrawn) {
+    if (gGamePaused && gRefreshDrawn) {
         DrawPlaque(rPAUSED);                    // Draw 'Paused' plaque
         UpdateAndPageFlip(bAllowDebugClear);
-    } else if (players.AutomapFlags & AF_OPTIONSACTIVE) {
+    } else if (gPlayers.AutomapFlags & AF_OPTIONSACTIVE) {
         R_RenderPlayerView();                   // Render the 3D view
         ST_Drawer();                            // Draw the status bar
         O_Drawer();                             // Draw the console handler
-        refreshdrawn = false;
-    } else if (players.AutomapFlags & AF_ACTIVE) {
+        gRefreshDrawn = false;
+    } else if (gPlayers.AutomapFlags & AF_ACTIVE) {
         AM_Drawer();                            // Draw the automap
         ST_Drawer();                            // Draw the status bar
         UpdateAndPageFlip(bAllowDebugClear);    // Update and page flip
-        refreshdrawn = true;
+        gRefreshDrawn = true;
     } else {
         R_RenderPlayerView();                   // Render the 3D view
         ST_Drawer();                            // Draw the status bar
         UpdateAndPageFlip(!bAllowDebugClear);   // Only allow debug clear if we are not going into pause mode
-        refreshdrawn = true;
+        gRefreshDrawn = true;
     }
 }
 
@@ -291,17 +293,17 @@ void P_Drawer() {
 // Start a game
 //--------------------------------------------------------------------------------------------------
 void P_Start() {
-    TimeMark1 = 0;  // Init the static timers
-    TimeMark2 = 0;
-    TimeMark4 = 0;
-    players.AutomapFlags &= AF_GODMODE;     // No automapping specials (but allow godmode)
+    gTimeMark1 = 0;  // Init the static timers
+    gTimeMark2 = 0;
+    gTimeMark4 = 0;
+    gPlayers.AutomapFlags &= AF_GODMODE;    // No automapping specials (but allow godmode)
 
     AM_Start();         // Start the automap system
     ST_Start();         // Init the status bar this level
     G_DoLoadLevel();    // Load a level into memory
     Random::init();     // Reset the random number generator
 
-    S_StartSong(Song_e1m1 - 1 + gamemap);
+    S_StartSong(Song_e1m1 - 1 + gGameMap);
 }
 
 //--------------------------------------------------------------------------------------------------

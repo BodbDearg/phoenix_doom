@@ -5,12 +5,12 @@
 struct line_t;
 struct mobj_t;
 
-extern bool     trymove2;       // Result from P_TryMove2
-extern bool     floatok;        // If true, move would be ok if within tmfloorz - tmceilingz
-extern Fixed    tmfloorz;       // Current floor z for P_TryMove2
-extern Fixed    tmceilingz;     // Current ceiling z for P_TryMove2
-extern mobj_t*  movething;      // Either a skull/missile target or a special pickup
-extern line_t*  blockline;      // Might be a door that can be opened
+extern bool     gTryMove2;      // Result from P_TryMove2
+extern bool     gFloatOk;       // If true, move would be ok if within tmfloorz - tmceilingz
+extern Fixed    gTmpFloorZ;     // Current floor z for P_TryMove2
+extern Fixed    gTmpCeilingZ;   // Current ceiling z for P_TryMove2
+extern mobj_t*  gMoveThing;     // Either a skull/missile target or a special pickup
+extern line_t*  gBlockLine;     // Might be a door that can be opened
 
 void P_TryMove2();
 void PM_CheckPosition();

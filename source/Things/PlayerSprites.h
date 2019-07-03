@@ -15,10 +15,10 @@ enum psprnum_e {
 
 // Describe the state for a player gun sprite
 struct pspdef_t {    
-    state_t*    StatePtr;       // a NULL state means not active
-    uint32_t    Time;           // Time to elapse before next state
-    int32_t     WeaponX;        // X and Y in pixels
-    int32_t     WeaponY;
+    const state_t*  StatePtr;   // a NULL state means not active
+    uint32_t        Time;       // Time to elapse before next state
+    int32_t         WeaponX;    // X and Y in pixels
+    int32_t         WeaponY;
 };
 
 void LowerPlayerWeapon(player_t* player);

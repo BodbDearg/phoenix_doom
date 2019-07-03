@@ -20,8 +20,8 @@
 
 **********************************/
 
-static uint32_t clipboundtop[MAXSCREENWIDTH];       // Bounds top y for vertical clipping
-static uint32_t clipboundbottom[MAXSCREENWIDTH];    // Bounds bottom y for vertical clipping
+static uint32_t gClipBoundTop[MAXSCREENWIDTH];          // Bounds top y for vertical clipping
+static uint32_t gClipBoundBottom[MAXSCREENWIDTH];       // Bounds bottom y for vertical clipping
 
 typedef struct {
     const std::byte* data;      // Pointer to raw texture data
@@ -32,12 +32,12 @@ typedef struct {
     uint32_t texturemid;        // Anchor point for texture
 } drawtex_t;
 
-static drawtex_t toptex;        // Describe the upper texture
-static drawtex_t bottomtex;     // Describe the lower texture
+static drawtex_t gTopTex;           // Describe the upper texture
+static drawtex_t gBottomTex;        // Describe the lower texture
 
-uint32_t tx_x;                      // Screen x coord being drawn
-int tx_scale;                       // True scale value 0-0x7FFF
-static uint32_t tx_texturecolumn;   // Column offset into source image
+uint32_t gTexX;                         // Screen x coord being drawn
+int gTexScale;                          // True scale value 0-0x7FFF
+static uint32_t gTexTextureColumn;      // Column offset into source image
 
 /**********************************
 
@@ -56,9 +56,9 @@ static void DrawTexture(drawtex_t *tex)
     if ((int)Run<=0) {      // Invalid?
         return;
     }
-    top = CenterY-((tx_scale*tex->topheight)>>(HEIGHTBITS+SCALEBITS));  // Screen Y
+    top = gCenterY-((gTexScale*tex->topheight)>>(HEIGHTBITS+SCALEBITS));  // Screen Y
 
-    colnum = tx_texturecolumn;  // Get the starting column offset
+    colnum = gTexTextureColumn;  // Get the starting column offset
     frac = tex->texturemid - (tex->topheight<<FIXEDTOHEIGHT);   // Get the anchor point
     frac >>= FRACBITS;
     while (frac&0x8000) {
@@ -97,31 +97,31 @@ static void DrawSeg(viswall_t *segl)
     
     if (ActionBits & (AC_TOPTEXTURE|AC_BOTTOMTEXTURE)) {
         x = segl->seglightlevel;
-        lightmin = lightmins[x];
-        lightmax = x;
-        lightsub = lightsubs[x];
-        lightcoef = lightcoefs[x];
-            
+        gLightMin = gLightMins[x];
+        gLightMax = x;
+        gLightSub = gLightSubs[x];
+        gLightCoef = gLightCoefs[x];
+        
         if (ActionBits & AC_TOPTEXTURE) {   // Is there a top wall?
-            toptex.topheight = segl->t_topheight;   // Init the top texture
-            toptex.bottomheight = segl->t_bottomheight;
-            toptex.texturemid = segl->t_texturemid;
+            gTopTex.topheight = segl->t_topheight;   // Init the top texture
+            gTopTex.bottomheight = segl->t_bottomheight;
+            gTopTex.texturemid = segl->t_texturemid;
             
             const Texture* const pTex = segl->t_texture;
-            toptex.width = pTex->width;
-            toptex.height = pTex->height;
-            toptex.data = pTex->pData;
+            gTopTex.width = pTex->width;
+            gTopTex.height = pTex->height;
+            gTopTex.data = pTex->pData;
         }
         
         if (ActionBits & AC_BOTTOMTEXTURE) {  // Is there a bottom wall?
-            bottomtex.topheight = segl->b_topheight;
-            bottomtex.bottomheight = segl->b_bottomheight;
-            bottomtex.texturemid = segl->b_texturemid;
+            gBottomTex.topheight = segl->b_topheight;
+            gBottomTex.bottomheight = segl->b_bottomheight;
+            gBottomTex.texturemid = segl->b_texturemid;
             
             const Texture* const pTex = segl->b_texture;
-            bottomtex.width = pTex->width;
-            bottomtex.height = pTex->height;
-            bottomtex.data = pTex->pData;
+            gBottomTex.width = pTex->width;
+            gBottomTex.height = pTex->height;
+            gBottomTex.data = pTex->pData;
         }
         
         _scalefrac = segl->LeftScale;   // Init the scale fraction
@@ -134,38 +134,38 @@ static void DrawSeg(viswall_t *segl)
                 scale = 0x1fff;                     // Fix the scale to maximum
             }
             
-            tx_x = x;   // Pass the X coord
+            gTexX = x;   // Pass the X coord
 
             // Calculate texture offset into shape
-            tx_texturecolumn = (
+            gTexTextureColumn = (
                 segl->offset - fixedMul(
-                    finetangent[(segl->CenterAngle + xtoviewangle[x]) >> ANGLETOFINESHIFT],
+                    gFineTangent[(segl->CenterAngle + gXToViewAngle[x]) >> ANGLETOFINESHIFT],
                     segl->distance
                 )
             ) >> FRACBITS;
             
-            tx_scale = scale;   // 0-0x1FFF
+            gTexScale = scale;   // 0-0x1FFF
             
             {
-                int texturelight = ((scale * lightcoef) >> 16) - lightsub;
+                int texturelight = ((scale * gLightCoef) >> 16) - gLightSub;
                 
-                if (texturelight < lightmin) {
-                    texturelight = lightmin;
+                if (texturelight < gLightMin) {
+                    texturelight = gLightMin;
                 }
                 
-                if (texturelight > lightmax) {
-                    texturelight = lightmax;
+                if (texturelight > gLightMax) {
+                    texturelight = gLightMax;
                 }
                 
-                tx_texturelight = texturelight;
+                gTxTextureLight = texturelight;
             }
             
             if (ActionBits&AC_TOPTEXTURE) {
-                DrawTexture(&toptex);           // Draw upper texture
+                DrawTexture(&gTopTex);          // Draw upper texture
             }
             
             if (ActionBits&AC_BOTTOMTEXTURE) {
-                DrawTexture(&bottomtex);        // Draw lower texture
+                DrawTexture(&gBottomTex);       // Draw lower texture
             }
             
             _scalefrac += segl->ScaleStep;      // Step to the next scale
@@ -189,7 +189,7 @@ static visplane_t* FindPlane(visplane_t *check, Fixed height, uint32_t PicHandle
     uint32_t *set;
 
     ++check;        // Automatically skip to the next plane
-    if (check<lastvisplane) {
+    if (check<gLastVisPlane) {
         do {
             if (height == check->height &&      // Same plane as before?
                 PicHandle == check->PicHandle &&
@@ -203,13 +203,13 @@ static visplane_t* FindPlane(visplane_t *check, Fixed height, uint32_t PicHandle
                 }
                 return check;           // Use the same one as before
             }
-        } while (++check<lastvisplane);
+        } while (++check<gLastVisPlane);
     }
     
 // make a new plane
     
-    check = lastvisplane;
-    ++lastvisplane;
+    check = gLastVisPlane;
+    ++gLastVisPlane;
     check->height = height;     // Init all the vars in the visplane
     check->PicHandle = PicHandle;
     check->minx = start;
@@ -220,7 +220,7 @@ static visplane_t* FindPlane(visplane_t *check, Fixed height, uint32_t PicHandle
 
     i = OPENMARK;
     set = check->open;  // A brute force method to fill in the visplane record FAST!
-    j = ScreenWidth/8;
+    j = gScreenWidth/8;
     do {
         set[0] = i;
         set[1] = i;
@@ -256,7 +256,7 @@ static void SegLoop(viswall_t *segl)
 
             // visplanes[0] is zero to force a FindPlane on the first pass
             
-    FloorPlane = CeilingPlane = visplanes;      // Reset the visplane pointers
+    FloorPlane = CeilingPlane = gVisPlanes;      // Reset the visplane pointers
     ActionBits = segl->WallActions;
     x = segl->LeftX;                // Init the x coord
     do {                            // Loop for each X coord
@@ -264,14 +264,14 @@ static void SegLoop(viswall_t *segl)
         if (scale >= 0x2000) {      // Too large?
             scale = 0x1fff;         // Fix the scale to maximum
         }
-        ceilingclipy = clipboundtop[x]; // Get the top y clip
-        floorclipy = clipboundbottom[x];    // Get the bottom y clip
+        ceilingclipy = gClipBoundTop[x];    // Get the top y clip
+        floorclipy = gClipBoundBottom[x];   // Get the bottom y clip
 
 // Shall I add the floor?
 
         if (ActionBits & AC_ADDFLOOR) {
             int top,bottom;
-            top = CenterY-((scale*segl->floorheight)>>(HEIGHTBITS+SCALEBITS));  // Y coord of top of floor
+            top = gCenterY-((scale*segl->floorheight)>>(HEIGHTBITS+SCALEBITS));  // Y coord of top of floor
             if (top <= ceilingclipy) {
                 top = ceilingclipy+1;       // Clip the top of floor to the bottom of the visible area
             }
@@ -293,7 +293,7 @@ static void SegLoop(viswall_t *segl)
         if (ActionBits & AC_ADDCEILING) {
             int top,bottom;
             top = ceilingclipy+1;       // Start from the ceiling
-            bottom = CenterY-1-((scale*segl->ceilingheight)>>(HEIGHTBITS+SCALEBITS));   // Bottom of the height
+            bottom = gCenterY-1-((scale*segl->ceilingheight)>>(HEIGHTBITS+SCALEBITS));   // Bottom of the height
             if (bottom >= floorclipy) {     // Clip the bottom?
                 bottom = floorclipy-1;
             }
@@ -313,7 +313,7 @@ static void SegLoop(viswall_t *segl)
 
         if (ActionBits & (AC_BOTTOMSIL|AC_NEWFLOOR)) {
             int low;
-            low = CenterY-((scale*segl->floornewheight)>>(HEIGHTBITS+SCALEBITS));
+            low = gCenterY-((scale*segl->floornewheight)>>(HEIGHTBITS+SCALEBITS));
             if (low > floorclipy) {
                 low = floorclipy;
             }
@@ -324,24 +324,24 @@ static void SegLoop(viswall_t *segl)
                 segl->BottomSil[x] = low;
             } 
             if (ActionBits & AC_NEWFLOOR) {
-                clipboundbottom[x] = low;
+                gClipBoundBottom[x] = low;
             }
         }
 
         if (ActionBits & (AC_TOPSIL|AC_NEWCEILING)) {
             int high;
-            high = (CenterY-1)-((scale*segl->ceilingnewheight)>>(HEIGHTBITS+SCALEBITS));
+            high = (gCenterY-1)-((scale*segl->ceilingnewheight)>>(HEIGHTBITS+SCALEBITS));
             if (high < ceilingclipy) {
                 high = ceilingclipy;
             }
-            if (high > (int)ScreenHeight-1) {
-                high = ScreenHeight-1;
+            if (high > (int)gScreenHeight-1) {
+                high = gScreenHeight-1;
             }
             if (ActionBits & AC_TOPSIL) {
                 segl->TopSil[x] = high+1;
             }
             if (ActionBits & AC_NEWCEILING) {
-                clipboundtop[x] = high;
+                gClipBoundTop[x] = high;
             }
         }
 
@@ -349,13 +349,13 @@ static void SegLoop(viswall_t *segl)
 
         if (ActionBits & AC_ADDSKY) {
             int bottom;
-            bottom = CenterY-((scale*segl->ceilingheight)>>(HEIGHTBITS+SCALEBITS));
+            bottom = gCenterY-((scale*segl->ceilingheight)>>(HEIGHTBITS+SCALEBITS));
             if (bottom > floorclipy) {
                 bottom = floorclipy;
             }
             if ((ceilingclipy+1) < bottom) {        // Valid?
-                tx_x = x;       // Pass the X coord
-                DrawSkyLine();  // Draw the sky
+                gTexX = x;          // Pass the X coord
+                DrawSkyLine();      // Draw the sky
             }
         }
         _scalefrac += segl->ScaleStep;      // Step to the next scale
@@ -374,10 +374,10 @@ static void DrawSprites(void)
     uint32_t *LocalPtr;
     vissprite_t *VisPtr;
     
-    i = SpriteTotal;    // Init the count
+    i = gSpriteTotal;    // Init the count
     if (i) {        // Any sprites to speak of?
-        LocalPtr = SortedSprites;   // Get the pointer to the sorted array
-        VisPtr = vissprites;    // Cache pointer to sprite array
+        LocalPtr = gSortedSprites;   // Get the pointer to the sorted array
+        VisPtr = gVisSprites;    // Cache pointer to sprite array
         do {
             DrawVisSprite(&VisPtr[*LocalPtr++&0x7F]);   // Draw from back to front
         } while (--i);
@@ -400,8 +400,8 @@ void SegCommands(void)
         viswall_t *LastSegPtr;
     
     
-        WallSegPtr = viswalls;      // Get the first wall segment to process
-        LastSegPtr = lastwallcmd;   // Last one to process
+        WallSegPtr = gVisWalls;      // Get the first wall segment to process
+        LastSegPtr = gLastWallCmd;   // Last one to process
         if (LastSegPtr == WallSegPtr) { // No walls to render?
             return;             // Exit now!!
         }
@@ -410,9 +410,9 @@ void SegCommands(void)
     
         i = 0;      // Init the vertical clipping records
         do {
-            clipboundtop[i] = -1;       // Allow to the ceiling
-            clipboundbottom[i] = ScreenHeight;  // Stop at the floor
-        } while (++i<ScreenWidth);
+            gClipBoundTop[i] = -1;       // Allow to the ceiling
+            gClipBoundBottom[i] = gScreenHeight;  // Stop at the floor
+        } while (++i<gScreenWidth);
 
         // Process all the wall segments
 
@@ -422,7 +422,7 @@ void SegCommands(void)
     
         // Now I actually draw the walls back to front to allow for clipping because of slop
     
-        LastSegPtr = viswalls;      // Stop at the last one
+        LastSegPtr = gVisWalls;      // Stop at the last one
         do {
             --WallSegPtr;           // Last go backwards!!
             DrawSeg(WallSegPtr);        // Draw the wall (Only if needed)
@@ -435,14 +435,14 @@ void SegCommands(void)
         visplane_t *LastPlanePtr;
         uint32_t WallScale;
         
-        PlanePtr = visplanes+1;     // Get the range of pointers
-        LastPlanePtr = lastvisplane;
+        PlanePtr = gVisPlanes+1;     // Get the range of pointers
+        LastPlanePtr = gLastVisPlane;
     
         if (PlanePtr!=LastPlanePtr) {   // No planes generated?
-            planey = -viewy;        // Get the Y coord for camera
-            WallScale = (viewangle-ANG90)>>ANGLETOFINESHIFT;    // left to right mapping
-            basexscale = (finecosine[WallScale] / ((int)ScreenWidth/2));
-            baseyscale = -(finesine[WallScale] / ((int)ScreenWidth/2));
+            gPlaneY = -gViewY;        // Get the Y coord for camera
+            WallScale = (gViewAngle-ANG90)>>ANGLETOFINESHIFT;    // left to right mapping
+            gBaseXScale = (gFineCosine[WallScale] / ((int)gScreenWidth/2));
+            gBaseYScale = -(gFineSine[WallScale] / ((int)gScreenWidth/2));
             do {
                 DrawVisPlane(PlanePtr);     // Convert the plane
             } while (++PlanePtr<LastPlanePtr);      // Loop for all

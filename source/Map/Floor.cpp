@@ -132,7 +132,7 @@ static void T_MoveFloor(floormove_t *floor)
 
     res = T_MovePlane(floor->sector,floor->speed,   // Do the move 
             floor->floordestheight, floor->crush, false, floor->direction);
-    if (Tick4) {        // Time for a sound? 
+    if (gTick4) {   // Time for a sound? 
         S_StartSound(&floor->sector->SoundX,sfx_stnmov);
     }
     if (res == pastdest) {      // Floor reached it's destination? 

@@ -23,13 +23,13 @@ static void loadSkyTexture() {
 // Prepare to load a game level
 //---------------------------------------------------------------------------------------------------------------------
 void G_DoLoadLevel() {
-    if (players.playerstate == PST_DEAD) {
-        players.playerstate = PST_REBORN;   // Force rebirth
+    if (gPlayers.playerstate == PST_DEAD) {
+        gPlayers.playerstate = PST_REBORN;   // Force rebirth
     }
     
     loadSkyTexture();
-    SetupLevel(gamemap);        // Load the level into memory
-    gameaction = ga_nothing;    // Game in progress
+    SetupLevel(gGameMap);       // Load the level into memory
+    gGameAction = ga_nothing;   // Game in progress
 }
 
 /**********************************
@@ -42,7 +42,7 @@ void G_PlayerFinishLevel()
 {
     player_t *p;        // Local pointer 
 
-    p = &players;
+    p = &gPlayers;
     memset(p->powers,0,sizeof(p->powers));  // Remove powers 
     memset(p->cards,0,sizeof(p->cards));    // Remove keycards and skulls 
     if (p->mo) {
@@ -66,7 +66,7 @@ void G_PlayerReborn()
     player_t *p;        // Local 
     uint32_t i;
 
-    p = &players;   // Get local pointer 
+    p = &gPlayers;   // Get local pointer 
     memset(p,0,sizeof(*p)); // Zap the player 
     p->usedown = p->attackdown = true;  // don't do anything immediately 
     p->playerstate = PST_LIVE;  // I live again! 
@@ -77,7 +77,7 @@ void G_PlayerReborn()
     p->ammo[am_clip] = 50;          // Award 50 bullets 
     i = 0;
     do {
-        p->maxammo[i] = maxammo[i]; // Reset ammo counts (No backpack) 
+        p->maxammo[i] = gMaxAmmo[i]; // Reset ammo counts (No backpack) 
     } while (++i<NUMAMMO);
 }
 
@@ -90,7 +90,7 @@ void G_PlayerReborn()
 
 void G_DoReborn()
 {
-    gameaction = ga_died;   // Reload the level from scratch 
+    gGameAction = ga_died;   // Reload the level from scratch 
 }
 
 /**********************************
@@ -101,7 +101,7 @@ void G_DoReborn()
 
 void G_ExitLevel()
 {
-    gameaction = ga_completed;
+    gGameAction = ga_completed;
 }
 
 /**********************************
@@ -112,7 +112,7 @@ void G_ExitLevel()
 
 void G_SecretExitLevel()
 {
-    gameaction = ga_secretexit;
+    gGameAction = ga_secretexit;
 }
 
 /**********************************
@@ -125,35 +125,35 @@ void G_InitNew(skill_e skill, uint32_t map)
 {
     Random::init();        // Reset the random number generator 
 
-    gamemap = map;
-    gameskill = skill;
+    gGameMap = map;
+    gGameSkill = skill;
 
 // Force players to be initialized upon first level load 
 
-    players.playerstate = PST_REBORN;
-    players.mo = 0; // For net consistancy checks 
+    gPlayers.playerstate = PST_REBORN;
+    gPlayers.mo = 0; // For net consistancy checks 
     
-    DemoRecording = false;      // No demo in progress 
-    DemoPlayback = false;
+    gDemoRecording = false;      // No demo in progress 
+    gDemoPlayback = false;
 
     if (skill == sk_nightmare ) {       // Hack for really BAD monsters 
-        states[S_SARG_ATK1].Time = 2*4; // Speed up the demons 
-        states[S_SARG_ATK2].Time = 2*4;
-        states[S_SARG_ATK3].Time = 2*4;
-        mobjinfo[MT_SERGEANT].Speed = 15;
-        mobjinfo[MT_SHADOWS].Speed = 15;
-        mobjinfo[MT_BRUISERSHOT].Speed = 40;    // Baron of hell 
-        mobjinfo[MT_HEADSHOT].Speed = 40;       // Cacodemon 
-        mobjinfo[MT_TROOPSHOT].Speed = 40;
+        gStates[S_SARG_ATK1].Time = 2*4; // Speed up the demons 
+        gStates[S_SARG_ATK2].Time = 2*4;
+        gStates[S_SARG_ATK3].Time = 2*4;
+        gMObjInfo[MT_SERGEANT].Speed = 15;
+        gMObjInfo[MT_SHADOWS].Speed = 15;
+        gMObjInfo[MT_BRUISERSHOT].Speed = 40;    // Baron of hell 
+        gMObjInfo[MT_HEADSHOT].Speed = 40;       // Cacodemon 
+        gMObjInfo[MT_TROOPSHOT].Speed = 40;
     } else {
-        states[S_SARG_ATK1].Time = 4*4;     // Set everyone back to normal 
-        states[S_SARG_ATK2].Time = 4*4;
-        states[S_SARG_ATK3].Time = 4*4;
-        mobjinfo[MT_SERGEANT].Speed = 8;
-        mobjinfo[MT_SHADOWS].Speed = 8;
-        mobjinfo[MT_BRUISERSHOT].Speed = 30;
-        mobjinfo[MT_HEADSHOT].Speed = 20;
-        mobjinfo[MT_TROOPSHOT].Speed = 20;
+        gStates[S_SARG_ATK1].Time = 4*4;     // Set everyone back to normal 
+        gStates[S_SARG_ATK2].Time = 4*4;
+        gStates[S_SARG_ATK3].Time = 4*4;
+        gMObjInfo[MT_SERGEANT].Speed = 8;
+        gMObjInfo[MT_SHADOWS].Speed = 8;
+        gMObjInfo[MT_BRUISERSHOT].Speed = 30;
+        gMObjInfo[MT_HEADSHOT].Speed = 20;
+        gMObjInfo[MT_TROOPSHOT].Speed = 20;
     }
 }
 
@@ -174,28 +174,28 @@ void G_RunGame()
     // Take away cards and stuff 
 
         G_PlayerFinishLevel();
-        if ((gameaction == ga_died) ||  // died, so restart the level 
-            (gameaction == ga_warped)) {    // skip intermission 
+        if ((gGameAction == ga_died) ||  // died, so restart the level 
+            (gGameAction == ga_warped)) {    // skip intermission 
             continue;
         }
 
     // decide which level to go to next 
 
-        if (gameaction == ga_secretexit) {
-             nextmap = 24;  // Go to the secret level 
+        if (gGameAction == ga_secretexit) {
+             gNextMap = 24;  // Go to the secret level 
         } else {
-            switch (gamemap) {
+            switch (gGameMap) {
             case 24:        // Secret level? 
-                nextmap = 4;
+                gNextMap = 4;
                 break;
             case 23:        // Final level! 
-                nextmap = 23;
+                gNextMap = 23;
                 break;      // Don't add secret level to prefs 
             default:
-                nextmap = gamemap+1;
+                gNextMap = gGameMap+1;
             }
-            if (nextmap>MaxLevel) {
-                MaxLevel = nextmap; // Save the prefs file 
+            if (gNextMap > gMaxLevel) {
+                gMaxLevel = gNextMap; // Save the prefs file 
                 WritePrefsFile();
             }
         }
@@ -206,11 +206,11 @@ void G_RunGame()
 
     // Run the finale if needed 
 
-        if (gamemap == 23) {
+        if (gGameMap == 23) {
             MiniLoop(F_Start,F_Stop,F_Ticker,F_Drawer);
             return;     // Exit 
         }
-        gamemap = nextmap;
+        gGameMap = gNextMap;
     }
 }
 
@@ -225,14 +225,14 @@ uint32_t G_PlayDemoPtr(uint32_t* demo)
     uint32_t exit;
     uint32_t skill,map;
 
-    DemoBuffer = demo;      // Save the demo buffer pointer 
+    gDemoBuffer = demo;      // Save the demo buffer pointer 
     skill = demo[0];        // Get the initial and map 
     map = demo[1];
-    DemoDataPtr = &demo[2];     // Init the pointer 
+    gDemoDataPtr = &demo[2];     // Init the pointer 
     G_InitNew((skill_e)skill,map);  // Init a game 
-    DemoPlayback = true;    // I am playing back data 
+    gDemoPlayback = true;    // I am playing back data 
     exit = MiniLoop(P_Start,P_Stop,P_Ticker,P_Drawer);  // Execute game 
-    DemoPlayback = false;   // End demo 
+    gDemoPlayback = false;   // End demo 
     return exit;
 }
 
@@ -248,15 +248,15 @@ void G_RecordDemo (void)
     uint32_t *Dest;
 
     Dest = (uint32_t*)MemAlloc(0x8000);       // Get memory for demo 
-    DemoBuffer = Dest;          // Save the pointer 
-    Dest[0] = StartSkill;       // Save the skill and level 
-    Dest[1] = StartMap;
-    DemoDataPtr = Dest+2;
-    G_InitNew(StartSkill,StartMap); // Begin a game 
-    DemoRecording = true;       // Begin recording 
+    gDemoBuffer = Dest;         // Save the pointer 
+    Dest[0] = gStartSkill;      // Save the skill and level 
+    Dest[1] = gStartMap;
+    gDemoDataPtr = Dest+2;
+    G_InitNew(gStartSkill, gStartMap); // Begin a game 
+    gDemoRecording = true;       // Begin recording 
     MiniLoop(P_Start,P_Stop,P_Ticker,P_Drawer); // Play it 
-    DemoRecording = false;      // End recording 
+    gDemoRecording = false;      // End recording 
     for (;;) {                  // Stay forever 
-        G_PlayDemoPtr(DemoBuffer);  // Play the demo 
+        G_PlayDemoPtr(gDemoBuffer);  // Play the demo 
     }
 }

@@ -11,31 +11,34 @@
 #define SIDE_FRONT  1
 #define SIDE_BACK   -1
 
-Fixed       slidex;         // The final position
-Fixed       slidey;       
-line_t*     specialline;
+Fixed       gSlideX;        // The final position
+Fixed       gSlideY;       
+line_t*     gSpecialLine;
 
-static Fixed slidedx;       // Current move for completablefrac
-static Fixed slidedy;
-static Fixed endbox[4];     // Final proposed position
-static Fixed blockfrac;     // The fraction of move that gets completed
-static Fixed blocknvx;      // The vector of the line that blocks move
-static Fixed blocknvy;
+static Fixed gSlideDx;       // Current move for completablefrac
+static Fixed gSlideDy;
+static Fixed gEndBox[4];     // Final proposed position
+static Fixed gBlockFrac;     // The fraction of move that gets completed
+static Fixed gBlockNVx;      // The vector of the line that blocks move
+static Fixed gBlockNVy;
 
 // p1, p2 are line endpoints
 // p3, p4 are move endpoints
-static int32_t  p1x;
-static int32_t  p1y;
-static int32_t  p2x;
-static int32_t  p2y;
-static int32_t  p3x;
-static int32_t  p3y;
-static int32_t  p4x;
-static int32_t  p4y;
+static int32_t  gP1x;
+static int32_t  gP1y;
+static int32_t  gP2x;
+static int32_t  gP2y;
+static int32_t  gP3x;
+static int32_t  gP3y;
+static int32_t  gP4x;
+static int32_t  gP4y;
 
-static Fixed    nvx;            // Normalized line vector
-static Fixed    nvy;
-static mobj_t*  slidething;
+static Fixed    gNVx;            // Normalized line vector
+static Fixed    gNVy;
+static mobj_t*  gSlideThing;
+
+static line_t **gList;
+static line_t *gLd;
 
 static int SL_PointOnSide2(int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t x3, int32_t y3)
 {
@@ -70,11 +73,11 @@ void P_SlideMove(mobj_t* mo)
     int     i;
     Fixed   frac, slide;
 
-    slidething = mo;
-    dx = slidething->momx;
-    dy = slidething->momy;
-    slidex = slidething->x;
-    slidey = slidething->y;
+    gSlideThing = mo;
+    dx = gSlideThing->momx;
+    dy = gSlideThing->momy;
+    gSlideX = gSlideThing->x;
+    gSlideY = gSlideThing->y;
 
 // perform a maximum of three bumps
 
@@ -89,17 +92,17 @@ void P_SlideMove(mobj_t* mo)
 
         rx = fixedMul(frac, dx);
         ry = fixedMul(frac, dy);
-        slidex += rx;
-        slidey += ry;
+        gSlideX += rx;
+        gSlideY += ry;
 
     //
     // made it the entire way
     //
         if (frac == 0x10000) {
-            slidething->momx = dx;
-            slidething->momy = dy;
-            SL_CheckSpecialLines (slidething->x, slidething->y
-                , slidex, slidey);
+            gSlideThing->momx = dx;
+            gSlideThing->momy = dy;
+            SL_CheckSpecialLines (gSlideThing->x, gSlideThing->y
+                , gSlideX, gSlideY);
             return;
         }
 
@@ -108,18 +111,18 @@ void P_SlideMove(mobj_t* mo)
     //
         dx -= rx;
         dy -= ry;
-        slide = fixedMul(dx, blocknvx);
-        slide += fixedMul(dy, blocknvy);
-        dx = fixedMul(slide, blocknvx);
-        dy = fixedMul(slide, blocknvy);
+        slide = fixedMul(dx, gBlockNVx);
+        slide += fixedMul(dy, gBlockNVy);
+        dx = fixedMul(slide, gBlockNVx);
+        dy = fixedMul(slide, gBlockNVy);
     }
 
 //
 // some hideous situation has happened that won't let the player slide
 //
-    slidex = slidething->x;
-    slidey = slidething->y;
-    slidething->momx = slidething->momy = 0;
+    gSlideX = gSlideThing->x;
+    gSlideY = gSlideThing->y;
+    gSlideThing->momx = gSlideThing->momy = 0;
 }
 
 
@@ -127,36 +130,36 @@ void P_SlideMove(mobj_t* mo)
 // Returns the fraction of the move that is completable
 //---------------------------------------------------------------------------------------------------------------------
 Fixed P_CompletableFrac(Fixed dx, Fixed dy) {
-    blockfrac = 0x10000;    // The entire dist until shown otherwise
-    slidedx = dx;
-    slidedy = dy;
+    gBlockFrac = 0x10000;    // The entire dist until shown otherwise
+    gSlideDx = dx;
+    gSlideDy = dy;
     
-    endbox[BOXTOP] = slidey + CLIPRADIUS * FRACUNIT;
-    endbox[BOXBOTTOM] = slidey - CLIPRADIUS * FRACUNIT;
-    endbox[BOXRIGHT] = slidex + CLIPRADIUS * FRACUNIT;
-    endbox[BOXLEFT] = slidex - CLIPRADIUS * FRACUNIT;
+    gEndBox[BOXTOP] = gSlideY + CLIPRADIUS * FRACUNIT;
+    gEndBox[BOXBOTTOM] = gSlideY - CLIPRADIUS * FRACUNIT;
+    gEndBox[BOXRIGHT] = gSlideX + CLIPRADIUS * FRACUNIT;
+    gEndBox[BOXLEFT] = gSlideX - CLIPRADIUS * FRACUNIT;
 
     if (dx > 0) {
-        endbox[BOXRIGHT] += dx;
+        gEndBox[BOXRIGHT] += dx;
     }
     else {
-        endbox[BOXLEFT] += dx;
+        gEndBox[BOXLEFT] += dx;
     }
     
     if (dy > 0) {
-        endbox[BOXTOP] += dy;
+        gEndBox[BOXTOP] += dy;
     }
     else {
-        endbox[BOXBOTTOM] += dy;
+        gEndBox[BOXBOTTOM] += dy;
     }
 
-    ++validcount;
+    ++gValidCount;
     
     // Check lines
-    int xl = (endbox[BOXLEFT] - gBlockMapOriginX) >> MAPBLOCKSHIFT;
-    int xh = (endbox[BOXRIGHT] - gBlockMapOriginX) >> MAPBLOCKSHIFT;
-    int yl = (endbox[BOXBOTTOM] - gBlockMapOriginY) >> MAPBLOCKSHIFT;
-    int yh = (endbox[BOXTOP] - gBlockMapOriginY) >> MAPBLOCKSHIFT;
+    int xl = (gEndBox[BOXLEFT] - gBlockMapOriginX) >> MAPBLOCKSHIFT;
+    int xh = (gEndBox[BOXRIGHT] - gBlockMapOriginX) >> MAPBLOCKSHIFT;
+    int yl = (gEndBox[BOXBOTTOM] - gBlockMapOriginY) >> MAPBLOCKSHIFT;
+    int yh = (gEndBox[BOXTOP] - gBlockMapOriginY) >> MAPBLOCKSHIFT;
 
     if (xl < 0) {
         xl = 0;
@@ -181,25 +184,24 @@ Fixed P_CompletableFrac(Fixed dx, Fixed dy) {
     }
     
     // Examine results
-    if (blockfrac < 0x1000) {
-        blockfrac = 0;
-        specialline = 0;
+    if (gBlockFrac < 0x1000) {
+        gBlockFrac = 0;
+        gSpecialLine = 0;
         return 0;           // Can't cross anything on a bad move, solid wall or thing
     }
 
-    return blockfrac;
+    return gBlockFrac;
 }
 
 int32_t SL_PointOnSide(int32_t x, int32_t y)
 {
     int     dx, dy, dist;
 
+    dx = x - gP1x;
+    dy = y - gP1y;
 
-    dx = x - p1x;
-    dy = y - p1y;
-
-    dist = fixedMul(dx, nvx);
-    dist += fixedMul(dy, nvy);
+    dist = fixedMul(dx, gNVx);
+    dist += fixedMul(dy, gNVy);
 
     if (dist > FRACUNIT)
         return SIDE_FRONT;
@@ -214,17 +216,17 @@ Fixed SL_CrossFrac()
     int     dx, dy, dist1, dist2, frac;
 
 // project move start and end points onto line normal
-    dx = p3x - p1x;
-    dy = p3y - p1y;
+    dx = gP3x - gP1x;
+    dy = gP3y - gP1y;
 
-    dist1 = fixedMul(dx, nvx);
-    dist1 += fixedMul(dy, nvy);
+    dist1 = fixedMul(dx, gNVx);
+    dist1 += fixedMul(dy, gNVy);
 
-    dx = p4x - p1x;
-    dy = p4y - p1y;
+    dx = gP4x - gP1x;
+    dy = gP4y - gP1y;
 
-    dist2 = fixedMul(dx, nvx);
-    dist2 += fixedMul(dy, nvy);
+    dist2 = fixedMul(dx, gNVx);
+    dist2 += fixedMul(dy, gNVy);
 
     if ( (dist1 < 0) == (dist2 < 0) )
         return FRACUNIT;        // doesn't cross
@@ -239,17 +241,17 @@ bool CheckLineEnds()
     int     dist1, dist2;
     int     dx, dy;
 
-    snx = p4y-p3y;
-    sny = -(p4x-p3x);
+    snx = gP4y-gP3y;
+    sny = -(gP4x-gP3x);
 
-    dx = p1x - p3x;
-    dy = p1y - p3y;
+    dx = gP1x - gP3x;
+    dy = gP1y - gP3y;
 
     dist1 = fixedMul(dx, snx);
     dist1 += fixedMul(dy, sny);
 
-    dx = p2x - p3x;
-    dy = p2y - p3y;
+    dx = gP2x - gP3x;
+    dy = gP2y - gP3y;
 
     dist2 = fixedMul(dx, snx);
     dist2 += fixedMul(dy, sny);
@@ -259,7 +261,6 @@ bool CheckLineEnds()
 
     return false;
 }
-
 
 /*
 ====================
@@ -284,17 +285,17 @@ void ClipToLine()
 
 // p3, p4 are move endpoints
 
-    p3x = slidex - CLIPRADIUS*nvx;
-    p3y = slidey - CLIPRADIUS*nvy;
+    gP3x = gSlideX - CLIPRADIUS*gNVx;
+    gP3y = gSlideY - CLIPRADIUS*gNVy;
 
-    p4x = p3x + slidedx;
-    p4y = p3y + slidedy;
+    gP4x = gP3x + gSlideDx;
+    gP4y = gP3y + gSlideDy;
 
 //
 // if the adjusted point is on the other side of the line, the endpoint
 // must be checked
 //
-    side2 = SL_PointOnSide (p3x, p3y);
+    side2 = SL_PointOnSide (gP3x, gP3y);
 
     if (side2 == SIDE_BACK)
     {
@@ -302,7 +303,7 @@ void ClipToLine()
         return; // !!! ClipToPoint and slide along normal to line
     }
 
-    side3 = SL_PointOnSide (p4x, p4y);
+    side3 = SL_PointOnSide(gP4x, gP4y);
     if (side3 == SIDE_ON)
         return;     // the move goes flush with the wall
     if (side3 == SIDE_FRONT)
@@ -323,12 +324,12 @@ void ClipToLine()
 //
     frac = SL_CrossFrac ();
 
-    if (frac < blockfrac)
+    if (frac < gBlockFrac)
     {
 blockmove:
-        blockfrac = frac;
-        blocknvx = -nvy;
-        blocknvy = nvx;
+        gBlockFrac = frac;
+        gBlockNVx = -gNVy;
+        gBlockNVy = gNVx;
     }
 }
 
@@ -346,10 +347,10 @@ uint32_t SL_CheckLine(line_t* ld)
     int         side1, temp;
 
 // check bbox first
-    if (endbox[BOXRIGHT] < ld->bbox[BOXLEFT]
-    ||  endbox[BOXLEFT] > ld->bbox[BOXRIGHT]
-    ||  endbox[BOXTOP] < ld->bbox[BOXBOTTOM]
-    ||  endbox[BOXBOTTOM] > ld->bbox[BOXTOP] )
+    if (gEndBox[BOXRIGHT] < ld->bbox[BOXLEFT]
+    ||  gEndBox[BOXLEFT] > ld->bbox[BOXRIGHT]
+    ||  gEndBox[BOXTOP] < ld->bbox[BOXBOTTOM]
+    ||  gEndBox[BOXBOTTOM] > ld->bbox[BOXTOP] )
         return true;
 
 // see if it can possibly block movement
@@ -365,7 +366,7 @@ uint32_t SL_CheckLine(line_t* ld)
     else
         openbottom = back->floorheight;
 
-    if (openbottom - slidething->z > 24*FRACUNIT)
+    if (openbottom - gSlideThing->z > 24*FRACUNIT)
         goto findfrac;      // too big of a step up
 
     if (front->ceilingheight < back->ceilingheight)
@@ -381,37 +382,34 @@ uint32_t SL_CheckLine(line_t* ld)
 findfrac:
 
 // p1, p2 are line endpoints
-    p1x = ld->v1.x;
-    p1y = ld->v1.y;
-    p2x = ld->v2.x;
-    p2y = ld->v2.y;
+    gP1x = ld->v1.x;
+    gP1y = ld->v1.y;
+    gP2x = ld->v2.x;
+    gP2y = ld->v2.y;
 
-    nvx = finesine[ld->fineangle];
-    nvy = -finecosine[ld->fineangle];
+    gNVx = gFineSine[ld->fineangle];
+    gNVy = -gFineCosine[ld->fineangle];
 
-    side1 = SL_PointOnSide (slidex, slidey);
+    side1 = SL_PointOnSide(gSlideX, gSlideY);
     if (side1 == SIDE_ON)
         return true;
     if (side1 == SIDE_BACK)
     {
         if (!ld->backsector)
             return true;            // don't clip to backs of one sided lines
-        temp = p1x;
-        p1x = p2x;
-        p2x = temp;
-        temp = p1y;
-        p1y = p2y;
-        p2y = temp;
-        nvx = -nvx;
-        nvy = -nvy;
+        temp = gP1x;
+        gP1x = gP2x;
+        gP2x = temp;
+        temp = gP1y;
+        gP1y = gP2y;
+        gP2y = temp;
+        gNVx = -gNVx;
+        gNVy = -gNVy;
     }
     ClipToLine ();
 
     return true;
 }
-
-static line_t **list;
-static line_t *ld;
 
 void SL_CheckSpecialLines(int32_t x1, int32_t y1, int32_t x2, int32_t y2) {
     int xl, xh, yl, yh;
@@ -453,35 +451,35 @@ void SL_CheckSpecialLines(int32_t x1, int32_t y1, int32_t x2, int32_t y2) {
         byh = gBlockMapHeight - 1;
     }
     
-    specialline = 0;
-    ++validcount;
+    gSpecialLine = 0;
+    ++gValidCount;
     
     int x3, y3, x4, y4;
     int side1, side2;
     
     for (int bx = bxl; bx <= bxh; bx++) {
         for (int by = byl; by <= byh; by++) {
-            for (list = gpBlockMapLineLists[(by * gBlockMapWidth) + bx]; list[0]; ++list) {
-                ld = list[0];
+            for (gList = gpBlockMapLineLists[(by * gBlockMapWidth) + bx]; gList[0]; ++gList) {
+                gLd = gList[0];
                 
-                if (!ld->special)
+                if (!gLd->special)
                     continue;
                 
-                if (ld->validcount == validcount)
+                if (gLd->validcount == gValidCount)
                     continue;   // Line has already been checked
                 
-                ld->validcount = validcount;
+                gLd->validcount = gValidCount;
                 
-                if (xh < ld->bbox[BOXLEFT]
-                ||  xl > ld->bbox[BOXRIGHT]
-                ||  yh < ld->bbox[BOXBOTTOM]
-                ||  yl > ld->bbox[BOXTOP])
+                if (xh < gLd->bbox[BOXLEFT]
+                ||  xl > gLd->bbox[BOXRIGHT]
+                ||  yh < gLd->bbox[BOXBOTTOM]
+                ||  yl > gLd->bbox[BOXTOP])
                     continue;
                 
-                x3 = ld->v1.x;
-                y3 = ld->v1.y;
-                x4 = ld->v2.x;
-                y4 = ld->v2.y;
+                x3 = gLd->v1.x;
+                y3 = gLd->v1.y;
+                x4 = gLd->v2.x;
+                y4 = gLd->v2.y;
                 
                 side1 = SL_PointOnSide2(x1,y1, x3,y3, x4,y4);
                 side2 = SL_PointOnSide2(x2,y2, x3,y3, x4,y4);
@@ -495,7 +493,7 @@ void SL_CheckSpecialLines(int32_t x1, int32_t y1, int32_t x2, int32_t y2) {
                 if (side1 == side2)
                     continue;   // Line doesn't cross move
 
-                specialline = ld;
+                gSpecialLine = gLd;
                 return;
             }
         }

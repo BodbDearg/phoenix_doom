@@ -23,7 +23,7 @@ static void P_Telefrag(mobj_t *thing,Fixed x,Fixed y)
     Fixed size;         // Size of the critter 
     mobj_t *m;          // Pointer to object 
 
-    for (m=mobjhead.next;m!=&mobjhead;m=m->next) {
+    for (m=gMObjHead.next;m!=&gMObjHead;m=m->next) {
         if (m->flags & MF_SHOOTABLE) {      // Can I kill it? 
             size = m->radius + thing->radius + (4<<FRACBITS);
             delta = m->x - x;       // Differance to object 
@@ -71,8 +71,8 @@ bool EV_Teleport(line_t *line,mobj_t *thing)
     sec = gpSectors;          // Get the sector pointer 
     do {
         if (sec->tag == tag) {
-            for (m=mobjhead.next ; m != &mobjhead ; m=m->next) {
-                if (m->InfoPtr != &mobjinfo[MT_TELEPORTMAN]) {
+            for (m = gMObjHead.next; m != &gMObjHead; m = m->next) {
+                if (m->InfoPtr != &gMObjInfo[MT_TELEPORTMAN]) {
                     continue;       // not a teleportman 
                 }
                 sector = m->subsector->sector;  // Get the sector attachment 
@@ -93,11 +93,11 @@ bool EV_Teleport(line_t *line,mobj_t *thing)
 
 // Spawn teleport fog at source and destination 
 
-                fog = SpawnMObj(oldx,oldy,oldz,&mobjinfo[MT_TFOG]); // Previous 
+                fog = SpawnMObj(oldx,oldy,oldz,&gMObjInfo[MT_TFOG]); // Previous 
                 S_StartSound(&fog->x,sfx_telept);
                 an = m->angle >> ANGLETOFINESHIFT;
-                fog = SpawnMObj(m->x+20*finecosine[an], m->y+20*finesine[an]
-                    ,thing->z,&mobjinfo[MT_TFOG]);      // In front of player 
+                fog = SpawnMObj(m->x+20*gFineCosine[an], m->y+20*gFineSine[an]
+                    ,thing->z,&gMObjInfo[MT_TFOG]);      // In front of player 
                 S_StartSound(&fog->x,sfx_telept);
                 if (thing->player) {        // Add a timing delay 
                     thing->reactiontime = TICKSPERSEC+(TICKSPERSEC/5);  // don't move for a bit 

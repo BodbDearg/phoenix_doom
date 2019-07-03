@@ -5,13 +5,13 @@
 #include "MapUtil.h"
 #include "Things/MapObj.h"
 
-static Fixed sightzstart;           // eye z of looker
-static Fixed topslope, bottomslope; // slopes to top and bottom of target
+static Fixed gSightZStart;              // eye z of looker
+static Fixed gTopSlope, gBottomSlope;   // slopes to top and bottom of target
 
-static vector_t strace;                 // from t1 to t2
-static Fixed t2x, t2y;
+static vector_t gSTrace;                 // from t1 to t2
+static Fixed gT2x, gT2y;
 
-static int t1xs,t1ys,t2xs,t2ys;
+static int gT1xs, gT1ys, gT2xs, gT2ys;
 
 
 /*
@@ -40,10 +40,10 @@ static Fixed PS_SightCrossLine (line_t *line)
     p2y = line->v2.y >> 16;
 
 // p3, p4 are sight endpoints
-    p3x = t1xs;
-    p3y = t1ys;
-    p4x = t2xs;
-    p4y = t2ys;
+    p3x = gT1xs;
+    p3y = gT1ys;
+    p4x = gT2xs;
+    p4y = gT2ys;
 
     dx = p2x - p3x;
     dy = p2y - p3y;
@@ -104,9 +104,9 @@ static bool PS_CrossSubsector(const subsector_t* sub)
     {
         line = seg->linedef;
 
-        if (line->validcount == validcount)
+        if (line->validcount == gValidCount)
             continue;       // allready checked other side
-        line->validcount = validcount;
+        line->validcount = gValidCount;
 
         frac = PS_SightCrossLine (line);
 
@@ -141,19 +141,19 @@ static bool PS_CrossSubsector(const subsector_t* sub)
 
         if (front->floorheight != back->floorheight)
         {
-            slope =  (((openbottom - sightzstart)<<6) / frac) << 8;
-            if (slope > bottomslope)
-                bottomslope = slope;
+            slope =  (((openbottom - gSightZStart)<<6) / frac) << 8;
+            if (slope > gBottomSlope)
+                gBottomSlope = slope;
         }
 
         if (front->ceilingheight != back->ceilingheight)
         {
-            slope = (((opentop - sightzstart)<<6) / frac) << 8;
-            if (slope < topslope)
-                topslope = slope;
+            slope = (((opentop - gSightZStart)<<6) / frac) << 8;
+            if (slope < gTopSlope)
+                gTopSlope = slope;
         }
 
-        if (topslope <= bottomslope)
+        if (gTopSlope <= gBottomSlope)
             return false;   // stop
     }
 
@@ -171,14 +171,14 @@ static bool PS_CrossBSPNode(const node_t* pNode) {
     }
     
     // Decide which side the start point is on
-    const uint32_t side = PointOnVectorSide(strace.x, strace.y, &pNode->Line);
+    const uint32_t side = PointOnVectorSide(gSTrace.x, gSTrace.y, &pNode->Line);
 
     // Cross the starting side
     if (!PS_CrossBSPNode((const node_t*) pNode->Children[side]))
         return false;
     
     // The partition plane is crossed here
-    if (side == PointOnVectorSide(t2x, t2y, &pNode->Line))
+    if (side == PointOnVectorSide(gT2x, gT2y, &pNode->Line))
         return true;    // The line doesn't touch the other side
     
     // Cross the ending side
@@ -208,24 +208,24 @@ uint32_t CheckSight(mobj_t *t1,mobj_t *t2)
     }
 
     // look from eyes of t1 to any part of t2
-    ++validcount;
+    ++gValidCount;
 
     // make sure it never lies exactly on a vertex coordinate
-    strace.x = (t1->x & ~0x1ffff) | 0x10000;
-    strace.y = (t1->y & ~0x1ffff) | 0x10000;
-    t2x = (t2->x & ~0x1ffff) | 0x10000;
-    t2y = (t2->y & ~0x1ffff) | 0x10000;
-    strace.dx = t2x - strace.x;
-    strace.dy = t2y - strace.y;
+    gSTrace.x = (t1->x & ~0x1ffff) | 0x10000;
+    gSTrace.y = (t1->y & ~0x1ffff) | 0x10000;
+    gT2x = (t2->x & ~0x1ffff) | 0x10000;
+    gT2y = (t2->y & ~0x1ffff) | 0x10000;
+    gSTrace.dx = gT2x - gSTrace.x;
+    gSTrace.dy = gT2y - gSTrace.y;
 
-    t1xs = strace.x >> 16;
-    t1ys = strace.y >> 16;
-    t2xs = t2x >> 16;
-    t2ys = t2y >> 16;
+    gT1xs = gSTrace.x >> 16;
+    gT1ys = gSTrace.y >> 16;
+    gT2xs = gT2x >> 16;
+    gT2ys = gT2y >> 16;
 
-    sightzstart = t1->z + t1->height - (t1->height>>2);
-    topslope = (t2->z+t2->height) - sightzstart;
-    bottomslope = (t2->z) - sightzstart;
+    gSightZStart = t1->z + t1->height - (t1->height>>2);
+    gTopSlope = (t2->z+t2->height) - gSightZStart;
+    gBottomSlope = (t2->z) - gSightZStart;
 
     return PS_CrossBSPNode(gpBSPTreeRoot);
 }

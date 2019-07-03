@@ -217,7 +217,7 @@ void EV_VerticalDoor(line_t *line,mobj_t *thing)
         }
         if (i!=-1) {
             S_StartSound(&thing->x,sfx_oof);    // Play the sound 
-            stbar.tryopen[i] = true;        // Trigger on status bar 
+            gStBar.tryopen[i] = true;        // Trigger on status bar 
             return;
         }
     }

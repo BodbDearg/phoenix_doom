@@ -31,7 +31,7 @@ enum {      // Intermission shape group
 
 **********************************/
 
-static const char* mapnames[] = {
+static constexpr char* MAP_NAMES[] = {
     "Hangar",
     "Nuclear Plant",
     "Toxin Refinery",
@@ -58,15 +58,17 @@ static const char* mapnames[] = {
     "Military Base"
 };
 
-static const char* const Finished = "Finished";
-static const char* const Entering = "Entering";
+static constexpr char* FINISHED = "Finished";
+static constexpr char* ENTERING = "Entering";
 
-static uint32_t killpercent;        // Percent to attain 
-static uint32_t itempercent;
-static uint32_t secretpercent;
-static uint32_t killvalue,itemvalue,secretvalue;    // Displayed percent value 
-static uint32_t INDelay;            // Delay before next inc 
-static uint32_t BangCount;          // Delay for gunshot sound 
+static uint32_t gKillPercent;        // Percent to attain 
+static uint32_t gItemPercent;
+static uint32_t gSecretPercent;
+static uint32_t gKillValue;         // Displayed percent value 
+static uint32_t gItemValue;
+static uint32_t gSecretValue;
+static uint32_t gINDelay;            // Delay before next inc 
+static uint32_t gBangCount;          // Delay for gunshot sound 
 
 /**********************************
 
@@ -88,7 +90,7 @@ void PrintBigFont(uint32_t x, uint32_t y, const char* string) {
     do {
         ++string;       // Place here so "continue" will work 
         y2 = y;         // Assume normal y coord 
-        Current = BigNumFont;   // Assume numeric font 
+        Current = gBigNumFont;   // Assume numeric font 
         if (c >= '0' && c<='9') {
             c-= '0';    
         } else if (c=='%') {        // Percent 
@@ -147,7 +149,7 @@ uint32_t GetBigStringWidth(const char* string) {
     Width = 0;
     do {
         ++string;
-        Current = BigNumFont;   // Assume numeric font 
+        Current = gBigNumFont;   // Assume numeric font 
         if (c >= '0' && c<='9') {
             c-= '0';    
         } else if (c=='%') {        // Percent 
@@ -227,18 +229,18 @@ void PrintBigFontCenter(uint32_t x, uint32_t y, const char* String) {
 **********************************/
 
 void IN_Start() {
-    INDelay = 0;
-    BangCount = 0;
-    killvalue = itemvalue = secretvalue = 0;    // All values shown are zero 
-    killpercent = itempercent = secretpercent = 100;    // Init in case of divide by zero 
-    if (TotalKillsInLevel) {            // Prevent divide by zeros 
-        killpercent = (players.killcount * 100) / TotalKillsInLevel;
+    gINDelay = 0;
+    gBangCount = 0;
+    gKillValue = gItemValue = gSecretValue = 0;    // All values shown are zero 
+    gKillPercent = gItemPercent = gSecretPercent = 100;    // Init in case of divide by zero 
+    if (gTotalKillsInLevel) {            // Prevent divide by zeros 
+        gKillPercent = (gPlayers.killcount * 100) / gTotalKillsInLevel;
     }
-    if (ItemsFoundInLevel) {
-        itempercent = (players.itemcount * 100) / ItemsFoundInLevel;
+    if (gItemsFoundInLevel) {
+        gItemPercent = (gPlayers.itemcount * 100) / gItemsFoundInLevel;
     }
-    if (SecretsFoundInLevel) {
-        secretpercent = (players.secretcount * 100) / SecretsFoundInLevel;
+    if (gSecretsFoundInLevel) {
+        gSecretPercent = (gPlayers.secretcount * 100) / gSecretsFoundInLevel;
     }
     S_StartSong(Song_intermission);     // Begin the music
 }
@@ -259,36 +261,36 @@ void IN_Stop() {
 **********************************/
 uint32_t IN_Ticker() {
     uint32_t Bang;
-    if (TotalGameTicks < (TICKSPERSEC/2)) { // Initial wait before I begin 
+    if (gTotalGameTicks < (TICKSPERSEC/2)) { // Initial wait before I begin 
         return ga_nothing;      // Do nothing 
     }
 
-    if (NewJoyPadButtons & (PadA|PadB|PadC)) {  // Pressed a button? 
-        killvalue = killpercent;        // Set to maximums 
-        itemvalue = itempercent;
-        secretvalue = secretpercent;
+    if (gNewJoyPadButtons & (PadA|PadB|PadC)) {  // Pressed a button? 
+        gKillValue = gKillPercent;        // Set to maximums 
+        gItemValue = gItemPercent;
+        gSecretValue = gSecretPercent;
         return ga_died;     // Exit after drawing 
     }
 
-    INDelay+=gElapsedTime;
-    if (INDelay>=INTERTIME) {
+    gINDelay+=gElapsedTime;
+    if (gINDelay>=INTERTIME) {
         Bang = false;
-        INDelay-=INTERTIME;
-        if (killvalue < killpercent) {      // Is it too high? 
-            ++killvalue;
+        gINDelay-=INTERTIME;
+        if (gKillValue < gKillPercent) {      // Is it too high? 
+            ++gKillValue;
             Bang = true;
         }
-        if (itemvalue < itempercent) {
-            ++itemvalue;
+        if (gItemValue < gItemPercent) {
+            ++gItemValue;
             Bang = true;
         }
-        if (secretvalue < secretpercent) {
-            ++secretvalue;
+        if (gSecretValue < gSecretPercent) {
+            ++gSecretValue;
             Bang = true;
         }
         if (Bang) {
-            ++BangCount;
-            if (!(BangCount&3)) {
+            ++gBangCount;
+            if (!(gBangCount&3)) {
                 S_StartSound(0,sfx_pistol);
             }
         }
@@ -305,22 +307,22 @@ void IN_Drawer() {
     const void* IntermisShapes;         // Cached pointer 
     DrawRezShape(0,0,rBACKGRNDBROWN);   // Load and draw the skulls 
     
-    IntermisShapes = loadResourceData(rINTERMIS);       // Load the intermission shapes 
-    PrintBigFontCenter(160,10,mapnames[gamemap-1]);     // Print the current map name 
-    PrintBigFontCenter(160,34,Finished);                // Print "Finished" 
+    IntermisShapes = loadResourceData(rINTERMIS);           // Load the intermission shapes 
+    PrintBigFontCenter(160,10, MAP_NAMES[gGameMap-1]);      // Print the current map name 
+    PrintBigFontCenter(160,34, FINISHED);                   // Print "Finished" 
     
-    if (nextmap != 23) {
-        PrintBigFontCenter(160,162,Entering);
-        PrintBigFontCenter(160,182,mapnames[nextmap-1]);
+    if (gNextMap != 23) {
+        PrintBigFontCenter(160,162, ENTERING);
+        PrintBigFontCenter(160,182, MAP_NAMES[gNextMap-1]);
     }
     
     DrawMShape(71,KVALY, GetShapeIndexPtr(IntermisShapes,KillShape));    // Draw the shapes 
     DrawMShape(65,IVALY, GetShapeIndexPtr(IntermisShapes,ItemsShape));
     DrawMShape(27,SVALY, GetShapeIndexPtr(IntermisShapes,SecretsShape));
 
-    PrintNumber(KVALX,KVALY,killvalue, PNFLAGS_PERCENT|PNFLAGS_RIGHT);   // Print the numbers 
-    PrintNumber(IVALX,IVALY,itemvalue, PNFLAGS_PERCENT|PNFLAGS_RIGHT);
-    PrintNumber(SVALX,SVALY,secretvalue ,PNFLAGS_PERCENT|PNFLAGS_RIGHT);
+    PrintNumber(KVALX,KVALY,gKillValue, PNFLAGS_PERCENT|PNFLAGS_RIGHT);   // Print the numbers 
+    PrintNumber(IVALX,IVALY,gItemValue, PNFLAGS_PERCENT|PNFLAGS_RIGHT);
+    PrintNumber(SVALX,SVALY,gSecretValue,PNFLAGS_PERCENT|PNFLAGS_RIGHT);
     releaseResource(rINTERMIS);
     UpdateAndPageFlip(true);                // Show the screen 
 }

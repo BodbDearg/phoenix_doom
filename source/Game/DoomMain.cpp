@@ -45,17 +45,18 @@ void AddToBox(Fixed* box, Fixed x, Fixed y) {
 static uint32_t LocalToNet(uint32_t cmd) {
     uint32_t NewCmd = 0;
 
-    if (cmd & PadSpeed) {       // Was speed true?
+    if (cmd & gPadSpeed) {      // Was speed true?
         NewCmd = PadA;          // Save it
     }
 
-    if (cmd & PadAttack) {      // Was attack true?
+    if (cmd & gPadAttack) {     // Was attack true?
         NewCmd |= PadB;         // Save it
     }
 
-    if (cmd & PadUse) {         // Was use true?
+    if (cmd & gPadUse) {        // Was use true?
         NewCmd |= PadC;         // Save it
     }
+
     return (cmd & ~(PadA|PadB|PadC)) | NewCmd;  // Return the network compatible response
 }
 
@@ -67,15 +68,15 @@ static uint32_t NetToLocal(uint32_t cmd) {
     uint32_t NewCmd = 0;
 
     if (cmd & PadA) {
-        NewCmd = PadSpeed;      // Set the speed bit
+        NewCmd = gPadSpeed;     // Set the speed bit
     }
 
     if (cmd & PadB) {
-        NewCmd |= PadAttack;    // Set the attack bit
+        NewCmd |= gPadAttack;   // Set the attack bit
     }
 
     if (cmd & PadC) {
-        NewCmd |= PadUse;       // Set the use bit
+        NewCmd |= gPadUse;      // Set the use bit
     }
 
     return (cmd & ~(PadA|PadB|PadC)) | NewCmd;  // Return the localized joypad setting
@@ -85,9 +86,9 @@ static uint32_t NetToLocal(uint32_t cmd) {
 // Read a joypad command byte from the demo data
 //----------------------------------------------------------------------------------------------------------------------
 static uint32_t GetDemoCmd() {
-    const uint32_t cmd = DemoDataPtr[0];    // Get a joypad byte from the demo stream
-    ++DemoDataPtr;                          // Inc the state
-    return NetToLocal(cmd);                 // Convert the network command to local
+    const uint32_t cmd = gDemoDataPtr[0];       // Get a joypad byte from the demo stream
+    ++gDemoDataPtr;                             // Inc the state
+    return NetToLocal(cmd);                     // Convert the network command to local
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -101,15 +102,15 @@ uint32_t MiniLoop(
 )
 {
     // Setup (cache graphics,etc)
-    DoWipe = true;
-    start();                    // Prepare the background task (Load data etc.)
-    uint32_t exit = 0;          // I am running
-    gameaction = ga_nothing;    // Game is not in progress
-    TotalGameTicks = 0;         // No vbls processed during game
-    gElapsedTime = 0;           // No time has elapsed yet
+    gDoWipe = true;
+    start();                        // Prepare the background task (Load data etc.)
+    uint32_t exit = 0;              // I am running
+    gGameAction = ga_nothing;       // Game is not in progress
+    gTotalGameTicks = 0;            // No vbls processed during game
+    gElapsedTime = 0;               // No time has elapsed yet
 
     // Init the joypad states
-    JoyPadButtons = PrevJoyPadButtons = NewJoyPadButtons = 0;
+    gJoyPadButtons = gPrevJoyPadButtons = gNewJoyPadButtons = 0;
 
     do {        
         // FIXME: DC: Put this somewhere better
@@ -129,47 +130,47 @@ uint32_t MiniLoop(
         }        
 
         // Run the tic immediately
-        TotalGameTicks += gElapsedTime;     // Add to the VBL count
+        gTotalGameTicks += gElapsedTime;    // Add to the VBL count
         exit = ticker();                    // Process the keypad commands
 
         // Adaptive timing based on previous frame
-        if (DemoPlayback || DemoRecording) {
+        if (gDemoPlayback || gDemoRecording) {
             gElapsedTime = 4;                       // Force 15 FPS
         } else {
-            gElapsedTime = (uint32_t) LastTics;     // Get the true time count
+            gElapsedTime = (uint32_t) gLastTics;    // Get the true time count
             if (gElapsedTime >= 9) {                // Too slow?
                 gElapsedTime = 8;                   // Make 7.5 fps as my mark
             }
         }
 
         // Get buttons for next tic
-        PrevJoyPadButtons = JoyPadButtons;          // Pass through the latest keypad info
+        gPrevJoyPadButtons = gJoyPadButtons;        // Pass through the latest keypad info
         uint32_t buttons = ReadJoyButtons(0);       // Read the controller
-        JoyPadButtons = buttons;                    // Save it
+        gJoyPadButtons = buttons;                   // Save it
         
-        if (DemoPlayback) {                             // Playing back a demo?
+        if (gDemoPlayback) {                            // Playing back a demo?
             if (buttons & (PadA|PadB|PadC|PadD) ) {     // Abort?
                 exit = ga_exitdemo;                     // Exit the demo
                 break;
             }
 
             // Get a joypad from demo data
-            JoyPadButtons = buttons = GetDemoCmd();
+            gJoyPadButtons = buttons = GetDemoCmd();
         }
 
-        NewJoyPadButtons = (buttons ^ PrevJoyPadButtons) & buttons;     // Get the joypad downs...
+        gNewJoyPadButtons = (buttons ^ gPrevJoyPadButtons) & buttons;   // Get the joypad downs...
 
-        if (DemoRecording) {                        // Am I recording a demo?
-            DemoDataPtr[0] = LocalToNet(buttons);   // Save the current joypad data
-            ++DemoDataPtr;
+        if (gDemoRecording) {                           // Am I recording a demo?
+            gDemoDataPtr[0] = LocalToNet(buttons);      // Save the current joypad data
+            ++gDemoDataPtr;
         }
 
         // Am I recording a demo?
-        if ((DemoRecording || DemoPlayback) && (buttons & PadStart) ) {
+        if ((gDemoRecording || gDemoPlayback) && (buttons & PadStart) ) {
             exit = ga_completed;    // End the game right now!
         }
 
-        if (gameaction == ga_warped) {      // Did I end the level?
+        if (gGameAction == ga_warped) {     // Did I end the level?
             exit = ga_warped;               // Exit after drawing
             break;                          // Exit
         }
@@ -181,7 +182,7 @@ uint32_t MiniLoop(
 
     stop();             // Release resources
     S_Clear();          // Kill sounds
-    players.mo = 0;     // For net consistancy checks
+    gPlayers.mo = 0;    // For net consistancy checks
     return exit;        // Return the abort code from ticker
 }
 
@@ -189,12 +190,12 @@ uint32_t MiniLoop(
 // If key's A,B or C was pressed or 8 seconds of demo was shown then abort the demo.
 //----------------------------------------------------------------------------------------------------------------------
 static uint32_t TIC_Abortable() {
-    if (TotalGameTicks >= (8 * TICKSPERSEC)) {      // Time up?
-        return ga_died;                             // Go on to next demo
+    if (gTotalGameTicks >= (8 * TICKSPERSEC)) {         // Time up?
+        return ga_died;                                 // Go on to next demo
     }
 
-    if (NewJoyPadButtons&(PadA|PadB|PadC|PadD)) {   // Pressed A B or C?
-        return ga_exitdemo;                         // Exit the demo right now!
+    if (gNewJoyPadButtons&(PadA|PadB|PadC|PadD)) {      // Pressed A B or C?
+        return ga_exitdemo;                             // Exit the demo right now!
     }
 
     return ga_nothing;  // Continue the demo
@@ -203,12 +204,12 @@ static uint32_t TIC_Abortable() {
 //----------------------------------------------------------------------------------------------------------------------
 // Load the title picture into memory
 //----------------------------------------------------------------------------------------------------------------------
-static bool OnlyOnce;
+static bool gOnlyOnce;
 
 static void START_Title() {
-    if (!OnlyOnce) {
-        OnlyOnce = true;
-        DoWipe = false;     // On power up, don't wipe the screen
+    if (!gOnlyOnce) {
+        gOnlyOnce = true;
+        gDoWipe = false;    // On power up, don't wipe the screen
     }
 
     S_StartSong(Song_intro);
@@ -232,10 +233,10 @@ static void DRAW_Title() {
 //----------------------------------------------------------------------------------------------------------------------
 // Load resources for the credits page
 //----------------------------------------------------------------------------------------------------------------------
-static uint32_t CreditRezNum;
+static uint32_t gCreditRezNum;
 
 static void START_Credits() {
-    CreditRezNum = rIDCREDITS;
+    gCreditRezNum = rIDCREDITS;
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -248,11 +249,11 @@ static void STOP_Credits() {
 // Ticker code for the credits page
 //----------------------------------------------------------------------------------------------------------------------
 static uint32_t TIC_Credits() {
-    if (TotalGameTicks >= (30 * TICKSPERSEC)) {     // Time up?
+    if (gTotalGameTicks >= (30 * TICKSPERSEC)) {    // Time up?
         return ga_died;                             // Go on to next demo
     }
 
-    if (NewJoyPadButtons & (PadA|PadB|PadC|PadD)) {     // Pressed A,B or C?
+    if (gNewJoyPadButtons & (PadA|PadB|PadC|PadD)) {    // Pressed A,B or C?
         return ga_exitdemo;                             // Abort the demo
     }
 
@@ -263,22 +264,22 @@ static uint32_t TIC_Credits() {
 // Draw the credits page
 //----------------------------------------------------------------------------------------------------------------------
 static void DRAW_Credits() {
-    switch (CreditRezNum) {
+    switch (gCreditRezNum) {
         case rIDCREDITS:
-            if (TotalGameTicks >= ( 10 * TICKSPERSEC)) {
-                CreditRezNum = rCREDITS;
-                DoWipe = true;
+            if (gTotalGameTicks >= ( 10 * TICKSPERSEC)) {
+                gCreditRezNum = rCREDITS;
+                gDoWipe = true;
             }
             break;
         
         case rCREDITS:
-            if (TotalGameTicks >= (20 * TICKSPERSEC)) {
-                CreditRezNum = rLOGCREDITS;
-                DoWipe = true;
+            if (gTotalGameTicks >= (20 * TICKSPERSEC)) {
+                gCreditRezNum = rLOGCREDITS;
+                gDoWipe = true;
             }
     }
 
-    DrawRezShape(0, 0, CreditRezNum);   // Draw the credits
+    DrawRezShape(0, 0, gCreditRezNum);  // Draw the credits
     UpdateAndPageFlip(true);            // Page flip
 }
 
@@ -288,8 +289,8 @@ static void DRAW_Credits() {
 static void RunMenu() {
     if (MiniLoop(M_Start, M_Stop, M_Ticker, M_Drawer) == ga_completed) {    // Process the menu
         S_StopSong();
-        G_InitNew(StartSkill, StartMap);    // Init the new game
-        G_RunGame();                        // Play the game
+        G_InitNew(gStartSkill, gStartMap);      // Init the new game
+        G_RunGame();                            // Play the game
     }
 }
 
@@ -334,7 +335,7 @@ static void RunDemo(uint32_t demoname) {
 // Main entry point for DOOM!!!!
 //----------------------------------------------------------------------------------------------------------------------
 void D_DoomMain() {
-    BigNumFont = loadResourceData(rBIGNUMB);    // Cache the large numeric font (Needed always)
+    gBigNumFont = loadResourceData(rBIGNUMB);   // Cache the large numeric font (Needed always)
 
     R_Init();   // Init refresh system
     P_Init();   // Init main code

@@ -71,7 +71,7 @@ static uint32_t CheckMissileRange(mobj_t* actor) noexcept {
         dist -= 128;                    // No melee attack, so fire more often
     }
 
-    if (actor->InfoPtr == &mobjinfo[MT_SKULL]) {    // Is it a skull?
+    if (actor->InfoPtr == &gMObjInfo[MT_SKULL]) {   // Is it a skull?
         dist >>= 1;                                 // Halve the distance for attack
     }
 
@@ -125,9 +125,9 @@ static bool P_Move(mobj_t& actor) noexcept {
 
     // Try to open any specials if we can't move to a location
     if (!P_TryMove(&actor, tryX, tryY) ) {
-        if (actor.flags & MF_FLOAT && floatok) {
+        if (actor.flags & MF_FLOAT && gFloatOk) {
             // Must adjust height
-            if (actor.z < tmfloorz) {
+            if (actor.z < gTmpFloorZ) {
                 actor.z += FLOATSPEED;      // Jump up
             } else {
                 actor.z -= FLOATSPEED;      // Jump down
@@ -137,7 +137,7 @@ static bool P_Move(mobj_t& actor) noexcept {
             return true;                    // I can move!!
         }
 
-        line_t* const pBlockLine = blockline;       // What line blocked me?
+        line_t* const pBlockLine = gBlockLine;      // What line blocked me?
 
         if (!pBlockLine || !pBlockLine->special)    // Am I blocked?
             return false;                           // Can't move
@@ -324,7 +324,7 @@ static bool P_LookForPlayers(mobj_t& actor, bool bAllAround) noexcept {
     // Pick another player as target if possible
     if (!(actor.flags & MF_SEETARGET)) {    // Can I see the player?
     newtarget:
-        actor.target = players.mo;          // Force player #0 tracking
+        actor.target = gPlayers.mo;         // Force player #0 tracking
         return false;                       // No one is targeted
     }
 
@@ -440,12 +440,12 @@ void A_Chase(mobj_t* const pActor) noexcept {
     }
 
     // Check for missile attack
-    if ((gameskill == sk_nightmare || pActor->movecount == 0) &&
+    if ((gGameSkill == sk_nightmare || pActor->movecount == 0) &&
         pInfo->missilestate &&
         CheckMissileRange(pActor)
     ) {
         SetMObjState(pActor, pInfo->missilestate);      // Shoot missile
-        if (gameskill != sk_nightmare) {                // Ruthless!!
+        if (gGameSkill != sk_nightmare) {               // Ruthless!!
             pActor->flags |= MF_JUSTATTACKED;           // Don't attack next round
         }
         return;
@@ -550,7 +550,7 @@ void A_TroopAttack(mobj_t* const pActor) noexcept {
         }
         
         // Launch a imp's missile
-        P_SpawnMissile(pActor, pActor->target, &mobjinfo[MT_TROOPSHOT]);
+        P_SpawnMissile(pActor, pActor->target, &gMObjInfo[MT_TROOPSHOT]);
     }
 }
 
@@ -579,7 +579,7 @@ void A_HeadAttack(mobj_t* const pActor) noexcept {
         }
         
         // Launch a missile - shoot eye missile
-        P_SpawnMissile(pActor, pActor->target, &mobjinfo[MT_HEADSHOT]);
+        P_SpawnMissile(pActor, pActor->target, &gMObjInfo[MT_HEADSHOT]);
     }
 }
 
@@ -588,8 +588,8 @@ void A_HeadAttack(mobj_t* const pActor) noexcept {
 //--------------------------------------------------------------------------------------------------
 void A_CyberAttack(mobj_t* const pActor) noexcept {
     if (pActor->target) {
-        A_FaceTarget(pActor);                                           // Face the enemy
-        P_SpawnMissile(pActor, pActor->target, &mobjinfo[MT_ROCKET]);   // Launch missile
+        A_FaceTarget(pActor);                                               // Face the enemy
+        P_SpawnMissile(pActor, pActor->target, &gMObjInfo[MT_ROCKET]);      // Launch missile
     }
 }
 
@@ -606,7 +606,7 @@ void A_BruisAttack(mobj_t* const pActor) noexcept {
         }
 
         // Launch a missile
-        P_SpawnMissile(pActor, pActor->target, &mobjinfo[MT_BRUISERSHOT]);
+        P_SpawnMissile(pActor, pActor->target, &gMObjInfo[MT_BRUISERSHOT]);
     }
 }
 
@@ -623,8 +623,8 @@ void A_SkullAttack(mobj_t* const pActor) noexcept {
 
         // Speed for distance
         const angle_t angle = pActor->angle >> ANGLETOFINESHIFT;
-        pActor->momx = fixedMul(SKULLSPEED, finecosine[angle]);
-        pActor->momy = fixedMul(SKULLSPEED, finesine[angle]);
+        pActor->momx = fixedMul(SKULLSPEED, gFineCosine[angle]);
+        pActor->momy = fixedMul(SKULLSPEED, gFineSine[angle]);
 
         uint32_t dist = GetApproxDistance(pDest->x - pActor->x, pDest->y - pActor->y);
         dist = dist / SKULLSPEED;   // Speed to hit target
@@ -697,13 +697,13 @@ void A_Explode(mobj_t* const pActor) noexcept {
 void A_BossDeath(mobj_t* const pActor) noexcept {    
     line_t junk;
 
-    if (gamemap != 8) {     // Level #8?
+    if (gGameMap != 8) {    // Level #8?
         return;             // Kill all you want, we'll make more!
     }
 
     // Scan the remaining thinkers to see if all bosses are dead.
     // This is a brute force method, but it works!
-    const mobj_t* pActor2 = mobjhead.next;
+    const mobj_t* pActor2 = gMObjHead.next;
 
     do {
         if (pActor2 != pActor && pActor2->InfoPtr == pActor->InfoPtr && pActor2->MObjHealth) {
@@ -713,7 +713,7 @@ void A_BossDeath(mobj_t* const pActor) noexcept {
         // Keep scanning the list
         pActor2 = pActor2->next;
 
-    } while (pActor2 != &mobjhead);     // Stop when wrapped around back to the start
+    } while (pActor2 != &gMObjHead);    // Stop when wrapped around back to the start
 
     // Victory!
     junk.tag = 666;                         // Floor's must be tagged with 666

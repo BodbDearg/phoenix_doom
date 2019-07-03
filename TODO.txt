@@ -7,6 +7,7 @@
 - Cleanup and optimize render code
 - Intro logos
 - Fix sky warping
+- Fix face death anim on HUD
 - Intro videos? (maybe)
 - Fix view bob not working.
 - Fix lost souls jumping UP suddenly when starting to fly
@@ -35,7 +36,8 @@
 - Maybe center numbers on HUD?
 - Optimize audio mixing for different channel counts and bit depths
 - Fix gun scale on HUD. (especially on smaller screen sizes)
-- Wall sliding sometimes 'sticking'
+- Wall sliding sometimes 'sticking' (may be original doom behavior - investigate)
+- Is the pistol reload speed too slow?
 - Do overbright lighting of environment due to muzzle flash?
 - Anything that can be done about the artifacts when rendering flats when the eye is almost level with the flat?
 - Level 15: strange bug where wall in room beyond visible through sky after opening door.

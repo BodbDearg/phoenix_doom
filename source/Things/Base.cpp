@@ -9,15 +9,17 @@
 #include "Map/Sight.h"
 #include "MapObj.h"
 
-static mobj_t *CheckThingMo;        // Used for PB_CheckThing 
-static Fixed testx, testy;
-static Fixed testfloorz, testceilingz, testdropoffz;
-static subsector_t *testsubsec;
-static line_t *ceilingline;
-
-static mobj_t *hitthing;
-static Fixed testbbox[4];       // Bounding box for tests 
-static int testflags;
+static mobj_t*          gCheckThingMo;          // Used for PB_CheckThing 
+static Fixed            gTestX;
+static Fixed            gTestY;
+static Fixed            gTestFloorZ;
+static Fixed            gTestCeilingZ;
+static Fixed            gTestDropoffZ;
+static subsector_t*     gTestSubSec;
+static line_t*          gCeilingLine;
+static mobj_t*          gHitThing;
+static Fixed            gTestBBox[4];           // Bounding box for tests 
+static int              gTestFlags;
 
 /**********************************
 
@@ -115,18 +117,18 @@ static bool PB_BoxCrossLine(line_t *ld)
     Fixed dx2,dy2;
     bool side1, side2;
 
-    if (testbbox[BOXRIGHT] <= ld->bbox[BOXLEFT]
-    ||  testbbox[BOXLEFT] >= ld->bbox[BOXRIGHT]
-    ||  testbbox[BOXTOP] <= ld->bbox[BOXBOTTOM]
-    ||  testbbox[BOXBOTTOM] >= ld->bbox[BOXTOP] )
+    if (gTestBBox[BOXRIGHT] <= ld->bbox[BOXLEFT]
+    ||  gTestBBox[BOXLEFT] >= ld->bbox[BOXRIGHT]
+    ||  gTestBBox[BOXTOP] <= ld->bbox[BOXBOTTOM]
+    ||  gTestBBox[BOXBOTTOM] >= ld->bbox[BOXTOP] )
         return false;
 
     if (ld->slopetype == ST_POSITIVE) {
-        x1 = testbbox[BOXLEFT];
-        x2 = testbbox[BOXRIGHT];
+        x1 = gTestBBox[BOXLEFT];
+        x2 = gTestBBox[BOXRIGHT];
     } else {
-        x1 = testbbox[BOXRIGHT];
-        x2 = testbbox[BOXLEFT];
+        x1 = gTestBBox[BOXRIGHT];
+        x2 = gTestBBox[BOXLEFT];
     }
 
     lx = ld->v1.x;
@@ -135,9 +137,9 @@ static bool PB_BoxCrossLine(line_t *ld)
     ldy = (ld->v2.y-ld->v1.y)>>16;
 
     dx1 = (x1 - lx)>>16;
-    dy1 = (testbbox[BOXTOP] - ly)>>16;
+    dy1 = (gTestBBox[BOXTOP] - ly)>>16;
     dx2 = (x2 - lx)>>16;
-    dy2 = (testbbox[BOXBOTTOM] - ly)>>16;
+    dy2 = (gTestBBox[BOXBOTTOM] - ly)>>16;
 
     side1 = ldy*dx1 < dy1*ldx;
     side2 = ldy*dx2 < dy2*ldx;
@@ -169,7 +171,7 @@ static bool PB_CheckLine (line_t *ld)
     if (!ld->backsector)
         return false;       // one sided line
 
-    if ( !(testflags & MF_MISSILE)
+    if ( !(gTestFlags & MF_MISSILE)
     && (ld->flags & (ML_BLOCKING | ML_BLOCKMONSTERS) ) )
             return false;       // explicitly blocking
 
@@ -193,15 +195,15 @@ static bool PB_CheckLine (line_t *ld)
     }
 
 // adjust floor / ceiling heights
-    if (opentop < testceilingz)
+    if (opentop < gTestCeilingZ)
     {
-        testceilingz = opentop;
-        ceilingline = ld;
+        gTestCeilingZ = opentop;
+        gCeilingLine = ld;
     }
-    if (openbottom > testfloorz)
-        testfloorz = openbottom;
-    if (lowfloor < testdropoffz)
-        testdropoffz = lowfloor;
+    if (openbottom > gTestFloorZ)
+        gTestFloorZ = openbottom;
+    if (lowfloor < gTestDropoffZ)
+        gTestDropoffZ = lowfloor;
 
     return true;
 }
@@ -233,15 +235,15 @@ static uint32_t PB_CheckThing (mobj_t *thing)
     if (!(thing->flags & MF_SOLID )) {
         return true;
     }
-    mo = CheckThingMo;
+    mo = gCheckThingMo;
     blockdist = thing->radius + mo->radius;
 
-    delta = thing->x - testx;
+    delta = thing->x - gTestX;
     if (delta < 0)
         delta = -delta;
     if (delta >= blockdist)
         return true;        // didn't hit it
-    delta = thing->y - testy;
+    delta = thing->y - gTestY;
     if (delta < 0)
         delta = -delta;
     if (delta >= blockdist)
@@ -253,8 +255,8 @@ static uint32_t PB_CheckThing (mobj_t *thing)
 //
 // check for skulls slamming into things
 //
-    if (testflags & MF_SKULLFLY) {
-        hitthing = thing;
+    if (gTestFlags & MF_SKULLFLY) {
+        gHitThing = thing;
         return false;       // stop moving
     }
 
@@ -262,7 +264,7 @@ static uint32_t PB_CheckThing (mobj_t *thing)
 //
 // missiles can hit other things
 //
-    if (testflags & MF_MISSILE) {
+    if (gTestFlags & MF_MISSILE) {
     // see if it went over / under
         if (mo->z > thing->z + thing->height)
             return true;        // overhead
@@ -271,7 +273,7 @@ static uint32_t PB_CheckThing (mobj_t *thing)
         if (mo->target->InfoPtr == thing->InfoPtr) {    // don't hit same species as originator
             if (thing == mo->target)
                 return true;    // don't explode on shooter
-            if (thing->InfoPtr != &mobjinfo[MT_PLAYER])
+            if (thing->InfoPtr != &gMObjInfo[MT_PLAYER])
                 return false;   // explode, but do no damage
             // let players missile other players
         }
@@ -279,7 +281,7 @@ static uint32_t PB_CheckThing (mobj_t *thing)
             return !(thing->flags & MF_SOLID);      // didn't do any damage
 
     // damage / explode
-        hitthing = thing;
+        gHitThing = thing;
         return false;           // don't traverse any more
     }
 
@@ -308,32 +310,32 @@ hitthing
 ==================
 */
 static uint32_t PB_CheckPosition(mobj_t *mo) {
-    testflags = mo->flags;
+    gTestFlags = mo->flags;
 
     int r = mo->radius;
-    testbbox[BOXTOP] = testy + r;
-    testbbox[BOXBOTTOM] = testy - r;
-    testbbox[BOXRIGHT] = testx + r;
-    testbbox[BOXLEFT] = testx - r;
+    gTestBBox[BOXTOP] = gTestY + r;
+    gTestBBox[BOXBOTTOM] = gTestY - r;
+    gTestBBox[BOXRIGHT] = gTestX + r;
+    gTestBBox[BOXLEFT] = gTestX - r;
     
     // The base floor / ceiling is from the subsector that contains the point.
     // Any contacted lines the step closer together will adjust them.
-    testsubsec = PointInSubsector(testx,testy);
-    testfloorz = testdropoffz = testsubsec->sector->floorheight;
-    testceilingz = testsubsec->sector->ceilingheight;
+    gTestSubSec = PointInSubsector(gTestX, gTestY);
+    gTestFloorZ = gTestDropoffZ = gTestSubSec->sector->floorheight;
+    gTestCeilingZ = gTestSubSec->sector->ceilingheight;
     
-    ++validcount;
+    ++gValidCount;
     
-    ceilingline = 0;
-    hitthing = 0;
+    gCeilingLine = 0;
+    gHitThing = 0;
 
     // The bounding box is extended by MAXRADIUS because mobj_ts are grouped
     // into mapblocks based on their origin point, and can overlap into adjacent
     // blocks by up to MAXRADIUS units.
-    int xl = (testbbox[BOXLEFT] - gBlockMapOriginX - MAXRADIUS) >> MAPBLOCKSHIFT;
-    int xh = (testbbox[BOXRIGHT] - gBlockMapOriginX + MAXRADIUS) >> MAPBLOCKSHIFT;
-    int yl = (testbbox[BOXBOTTOM] - gBlockMapOriginY - MAXRADIUS) >> MAPBLOCKSHIFT;
-    int yh = (testbbox[BOXTOP] - gBlockMapOriginY + MAXRADIUS) >> MAPBLOCKSHIFT;
+    int xl = (gTestBBox[BOXLEFT] - gBlockMapOriginX - MAXRADIUS) >> MAPBLOCKSHIFT;
+    int xh = (gTestBBox[BOXRIGHT] - gBlockMapOriginX + MAXRADIUS) >> MAPBLOCKSHIFT;
+    int yl = (gTestBBox[BOXBOTTOM] - gBlockMapOriginY - MAXRADIUS) >> MAPBLOCKSHIFT;
+    int yh = (gTestBBox[BOXTOP] - gBlockMapOriginY + MAXRADIUS) >> MAPBLOCKSHIFT;
     
     if (xl < 0) {
         xl = 0;
@@ -351,7 +353,7 @@ static uint32_t PB_CheckPosition(mobj_t *mo) {
         yh = (int32_t) gBlockMapHeight - 1;
     }
     
-    CheckThingMo = mo;  // Store for PB_CheckThing
+    gCheckThingMo = mo;  // Store for PB_CheckThing
     
     for (int bx = xl; bx <= xh; bx++) {
         for (int by = yl; by <= yh; by++) {
@@ -377,20 +379,20 @@ static uint32_t PB_CheckPosition(mobj_t *mo) {
 
 static bool PB_TryMove(int tryx,int tryy,mobj_t *mo)
 {
-    testx = tryx;
-    testy = tryy;
+    gTestX = tryx;
+    gTestY = tryy;
 
     if (!PB_CheckPosition(mo))
         return false;       // solid wall or thing
 
-    if (testceilingz - testfloorz < mo->height)
+    if (gTestCeilingZ - gTestFloorZ < mo->height)
         return false;           // doesn't fit
-    if ( testceilingz - mo->z < mo->height)
+    if (gTestCeilingZ - mo->z < mo->height)
         return false;           // mobj must lower itself to fit
-    if ( testfloorz - mo->z > 24*FRACUNIT )
+    if (gTestFloorZ - mo->z > 24*FRACUNIT )
         return false;           // too big a step up
-    if ( !(testflags&(MF_DROPOFF|MF_FLOAT))
-        && testfloorz - testdropoffz > 24*FRACUNIT )
+    if (!(gTestFlags&(MF_DROPOFF|MF_FLOAT))
+        && gTestFloorZ - gTestDropoffZ > 24*FRACUNIT )
         return false;           // don't stand over a dropoff
 
 //
@@ -398,8 +400,8 @@ static bool PB_TryMove(int tryx,int tryy,mobj_t *mo)
 //
 
     UnsetThingPosition(mo);
-    mo->floorz = testfloorz;
-    mo->ceilingz = testceilingz;
+    mo->floorz = gTestFloorZ;
+    mo->ceilingz = gTestCeilingZ;
     mo->x = tryx;
     mo->y = tryy;
     SetThingPosition(mo);
@@ -443,17 +445,17 @@ static uint32_t P_XYMovement(mobj_t* mo) {
         if (!PB_TryMove(mo->x + xuse, mo->y + yuse,mo)) {
         // blocked move
             if (mo->flags & MF_SKULLFLY) {
-                L_SkullBash(mo,hitthing);
+                L_SkullBash(mo, gHitThing);
                 return true;
             }
 
             if (mo->flags & MF_MISSILE) {   // explode a missile
-                if (ceilingline && ceilingline->backsector &&
-                    ceilingline->backsector->CeilingPic==-1) {  // hack to prevent missiles exploding against the sky
+                if (gCeilingLine && gCeilingLine->backsector &&
+                    gCeilingLine->backsector->CeilingPic==-1) {  // hack to prevent missiles exploding against the sky
                     P_RemoveMobj(mo);
                     return true;
                 }
-                L_MissileHit(mo,hitthing);
+                L_MissileHit(mo, gHitThing);
                 return true;
             }
 
@@ -546,8 +548,8 @@ static void P_MobjThinker(mobj_t *mobj)
 void P_RunMobjBase(void)
 {
     mobj_t *mo;
-    mo = mobjhead.next;
-    if (mo!=&mobjhead) {
+    mo = gMObjHead.next;
+    if (mo!=&gMObjHead) {
         do {    // End of the list? 
             mobj_t *NextMo;     // In case it's deleted! 
             NextMo = mo->next;
@@ -555,6 +557,6 @@ void P_RunMobjBase(void)
                 P_MobjThinker(mo);  // Execute the code 
             }
             mo = NextMo;            // Next in the list 
-        } while (mo!=&mobjhead);
+        } while (mo!=&gMObjHead);
     }
 }

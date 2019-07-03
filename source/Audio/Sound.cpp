@@ -33,7 +33,7 @@ void S_StartSound(const Fixed* const pOriginXY, const uint32_t soundId) {
     uint32_t rightVolume = 255;
     
     if (pOriginXY) {
-        const mobj_t* const pListener = players.mo;
+        const mobj_t* const pListener = gPlayers.mo;
 
         if (pOriginXY != &pListener->x) {
             const Fixed dist = GetApproxDistance(pListener->x - pOriginXY[0], pListener->y - pOriginXY[1]);
@@ -51,7 +51,7 @@ void S_StartSound(const Fixed* const pOriginXY, const uint32_t soundId) {
                 if (vol <= 0)   // Too quiet?
                     return;
                 
-                const int sep = 128 - (fixedMul(S_STEREO_SWING, finesine[angle]) >> FRACBITS);
+                const int sep = 128 - (fixedMul(S_STEREO_SWING, gFineSine[angle]) >> FRACBITS);
                 rightVolume = (sep * vol) >> 8;
                 leftVolume = ((256 - sep) * vol) >> 8;
             }
@@ -74,7 +74,7 @@ void S_StartSound(const Fixed* const pOriginXY, const uint32_t soundId) {
 //--------------------------------------------------------------------------------------------------
 // Start music
 //--------------------------------------------------------------------------------------------------
-static const uint8_t SONG_LOOKUP[] = {
+static constexpr uint8_t SONG_LOOKUP[] = {
     0,      // -- NO SONG --
     11,     // Intro
     12,     // Final

@@ -2,7 +2,7 @@
 
 #include "Burger.h"
 
-ammotype_e WeaponAmmos[NUMWEAPONS] = {  
+ammotype_e gWeaponAmmos[NUMWEAPONS] = {  
     am_noammo,      // Fists
     am_clip,        // Pistol
     am_shell,       // Shotgun
@@ -13,43 +13,43 @@ ammotype_e WeaponAmmos[NUMWEAPONS] = {
     am_noammo       // Chainsaw
 };
 
-uint32_t maxammo[NUMAMMO] = { 
+uint32_t gMaxAmmo[NUMAMMO] = { 
     200,
     50,
     300,
     50
 };
 
-uint32_t        PadAttack = PadA;
-uint32_t        PadUse = PadB;
-uint32_t        PadSpeed = PadC;
-uint32_t        ControlType;
-uint32_t        TotalGameTicks;
+uint32_t        gPadAttack = PadA;
+uint32_t        gPadUse = PadB;
+uint32_t        gPadSpeed = PadC;
+uint32_t        gControlType;
+uint32_t        gTotalGameTicks;
 uint32_t        gElapsedTime;
-uint32_t        MaxLevel;
-uint32_t*       DemoDataPtr;
-uint32_t*       DemoBuffer;
-uint32_t        JoyPadButtons;
-uint32_t        PrevJoyPadButtons;
-uint32_t        NewJoyPadButtons;
-skill_e         StartSkill;
-uint32_t        StartMap;
-const void*     BigNumFont;
-uint32_t        TotalKillsInLevel;
-uint32_t        ItemsFoundInLevel;
-uint32_t        SecretsFoundInLevel;
-uint32_t        tx_texturelight;
-Fixed           lightsub;
-Fixed           lightcoef;
-Fixed           lightmin;
-Fixed           lightmax;
-player_t        players;
-gameaction_e    gameaction;
-skill_e         gameskill;
-uint32_t        gamemap;
-uint32_t        nextmap;
-uint32_t        ScreenSize;
-bool            DemoRecording;
-bool            DemoPlayback;
-bool            DoWipe;
-uint32_t        validcount;
+uint32_t        gMaxLevel;
+uint32_t*       gDemoDataPtr;
+uint32_t*       gDemoBuffer;
+uint32_t        gJoyPadButtons;
+uint32_t        gPrevJoyPadButtons;
+uint32_t        gNewJoyPadButtons;
+skill_e         gStartSkill;
+uint32_t        gStartMap;
+const void*     gBigNumFont;
+uint32_t        gTotalKillsInLevel;
+uint32_t        gItemsFoundInLevel;
+uint32_t        gSecretsFoundInLevel;
+uint32_t        gTxTextureLight;
+Fixed           gLightSub;
+Fixed           gLightCoef;
+Fixed           gLightMin;
+Fixed           gLightMax;
+player_t        gPlayers;
+gameaction_e    gGameAction;
+skill_e         gGameSkill;
+uint32_t        gGameMap;
+uint32_t        gNextMap;
+uint32_t        gScreenSize;
+bool            gDemoRecording;
+bool            gDemoPlayback;
+bool            gDoWipe;
+uint32_t        gValidCount;

@@ -143,9 +143,9 @@ uint32_t getSky3TexNum() {
 }
 
 uint32_t getCurrentSkyTexNum() {
-    if (gamemap < 9 || gamemap == 24) {
+    if (gGameMap < 9 || gGameMap == 24) {
         return getSky1TexNum();
-    } else if (gamemap < 18) {
+    } else if (gGameMap < 18) {
         return getSky2TexNum();
     } else {
         return getSky3TexNum();

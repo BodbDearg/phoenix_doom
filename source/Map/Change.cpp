@@ -26,8 +26,8 @@
 
 **********************************/
 
-static uint32_t crushchange;        // If true, then crush bodies to blood 
-static uint32_t nofit;              // Set to true if something is blocking 
+static uint32_t gCrushChange;       // If true, then crush bodies to blood 
+static uint32_t gNoFit;             // Set to true if something is blocking 
 
 /**********************************
 
@@ -52,8 +52,8 @@ static uint32_t ThingHeightClip(mobj_t *thing)
 
     // What about stranding a monster partially off an edge? 
 
-    thing->floorz = tmfloorz;       // Save off the variables 
-    thing->ceilingz = tmceilingz;
+    thing->floorz = gTmpFloorZ;       // Save off the variables 
+    thing->ceilingz = gTmpCeilingZ;
 
     if (onfloor) {  // walking monsters rise and fall with the floor 
         thing->z = thing->floorz;   // Pin to the floor 
@@ -83,7 +83,7 @@ static uint32_t PIT_ChangeSector(mobj_t *thing)
 
     // crunch bodies to giblets 
     if (!thing->MObjHealth) {           // No health... 
-        SetMObjState(thing,&states[S_GIBS]);    // Change to goo 
+        SetMObjState(thing,&gStates[S_GIBS]);    // Change to goo 
         thing->height = 0;  // No height 
         thing->radius = 0;  // No radius 
         return true;        // keep checking 
@@ -100,12 +100,12 @@ static uint32_t PIT_ChangeSector(mobj_t *thing)
         return true;                // assume it is bloody gibs or something 
     }
 
-    nofit = true;       // Can't fit 
-    if (crushchange && Tick4) {     // Crush it? 
+    gNoFit = true;       // Can't fit 
+    if (gCrushChange && gTick4) {    // Crush it? 
         mobj_t *mo;
         DamageMObj(thing,0,0,10);       // Take some damage 
         // spray blood in a random direction 
-        mo = SpawnMObj(thing->x,thing->y,thing->z + thing->height/2,&mobjinfo[MT_BLOOD]);
+        mo = SpawnMObj(thing->x,thing->y,thing->z + thing->height/2,&gMObjInfo[MT_BLOOD]);
         mo->momx = (255 - (Fixed) Random::nextU32(511)) << (FRACBITS - 4);  // Have it jump out 
         mo->momy = (255 - (Fixed) Random::nextU32(511)) << (FRACBITS - 4);
     }
@@ -127,10 +127,10 @@ uint32_t ChangeSector(sector_t *sector, uint32_t crunch)
 // force next sound to reflood 
 
 
-    players.lastsoundsector = 0;
+    gPlayers.lastsoundsector = 0;
 
-    nofit = false;          // Assume that it's ok 
-    crushchange = crunch;   // Can I crush bodies 
+    gNoFit = false;          // Assume that it's ok 
+    gCrushChange = crunch;   // Can I crush bodies 
 
 // recheck heights for all things near the moving sector 
 
@@ -143,5 +143,5 @@ uint32_t ChangeSector(sector_t *sector, uint32_t crunch)
             BlockThingsIterator(x,y,PIT_ChangeSector);  // Test everything 
         } while (++y<y2);
     } while (++x<x2);
-    return nofit;       // Return flag 
+    return gNoFit;       // Return flag 
 }

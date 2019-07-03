@@ -34,8 +34,8 @@ typedef struct {            // Struct to describe a switch
     bwhere_e where;         // Vertical position of the button 
 } button_t;
 
-uint32_t NumSwitches;       // Number of switches * 2 
-uint32_t SwitchList[] = {
+uint32_t gNumSwitches;      // Number of switches * 2 
+uint32_t gSwitchList[] = {
     rSW1BRN1-rT_START,rSW2BRN1-rT_START,            // Before,After 
     rSW1GARG-rT_START,rSW2GARG-rT_START,
     rSW1GSTON-rT_START,rSW2GSTON-rT_START,
@@ -87,7 +87,7 @@ static void T_Button(button_t *button)
 
 void P_InitSwitchList(void)
 {
-    NumSwitches = sizeof(SwitchList)/sizeof(uint32_t);
+    gNumSwitches = sizeof(gSwitchList) / sizeof(uint32_t);
 }
 
 /**********************************
@@ -141,29 +141,29 @@ void P_ChangeSwitchTexture(line_t *line, bool useAgain)
 
     i = 0;
     do {
-        if (SwitchList[i] == texTop) {
+        if (gSwitchList[i] == texTop) {
             S_StartSound(SoundOrg,sound);
-            MySide->toptexture = SwitchList[i^1];
+            MySide->toptexture = gSwitchList[i^1];
             if (useAgain) {
                 P_StartButton(line,top,texTop,BUTTONTIME);
             }
             return;
-        } else if (SwitchList[i] == texMid) {
+        } else if (gSwitchList[i] == texMid) {
             S_StartSound(SoundOrg,sound);
-            MySide->midtexture = SwitchList[i^1];
+            MySide->midtexture = gSwitchList[i^1];
             if (useAgain) {
                 P_StartButton(line,middle,texMid,BUTTONTIME);
             }
             return;
-        } else if (SwitchList[i] == texBot) {
+        } else if (gSwitchList[i] == texBot) {
             S_StartSound(SoundOrg,sound);
-            MySide->bottomtexture = SwitchList[i^1];
+            MySide->bottomtexture = gSwitchList[i^1];
             if (useAgain) {
                 P_StartButton(line,bottom,texBot,BUTTONTIME);
             }
             return;
         }
-    } while (++i<NumSwitches);
+    } while (++i < gNumSwitches);
 }
 
 /**********************************

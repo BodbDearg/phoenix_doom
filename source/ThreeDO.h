@@ -5,7 +5,7 @@
 
 struct vissprite_t;
 
-extern uint32_t LastTics;       // Time elapsed since last page flip
+extern uint32_t gLastTics;      // Time elapsed since last page flip
 
 void ThreeDOMain();
 void WritePrefsFile();

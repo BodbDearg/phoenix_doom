@@ -110,23 +110,23 @@ void InitMathTables();
 //----------------------------------------------------------------------------------------------------------------------
 // Render main
 //----------------------------------------------------------------------------------------------------------------------
-extern viswall_t        viswalls[MAXWALLCMDS];          // Visible wall array
-extern viswall_t*       lastwallcmd;                    // Pointer to free wall entry
-extern visplane_t       visplanes[MAXVISPLANES];        // Visible floor array
-extern visplane_t*      lastvisplane;                   // Pointer to free floor entry
-extern vissprite_t      vissprites[MAXVISSPRITES];      // Visible sprite array
-extern vissprite_t*     vissprite_p;                    // Pointer to free sprite entry
-extern uint8_t          openings[MAXOPENINGS];
-extern uint8_t*         lastopening;
-extern Fixed            viewx;                          // Camera x,y,z
-extern Fixed            viewy;
-extern Fixed            viewz;
-extern angle_t          viewangle;                      // Camera angle
-extern Fixed            viewcos;                        // Camera sine, cosine from angle
-extern Fixed            viewsin;
-extern uint32_t         extralight;                     // Bumped light from gun blasts
-extern angle_t          clipangle;                      // Leftmost clipping angle
-extern angle_t          doubleclipangle;                // Doubled leftmost clipping angle
+extern viswall_t        gVisWalls[MAXWALLCMDS];         // Visible wall array
+extern viswall_t*       gLastWallCmd;                   // Pointer to free wall entry
+extern visplane_t       gVisPlanes[MAXVISPLANES];       // Visible floor array
+extern visplane_t*      gLastVisPlane;                  // Pointer to free floor entry
+extern vissprite_t      gVisSprites[MAXVISSPRITES];     // Visible sprite array
+extern vissprite_t*     gpVisSprite;                    // Pointer to free sprite entry
+extern uint8_t          gOpenings[MAXOPENINGS];
+extern uint8_t*         gLastOpening;
+extern Fixed            gViewX;                         // Camera x,y,z
+extern Fixed            gViewY;
+extern Fixed            gViewZ;
+extern angle_t          gViewAngle;                     // Camera angle
+extern Fixed            gViewCos;                       // Camera sine, cosine from angle
+extern Fixed            gViewSin;
+extern uint32_t         gExtraLight;                    // Bumped light from gun blasts
+extern angle_t          gClipAngle;                     // Leftmost clipping angle
+extern angle_t          gDoubleClipAngle;               // Doubled leftmost clipping angle
 
 void R_Init() noexcept;
 void R_Setup() noexcept;
@@ -135,10 +135,10 @@ void R_RenderPlayerView() noexcept;
 //----------------------------------------------------------------------------------------------------------------------
 // Render - 'phase 1'
 //----------------------------------------------------------------------------------------------------------------------
-extern uint32_t     SpriteTotal;        // Total number of sprites to render
-extern uint32_t*    SortedSprites;      // Pointer to array of words of sprites to render
+extern uint32_t     gSpriteTotal;       // Total number of sprites to render
+extern uint32_t*    gSortedSprites;     // Pointer to array of words of sprites to render
 
-void BSP();
+void bsp() noexcept;
 
 //----------------------------------------------------------------------------------------------------------------------
 // Render - 'phase 2'
@@ -153,17 +153,17 @@ void SegCommands();
 //----------------------------------------------------------------------------------------------------------------------
 // Render - 'phase 7'
 //----------------------------------------------------------------------------------------------------------------------
-extern std::byte*   PlaneSource;        // Pointer to floor shape
-extern Fixed        planey;             // Latched viewx / viewy for floor drawing
-extern Fixed        basexscale;
-extern Fixed        baseyscale;
+extern std::byte*   gPlaneSource;       // Pointer to floor shape
+extern Fixed        gPlaneY;            // Latched viewx / viewy for floor drawing
+extern Fixed        gBaseXScale;
+extern Fixed        gBaseYScale;
 
 void DrawVisPlane(visplane_t* PlanePtr);
 
 //----------------------------------------------------------------------------------------------------------------------
 // Render - 'phase 8'
 //----------------------------------------------------------------------------------------------------------------------
-extern uint32_t spropening[MAXSCREENWIDTH];     // clipped range
+extern uint32_t gSprOpening[MAXSCREENWIDTH];    // clipped range
 
 uint32_t* SortWords(uint32_t* Before, uint32_t* After, uint32_t Total);
 void DrawVisSprite(const vissprite_t* const pVisSprite);

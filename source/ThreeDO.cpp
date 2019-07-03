@@ -65,7 +65,7 @@ typedef struct MyCCB {  // Clone of the CCB Block from the 3DO includes
     0x00D0,0x1300,0x08D0,0x1700,0x10D0,0x1B00,0x18D0,0x1F00,
 #endif
 
-static uint32_t LightTable[] = {
+static uint32_t gLightTable[] = {
     0x0000,0x0400,0x0800,0x0C00,0x1000,0x1400,0x1800,0x1C00,    // 1/16 - 8/16 
     0x00D0,0x00D0,0x1300,0x1300,0x08D0,0x08D0,0x1700,0x1700,
     0x10D0,0x10D0,0x1B00,0x1B00,0x18D0,0x18D0,0x1F00,0x1F00,
@@ -90,30 +90,30 @@ extern void DrawASpan(
 
 #define CCBTotal 0x200
 
-static MyCCB CCBArray[CCBTotal];            // Array of CCB structs 
+static MyCCB gCCBArray[CCBTotal];            // Array of CCB structs 
 
 // DC: TODO: unused currently
 #if 0
-static MyCCB *CurrentCCB = &CCBArray[0];    // Pointer to empty CCB 
-static LongWord LastTicCount;               // Time mark for page flipping 
+static MyCCB *CurrentCCB = &gCCBArray[0];    // Pointer to empty CCB 
+static LongWord gLastTicCount;               // Time mark for page flipping 
 #endif
 
-uint32_t LastTics;                          // Time elapsed since last page flip 
-uint32_t WorkPage;                              // Which frame is not being displayed 
+uint32_t gLastTics;         // Time elapsed since last page flip 
+uint32_t gWorkPage;         // Which frame is not being displayed 
 
 // DC: TODO: unused currently
 #if 0
-static Byte *CelLine190;
+static Byte *gCelLine190;
 #endif
 
-uint8_t SpanArray[MAXSCREENWIDTH*MAXSCREENHEIGHT]; // Buffer for floor textures 
-uint8_t* SpanPtr = SpanArray;      // Pointer to empty buffer 
+uint8_t gSpanArray[MAXSCREENWIDTH*MAXSCREENHEIGHT]; // Buffer for floor textures 
+uint8_t* gSpanPtr = gSpanArray;      // Pointer to empty buffer 
 
 #define SKYSCALE(x) (Fixed)(1048576.0*(x/160.0))
 
 // DC: TODO: unused currently
 #if 0
-static Fixed SkyScales[6] = {
+static Fixed gSkyScales[6] = {
     SKYSCALE(160.0),
     SKYSCALE(144.0),
     SKYSCALE(128.0),
@@ -124,17 +124,17 @@ static Fixed SkyScales[6] = {
 #endif
 
 #define SCREENS 3                   // Need to page flip 
-uint32_t MainTask;                  // My own task item 
+uint32_t gMainTask;                  // My own task item 
 
 // DC: TODO: unused currently
 #if 0
-static uint32_t ScreenPageCount;    // Number of screens 
-static Item ScreenItems[SCREENS];   // Referances to the game screens 
-static Item VideoItems[SCREENS];
-static long ScreenByteCount;        // How many bytes for each screen 
-static Item ScreenGroupItem = 0;    // Main screen referance 
-static Byte *ScreenMaps[SCREENS];   // Pointer to the bitmap screens 
-static Item VRAMIOReq;              // I/O Request for screen copy 
+static uint32_t gScreenPageCount;    // Number of screens 
+static Item gScreenItems[SCREENS];   // Referances to the game screens 
+static Item gVideoItems[SCREENS];
+static long gScreenByteCount;        // How many bytes for each screen 
+static Item gScreenGroupItem = 0;    // Main screen referance 
+static Byte *gScreenMaps[SCREENS];   // Pointer to the bitmap screens 
+static Item gVRAMIOReq;              // I/O Request for screen copy 
 #endif
 
 /**********************************
@@ -166,10 +166,10 @@ static void SetMyScreen(uint32_t Page)
 {
     // DC: FIXME: implement/replace
     #if 0
-        VideoItem = VideoItems[Page];           // Get the bitmap item # 
-        VideoScreen = ScreenItems[Page];
-        VideoPointer = (Byte *) &ScreenMaps[Page][0];
-        CelLine190 = (Byte *) &VideoPointer[190*640];
+        VideoItem = gVideoItems[Page];           // Get the bitmap item # 
+        VideoScreen = gScreenItems[Page];
+        VideoPointer = (Byte *) &gScreenMaps[Page][0];
+        gCelLine190 = (Byte *) &VideoPointer[190*640];
     #endif
 }
 
@@ -184,12 +184,12 @@ static void SetMyScreen(uint32_t Page)
 
 // DC: TODO: unused currently
 #if 0
-static Word HeightArray[1] = { 200 };   // I want 200 lines for display memory 
+static Word gHeightArray[1] = { 200 };   // I want 200 lines for display memory 
 #endif
 
 // DC: 3DO specific - disable
 #if 0
-    static Word MyCustomVDL[] = {
+    static Word gMyCustomVDL[] = {
         VDL_RELSEL|         // Relative pointer to next VDL 
         (1<<VDL_LEN_SHIFT)|     // (DMA) 1 control words in this VDL entry 
         (20<<VDL_LINE_SHIFT),   // Scan lines to persist 
@@ -269,18 +269,18 @@ static Word HeightArray[1] = { 200 };   // I want 200 lines for display memory
         VDL_NOP
     };
 
-    static TagArg ScreenTags[] =    {       // Change this to change the screen count! 
+    static TagArg gScreenTags[] =    {       // Change this to change the screen count! 
         CSG_TAG_SPORTBITS, (void *)0,   // Allow SPORT DMA (Must be FIRST) 
         CSG_TAG_SCREENCOUNT, (void *)SCREENS,   // How many screens to make! 
         CSG_TAG_BITMAPCOUNT,(void *)1,
-        CSG_TAG_BITMAPHEIGHT_ARRAY,(void *)&HeightArray[0],
+        CSG_TAG_BITMAPHEIGHT_ARRAY,(void *)&gHeightArray[0],
         CSG_TAG_DONE, 0         // End of list 
     };
 #endif
 
 // DC: TODO: unused currently
 #if 0
-static char FileName[32];
+static char gFileName[32];
 #endif
 
 void InitTools()
@@ -329,15 +329,15 @@ void InitTools()
 
     // DC: 3DO specific code - disabling
     #if 0
-        ScreenTags[0].ta_Arg = (void *)GETBANKBITS(GrafBase->gf_ZeroPage);
-        ScreenGroupItem = CreateScreenGroup(ScreenItems,ScreenTags);
+        gScreenTags[0].ta_Arg = (void *)GETBANKBITS(GrafBase->gf_ZeroPage);
+        gScreenGroupItem = CreateScreenGroup(gScreenItems,gScreenTags);
 
-        if (ScreenGroupItem<0) {        // Error creating screens? 
+        if (gScreenGroupItem<0) {        // Error creating screens? 
             goto FooBar;
         }
-        AddScreenGroup(ScreenGroupItem,NULL);       // Add my screens to the system 
+        AddScreenGroup(gScreenGroupItem,NULL);       // Add my screens to the system 
 
-        screen = (Screen*)LookupItem(ScreenItems[0]);
+        screen = (Screen*)LookupItem(gScreenItems[0]);
         if (!screen) {
             goto FooBar;
         }
@@ -345,23 +345,23 @@ void InitTools()
         width = screen->scr_TempBitmap->bm_Width;       // How big is the screen? 
         height = screen->scr_TempBitmap->bm_Height;
 
-        ScreenPageCount = (width*2*height+GrafBase->gf_VRAMPageSize-1)/GrafBase->gf_VRAMPageSize;
-        ScreenByteCount = ScreenPageCount * GrafBase->gf_VRAMPageSize;
+        gScreenPageCount = (width*2*height+GrafBase->gf_VRAMPageSize-1)/GrafBase->gf_VRAMPageSize;
+        gScreenByteCount = gScreenPageCount * GrafBase->gf_VRAMPageSize;
 
         i=0;
         do {        // Process the screens 
-            screen = (Screen *)LookupItem(ScreenItems[i]);
-            ScreenMaps[i] = (Byte *)screen->scr_TempBitmap->bm_Buffer;
-            memset(ScreenMaps[i],0,ScreenByteCount);    // Clear the screen 
+            screen = (Screen *)LookupItem(gScreenItems[i]);
+            gScreenMaps[i] = (Byte *)screen->scr_TempBitmap->bm_Buffer;
+            memset(gScreenMaps[i],0,gScreenByteCount);    // Clear the screen 
             Node = (ItemNode *) screen->scr_TempBitmap; // Get the bitmap pointer 
-            VideoItems[i] = (Item)Node->n_Item;         // Get the bitmap item # 
-            MyCustomVDL[9]=MyCustomVDL[10] = (Word)ScreenMaps[i];
-            MyVDLItem = SubmitVDL((VDLEntry *)&MyCustomVDL[0],sizeof(MyCustomVDL)/4,VDLTYPE_FULL);
-            SetVDL(ScreenItems[i],MyVDLItem);
+            gVideoItems[i] = (Item)Node->n_Item;         // Get the bitmap item # 
+            gMyCustomVDL[9]=gMyCustomVDL[10] = (Word)gScreenMaps[i];
+            MyVDLItem = SubmitVDL((VDLEntry *)&gMyCustomVDL[0],sizeof(gMyCustomVDL)/4,VDLTYPE_FULL);
+            SetVDL(gScreenItems[i],MyVDLItem);
 
-            SetClipWidth(VideoItems[i],320);
-            SetClipHeight(VideoItems[i],200);       // I only want 200 lines 
-            SetClipOrigin(VideoItems[i],0,0);       // Set the clip top for the screen 
+            SetClipWidth(gVideoItems[i],320);
+            SetClipHeight(gVideoItems[i],200);       // I only want 200 lines 
+            SetClipOrigin(gVideoItems[i],0,0);       // Set the clip top for the screen 
         } while (++i<SCREENS);
 
         InitEventUtility(1, 1, false);    // I want 1 joypad, 1 mouse, and passive listening 
@@ -371,8 +371,8 @@ void InitTools()
 
     // DC: 3DO specific code - disabling
     #if 0
-        MainTask = KernelBase->kb_CurrentTask->t.n_Item;    // My task Item 
-        VRAMIOReq = GetVRAMIOReq();
+        gMainTask = KernelBase->kb_CurrentTask->t.n_Item;    // My task Item 
+        gVRAMIOReq = GetVRAMIOReq();
         SetMyScreen(0);                                     // Init the video display 
     #endif
 
@@ -382,7 +382,7 @@ void InitTools()
     {
         MyCCB *CCBPtr;
         i = CCBTotal;
-        CCBPtr = CCBArray;
+        CCBPtr = gCCBArray;
         
         do {
             CCBPtr->ccb_NextPtr = (MyCCB *)(sizeof(MyCCB)-8);   // Create the next offset 
@@ -413,7 +413,7 @@ void ThreeDOMain() {
 
 // DC: 3DO specific - remove eventually
 #if 0
-    static LongWord RamFileSize;
+    static LongWord gRamFileSize;
 #endif
 
 int32_t StdReadFile(char *fName,char *buf)
@@ -444,10 +444,10 @@ int32_t StdReadFile(char *fName,char *buf)
             // Try to read it in 
 
             // Calc the read size based on blocks 
-            RamFileSize = ds.ds_DeviceBlockCount * ds.ds_DeviceBlockSize;
+            gRamFileSize = ds.ds_DeviceBlockCount * ds.ds_DeviceBlockSize;
             memset(&params,0,sizeof(IOInfo));       // Zap the I/O info record 
             params.ioi_Command = CMD_READ;          // Read command 
-            params.ioi_Recv.iob_Len = RamFileSize;  // Data length 
+            params.ioi_Recv.iob_Len = gRamFileSize;  // Data length 
             params.ioi_Recv.iob_Buffer = buf;       // Data buffer 
             err = DoIO(req,&params);                // Read the file 
         }
@@ -466,7 +466,7 @@ int32_t StdReadFile(char *fName,char *buf)
 **********************************/
 
 #define PREFWORD 0x4C57
-static char PrefsName[] = "/NVRAM/DoomPrefs";       // Save game name 
+static char gPrefsName[] = "/NVRAM/DoomPrefs";       // Save game name 
 
 void WritePrefsFile()
 {
@@ -475,13 +475,13 @@ void WritePrefsFile()
     uint32_t i;
 
     PrefFile[0] = PREFWORD;
-    PrefFile[1] = StartSkill;
-    PrefFile[2] = StartMap;
+    PrefFile[1] = gStartSkill;
+    PrefFile[2] = gStartMap;
     PrefFile[3] = audioGetSoundVolume();
     PrefFile[4] = audioGetMusicVolume();
-    PrefFile[5] = ControlType;
-    PrefFile[6] = MaxLevel;
-    PrefFile[7] = ScreenSize;
+    PrefFile[5] = gControlType;
+    PrefFile[6] = gMaxLevel;
+    PrefFile[7] = gScreenSize;
     PrefFile[8] = 0;            // Was 'LowDetail' - now unused
     PrefFile[9] = 12345;        // Init the checksum 
     i = 0;
@@ -490,20 +490,20 @@ void WritePrefsFile()
         CheckSum += PrefFile[i];        // Make a simple checksum 
     } while (++i<10);
     PrefFile[9] = CheckSum;
-    SaveAFile(PrefsName, &PrefFile, sizeof(PrefFile));    // Save the game file 
+    SaveAFile(gPrefsName, &PrefFile, sizeof(PrefFile));    // Save the game file 
 }
 
 //-------------------------------------------------------------------------------------------------
 // Clear out the prefs file
 //-------------------------------------------------------------------------------------------------
 void ClearPrefsFile() {
-    StartSkill = sk_medium;                     // Init the basic skill level
-    StartMap = 1;                               // Only allow playing from map #1
+    gStartSkill = sk_medium;                    // Init the basic skill level
+    gStartMap = 1;                              // Only allow playing from map #1
     audioSetSoundVolume(MAX_AUDIO_VOLUME);      // Init the sound effects volume
     audioSetMusicVolume(MAX_AUDIO_VOLUME);      // Init the music volume
-    ControlType = 3;                            // Use basic joypad controls
-    MaxLevel = 1;                               // Only allow level 1 to select from
-    ScreenSize = 0;                             // Default screen size
+    gControlType = 3;                           // Use basic joypad controls
+    gMaxLevel = 1;                              // Only allow level 1 to select from
+    gScreenSize = 0;                            // Default screen size
     WritePrefsFile();                           // Output the new prefs
 }
 
@@ -519,7 +519,7 @@ void ReadPrefsFile()
     uint32_t CheckSum;          // Running checksum 
     uint32_t i;
 
-    if (StdReadFile(PrefsName,(char *) PrefFile)<0) {   // Error reading? 
+    if (StdReadFile(gPrefsName,(char *) PrefFile)<0) {   // Error reading? 
         ClearPrefsFile();       // Clear it out 
         return;
     }
@@ -535,19 +535,19 @@ void ReadPrefsFile()
         return;
     }
     
-    StartSkill = (skill_e)PrefFile[1];
-    StartMap = PrefFile[2];
+    gStartSkill = (skill_e)PrefFile[1];
+    gStartMap = PrefFile[2];
     audioSetSoundVolume(PrefFile[3]);
     audioSetMusicVolume(PrefFile[4]);
-    ControlType = PrefFile[5];
-    MaxLevel = PrefFile[6];
-    ScreenSize = PrefFile[7];
+    gControlType = PrefFile[5];
+    gMaxLevel = PrefFile[6];
+    gScreenSize = PrefFile[7];
     
-    if ((StartSkill >= (sk_nightmare+1)) ||
-        (StartMap >= 27) ||
-        (ControlType >= 6) ||
-        (MaxLevel >= 26) ||
-        (ScreenSize >= 6)
+    if ((gStartSkill >= (sk_nightmare+1)) ||
+        (gStartMap >= 27) ||
+        (gControlType >= 6) ||
+        (gMaxLevel >= 26) ||
+        (gScreenSize >= 6)
     ) {
         ClearPrefsFile();
     }
@@ -566,13 +566,13 @@ static void FlushCCBs()
         MyCCB* NewCCB;
 
         NewCCB = CurrentCCB;
-        if (NewCCB!=&CCBArray[0]) {
+        if (NewCCB!=&gCCBArray[0]) {
             --NewCCB;       // Get the last used CCB 
             NewCCB->ccb_Flags |= CCB_LAST;  // Mark as the last one 
-            DrawCels(VideoItem,(CCB *)&CCBArray[0]);    // Draw all the cels in one shot 
-            CurrentCCB = &CCBArray[0];      // Reset the empty entry 
+            DrawCels(VideoItem,(CCB *)&gCCBArray[0]);    // Draw all the cels in one shot 
+            CurrentCCB = &gCCBArray[0];      // Reset the empty entry 
         }
-        SpanPtr = SpanArray;        // Reset the floor texture pointer 
+        gSpanPtr = gSpanArray;        // Reset the floor texture pointer 
     #endif
 }
 
@@ -600,7 +600,7 @@ void UpdateAndPageFlip(const bool bAllowDebugClear) {
             
             DoWipe = false;
             NewImage = VideoPointer;    // Pointer to the NEW image 
-            PrevPage = WorkPage-1;  // Get the currently displayed page 
+            PrevPage = gWorkPage-1;  // Get the currently displayed page 
             if (PrevPage==-1) {     // Wrapped? 
                 PrevPage = SCREENS-1;
             }
@@ -609,22 +609,22 @@ void UpdateAndPageFlip(const bool bAllowDebugClear) {
                 PrevPage=SCREENS;
             }
             --PrevPage;
-            OldImage = (Byte *) &ScreenMaps[PrevPage][0];   // Get work buffer 
+            OldImage = (Byte *) &gScreenMaps[PrevPage][0];   // Get work buffer 
             
                 // Copy the buffer from display to work 
             memcpy(OldImage,VideoPointer,320*200*2);
             WipeDoom((LongWord *)OldImage,(LongWord *)NewImage);            // Perform the wipe 
         }
-        DisplayScreen(ScreenItems[WorkPage],0);     // Display the hidden page 
-        if (++WorkPage>=SCREENS) {      // Next screen in line 
-            WorkPage = 0;
+        DisplayScreen(gScreenItems[gWorkPage],0);     // Display the hidden page 
+        if (++gWorkPage>=SCREENS) {      // Next screen in line 
+            gWorkPage = 0;
         }
-        SetMyScreen(WorkPage);      // Set the 3DO vars 
+        SetMyScreen(gWorkPage);      // Set the 3DO vars 
         do {
             NewTick = ReadTick();               // Get the time mark 
-            LastTics = NewTick - LastTicCount;  // Get the time elapsed 
+            LastTics = NewTick - gLastTicCount;  // Get the time elapsed 
         } while (!LastTics);                    // Hmmm, too fast?!?!? 
-        LastTicCount = NewTick;                 // Save the time mark 
+        gLastTicCount = NewTick;                 // Save the time mark 
     #endif
 }
 
@@ -638,7 +638,7 @@ void UpdateAndPageFlip(const bool bAllowDebugClear) {
 void DrawPlaque(uint32_t RezNum)
 {
     uint32_t PrevPage;
-    PrevPage = WorkPage-1;
+    PrevPage = gWorkPage-1;
     if (PrevPage==-1) {
         PrevPage = SCREENS-1;
     }
@@ -648,7 +648,7 @@ void DrawPlaque(uint32_t RezNum)
     DrawShape(160 - (getCCBWidth(pPic) / 2), 80, pPic);
     FlushCCBs();        // Make sure it's drawn 
     releaseResource(RezNum);
-    SetMyScreen(WorkPage);      // Reset to normal 
+    SetMyScreen(gWorkPage);      // Reset to normal 
 }
 
 /**********************************
@@ -666,9 +666,9 @@ void AddCCB(uint32_t x, uint32_t y, MyCCB* NewCCB)
         LongWord ThePtr;        // Temp pointer to munge 
 
         DestCCB = CurrentCCB;       // Copy pointer to local 
-        if (DestCCB>=&CCBArray[CCBTotal]) {     // Am I full already? 
+        if (DestCCB>=&gCCBArray[CCBTotal]) {     // Am I full already? 
             FlushCCBs();
-            DestCCB = CCBArray;
+            DestCCB = gCCBArray;
         }
         TheFlags = NewCCB->ccb_Flags;       // Preload the CCB flags 
         DestCCB->ccb_XPos = x<<16;      // Set the x and y coord 
@@ -843,7 +843,7 @@ void DrawARect(const uint32_t x, const uint32_t y, const uint32_t width, const u
 
     Drawing the sky is the easiest, so I'll do this first.
     The parms are, 
-    tx_x = screen x coord for the virtual screen.
+    gTexX = screen x coord for the virtual screen.
     colnum = index for which scan line to draw from the source image. Note that
         this number has all bits set so I must mask off the unneeded bits for
         texture wraparound.
@@ -852,17 +852,17 @@ void DrawARect(const uint32_t x, const uint32_t y, const uint32_t width, const u
     
 **********************************/
 
-extern uint32_t tx_x;
-extern int tx_scale;
+extern uint32_t gTexX;
+extern int gTexScale;
 
 void DrawSkyLine()
 {
     // Note: sky textures are 256 pixels wide so this wraps around
-    const uint32_t colNum = (((xtoviewangle[tx_x] + viewangle) >> ANGLETOSKYSHIFT) & 0xFF);
+    const uint32_t colNum = (((gXToViewAngle[gTexX] + gViewAngle) >> ANGLETOSKYSHIFT) & 0xFF);
     
     // Sky is always rendered at max light and 1.0 scale
-    tx_texturelight = MAX_WALL_LIGHT_VALUE << LIGHTSCALESHIFT;
-    tx_scale = 1 << SCALEBITS;
+    gTxTextureLight = MAX_WALL_LIGHT_VALUE << LIGHTSCALESHIFT;
+    gTexScale = 1 << SCALEBITS;
     
     // Set source texture details
     // TODO: don't keep doing this for each column
@@ -877,11 +877,11 @@ void DrawSkyLine()
         MyCCB* DestCCB;         // Pointer to new CCB entry 
     
         DestCCB = CurrentCCB;       // Copy pointer to local 
-        if (DestCCB>=&CCBArray[CCBTotal]) {     // Am I full already? 
+        if (DestCCB>=&gCCBArray[CCBTotal]) {     // Am I full already? 
             FlushCCBs();                // Draw all the CCBs/Lines 
-            DestCCB = CCBArray;
+            DestCCB = gCCBArray;
         }
-        Colnum = (((xtoviewangle[tx_x]+viewangle)>>ANGLETOSKYSHIFT)&0xFF)*64;
+        Colnum = (((xtoviewangle[gTexX]+viewangle)>>ANGLETOSKYSHIFT)&0xFF)*64;
         Source = (Byte *)(*SkyTexture->data);   // Index to the true shape 
 
         DestCCB[0].ccb_Flags = CCB_SPABS|CCB_LDSIZE|CCB_LDPRS|
@@ -891,10 +891,10 @@ void DrawSkyLine()
         DestCCB[0].ccb_PRE1 = 0x3E005000|(128-1);   // Project the pixels 
         DestCCB[0].ccb_PLUTPtr = Source;        // Get the palette ptr 
         DestCCB[0].ccb_SourcePtr = (CelData *)&Source[Colnum+32];   // Get the source ptr 
-        DestCCB[0].ccb_XPos = tx_x<<16;     // Set the x and y coord for start 
+        DestCCB[0].ccb_XPos = gTexX<<16;     // Set the x and y coord for start 
         DestCCB[0].ccb_YPos = 0<<16;
         DestCCB[0].ccb_HDX = 0<<20;     // Convert 6 bit frac to CCB scale 
-        DestCCB[0].ccb_HDY = SkyScales[ScreenSize]; // Video stretch factor 
+        DestCCB[0].ccb_HDY = gSkyScales[ScreenSize]; // Video stretch factor 
         DestCCB[0].ccb_VDX = 1<<16;
         DestCCB[0].ccb_VDY = 0<<16;
         DestCCB[0].ccb_PIXC = 0x1F00;       // PIXC control 
@@ -918,7 +918,7 @@ static Fixed getLightMultiplier(const uint32_t lightValue, const uint32_t maxLig
 
     Drawing the wall columns are a little trickier, so I'll do this next.
     The parms are, 
-    tx_x = screen x coord for the virtual screen.
+    gTexX = screen x coord for the virtual screen.
     y = screen y coord for the virtual screen.
     bottom = screen y coord for the BOTTOM of the pixel run. Subtract from top
         to get the exact destination pixel run count.
@@ -940,16 +940,16 @@ void DrawWallColumn(
 )
 {
     // TODO: TEMP - CLEANUP
-    const uint32_t numPixels = (Run * tx_scale) >> SCALEBITS;
-    const uint32_t numPixelsRounded = ((Run * tx_scale) & 0x1F0) != 0 ? numPixels + 1 : numPixels;    
-    const Fixed lightMultiplier = getLightMultiplier(tx_texturelight, MAX_WALL_LIGHT_VALUE);
+    const uint32_t numPixels = (Run * gTexScale) >> SCALEBITS;
+    const uint32_t numPixelsRounded = ((Run * gTexScale) & 0x1F0) != 0 ? numPixels + 1 : numPixels;    
+    const Fixed lightMultiplier = getLightMultiplier(gTxTextureLight, MAX_WALL_LIGHT_VALUE);
 
     const uint16_t* const pPLUT = (const uint16_t*) Source;
 
     for (uint32_t pixNum = 0; pixNum < numPixelsRounded; ++pixNum) {
         const uint32_t dstY = y + pixNum;
-        if (dstY >= 0 && dstY < ScreenHeight) {
-            const uint32_t pixTexYOffsetFixed = (pixNum << (SCALEBITS + 1)) / tx_scale;
+        if (dstY >= 0 && dstY < gScreenHeight) {
+            const uint32_t pixTexYOffsetFixed = (pixNum << (SCALEBITS + 1)) / gTexScale;
             const uint32_t pixTexYOffset = pixTexYOffsetFixed & 1 ? (pixTexYOffsetFixed / 2) + 1 : pixTexYOffsetFixed / 2;
             
             const uint32_t texYOffset = (ColY + pixTexYOffset) % (TexHeight);
@@ -971,8 +971,8 @@ void DrawWallColumn(
             const Fixed darkenedB = fixedMul(texBFrac, lightMultiplier);
 
             const uint32_t finalColor = Video::fixedRgbToScreenCol(darkenedR, darkenedG, darkenedB);
-            const uint32_t screenX = tx_x + ScreenXOffset;
-            const uint32_t screenY = dstY + ScreenYOffset;
+            const uint32_t screenX = gTexX + gScreenXOffset;
+            const uint32_t screenY = dstY + gScreenYOffset;
 
             Video::gFrameBuffer[screenY * Video::SCREEN_WIDTH + screenX] = finalColor;
         }
@@ -984,9 +984,9 @@ void DrawWallColumn(
         Word Colnum7;
     
         DestCCB = CurrentCCB;       // Copy pointer to local 
-        if (DestCCB>=&CCBArray[CCBTotal]) {     // Am I full already? 
+        if (DestCCB>=&gCCBArray[CCBTotal]) {     // Am I full already? 
             FlushCCBs();                // Draw all the CCBs/Lines 
-            DestCCB = CCBArray;
+            DestCCB = gCCBArray;
         }
 
         Colnum7 = Colnum & 7;   // Get the pixel skip 
@@ -1000,13 +1000,13 @@ void DrawWallColumn(
         DestCCB[0].ccb_PRE1 = 0x3E005000|(Colnum7+Run-1);   // Project the pixels 
         DestCCB[0].ccb_PLUTPtr = Source;        // Get the palette ptr 
         DestCCB[0].ccb_SourcePtr = (CelData *)&Source[Colnum];  // Get the source ptr 
-        DestCCB[0].ccb_XPos = tx_x<<16;     // Set the x and y coord for start 
+        DestCCB[0].ccb_XPos = gTexX<<16;     // Set the x and y coord for start 
         DestCCB[0].ccb_YPos = (y<<16)+0xFF00;
         DestCCB[0].ccb_HDX = 0<<20;     // Convert 6 bit frac to CCB scale 
-        DestCCB[0].ccb_HDY = (tx_scale<<11);
+        DestCCB[0].ccb_HDY = (gTexScale<<11);
         DestCCB[0].ccb_VDX = 1<<16;
         DestCCB[0].ccb_VDY = 0<<16;
-        DestCCB[0].ccb_PIXC = LightTable[tx_texturelight>>LIGHTSCALESHIFT];     // PIXC control 
+        DestCCB[0].ccb_PIXC = gLightTable[tx_texturelight>>LIGHTSCALESHIFT];     // PIXC control 
     
         ++DestCCB;              // Next CCB 
         CurrentCCB = DestCCB;   // Save the CCB pointer 
@@ -1027,7 +1027,7 @@ void DrawWallColumn(
         this number has all bits set so I must mask off the unneeded bits for
         texture wraparound.
 
-    SpanPtr is a pointer to the SpanArray buffer, this is where I store the
+    gSpanPtr is a pointer to the gSpanArray buffer, this is where I store the
     processed floor textures.
     No light shading is used. The scale factor is a constant.
     
@@ -1043,15 +1043,15 @@ void DrawFloorColumn(
     Fixed ds_ystep
 ) {
     // TODO: TEMP - CLEANUP
-    const uint16_t* const pPLUT = (const uint16_t*) PlaneSource;
-    const Fixed lightMultiplier = getLightMultiplier(tx_texturelight, MAX_FLOOR_LIGHT_VALUE);
+    const uint16_t* const pPLUT = (const uint16_t*) gPlaneSource;
+    const Fixed lightMultiplier = getLightMultiplier(gTxTextureLight, MAX_FLOOR_LIGHT_VALUE);
 
     for (uint32_t pixelNum = 0; pixelNum < Count; ++pixelNum) {
         Fixed tx = ((xfrac + ds_xstep * pixelNum) >> FRACBITS) & 63;    // assumes 64x64
         Fixed ty = ((yfrac + ds_ystep * pixelNum) >> FRACBITS) & 63;    // assumes 64x64
 
         Fixed offset = ty * 64 + tx;
-        const uint8_t lutByte = ((uint8_t) PlaneSource[64 + offset]) & 31;
+        const uint8_t lutByte = ((uint8_t) gPlaneSource[64 + offset]) & 31;
         ASSERT(lutByte < 32);
         uint8_t colorIdx = lutByte;
 
@@ -1069,8 +1069,8 @@ void DrawFloorColumn(
         const Fixed darkenedB = fixedMul(texBFrac, lightMultiplier);
 
         const uint32_t finalColor = Video::fixedRgbToScreenCol(darkenedR, darkenedG, darkenedB);        
-        const uint32_t screenX = ds_x1 + pixelNum + ScreenXOffset;
-        const uint32_t screenY = ds_y + ScreenYOffset;
+        const uint32_t screenX = ds_x1 + pixelNum + gScreenXOffset;
+        const uint32_t screenY = ds_y + gScreenYOffset;
 
         Video::gFrameBuffer[screenY * Video::SCREEN_WIDTH + screenX] = finalColor;
     }
@@ -1081,11 +1081,11 @@ void DrawFloorColumn(
         MyCCB *DestCCB;
 
         DestCCB = CurrentCCB;       // Copy pointer to local 
-        if (DestCCB>=&CCBArray[CCBTotal]) {     // Am I full already? 
+        if (DestCCB>=&gCCBArray[CCBTotal]) {     // Am I full already? 
             FlushCCBs();                // Draw all the CCBs/Lines 
-            DestCCB=CCBArray;
+            DestCCB=gCCBArray;
         }
-        DestPtr = SpanPtr;
+        DestPtr = gSpanPtr;
         DrawASpan(Count,xfrac,yfrac,ds_xstep,ds_ystep,DestPtr);
 
         DestCCB->ccb_Flags = CCB_SPABS|CCB_LDSIZE|CCB_LDPRS|
@@ -1102,11 +1102,11 @@ void DrawFloorColumn(
         DestCCB->ccb_HDY = 0<<20;
         DestCCB->ccb_VDX = 0<<16;
         DestCCB->ccb_VDY = 1<<16;
-        DestCCB->ccb_PIXC = LightTable[tx_texturelight>>LIGHTSCALESHIFT];           // PIXC control 
+        DestCCB->ccb_PIXC = gLightTable[tx_texturelight>>LIGHTSCALESHIFT];           // PIXC control 
     
         Count = (Count+3)&(~3);     // Round to nearest longword 
         DestPtr += Count;
-        SpanPtr = DestPtr;
+        gSpanPtr = DestPtr;
         ++DestCCB;              // Next CCB 
         CurrentCCB = DestCCB;   // Save the CCB pointer 
     #endif
@@ -1224,27 +1224,27 @@ void WipeDoom(LongWord *OldScreen,LongWord *NewScreen)
 }
 #endif
 
-static std::byte* SpritePLUT;
-static uint32_t SpriteY;
-static uint32_t SpriteYScale;
-static uint32_t SpritePIXC;
-static uint32_t SpritePRE0;
-static uint32_t SpritePRE1;
-static std::byte* StartLinePtr;
-static uint32_t SpriteWidth;
+static std::byte* gSpritePLUT;
+static uint32_t gSpriteY;
+static uint32_t gSpriteYScale;
+static uint32_t gSpritePIXC;
+static uint32_t gSpritePRE0;
+static uint32_t gSpritePRE1;
+static std::byte* gStartLinePtr;
+static uint32_t gSpriteWidth;
 
 /*
 static uint8_t* CalcLine(Fixed XFrac)
 {
     uint8_t *DataPtr;
     
-    DataPtr = StartLinePtr;
+    DataPtr = gStartLinePtr;
     XFrac>>=FRACBITS;
     if (XFrac<=0) {     // Left clip failsafe
         return DataPtr;
     }
-    if (XFrac>= (int) SpriteWidth) {   // Clipping failsafe
-        XFrac=(int) SpriteWidth-1;
+    if (XFrac>= (int) gSpriteWidth) {   // Clipping failsafe
+        XFrac=(int) gSpriteWidth-1;
     }
     do {
         uint32_t Offset;
@@ -1301,9 +1301,9 @@ void DrawSpriteNoClip(const vissprite_t* const pVisSprite) {
     int y2 = pVisSprite->y2;
 
     const bool bCompletelyOffscreen = (
-        (x1 >= (int) ScreenWidth) ||
+        (x1 >= (int) gScreenWidth) ||
         (x2 < 0) ||
-        (y1 >= (int) ScreenHeight) ||
+        (y1 >= (int) gScreenHeight) ||
         (y2 < 0)
     );
 
@@ -1364,8 +1364,8 @@ void DrawSpriteNoClip(const vissprite_t* const pVisSprite) {
         x1 = 0;
     }
 
-    if (x2 >= (int) ScreenWidth) {
-        x2 = ScreenWidth - 1;
+    if (x2 >= (int) gScreenWidth) {
+        x2 = gScreenWidth - 1;
     }
     
     if (y1 < 0) {
@@ -1374,8 +1374,8 @@ void DrawSpriteNoClip(const vissprite_t* const pVisSprite) {
         y1 = 0;
     }
 
-    if (y2 >= (int) ScreenHeight) {
-        y2 = ScreenHeight - 1;
+    if (y2 >= (int) gScreenHeight) {
+        y2 = gScreenHeight - 1;
     }
     
     // Render all the columns of the sprite
@@ -1387,7 +1387,7 @@ void DrawSpriteNoClip(const vissprite_t* const pVisSprite) {
         Fixed texelYFrac = startTexelY;
         
         const uint16_t* const pImageCol = pImage + texelXInt * spriteH;
-        uint32_t* pDstPixel = &Video::gFrameBuffer[x + ScreenXOffset + (y1 + ScreenYOffset) * Video::SCREEN_WIDTH];
+        uint32_t* pDstPixel = &Video::gFrameBuffer[x + gScreenXOffset + (y1 + gScreenYOffset) * Video::SCREEN_WIDTH];
 
         for (int y = y1; y <= y2; ++y) {
             // Grab this pixels color from the sprite image and skip if alpha 0
@@ -1437,7 +1437,7 @@ void DrawSpriteNoClip(const vissprite_t* const pVisSprite) {
     if (ColorMap&0x8000) {
         ((LongWord *)patch)[13] = 0x9C81;
     } else {
-        ((LongWord *)patch)[13] = LightTable[(ColorMap&0xFF)>>LIGHTSCALESHIFT];
+        ((LongWord *)patch)[13] = gLightTable[(ColorMap&0xFF)>>LIGHTSCALESHIFT];
     }
     if (ColorMap&0x4000) {
         x = vis->x2;
@@ -1463,20 +1463,20 @@ static void OneSpriteLine(
 )
 {
     // Sanity checks
-    ASSERT(topClipY >= 0 && topClipY <= ScreenHeight);
-    ASSERT(bottomClipY >= 0 && bottomClipY <= ScreenHeight);
+    ASSERT(topClipY >= 0 && topClipY <= gScreenHeight);
+    ASSERT(bottomClipY >= 0 && bottomClipY <= gScreenHeight);
     ASSERT(pVisSprite);
 
     // Get the top and bottom screen edges for the sprite columnn to be rendered.
     // Also check if the column is completely offscreen, because the input is not clipped.
     // 3DO Doom originally relied on the hardware to clip in this routine...
-    if (screenX < 0 || screenX >= (int) ScreenWidth)
+    if (screenX < 0 || screenX >= (int) gScreenWidth)
         return;
     
     int y1 = pVisSprite->y1;
     int y2 = pVisSprite->y2;
     
-    if (y1 >= (int) ScreenHeight || y2 < 0)
+    if (y1 >= (int) gScreenHeight || y2 < 0)
         return;
     
     // If the clip bounds are meeting (or past each other?!) then ignore
@@ -1524,7 +1524,7 @@ static void OneSpriteLine(
     // Render the sprite column
     const uint16_t* const pImageCol = getSpriteColumn(pVisSprite, spriteX);
     Fixed texelYFrac = startTexelY;
-    uint32_t* pDstPixel = &Video::gFrameBuffer[screenX + ScreenXOffset + (y1 + ScreenYOffset) * Video::SCREEN_WIDTH];
+    uint32_t* pDstPixel = &Video::gFrameBuffer[screenX + gScreenXOffset + (y1 + gScreenYOffset) * Video::SCREEN_WIDTH];
 
     for (int y = y1; y <= y2; ++y) {
         // Grab this pixels color from the sprite image and skip if alpha 0
@@ -1561,23 +1561,23 @@ static void OneSpriteLine(
         MyCCB *DestCCB;
 
         DestCCB = CurrentCCB;       // Copy pointer to local 
-        if (DestCCB>=&CCBArray[CCBTotal]) {     // Am I full already? 
+        if (DestCCB>=&gCCBArray[CCBTotal]) {     // Am I full already? 
             FlushCCBs();                // Draw all the CCBs/Lines 
-            DestCCB=CCBArray;
+            DestCCB=gCCBArray;
         }
         DestCCB->ccb_Flags = CCB_SPABS|CCB_LDSIZE|CCB_LDPRS|CCB_PACKED|
         CCB_LDPPMP|CCB_CCBPRE|CCB_YOXY|CCB_ACW|CCB_ACCW|
         CCB_ACE|CCB_BGND|CCB_NOBLK|CCB_PPABS|CCB_LDPLUT;    // ccb_flags 
 
-        DestCCB->ccb_PIXC = SpritePIXC;         // PIXC control 
-        DestCCB->ccb_PRE0 = SpritePRE0;     // Preamble (Coded 8 bit) 
-        DestCCB->ccb_PRE1 = SpritePRE1;     // Second preamble 
+        DestCCB->ccb_PIXC = gSpritePIXC;         // PIXC control 
+        DestCCB->ccb_PRE0 = gSpritePRE0;     // Preamble (Coded 8 bit) 
+        DestCCB->ccb_PRE1 = gSpritePRE1;     // Second preamble 
         DestCCB->ccb_SourcePtr = (CelData *)SpriteLinePtr;  // Save the source ptr 
-        DestCCB->ccb_PLUTPtr = SpritePLUT;      // Get the palette ptr 
+        DestCCB->ccb_PLUTPtr = gSpritePLUT;      // Get the palette ptr 
         DestCCB->ccb_XPos = (x1+ScreenXOffset)<<16;     // Set the x and y coord for start 
-        DestCCB->ccb_YPos = SpriteY;
+        DestCCB->ccb_YPos = gSpriteY;
         DestCCB->ccb_HDX = 0<<20;       // OK 
-        DestCCB->ccb_HDY = SpriteYScale;
+        DestCCB->ccb_HDY = gSpriteYScale;
         DestCCB->ccb_VDX = 1<<16;
         DestCCB->ccb_VDY = 0<<16;
         ++DestCCB;          // Next CCB 
@@ -1604,22 +1604,22 @@ static void OneSpriteClipLine(Word x1,Byte *SpriteLinePtr,int Clip,int Run)
 
     DrawARect(0,191,Run,1,BLACK);
     DestCCB = CurrentCCB;       // Copy pointer to local 
-    if (DestCCB>=&CCBArray[CCBTotal-1]) {       // Am I full already? 
+    if (DestCCB>=&gCCBArray[CCBTotal-1]) {       // Am I full already? 
         FlushCCBs();                // Draw all the CCBs/Lines 
-        DestCCB=CCBArray;
+        DestCCB=gCCBArray;
     }
     DestCCB->ccb_Flags = CCB_SPABS|CCB_LDSIZE|CCB_LDPRS|CCB_PACKED|
     CCB_LDPPMP|CCB_CCBPRE|CCB_YOXY|CCB_ACW|CCB_ACCW|
     CCB_ACE|CCB_BGND|CCB_PPABS|CCB_LDPLUT;  // ccb_flags 
 
     DestCCB->ccb_PIXC = 0x1F00;         // PIXC control 
-    DestCCB->ccb_PRE0 = SpritePRE0;     // Preamble (Coded 8 bit) 
-    DestCCB->ccb_PRE1 = SpritePRE1;     // Second preamble 
+    DestCCB->ccb_PRE0 = gSpritePRE0;     // Preamble (Coded 8 bit) 
+    DestCCB->ccb_PRE1 = gSpritePRE1;     // Second preamble 
     DestCCB->ccb_SourcePtr = (CelData *)SpriteLinePtr;  // Save the source ptr 
-    DestCCB->ccb_PLUTPtr = SpritePLUT;      // Get the palette ptr 
+    DestCCB->ccb_PLUTPtr = gSpritePLUT;      // Get the palette ptr 
     DestCCB->ccb_XPos = -(Clip<<16);        // Set the x and y coord for start 
     DestCCB->ccb_YPos = 191<<16;
-    DestCCB->ccb_HDX = SpriteYScale;        // OK 
+    DestCCB->ccb_HDX = gSpriteYScale;        // OK 
     DestCCB->ccb_HDY = 0<<20;
     DestCCB->ccb_VDX = 0<<16;
     DestCCB->ccb_VDY = 1<<16;
@@ -1629,12 +1629,12 @@ static void OneSpriteClipLine(Word x1,Byte *SpriteLinePtr,int Clip,int Run)
     CCB_LDPPMP|CCB_CCBPRE|CCB_YOXY|CCB_ACW|CCB_ACCW|
     CCB_ACE|CCB_NOBLK|CCB_PPABS;    // ccb_flags 
 
-    DestCCB->ccb_PIXC = SpritePIXC;         // PIXC control 
+    DestCCB->ccb_PIXC = gSpritePIXC;         // PIXC control 
     DestCCB->ccb_PRE0 = 0x00000016;     // Preamble (Uncoded 16) 
     DestCCB->ccb_PRE1 = 0x9E001800+(Run-1);     // Second preamble 
     DestCCB->ccb_SourcePtr = (CelData *)CelLine190; // Save the source ptr 
     DestCCB->ccb_XPos = (x1+ScreenXOffset)<<16;     // Set the x and y coord for start 
-    DestCCB->ccb_YPos = SpriteY+(Clip<<16);
+    DestCCB->ccb_YPos = gSpriteY+(Clip<<16);
     DestCCB->ccb_HDX = 0<<20;       // OK 
     DestCCB->ccb_HDY = 1<<20;
     DestCCB->ccb_VDX = 1<<15;       // Need 15 to fix the LFORM bug 
@@ -1649,12 +1649,12 @@ static void OneSpriteClipLine(Word x1,Byte *SpriteLinePtr,int Clip,int Run)
 // Draws a clipped sprite to the screen
 //-------------------------------------------------------------------------------------------------
 void DrawSpriteClip(const uint32_t x1, const uint32_t x2, const vissprite_t* const pVisSprite) {
-    SpriteYScale = pVisSprite->yscale << 4;                     // Get scale Y factor
-    StartLinePtr = (std::byte*) pVisSprite->pSprite->pTexture;  // Get pointer to first line of data
-    SpriteWidth = pVisSprite->pSprite->width;
-    SpritePIXC = (pVisSprite->colormap & 0x8000) ? 0x9C81 : LightTable[(pVisSprite->colormap & 0xFF) >> LIGHTSCALESHIFT];
+    gSpriteYScale = pVisSprite->yscale << 4;                     // Get scale Y factor
+    gStartLinePtr = (std::byte*) pVisSprite->pSprite->pTexture;  // Get pointer to first line of data
+    gSpriteWidth = pVisSprite->pSprite->width;
+    gSpritePIXC = (pVisSprite->colormap & 0x8000) ? 0x9C81 : gLightTable[(pVisSprite->colormap & 0xFF) >> LIGHTSCALESHIFT];
     uint32_t y = pVisSprite->y1;
-    SpriteY = (y + ScreenYOffset) << 16;    // Unmolested Y coord
+    gSpriteY = (y + gScreenYOffset) << 16;    // Unmolested Y coord
     uint32_t y2 = pVisSprite->y2;
     uint32_t MaxRun = y2 - y;
     
@@ -1662,8 +1662,8 @@ void DrawSpriteClip(const uint32_t x1, const uint32_t x2, const vissprite_t* con
         y = 0;
     }
     
-    if ((int) y2 >= (int) ScreenHeight) {
-        y2 = ScreenHeight;
+    if ((int) y2 >= (int) gScreenHeight) {
+        y2 = gScreenHeight;
     }
     
     Fixed XFrac = 0;
@@ -1671,7 +1671,7 @@ void DrawSpriteClip(const uint32_t x1, const uint32_t x2, const vissprite_t* con
     
     if (pVisSprite->colormap & 0x4000) {
         XStep = -XStep; // Step in the opposite direction
-        XFrac = (SpriteWidth << FRACBITS) - 1;
+        XFrac = (gSpriteWidth << FRACBITS) - 1;
     }
     
     if (pVisSprite->x1 != x1) { // How far should I skip?
@@ -1681,17 +1681,17 @@ void DrawSpriteClip(const uint32_t x1, const uint32_t x2, const vissprite_t* con
     uint32_t x = x1;
     
     do {
-        uint32_t top = spropening[x];   // Get the opening to the screen
+        uint32_t top = gSprOpening[x];  // Get the opening to the screen
         
-        if (top == ScreenHeight) {  // Not clipped?
-            OneSpriteLine(x, XFrac, 0, ScreenHeight, pVisSprite);
+        if (top == gScreenHeight) {  // Not clipped?
+            OneSpriteLine(x, XFrac, 0, gScreenHeight, pVisSprite);
         } else {
             uint32_t bottom = top & 0xff;
             top >>= 8;
             
             if (top < bottom) { // Valid run?
                 if (y >= top && y2 < bottom) {
-                    OneSpriteLine(x, XFrac, 0, ScreenHeight, pVisSprite);
+                    OneSpriteLine(x, XFrac, 0, gScreenHeight, pVisSprite);
                 } else {
                     int Clip = top - pVisSprite->y1;    // Number of pixels to clip
                     int Run = bottom - top;             // Allowable run
@@ -1723,16 +1723,16 @@ void DrawSpriteClip(const uint32_t x1, const uint32_t x2, const vissprite_t* con
     
     patch = (patch_t *)loadResourceData(vis->PatchLump);   // Get shape data 
     patch =(patch_t *) &((Byte *)patch)[vis->PatchOffset];  // Get true pointer 
-    SpriteYScale = vis->yscale<<4;      // Get scale Y factor 
-    SpritePLUT = &((Byte *)patch)[64];  // Get pointer to PLUT 
-    SpritePRE0 = ((Word *)patch)[14]&~(0xFF<<6);    // Only 1 row allowed! 
-    SpritePRE1 = ((Word *)patch)[15];       // Get the proper height 
+    gSpriteYScale = vis->yscale<<4;      // Get scale Y factor 
+    gSpritePLUT = &((Byte *)patch)[64];  // Get pointer to PLUT 
+    gSpritePRE0 = ((Word *)patch)[14]&~(0xFF<<6);    // Only 1 row allowed! 
+    gSpritePRE1 = ((Word *)patch)[15];       // Get the proper height 
     y = ((Word *)patch)[3];     // Get offset to the sprite shape data 
-    StartLinePtr = &((Byte *)patch)[y+16];  // Get pointer to first line of data 
-    SpriteWidth = getCCBHeight(&((Word *)patch)[1]);
-    SpritePIXC = (vis->colormap&0x8000) ? 0x9C81 : LightTable[(vis->colormap&0xFF)>>LIGHTSCALESHIFT];
+    gStartLinePtr = &((Byte *)patch)[y+16];  // Get pointer to first line of data 
+    gSpriteWidth = getCCBHeight(&((Word *)patch)[1]);
+    gSpritePIXC = (vis->colormap&0x8000) ? 0x9C81 : gLightTable[(vis->colormap&0xFF)>>LIGHTSCALESHIFT];
     y = vis->y1;
-    SpriteY = (y+ScreenYOffset)<<16;    // Unmolested Y coord 
+    gSpriteY = (y+ScreenYOffset)<<16;    // Unmolested Y coord 
     y2 = vis->y2;
     MaxRun = y2-y;
     
@@ -1746,7 +1746,7 @@ void DrawSpriteClip(const uint32_t x1, const uint32_t x2, const vissprite_t* con
     XStep = 0xFFFFFFFFUL/(LongWord)vis->xscale; // Get the recipocal for the X scale 
     if (vis->colormap&0x4000) {
         XStep = -XStep;     // Step in the opposite direction 
-        XFrac = (SpriteWidth<<FRACBITS)-1;
+        XFrac = (gSpriteWidth<<FRACBITS)-1;
     }
     if (vis->x1!=x1) {      // How far should I skip? 
         XFrac += XStep*(x1-vis->x1);
@@ -1925,9 +1925,9 @@ void DrawColors()
 
     DrawIt:
         DestCCB = CurrentCCB;       // Copy pointer to local 
-        if (DestCCB>=&CCBArray[CCBTotal]) {     // Am I full already? 
+        if (DestCCB>=&gCCBArray[CCBTotal]) {     // Am I full already? 
             FlushCCBs();                // Draw all the CCBs/Lines 
-            DestCCB=CCBArray;
+            DestCCB=gCCBArray;
         }
     
         DestCCB->ccb_Flags =ccb;    // ccb_flags 
@@ -1955,44 +1955,44 @@ void DrawColors()
 
 **********************************/
 
-Word LastJoyButtons[4];     // Save the previous joypad bits 
-static Word FileNum;
-static uint16_t OneLine[640];
+Word gLastJoyButtons[4];     // Save the previous joypad bits 
+static Word gFileNum;
+static uint16_t gOneLine[640];
 
 Word ReadJoyButtons(Word PadNum)
 {
-    char FileName[20];
+    char gFileName[20];
     ControlPadEventData ControlRec;
     uint16_t *OldImage;
     uint16_t *DestImage;
 
     GetControlPad(PadNum+1,FALSE,&ControlRec);      // Read joypad 
     if (PadNum<4) {
-        if (((ControlRec.cped_ButtonBits^LastJoyButtons[PadNum]) &
+        if (((ControlRec.cped_ButtonBits^gLastJoyButtons[PadNum]) &
             ControlRec.cped_ButtonBits)&PadC) {
             Word i,j,PrevPage;
             
-            sprintf(FileName,"Art%d.RAW16",FileNum);
-            ++FileNum;
-            PrevPage = WorkPage-1;  // Get the currently displayed page 
+            sprintf(gFileName,"Art%d.RAW16",gFileNum);
+            ++gFileNum;
+            PrevPage = gWorkPage-1;  // Get the currently displayed page 
             if (PrevPage==-1) {     // Wrapped? 
                 PrevPage = SCREENS-1;
             }
-            OldImage = (uint16_t *) &ScreenMaps[PrevPage][0];  // Get work buffer 
+            OldImage = (uint16_t *) &gScreenMaps[PrevPage][0];  // Get work buffer 
             i = 0;
             DestImage = OldImage;
             do {
-                memcpy(OneLine,DestImage,320*2*2);
+                memcpy(gOneLine,DestImage,320*2*2);
                 j = 0;
                 do {
-                    DestImage[j] = OneLine[j*2];
-                    DestImage[j+320] = OneLine[(j*2)+1];
+                    DestImage[j] = gOneLine[j*2];
+                    DestImage[j+320] = gOneLine[(j*2)+1];
                 } while (++j<320);
                 DestImage+=640;
             } while (++i<100);
-            WriteMacFile(FileName,OldImage,320*200*2);
+            WriteMacFile(gFileName,OldImage,320*200*2);
         }
-        LastJoyButtons[PadNum] = (Word)ControlRec.cped_ButtonBits;
+        gLastJoyButtons[PadNum] = (Word)ControlRec.cped_ButtonBits;
     }
     return (Word)ControlRec.cped_ButtonBits;        // Return the data 
 }

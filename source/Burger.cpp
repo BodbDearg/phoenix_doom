@@ -18,8 +18,8 @@
 #endif
 
 // Width of the screen in pixels 
-uint32_t FramebufferWidth = 320;
-uint32_t FramebufferHeight = 200;
+uint32_t gFramebufferWidth = 320;
+uint32_t gFramebufferHeight = 200;
 
 /**********************************
 
@@ -28,9 +28,9 @@ uint32_t FramebufferHeight = 200;
 
 **********************************/
 
-uint8_t *VideoPointer;     // Pointer to draw buffer 
-Item VideoItem;         // 3DO specific video Item number for hardware 
-Item VideoScreen;       // 3DO specific screen Item number for hardware 
+uint8_t* gVideoPointer;     // Pointer to draw buffer 
+Item gVideoItem;         // 3DO specific video Item number for hardware 
+Item gVideoScreen;       // 3DO specific screen Item number for hardware 
 
 /**********************************
 
@@ -38,7 +38,7 @@ Item VideoScreen;       // 3DO specific screen Item number for hardware
 
 **********************************/
 
-uint32_t LastTick;      // Time last waited at 
+uint32_t gLastTick;      // Time last waited at 
 
 /**********************************
 
@@ -46,8 +46,8 @@ uint32_t LastTick;      // Time last waited at
 
 **********************************/
 
-static volatile uint32_t TickValue;
-static bool TimerInited;
+static volatile uint32_t gTickValue;
+static bool gTimerInited;
 
 //---------------------------------------------------------------------------------------------------------------------
 // Draw a shape using a resource number
@@ -77,7 +77,7 @@ const struct CelControlBlock* GetShapeIndexPtr(const void* ShapeArrayPtr, uint32
 
 **********************************/
 
-uint32_t LastJoyButtons[4];     // Save the previous joypad bits 
+uint32_t gLastJoyButtons[4];     // Save the previous joypad bits 
 
 uint32_t ReadJoyButtons(uint32_t PadNum) noexcept
 {
@@ -179,18 +179,18 @@ static void Timer60Hz(void) noexcept
 
 uint32_t ReadTick() noexcept
 {
-    if (TimerInited) {      // Was the timer started? 
-        return TickValue;
+    if (gTimerInited) {      // Was the timer started? 
+        return gTickValue;
     }
     
-    TimerInited = true;     // Mark as started 
+    gTimerInited = true;     // Mark as started 
 
     // DC: FIXME: reimplement/replace
     #if 0
         CreateThread("Timer60Hz",KernelBase->kb_CurrentTask->t.n_Priority+10,Timer60Hz,512);
     #endif
     
-    return TickValue;       // Return the tick value 
+    return gTickValue;       // Return the tick value 
 }
 
 /****************************************
@@ -200,7 +200,7 @@ uint32_t ReadTick() noexcept
 
 ****************************************/
 
-static uint32_t TensTable[] = {
+static uint32_t gTensTable[] = {
 1,              // Table to quickly div by 10 
 10,
 100,
@@ -224,7 +224,7 @@ void LongWordToAscii(uint32_t Val, char* AsciiPtr) noexcept
     Printing = false;   // Not printing yet 
     do {
         --Index;        // Dec index 
-        BigNum = TensTable[Index];  // Get div value in local 
+        BigNum = gTensTable[Index];  // Get div value in local 
         Letter = '0';            // Init ASCII value 
         while (Val>=BigNum) {    // Can I divide? 
             Val-=BigNum;        // Remove value 

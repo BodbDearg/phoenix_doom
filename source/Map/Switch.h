@@ -5,8 +5,8 @@
 struct line_t;
 struct mobj_t;
 
-extern uint32_t NumSwitches;    // Number of switches * 2
-extern uint32_t SwitchList[];
+extern uint32_t gNumSwitches;       // Number of switches * 2
+extern uint32_t gSwitchList[];
 
 void P_InitSwitchList();
 void P_ChangeSwitchTexture(line_t* line, bool useAgain);

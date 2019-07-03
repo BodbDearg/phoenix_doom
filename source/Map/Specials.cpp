@@ -19,16 +19,16 @@
 #include "Things/MapObj.h"
 #include "Things/Teleport.h"
 
-uint32_t NumFlatAnims;      // Number of flat anims 
+uint32_t gNumFlatAnims;      // Number of flat anims 
 
-anim_t FlatAnims[] = {
+anim_t gFlatAnims[] = {
     { rNUKAGE3 - rF_START, rNUKAGE1 - rF_START, rNUKAGE1 - rF_START},
     { rFWATER4 - rF_START, rFWATER1 - rF_START, rFWATER1 - rF_START},
     { rLAVA4 - rF_START, rLAVA1 - rF_START, rLAVA1 - rF_START}
 };
 
-static uint32_t numlinespecials;    // Number of line specials 
-static line_t **linespeciallist;    // Pointer to array of line pointers 
+static uint32_t     gNumLineSpecials;    // Number of line specials 
+static line_t**     gLineSpecialList;    // Pointer to array of line pointers 
 
 /**********************************
 
@@ -38,7 +38,7 @@ static line_t **linespeciallist;    // Pointer to array of line pointers
 
 void P_InitPicAnims()
 {
-    NumFlatAnims = sizeof(FlatAnims)/sizeof(anim_t);        // Set the number 
+    gNumFlatAnims = sizeof(gFlatAnims) / sizeof(anim_t);    // Set the number 
 }
 
 /**********************************
@@ -613,7 +613,7 @@ void PlayerInSpecialSector(player_t *player, sector_t *sector)
         ++player->secretcount;
         sector->special = 0;        // Remove the special 
     }
-    if (Damage && Tick1) {      // Time for pain 
+    if (Damage && gTick1) {     // Time for pain 
         if (Damage&0x8000 || !player->powers[pw_ironfeet]) {    // Inflict? 
             DamageMObj(player->mo,0,0,Damage&0x7FFF);
         }
@@ -625,9 +625,9 @@ void PlayerInSpecialSector(player_t *player, sector_t *sector)
 //---------------------------------------------------------------------------------------------------------------------
 void P_UpdateSpecials() {
     // Animate flats and textures globaly periodically
-    if (Tick4) {
+    if (gTick4) {
         uint32_t i = 0;
-        anim_t* AnimPtr = FlatAnims;    // Index to the flat anims
+        anim_t* AnimPtr = gFlatAnims;   // Index to the flat anims
         
         do {
             ++AnimPtr->CurrentPic;                                  // Next picture index
@@ -638,15 +638,15 @@ void P_UpdateSpecials() {
             // Set the frame
             setFlatAnimTexNum(AnimPtr->LastPicNum, AnimPtr->CurrentPic);
             ++AnimPtr;
-        } while (++i<NumFlatAnims);
+        } while (++i < gNumFlatAnims);
     }
     
     // Animate line specials
     {
-        uint32_t i = numlinespecials;
+        uint32_t i = gNumLineSpecials;
         if (i != 0) {
             line_t **line;
-            line = linespeciallist;
+            line = gLineSpecialList;
             do {
                 line_t *theline;
                 theline = line[0];  // Get the pointer
@@ -689,7 +689,7 @@ void SpawnSpecials()
             P_SpawnGlowingLight(*sector);
             break;
         case 9:     // SECRET SECTOR 
-            ++SecretsFoundInLevel;
+            ++gSecretsFoundInLevel;
             break;
         case 10:    // DOOR CLOSE IN 30 SECONDS 
             P_SpawnDoorCloseIn30(sector);
@@ -708,25 +708,25 @@ void SpawnSpecials()
 
     // Init line EFFECTs, first pass, count the effects detected 
 
-    numlinespecials = 0;        // No specials found 
+    gNumLineSpecials = 0;       // No specials found 
     i = gNumLines;              // Get the line count 
     if (i) {
         line_t *line;
         line = gpLines;         // Traverse the list 
         do {
             if (line->special==48) {    // EFFECT FIRSTCOL SCROLL+ 
-                ++numlinespecials;      // Inc the count 
+                ++gNumLineSpecials;     // Inc the count 
             }
             ++line;
         } while (--i);      // All done? 
     }
-    if (numlinespecials) {      // Any found? 
+    if (gNumLineSpecials) {     // Any found? 
         line_t *line;
         line_t **linelist;
         
         // Get memory for the list 
-        linelist = (line_t**) MemAlloc(sizeof(line_t*) * numlinespecials);
-        linespeciallist = linelist;     // Save the pointer 
+        linelist = (line_t**) MemAlloc(sizeof(line_t*) * gNumLineSpecials);
+        gLineSpecialList = linelist;    // Save the pointer 
         i = gNumLines;
         line = gpLines;                 // Reset the count 
         
@@ -748,8 +748,8 @@ void SpawnSpecials()
 
 void PurgeLineSpecials()
 {
-    if (linespeciallist) {                      // Is there a valid pointer? 
-        MEM_FREE_AND_NULL(linespeciallist);     // Release it 
-        numlinespecials = 0;                    // No lines 
+    if (gLineSpecialList) {                     // Is there a valid pointer? 
+        MEM_FREE_AND_NULL(gLineSpecialList);    // Release it 
+        gNumLineSpecials = 0;                   // No lines 
     }
 }

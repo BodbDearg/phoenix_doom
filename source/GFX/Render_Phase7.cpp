@@ -6,14 +6,14 @@
 
 #define OPENMARK ((MAXSCREENHEIGHT-1)<<8)
 
-std::byte*  PlaneSource;
-Fixed       planey;
-Fixed       basexscale;
-Fixed       baseyscale;
-uint32_t    PlaneDistance;
+std::byte*  gPlaneSource;
+Fixed       gPlaneY;
+Fixed       gBaseXScale;
+Fixed       gBaseYScale;
+uint32_t    gPlaneDistance;
 
-static uint32_t PlaneHeight;
-static uint32_t spanstart[MAXSCREENHEIGHT];
+static uint32_t gPlaneHeight;
+static uint32_t gSpanStart[MAXSCREENHEIGHT];
 
 /**********************************
 
@@ -38,27 +38,27 @@ static void MapPlane(uint32_t x2, uint32_t y)
 // distance is 12.4
 // length is 11.5
 
-    x1 = spanstart[y];
-    distance = (yslope[y]*PlaneHeight)>>12; // Get the offset for the plane height
-    length = (distscale[x1]*distance)>>14;
-    angle = (xtoviewangle[x1]+viewangle)>>ANGLETOFINESHIFT;
+    x1 = gSpanStart[y];
+    distance = (gYSlope[y]*gPlaneHeight)>>12; // Get the offset for the plane height
+    length = (gDistScale[x1]*distance)>>14;
+    angle = (gXToViewAngle[x1]+gViewAngle)>>ANGLETOFINESHIFT;
 
 // xfrac, yfrac, xstep, ystep
 
-    xfrac = (((finecosine[angle]>>1)*length)>>4)+viewx;
-    yfrac = planey - (((finesine[angle]>>1)*length)>>4);
+    xfrac = (((gFineCosine[angle]>>1)*length)>>4)+gViewX;
+    yfrac = gPlaneY - (((gFineSine[angle]>>1)*length)>>4);
 
-    xstep = ((Fixed)distance*basexscale)>>4;
-    ystep = ((Fixed)distance*baseyscale)>>4;
+    xstep = ((Fixed)distance*gBaseXScale)>>4;
+    ystep = ((Fixed)distance*gBaseYScale)>>4;
 
-    length = lightcoef/(Fixed)distance - lightsub;
-    if (length < lightmin) {
-        length = lightmin;
+    length = gLightCoef/(Fixed)distance - gLightSub;
+    if (length < gLightMin) {
+        length = gLightMin;
     }
-    if (length > lightmax) {
-        length = lightmax;
+    if (length > gLightMax) {
+        length = gLightMax;
     }
-    tx_texturelight = length;
+    gTxTextureLight = length;
     DrawFloorColumn(y,x1,x2-x1,xfrac,yfrac,xstep,ystep);
 }
 
@@ -79,18 +79,18 @@ void DrawVisPlane(visplane_t *p)
     uint32_t *open;
 
     const Texture* const pTex = getFlatAnimTexture((uint32_t) p->PicHandle);
-    PlaneSource = (std::byte*) pTex->pData;
+    gPlaneSource = (std::byte*) pTex->pData;
     x = p->height;
     if ((int)x<0) {
         x = -x;
     }
-    PlaneHeight = x;
+    gPlaneHeight = x;
     
     stop = p->PlaneLight;
-    lightmin = lightmins[stop];
-    lightmax = stop;
-    lightsub = lightsubs[stop];
-    lightcoef = planelightcoef[stop];
+    gLightMin = gLightMins[stop];
+    gLightMax = stop;
+    gLightSub = gLightSubs[stop];
+    gLightCoef = gPlaneLightCoef[stop];
     
     stop = p->maxx+1;   // Maximum x coord
     x = p->minx;        // Starting x
@@ -129,7 +129,7 @@ void DrawVisPlane(visplane_t *p)
                     Count = PrevTopY;
                 }
                 do {
-                    spanstart[NewTopY] = x; // Mark the starting x's
+                    gSpanStart[NewTopY] = x; // Mark the starting x's
                 } while (++NewTopY<Count);
             }
         
@@ -150,7 +150,7 @@ void DrawVisPlane(visplane_t *p)
                     Count = PrevBottomY;
                 }
                 do {
-                    spanstart[NewBottomY] = x;      // Mark the starting x's
+                    gSpanStart[NewBottomY] = x;      // Mark the starting x's
                 } while ((int)--NewBottomY>Count);
             }
             oldtop=newtop;

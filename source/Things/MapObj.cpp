@@ -22,8 +22,7 @@ typedef struct {        // Respawn think logic
 } spawnthing_t;
 
 // Bit field for item spawning based on level 
-
-static uint32_t LevelBitMasks[5] = {MTF_EASY,MTF_EASY,MTF_NORMAL,MTF_HARD,MTF_HARD};    
+static constexpr uint32_t LEVEL_BIT_MASKS[5] = { MTF_EASY, MTF_EASY, MTF_NORMAL, MTF_HARD, MTF_HARD };    
 
 /**********************************
 
@@ -104,7 +103,7 @@ void P_RemoveMobj(mobj_t* mobj)
 
 **********************************/
 
-uint32_t SetMObjState(mobj_t*mobj, state_t* StatePtr)
+uint32_t SetMObjState(mobj_t*mobj, const state_t* StatePtr)
 {
     if (!StatePtr) {                // Shut down state? 
         P_RemoveMobj(mobj);         // Remove the object 
@@ -164,10 +163,10 @@ void ExplodeMissile(mobj_t* mo)
 
 **********************************/
 
-mobj_t *SpawnMObj(Fixed x, Fixed y, Fixed z, mobjinfo_t* InfoPtr)
+mobj_t *SpawnMObj(Fixed x, Fixed y, Fixed z, const mobjinfo_t* InfoPtr)
 {
     mobj_t *mobj;
-    state_t *st;
+    const state_t *st;
     sector_t *sector;
 
     mobj = (mobj_t*) MemAlloc(sizeof(mobj_t));
@@ -185,12 +184,12 @@ mobj_t *SpawnMObj(Fixed x, Fixed y, Fixed z, mobjinfo_t* InfoPtr)
 // do not set the state with SetMObjState, because action routines can't 
 // be called yet 
 
-    st = InfoPtr->spawnstate;   // Get the initial state 
-    if (!st) {                  // If null, then it's dormant 
-        st = &states[S_NULL];   // Since I am creating this, I MUST have a valid state 
+    st = InfoPtr->spawnstate;       // Get the initial state 
+    if (!st) {                      // If null, then it's dormant 
+        st = &gStates[S_NULL];      // Since I am creating this, I MUST have a valid state 
     }
-    mobj->state = st;           // Save the state pointer 
-    mobj->tics = st->Time;      // Init the tics 
+    mobj->state = st;               // Save the state pointer 
+    mobj->tics = st->Time;          // Init the tics 
 
 // Set subsector and/or block links 
 
@@ -209,10 +208,10 @@ mobj_t *SpawnMObj(Fixed x, Fixed y, Fixed z, mobjinfo_t* InfoPtr)
 
 // Link into the END of the mobj list 
 
-    mobjhead.prev->next = mobj;     // Set the new forward link 
-    mobj->next = &mobjhead;         // Set my next link 
-    mobj->prev = mobjhead.prev;     // Set my previous link 
-    mobjhead.prev = mobj;           // Link myself in 
+    gMObjHead.prev->next = mobj;    // Set the new forward link 
+    mobj->next = &gMObjHead;        // Set my next link 
+    mobj->prev = gMObjHead.prev;    // Set my previous link 
+    gMObjHead.prev = mobj;          // Link myself in 
     return mobj;                    // Return the new object pointer 
 }
 
@@ -223,7 +222,7 @@ mobj_t *SpawnMObj(Fixed x, Fixed y, Fixed z, mobjinfo_t* InfoPtr)
 
 **********************************/
 
-void P_SpawnPlayer(mapthing_t* mthing)
+void P_SpawnPlayer(const mapthing_t* mthing)
 {
     player_t *p;
     Fixed x,y;
@@ -234,7 +233,7 @@ void P_SpawnPlayer(mapthing_t* mthing)
     if (i) {                // In the game? 
         return;             // not playing 
     }
-    p = &players;       // Get the player # 
+    p = &gPlayers;       // Get the player # 
 
     if (p->playerstate == PST_REBORN) {     // Did you die? 
         G_PlayerReborn();           // Reset the player's variables 
@@ -242,7 +241,7 @@ void P_SpawnPlayer(mapthing_t* mthing)
 
     x = mthing->x;      // Get the Fixed coords 
     y = mthing->y;
-    mobj = SpawnMObj(x,y,(Fixed)ONFLOORZ,&mobjinfo[MT_PLAYER]);
+    mobj = SpawnMObj(x,y,(Fixed)ONFLOORZ,&gMObjInfo[MT_PLAYER]);
 
     mobj->angle = mthing->angle;    // Get the facing angle 
 
@@ -266,20 +265,20 @@ void P_SpawnPlayer(mapthing_t* mthing)
 
 **********************************/
 
-void SpawnMapThing(mapthing_t* mthing)
+void SpawnMapThing(const mapthing_t* mthing)
 {
     uint32_t i,Type;
     mobj_t *mobj;
-    mobjinfo_t *InfoPtr;
+    const mobjinfo_t *InfoPtr;
 
 // Count deathmatch start positions 
 
     Type = mthing->type;
     if (Type == 11) {       // Starting positions 
-        if (deathmatch_p < &deathmatchstarts[10]) { // Full? 
-            deathmatch_p[0] = mthing[0];
+        if (gpDeathmatch < &gDeathmatchStarts[10]) { // Full? 
+            gpDeathmatch[0] = mthing[0];
         }
-        ++deathmatch_p;     // I have a starting position 
+        ++gpDeathmatch;     // I have a starting position 
         return;             // Exit now 
     }
 
@@ -288,7 +287,7 @@ void SpawnMapThing(mapthing_t* mthing)
     if (Type < 5) {     // Object 0-4 
         // save spots for respawning in network games 
         if (Type < (1+1)) {
-            playerstarts = mthing[0];   // Save the start spot 
+            gPlayerStarts = mthing[0];   // Save the start spot 
             P_SpawnPlayer(mthing);      // Create the player  
         }
         return;         // Exit 
@@ -300,14 +299,14 @@ void SpawnMapThing(mapthing_t* mthing)
         return;         // Don't spawn, requires deathmatch 
     }
 
-    if (!(mthing->ThingFlags & LevelBitMasks[gameskill])) { // Can I spawn this? 
+    if (!(mthing->ThingFlags & LEVEL_BIT_MASKS[gGameSkill])) {  // Can I spawn this? 
         return;         // Exit now 
     }
 
 // Find which type to spawn 
 
     i = 0;
-    InfoPtr = mobjinfo;     // Get pointer to table 
+    InfoPtr = gMObjInfo;     // Get pointer to table 
     do {
         if (InfoPtr->doomednum == Type) {       // Match? 
             Fixed z;
@@ -325,10 +324,10 @@ void SpawnMapThing(mapthing_t* mthing)
                 }
             }
             if (mobj->flags & MF_COUNTKILL) {       // Must be killed? 
-                ++TotalKillsInLevel;
+                ++gTotalKillsInLevel;
             }
             if (mobj->flags & MF_COUNTITEM) {       // Must be collected? 
-                ++ItemsFoundInLevel;
+                ++gItemsFoundInLevel;
             }
 
             mobj->angle = mthing->angle;    // Round the angle 
@@ -352,14 +351,14 @@ void P_SpawnPuff(Fixed x, Fixed y, Fixed z)
     mobj_t *th;
 
     z += (255-Random::nextU32(511))<<10;      // Randomize the z 
-    th = SpawnMObj(x,y,z,&mobjinfo[MT_PUFF]);       // Create a puff 
+    th = SpawnMObj(x,y,z,&gMObjInfo[MT_PUFF]);       // Create a puff 
     th->momz = FRACUNIT;    // Allow it to move up per frame 
     Sub1RandomTick(th);
 
 // Don't make punches spark on the wall 
 
-    if (attackrange == MELEERANGE) {
-        SetMObjState(th,&states[S_PUFF3]);      // Reset to the third state 
+    if (gAttackRange == MELEERANGE) {
+        SetMObjState(th,&gStates[S_PUFF3]);      // Reset to the third state 
     }
 }
 
@@ -374,13 +373,13 @@ void P_SpawnBlood(Fixed x, Fixed y, Fixed z, uint32_t damage)
     mobj_t *th;
 
     z += (255-Random::nextU32(511))<<10;  // Move a little for the Z 
-    th = SpawnMObj(x,y,z,&mobjinfo[MT_BLOOD]);  // Create the blood (Hamburger) 
+    th = SpawnMObj(x,y,z,&gMObjInfo[MT_BLOOD]);  // Create the blood (Hamburger) 
     th->momz = FRACUNIT*2;          // Allow some ascending motion 
     Sub1RandomTick(th);
     if (damage < 13 && damage >= 9) {
-        SetMObjState(th,&states[S_BLOOD2]); // Smaller mess 
+        SetMObjState(th,&gStates[S_BLOOD2]); // Smaller mess 
     } else if (damage < 9) {
-        SetMObjState(th,&states[S_BLOOD3]); // Mild mess 
+        SetMObjState(th,&gStates[S_BLOOD3]); // Mild mess 
     }
 }
 
@@ -408,7 +407,7 @@ static void P_CheckMissileSpawn(mobj_t* th)
 
 **********************************/
 
-void P_SpawnMissile(mobj_t* source, mobj_t* dest, mobjinfo_t* InfoPtr)
+void P_SpawnMissile(mobj_t* source, mobj_t* dest, const mobjinfo_t* InfoPtr)
 {
     mobj_t *th;
     angle_t an;
@@ -430,8 +429,8 @@ void P_SpawnMissile(mobj_t* source, mobj_t* dest, mobjinfo_t* InfoPtr)
     th->angle = an;
     an >>= ANGLETOFINESHIFT;        // Convert to internal table record 
     speed = InfoPtr->Speed;     // Get the speed 
-    th->momx = (Fixed)speed * finecosine[an];
-    th->momy = (Fixed)speed * finesine[an];
+    th->momx = (Fixed)speed * gFineCosine[an];
+    th->momy = (Fixed)speed * gFineSine[an];
 
     dist = GetApproxDistance(dest->x-source->x,dest->y-source->y);
     dist = dist / (Fixed)(speed<<FRACBITS);     // Convert to frac 
@@ -449,7 +448,7 @@ void P_SpawnMissile(mobj_t* source, mobj_t* dest, mobjinfo_t* InfoPtr)
 
 **********************************/
 
-void SpawnPlayerMissile(mobj_t* source, mobjinfo_t* InfoPtr)
+void SpawnPlayerMissile(mobj_t* source, const mobjinfo_t* InfoPtr)
 {
     mobj_t *th;
     angle_t an;
@@ -461,13 +460,13 @@ void SpawnPlayerMissile(mobj_t* source, mobjinfo_t* InfoPtr)
     an = source->angle;     // Get the player's angle 
 
     slope = AimLineAttack(source,an,16*64*FRACUNIT);
-    if (!linetarget) {      // No target? 
+    if (!gLineTarget) {      // No target? 
         an += 1<<26;        // Aim a little to the right 
         slope = AimLineAttack(source,an,16*64*FRACUNIT);
-        if (!linetarget) {  // Still no target? 
+        if (!gLineTarget) {  // Still no target? 
             an -= 2<<26;        // Try a little to the left 
             slope = AimLineAttack(source,an,16*64*FRACUNIT);
-            if (!linetarget) {  // I give up, just fire directly ahead 
+            if (!gLineTarget) {  // I give up, just fire directly ahead 
                 an = source->angle;     // Reset the angle 
                 slope = 0;      // No z slope 
             }
@@ -489,8 +488,8 @@ void SpawnPlayerMissile(mobj_t* source, mobjinfo_t* InfoPtr)
     speed = InfoPtr->Speed;     // Get the true speed 
     an>>=ANGLETOFINESHIFT;      // Convert to index 
 
-    th->momx = (Fixed)speed * finecosine[an];
-    th->momy = (Fixed)speed * finesine[an];
+    th->momx = (Fixed)speed * gFineCosine[an];
+    th->momy = (Fixed)speed * gFineSine[an];
     th->momz = (Fixed)speed * slope;
 
     P_CheckMissileSpawn(th);        // Move the missile a little 

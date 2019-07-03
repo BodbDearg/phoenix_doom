@@ -25,62 +25,62 @@ static constexpr int32_t    WEAPONTOP       = 32;                   // Topmost Y
 **********************************/
 
 // State to raise a weapon with
-static state_t* WeaponUpStates[NUMWEAPONS] = {
-    &states[S_PUNCHUP],         // Fists
-    &states[S_PISTOLUP],        // Pistol
-    &states[S_SGUNUP],          // Shotgun
-    &states[S_CHAINUP],         // Chaingun
-    &states[S_MISSILEUP],       // Rocket launcher
-    &states[S_PLASMAUP],        // Plasma rifle
-    &states[S_BFGUP],           // BFG 9000
-    &states[S_SAWUP]            // Chainsaw
+static constexpr state_t* WEAPON_UP_STATES[NUMWEAPONS] = {
+    &gStates[S_PUNCHUP],        // Fists
+    &gStates[S_PISTOLUP],       // Pistol
+    &gStates[S_SGUNUP],         // Shotgun
+    &gStates[S_CHAINUP],        // Chaingun
+    &gStates[S_MISSILEUP],      // Rocket launcher
+    &gStates[S_PLASMAUP],       // Plasma rifle
+    &gStates[S_BFGUP],          // BFG 9000
+    &gStates[S_SAWUP]           // Chainsaw
 };
 
 // State to raise a weapon with
-static state_t* WeaponDownStates[NUMWEAPONS] = {
-    &states[S_PUNCHDOWN],       // Fists
-    &states[S_PISTOLDOWN],      // Pistol
-    &states[S_SGUNDOWN],        // Shotgun
-    &states[S_CHAINDOWN],       // Chaingun
-    &states[S_MISSILEDOWN],     // Rocket launcher
-    &states[S_PLASMADOWN],      // Plasma rifle
-    &states[S_BFGDOWN],         // BFG 9000
-    &states[S_SAWDOWN]          // Chainsaw
+static constexpr state_t* WEAPON_DOWN_STATES[NUMWEAPONS] = {
+    &gStates[S_PUNCHDOWN],      // Fists
+    &gStates[S_PISTOLDOWN],     // Pistol
+    &gStates[S_SGUNDOWN],       // Shotgun
+    &gStates[S_CHAINDOWN],      // Chaingun
+    &gStates[S_MISSILEDOWN],    // Rocket launcher
+    &gStates[S_PLASMADOWN],     // Plasma rifle
+    &gStates[S_BFGDOWN],        // BFG 9000
+    &gStates[S_SAWDOWN]         // Chainsaw
 };
 
 // State to raise a weapon with
-static state_t* WeaponReadyStates[NUMWEAPONS] = {
-    &states[S_PUNCH],           // Fists
-    &states[S_PISTOL],          // Pistol
-    &states[S_SGUN],            // Shotgun
-    &states[S_CHAIN],           // Chaingun
-    &states[S_MISSILE],         // Rocket launcher
-    &states[S_PLASMA],          // Plasma rifle
-    &states[S_BFG],             // BFG 9000
-    &states[S_SAW]              // Chainsaw
+static constexpr state_t* WEAPON_READY_STATES[NUMWEAPONS] = {
+    &gStates[S_PUNCH],          // Fists
+    &gStates[S_PISTOL],         // Pistol
+    &gStates[S_SGUN],           // Shotgun
+    &gStates[S_CHAIN],          // Chaingun
+    &gStates[S_MISSILE],        // Rocket launcher
+    &gStates[S_PLASMA],         // Plasma rifle
+    &gStates[S_BFG],            // BFG 9000
+    &gStates[S_SAW]             // Chainsaw
 };
 
 // State to raise a weapon with
-static state_t* WeaponAttackStates[NUMWEAPONS] = {
-    &states[S_PUNCH1],          // Fists
-    &states[S_PISTOL1],         // Pistol
-    &states[S_SGUN2],           // Shotgun
-    &states[S_CHAIN1],          // Chaingun
-    &states[S_MISSILE1],        // Rocket launcher
-    &states[S_PLASMA1],         // Plasma rifle
-    &states[S_BFG1],            // BFG 9000
-    &states[S_SAW1]             // Chainsaw
+static constexpr state_t* WEAPON_ATTACK_STATES[NUMWEAPONS] = {
+    &gStates[S_PUNCH1],         // Fists
+    &gStates[S_PISTOL1],        // Pistol
+    &gStates[S_SGUN2],          // Shotgun
+    &gStates[S_CHAIN1],         // Chaingun
+    &gStates[S_MISSILE1],       // Rocket launcher
+    &gStates[S_PLASMA1],        // Plasma rifle
+    &gStates[S_BFG1],           // BFG 9000
+    &gStates[S_SAW1]            // Chainsaw
 };
 
 // State to raise a weapon with
-static state_t* WeaponFlashStates[NUMWEAPONS] = {
+static constexpr state_t* WEAPON_FLASH_STATES[NUMWEAPONS] = {
     0,                          // Fists
-    &states[S_PISTOLFLASH],     // Pistol
-    &states[S_SGUNFLASH1],      // Shotgun
-    &states[S_CHAINFLASH1],     // Chaingun
-    &states[S_MISSILEFLASH1],   // Rocket launcher
-    &states[S_PLASMAFLASH1],    // Plasma rifle
-    &states[S_BFGFLASH1],       // BFG 9000
+    &gStates[S_PISTOLFLASH],    // Pistol
+    &gStates[S_SGUNFLASH1],     // Shotgun
+    &gStates[S_CHAINFLASH1],    // Chaingun
+    &gStates[S_MISSILEFLASH1],  // Rocket launcher
+    &gStates[S_PLASMAFLASH1],   // Plasma rifle
+    &gStates[S_BFGFLASH1],      // BFG 9000
     0                           // Chainsaw
 };
 
@@ -92,7 +92,7 @@ static state_t* WeaponFlashStates[NUMWEAPONS] = {
 
 **********************************/
 
-static mobj_t *SoundTarget;     // Player object to track (Make global to avoid passing it)
+static mobj_t* gpSoundTarget;       // Player object to track (Make global to avoid passing it)
 
 static void RecursiveSound(sector_t *sec, uint32_t soundblocks)
 {
@@ -103,10 +103,10 @@ static void RecursiveSound(sector_t *sec, uint32_t soundblocks)
 
 // wake up all monsters in this sector
 
-    if (sec->validcount != validcount || sec->soundtraversed > (soundblocks+1)) {
-        sec->validcount = validcount;       // Mark for flood fill
+    if (sec->validcount != gValidCount || sec->soundtraversed > (soundblocks+1)) {
+        sec->validcount = gValidCount;       // Mark for flood fill
         sec->soundtraversed = soundblocks+1;    // distance for sound (1 or 2)
-        sec->soundtarget = SoundTarget;     // Set the noise maker source
+        sec->soundtarget = gpSoundTarget;     // Set the noise maker source
         Count = sec->linecount;             // How many lines to check?
         checker = sec->lines;
         do {
@@ -147,8 +147,8 @@ static void NoiseAlert(player_t *player)
     sec = player->mo->subsector->sector;    // Get the current sector ptr
     if (player->lastsoundsector != sec) {   // Not the same one?
         player->lastsoundsector = sec;  // Set the new sector I made sound in
-        SoundTarget = player->mo;   // Set the target for the monsters
-        ++validcount;           // Set a unique number for sector flood fill
+        gpSoundTarget = player->mo;   // Set the target for the monsters
+        ++gValidCount;           // Set a unique number for sector flood fill
         RecursiveSound(sec,0);  // Wake the monsters
     }
 }
@@ -160,7 +160,7 @@ static void NoiseAlert(player_t *player)
 
 **********************************/
 
-static void SetPlayerSprite(player_t* player, psprnum_e position, state_t* state)
+static void SetPlayerSprite(player_t* player, psprnum_e position, const state_t* state)
 {
     pspdef_t *psp;
 
@@ -204,7 +204,7 @@ static void BringUpWeapon(player_t *player)
         S_StartSound(&player->mo->x,sfx_sawup);     // Play the chainsaw sound...
     }
     player->psprites[ps_weapon].WeaponY = WEAPONBOTTOM; // Set the screen Y to bottom
-    SetPlayerSprite(player,ps_weapon,WeaponUpStates[player->pendingweapon]);        // Set the weapon sprite
+    SetPlayerSprite(player,ps_weapon,WEAPON_UP_STATES[player->pendingweapon]);        // Set the weapon sprite
     player->pendingweapon = wp_nochange;            // No new weapon pending
 }
 
@@ -221,7 +221,7 @@ static bool CheckAmmo(player_t *player)
     weapontype_e Weapon;
     uint32_t Count;         // Minimum ammo to fire with
 
-    ammo = WeaponAmmos[player->readyweapon];    // What ammo type to use?
+    ammo = gWeaponAmmos[player->readyweapon];    // What ammo type to use?
     Count = 1;              // Assume 1 round
     if (player->readyweapon == wp_bfg) {        // BFG 9000?
         Count = BFGCELLS;   // Get the BFG energy requirements
@@ -251,7 +251,7 @@ static bool CheckAmmo(player_t *player)
     }
     player->pendingweapon = Weapon;     // Save the new weapon
                     // Lower the existing weapon
-    SetPlayerSprite(player,ps_weapon,WeaponDownStates[player->readyweapon]);
+    SetPlayerSprite(player,ps_weapon,WEAPON_DOWN_STATES[player->readyweapon]);
     return false;   // Can't shoot!
 }
 
@@ -264,10 +264,10 @@ static bool CheckAmmo(player_t *player)
 static void FireWeapon(player_t *player)
 {
     if (CheckAmmo(player)) {        // Do I have ammo? (Change weapon if not)
-        SetMObjState(player->mo,&states[S_PLAY_ATK1]);  // Player is in attack mode
+        SetMObjState(player->mo,&gStates[S_PLAY_ATK1]);  // Player is in attack mode
         player->psprites[ps_weapon].WeaponX = 0;    // Reset the weapon's screen
         player->psprites[ps_weapon].WeaponY = WEAPONTOP;    // position
-        SetPlayerSprite(player,ps_weapon,WeaponAttackStates[player->readyweapon]);  // Begin animation
+        SetPlayerSprite(player,ps_weapon,WEAPON_ATTACK_STATES[player->readyweapon]);  // Begin animation
         NoiseAlert(player);     // Alert the monsters...
     }
 }
@@ -280,7 +280,7 @@ static void FireWeapon(player_t *player)
 
 void LowerPlayerWeapon(player_t *player)
 {
-    SetPlayerSprite(player,ps_weapon,WeaponDownStates[player->readyweapon]);
+    SetPlayerSprite(player,ps_weapon,WEAPON_DOWN_STATES[player->readyweapon]);
 }
 
 /**********************************
@@ -296,20 +296,20 @@ void A_WeaponReady(player_t *player,pspdef_t *psp)
 
     // Special case for chainsaw's idle sound
 
-    if (player->readyweapon == wp_chainsaw && psp->StatePtr == &states[S_SAW]) {
+    if (player->readyweapon == wp_chainsaw && psp->StatePtr == &gStates[S_SAW]) {
         S_StartSound(&player->mo->x,sfx_sawidl);    // Play the idle sound
     }
 
 // Check for change, if player is dead, put the weapon away
 
     if (player->pendingweapon != wp_nochange || !player->health) {  // Alive?
-        SetPlayerSprite(player,ps_weapon,WeaponDownStates[player->readyweapon]);
+        SetPlayerSprite(player,ps_weapon,WEAPON_DOWN_STATES[player->readyweapon]);
         return;
     }
 
 // check for weapon fire
 
-    if (JoyPadButtons & PadAttack) {        // Attack?
+    if (gJoyPadButtons & gPadAttack) {        // Attack?
         FireWeapon(player);             // Fire the weapon...
         return;             // Exit now
     }
@@ -317,10 +317,10 @@ void A_WeaponReady(player_t *player,pspdef_t *psp)
 // Bob the weapon based on movement speed
 
     BobValue = (player->bob>>FRACBITS); // Isolate the integer
-    angle = (TotalGameTicks<<6)&FINEMASK;       // Get the angle
-    psp->WeaponX = (BobValue * finecosine[angle])>>FRACBITS;
+    angle = (gTotalGameTicks<<6)&FINEMASK;       // Get the angle
+    psp->WeaponX = (BobValue * gFineCosine[angle])>>FRACBITS;
     angle &= (FINEANGLES/2)-1;      // Force semi-circle
-    psp->WeaponY = ((BobValue * finesine[angle])>>FRACBITS) + WEAPONTOP;
+    psp->WeaponY = ((BobValue * gFineSine[angle])>>FRACBITS) + WEAPONTOP;
 }
 
 /**********************************
@@ -334,7 +334,7 @@ void A_ReFire(player_t *player,pspdef_t *psp)
 
 // Check for fire (if a weaponchange is pending, let it go through instead)
 
-    if ( (JoyPadButtons & PadAttack) && // Still firing?
+    if ( (gJoyPadButtons & gPadAttack) && // Still firing?
         player->pendingweapon == wp_nochange && player->health) {
         player->refire = true;      // Count for grimacing player face
         FireWeapon(player); // Shoot...
@@ -384,7 +384,7 @@ void A_Raise(player_t *player,pspdef_t *psp)
     if (psp->WeaponY <= WEAPONTOP) {    // At the top?
         psp->WeaponY = WEAPONTOP;   // Make sure it's ok!
 // the weapon has been raised all the way, so change to the ready state
-        SetPlayerSprite(player,ps_weapon,WeaponReadyStates[player->readyweapon]);
+        SetPlayerSprite(player,ps_weapon,WEAPON_READY_STATES[player->readyweapon]);
     }
 }
 
@@ -396,7 +396,7 @@ void A_Raise(player_t *player,pspdef_t *psp)
 
 void A_GunFlash(player_t *player,pspdef_t *psp)
 {
-    SetPlayerSprite(player,ps_flash,WeaponFlashStates[player->readyweapon]);
+    SetPlayerSprite(player,ps_flash,WEAPON_FLASH_STATES[player->readyweapon]);
 }
 
 /**********************************
@@ -419,7 +419,7 @@ void A_Punch(player_t *player,pspdef_t *psp)
     angle = mo->angle;          // Get the player's angle
     angle += (255-Random::nextU32(511))<<18;  // Adjust for direction of attack
     LineAttack(mo,angle,MELEERANGE,FIXED_MAX,damage);  // Attack!
-    target = linetarget;
+    target = gLineTarget;
     if (target) {       // Did I hit someone?
         // Point the player to the victim
         mo->angle = PointToAngle(mo->x,mo->y,target->x,target->y);
@@ -447,7 +447,7 @@ void A_Saw(player_t *player,pspdef_t *psp)
 // use meleerange + 1 so the puff doesn't skip the flash
 
     LineAttack(mo,angle,MELEERANGE+1,FIXED_MAX,damage);
-    target = linetarget;
+    target = gLineTarget;
     if (!target) {          // Anyone hit?
         S_StartSound(&mo->x,sfx_sawful);    // Loud saw sound effect
         return;
@@ -484,7 +484,7 @@ void A_Saw(player_t *player,pspdef_t *psp)
 void A_FireMissile(player_t *player,pspdef_t *psp)
 {
     --player->ammo[am_misl];    // Remove a round
-    SpawnPlayerMissile(player->mo,&mobjinfo[MT_ROCKET]);        // Create a missile object
+    SpawnPlayerMissile(player->mo,&gMObjInfo[MT_ROCKET]);        // Create a missile object
 }
 
 /**********************************
@@ -496,7 +496,7 @@ void A_FireMissile(player_t *player,pspdef_t *psp)
 void A_FireBFG(player_t *player,pspdef_t *psp)
 {
     player->ammo[am_cell] -= BFGCELLS;
-    SpawnPlayerMissile(player->mo,&mobjinfo[MT_BFG]);
+    SpawnPlayerMissile(player->mo,&gMObjInfo[MT_BFG]);
 }
 
 /**********************************
@@ -509,8 +509,8 @@ void A_FirePlasma(player_t *player,pspdef_t *psp)
 {
     --player->ammo[am_cell];    // Remove a round
     // I have two flash states, choose one randomly
-    SetPlayerSprite(player,ps_flash,WeaponFlashStates[player->readyweapon]+Random::nextU32(1));
-    SpawnPlayerMissile(player->mo,&mobjinfo[MT_PLASMA]);        // Spawn the missile
+    SetPlayerSprite(player,ps_flash,WEAPON_FLASH_STATES[player->readyweapon]+Random::nextU32(1));
+    SpawnPlayerMissile(player->mo,&gMObjInfo[MT_PLASMA]);        // Spawn the missile
 }
 
 /**********************************
@@ -543,7 +543,7 @@ void A_FirePistol(player_t *player,pspdef_t *psp)
     S_StartSound(&player->mo->x,sfx_pistol);        // Bang!!
 
     --player->ammo[am_clip];    // Remove a round
-    SetPlayerSprite(player,ps_flash,WeaponFlashStates[player->readyweapon]);    // Flash weapon
+    SetPlayerSprite(player,ps_flash,WEAPON_FLASH_STATES[player->readyweapon]);    // Flash weapon
     GunShot(player->mo,!player->refire);    // Shoot a round
 }
 
@@ -564,7 +564,7 @@ void A_FireShotgun(player_t *player, pspdef_t *psp)
     mo = player->mo;        // Get mobj pointer for player
     S_StartSound(&mo->x,sfx_shotgn);    // Bang!
     --player->ammo[am_shell];   // Remove a round
-    SetPlayerSprite(player,ps_flash,WeaponFlashStates[player->readyweapon]);
+    SetPlayerSprite(player,ps_flash,WEAPON_FLASH_STATES[player->readyweapon]);
     slope = AimLineAttack(mo,mo->angle,MISSILERANGE);
 
 // shotgun pellets all go at a fixed slope
@@ -605,8 +605,8 @@ void A_FireCGun(player_t *player,pspdef_t *psp)
     if (player->ammo[am_clip]) {    // Any ammo?
         --player->ammo[am_clip];
         // Make sure the flash matches the weapon frame state
-        NewState = WeaponFlashStates[wp_chaingun];
-        if (psp->StatePtr==&states[S_CHAIN1]) {
+        NewState = WEAPON_FLASH_STATES[wp_chaingun];
+        if (psp->StatePtr==&gStates[S_CHAIN1]) {
             ++NewState;
         }
         SetPlayerSprite(player,ps_flash,NewState);
@@ -654,9 +654,9 @@ void A_BFGSpray(mobj_t *mo)
     do {
         // mo->target is the originator (player) of the missile
         AimLineAttack(mo->target,an,16*64*FRACUNIT);
-        target = linetarget;
+        target = gLineTarget;
         if (target) {
-            SpawnMObj(target->x,target->y,target->z + (target->height>>2),&mobjinfo[MT_EXTRABFG]);
+            SpawnMObj(target->x,target->y,target->z + (target->height>>2),&gMObjInfo[MT_EXTRABFG]);
             damage = 15;        // Minimum 15 points of damage
             j = 15;
             do {

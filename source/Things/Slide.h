@@ -5,9 +5,9 @@
 struct line_t;
 struct mobj_t;
 
-extern Fixed    slidex;         // The final position
-extern Fixed    slidey;
-extern line_t*  specialline;
+extern Fixed    gSlideX;        // The final position
+extern Fixed    gSlideY;
+extern line_t*  gSpecialLine;
 
 void P_SlideMove(mobj_t* mo);
 Fixed P_CompletableFrac(Fixed dx, Fixed dy);

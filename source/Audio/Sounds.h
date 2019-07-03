@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 // All the songs in the game
 enum musicnum_e : uint8_t { 
     Song_None,

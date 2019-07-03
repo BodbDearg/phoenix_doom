@@ -17,9 +17,7 @@
 #include "ThreeDO.h"
 #include <cstring>
 
-static line_t **LineArrayBuffer;    // Pointer to array of line_t pointers used by sectors 
-
-static uint32_t PreLoadTable[] = {
+static constexpr uint32_t PRELOAD_TABLE[] = {
     rSPR_ZOMBIE,            // Zombiemen 
     rSPR_SHOTGUY,           // Shotgun guys 
     rSPR_IMP,               // Imps 
@@ -43,8 +41,11 @@ static uint32_t PreLoadTable[] = {
     UINT32_MAX
 };
 
-mapthing_t deathmatchstarts[10],*deathmatch_p;  // Deathmatch starts 
-mapthing_t playerstarts;    // Starting position for players 
+static line_t** gLineArrayBuffer;    // Pointer to array of line_t pointers used by sectors 
+
+mapthing_t      gDeathmatchStarts[10];      // Deathmatch starts 
+mapthing_t*     gpDeathmatch;
+mapthing_t      gPlayerStarts;              // Starting position for players 
 
 /**********************************
 
@@ -79,9 +80,9 @@ static void GroupLines(void)
     // Build line tables for each sector 
     linebuffer = (line_t**)MemAlloc(total * sizeof(line_t*));
     
-    LineArrayBuffer = linebuffer;   // Save in global for later disposal 
-    sector = gpSectors;             // Init the sector pointer 
-    i = gNumSectors;                // Get the sector count 
+    gLineArrayBuffer = linebuffer;      // Save in global for later disposal 
+    sector = gpSectors;                 // Init the sector pointer 
+    i = gNumSectors;                    // Get the sector count 
     
     do {
         bbox[BOXTOP] = bbox[BOXRIGHT] = FIXED_MIN;     // Invalidate the rect 
@@ -201,9 +202,9 @@ static void PreloadWalls() {
     }
     
     // Now scan the walls for switches; mark for loading the alternate switch state texture:
-    for (uint32_t switchNum = 0; switchNum < NumSwitches; ++switchNum) {
-        if (bLoadTexFlags[SwitchList[switchNum]]) {         // Found a switch?
-            bLoadTexFlags[SwitchList[switchNum^1]] = true;  // Load the alternate texture for the switch
+    for (uint32_t switchNum = 0; switchNum < gNumSwitches; ++switchNum) {
+        if (bLoadTexFlags[gSwitchList[switchNum]]) {            // Found a switch?
+            bLoadTexFlags[gSwitchList[switchNum^1]] = true;     // Load the alternate texture for the switch
         }
     }
     
@@ -236,8 +237,8 @@ static void PreloadWalls() {
     
     // Mark for loading the other frames for any animated flats that we will load
     {
-        const anim_t* pAnim = FlatAnims;
-        const anim_t* const pEndAnim = FlatAnims + NumFlatAnims;
+        const anim_t* pAnim = gFlatAnims;
+        const anim_t* const pEndAnim = gFlatAnims + gNumFlatAnims;
         
         while (pAnim < pEndAnim) {
             const uint32_t lastAnimTexNum = pAnim->LastPicNum;
@@ -264,9 +265,9 @@ static void PreloadWalls() {
     {
         uint32_t tableIdx = 0;
         
-        while (PreLoadTable[tableIdx] != -1) {
-            loadResourceData(PreLoadTable[tableIdx]);
-            releaseResource(PreLoadTable[tableIdx]);
+        while (PRELOAD_TABLE[tableIdx] != -1) {
+            loadResourceData(PRELOAD_TABLE[tableIdx]);
+            releaseResource(PRELOAD_TABLE[tableIdx]);
             ++tableIdx;
         }
     }
@@ -288,9 +289,9 @@ void SetupLevel(uint32_t map) {
         CompactHandles();   // Pack remaining memory
     #endif
     
-    TotalKillsInLevel = ItemsFoundInLevel = SecretsFoundInLevel = 0;
+    gTotalKillsInLevel = gItemsFoundInLevel = gSecretsFoundInLevel = 0;
     
-    player_t* p = &players;
+    player_t* p = &gPlayers;
     p->killcount = 0;           // Nothing killed
     p->secretcount = 0;         // No secrets found
     p->itemcount = 0;           // No items found
@@ -299,12 +300,12 @@ void SetupLevel(uint32_t map) {
     mapDataInit(map);       // Loads all map geometry, bsp, reject matrix etc. (everything except things)
     GroupLines();           // Final last minute data arranging
     
-    deathmatch_p = deathmatchstarts;
+    gpDeathmatch = gDeathmatchStarts;
     
     LoadThings(getMapStartLump(map) + ML_THINGS);   // Spawn all the items
     SpawnSpecials();                                // Spawn all sector specials
     PreloadWalls();                                 // Load all the wall textures and sprites
-    gamepaused = false;                             // Game in progress
+    gGamePaused = false;                            // Game in progress
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -312,7 +313,7 @@ void SetupLevel(uint32_t map) {
 //---------------------------------------------------------------------------------------------------------------------
 void ReleaseMapMemory() {
     mapDataShutdown();
-    MEM_FREE_AND_NULL(LineArrayBuffer);
+    MEM_FREE_AND_NULL(gLineArrayBuffer);
     texturesFreeAll();
     spritesFreeAll();
     InitThinkers();         // Dispose of all remaining memory

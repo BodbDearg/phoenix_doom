@@ -17,12 +17,19 @@
 #define MAXBOB (16<<FRACBITS)   // 16 pixels of bobbing up and down 
 #define SLOWTURNTICS 10         // Time before fast turning 
 
-static bool onground;        // True if the player is on the ground 
+static bool gOnGround;          // True if the player is on the ground 
 
-static uint32_t forwardmove[2] = {0x38000>>2,0x60000>>2};
-static uint32_t sidemove[2] = {0x38000>>2,0x58000>>2};
+static constexpr uint32_t FORWARD_MOVE[2] = { 
+    0x38000 >> 2, 
+    0x60000 >> 2
+};
 
-static Fixed angleturn[] = {
+static constexpr uint32_t SIDE_MOVE[2] = {
+    0x38000 >> 2,
+    0x58000 >> 2
+};
+
+static constexpr Fixed ANGLE_TURN[] = {
     600 << FRACBITS, 
     600 << FRACBITS,
     1000 << FRACBITS,
@@ -36,7 +43,7 @@ static Fixed angleturn[] = {
 };
 
 // Will be mul'd by ElapsedTime
-static Fixed fastangleturn[] = {
+static constexpr Fixed FAST_ANGLE_TURN[] = {
     400 << FRACBITS,
     400 << FRACBITS,
     450 << FRACBITS,
@@ -64,16 +71,16 @@ static void P_PlayerMove(mobj_t *mo)
 
     // DC: added a noclip cheat
     if (mo->flags & MF_NOCLIP) {
-        slidex = mo->x + momx * 4;
-        slidey = mo->y + momy * 4;
+        gSlideX = mo->x + momx * 4;
+        gSlideY = mo->y + momy * 4;
     }
     else {
         P_SlideMove(mo);            // Slide the player ahead 
     }
 
-    if (slidex != mo->x || slidey != mo->y) {   // No motion at all? 
-        if (P_TryMove(mo,slidex,slidey)) {      // Can I move? 
-            goto dospecial;                     // Movement OK, just special and exit 
+    if (gSlideX != mo->x || gSlideY != mo->y) {     // No motion at all? 
+        if (P_TryMove(mo, gSlideX, gSlideY)) {      // Can I move? 
+            goto dospecial;                         // Movement OK, just special and exit 
         }
     }
 
@@ -104,8 +111,8 @@ static void P_PlayerMove(mobj_t *mo)
     }
 
 dospecial:
-    if (specialline) {      // Did a line get crossed? 
-        P_CrossSpecialLine(specialline,mo); // Call the special event 
+    if (gSpecialLine) {                         // Did a line get crossed? 
+        P_CrossSpecialLine(gSpecialLine, mo);   // Call the special event 
     }
 }
 
@@ -195,7 +202,7 @@ static void P_PlayerZMovement(mobj_t *mo)
 
 static void P_PlayerMobjThink (mobj_t *mobj)
 {
-    state_t *st;        // Pointer to current game state structure 
+    const state_t *st;        // Pointer to current game state structure 
 
 // Momentum movement 
 
@@ -236,9 +243,9 @@ static void P_BuildMove(player_t *player)
     Fixed Motion;           // Motion result 
     mobj_t *mo;
 
-    buttons = JoyPadButtons;
-    oldbuttons = PrevJoyPadButtons;
-    SpeedIndex = (buttons&PadSpeed) ? 1 : 0;
+    buttons = gJoyPadButtons;
+    oldbuttons = gPrevJoyPadButtons;
+    SpeedIndex = (buttons&gPadSpeed) ? 1 : 0;
     
 // Use two stage accelerative turning on the joypad 
 
@@ -255,9 +262,9 @@ static void P_BuildMove(player_t *player)
     player->turnheld = TurnIndex;       // Save it 
 
     Motion = 0;             // Assume no side motion 
-    if (!(buttons & PadUse)) {      // Use allows weapon change 
+    if (!(buttons & gPadUse)) {      // Use allows weapon change 
         if (buttons & (PadRightShift|PadLeftShift)) {   // Side motion? 
-            Motion = sidemove[SpeedIndex]*gElapsedTime;  // Sidestep to the right 
+            Motion = SIDE_MOVE[SpeedIndex]*gElapsedTime;  // Sidestep to the right 
             if (buttons & PadLeftShift) {
                 Motion = -Motion;   // Sidestep to the left 
             }
@@ -268,14 +275,14 @@ static void P_BuildMove(player_t *player)
     Motion = 0;         // No angle turning 
     if (SpeedIndex && !(buttons&(PadUp|PadDown)) ) {
         if (buttons & (PadRight|PadLeft)) {
-            Motion = fastangleturn[TurnIndex]*gElapsedTime;
+            Motion = FAST_ANGLE_TURN[TurnIndex]*gElapsedTime;
             if (buttons & PadRight) {
                 Motion = -Motion;
             }
         }
     } else {
         if (buttons & (PadRight|PadLeft)) {
-            Motion = angleturn[TurnIndex];      // Don't time adjust, for fine tuning 
+            Motion = ANGLE_TURN[TurnIndex];      // Don't time adjust, for fine tuning 
             if (gElapsedTime<4) {
                 Motion>>=1;
                 if (gElapsedTime<2) {
@@ -291,7 +298,7 @@ static void P_BuildMove(player_t *player)
 
     Motion = 0;
     if (buttons & (PadUp|PadDown)) {
-        Motion = forwardmove[SpeedIndex]*gElapsedTime;
+        Motion = FORWARD_MOVE[SpeedIndex]*gElapsedTime;
         if (buttons & PadDown) {
             Motion = -Motion;
         }
@@ -304,13 +311,13 @@ static void P_BuildMove(player_t *player)
 
     if (!mo->momx && !mo->momy && !player->forwardmove && !player->sidemove) {
     // if in a walking frame, stop moving 
-        state_t *StatePtr;
+        const state_t *StatePtr;
         StatePtr = mo->state;
-        if (StatePtr == &states[S_PLAY_RUN1] ||
-            StatePtr == &states[S_PLAY_RUN2] ||
-            StatePtr == &states[S_PLAY_RUN3] ||
-            StatePtr == &states[S_PLAY_RUN4]) {
-            SetMObjState(mo,&states[S_PLAY]);       // Standing frame 
+        if (StatePtr == &gStates[S_PLAY_RUN1] ||
+            StatePtr == &gStates[S_PLAY_RUN2] ||
+            StatePtr == &gStates[S_PLAY_RUN3] ||
+            StatePtr == &gStates[S_PLAY_RUN4]) {
+            SetMObjState(mo,&gStates[S_PLAY]);       // Standing frame 
         }
     }
 }
@@ -326,8 +333,8 @@ static void PlayerThrust(mobj_t *MObjPtr,angle_t angle,Fixed move)
     if (move) {
         angle >>= ANGLETOFINESHIFT;     // Convert to index to table 
         move >>= (FRACBITS-8);              // Convert to integer (With 8 bit frac) 
-        MObjPtr->momx += (move*finecosine[angle])>>8;   // Add momentum 
-        MObjPtr->momy += (move*finesine[angle])>>8;
+        MObjPtr->momx += (move*gFineCosine[angle])>>8;   // Add momentum 
+        MObjPtr->momy += (move*gFineSine[angle])>>8;
     }
 }
 
@@ -358,7 +365,7 @@ static void PlayerCalcHeight(player_t *player)
 
     player->bob = bob;      // Save the new vertical adjustment 
 
-    if (!onground) {        // Don't bob the view if in the air! 
+    if (!gOnGround) {       // Don't bob the view if in the air! 
         bob = 0;            // Zap the bob factor 
     } else {
 
@@ -369,8 +376,8 @@ static void PlayerCalcHeight(player_t *player)
 // This is translated to 8192/40 or 204.8 angles per tick. 
 // Neat eh? 
 
-        bob = (bob>>(FRACBITS+1)) * finesine[       // What a mouthful!! 
-            ((FINEANGLES/((2*TICKSPERSEC)/3))*TotalGameTicks)&FINEMASK];
+        bob = (bob>>(FRACBITS+1)) * gFineSine[       // What a mouthful!! 
+            ((FINEANGLES/((2*TICKSPERSEC)/3))*gTotalGameTicks)&FINEMASK];
 
         if (player->playerstate == PST_LIVE) {      // If the player is alive... 
             top = player->deltaviewheight;      // Get gravity 
@@ -421,16 +428,16 @@ static void MoveThePlayer(player_t *player)
     
     // Don't let the player control movement if not onground 
 
-    onground = (MObjPtr->z <= MObjPtr->floorz); // Save for PlayerCalcHeight 
+    gOnGround = (MObjPtr->z <= MObjPtr->floorz); // Save for PlayerCalcHeight 
 
-    if (onground) {     // Can I move? 
+    if (gOnGround) {     // Can I move? 
         PlayerThrust(MObjPtr,newangle,player->forwardmove);
         PlayerThrust(MObjPtr,newangle-ANG90,player->sidemove);
     }
 
     if ( (player->forwardmove || player->sidemove) &&       // Am I moving? 
-        MObjPtr->state == &states[S_PLAY] ) {   // Normal play? 
-        SetMObjState(MObjPtr,&states[S_PLAY_RUN1]);     // Set the sprite 
+        MObjPtr->state == &gStates[S_PLAY] ) {   // Normal play? 
+        SetMObjState(MObjPtr,&gStates[S_PLAY_RUN1]);     // Set the sprite 
     }
 }
 
@@ -457,7 +464,7 @@ static void P_DeathThink(player_t *player)
             player->viewheight=8*FRACUNIT;      // Set to the bottom 
         }
     }
-    onground = (player->mo->z <= player->mo->floorz);   // Get the floor state 
+    gOnGround = (player->mo->z <= player->mo->floorz);   // Get the floor state 
     PlayerCalcHeight(player);       // Calc the height of the player 
 
     // Only face killer if I didn't kill myself or jumped into lava 
@@ -485,7 +492,7 @@ DownDamage:
         }
     }
 
-    if ( (JoyPadButtons & PadUse) && player->viewheight < ((8*FRACUNIT)+1)) {
+    if ( (gJoyPadButtons & gPadUse) && player->viewheight < ((8*FRACUNIT)+1)) {
         player->playerstate = PST_REBORN;       // Restart the player 
     }
 }
@@ -524,7 +531,7 @@ void P_PlayerThink(player_t *player)
     uint32_t buttons;       // Current joypad buttons 
     uint32_t i;
 
-    buttons = JoyPadButtons;        // Get the joypad info 
+    buttons = gJoyPadButtons;        // Get the joypad info 
 
     P_PlayerMobjThink(player->mo);      // Perform the inertia movement 
     P_BuildMove(player);            // Convert joypad info to motion 
@@ -568,9 +575,9 @@ void P_PlayerThink(player_t *player)
 
 // Process use actions 
 
-    if (buttons & PadUse) {
+    if (buttons & gPadUse) {
         if (player->pendingweapon == wp_nochange) {
-            i = (buttons^PrevJoyPadButtons)&buttons;    // Get button downs 
+            i = (buttons^gPrevJoyPadButtons)&buttons;    // Get button downs 
             if (i&(PadRightShift|PadLeftShift)) {   // Pressed the shifts? 
                 i = (PadRightShift&i) ? 1 : -1; // Cycle up or down? 
                 player->pendingweapon=player->readyweapon;  // Init the weapon 
@@ -591,10 +598,10 @@ void P_PlayerThink(player_t *player)
 
 // Process weapon attacks 
 
-    if (buttons & PadAttack) {          // Am I attacking? 
+    if (buttons & gPadAttack) {          // Am I attacking? 
         player->attackdown+=gElapsedTime;        // Add in the timer 
         if (player->attackdown >= (TICKSPERSEC*2)) {
-            stbar.specialFace = f_mowdown;
+            gStBar.specialFace = f_mowdown;
         }
     } else {
         player->attackdown = false;     // Reset the timer 

@@ -49,17 +49,17 @@ struct mobj_t {
     Fixed           momy;
     Fixed           momz;
 
-    mobjinfo_t*     InfoPtr;        // Pointer to mobj info record
-    uint32_t        tics;           // Time before next state
-    state_t*        state;          // Pointer to current state record (Can't be NULL!)
-    uint32_t        flags;          // State flags for object
-    uint32_t        MObjHealth;     // Object's health
-    uint32_t        movedir;        // 0-7
-    uint32_t        movecount;      // When 0, select a new dir
-    mobj_t*         target;         // Thing being chased/attacked (or NULL); also the originator for missiles.
-    uint32_t        reactiontime;   // If non 0, don't attack yet; used by player to freeze a bit after teleporting.
-    uint32_t        threshold;      // If > 0, the target will be chased no matter what (even if shot)
-    player_t*       player;         // Only valid if type == MT_PLAYER
+    const mobjinfo_t*   InfoPtr;        // Pointer to mobj info record
+    uint32_t            tics;           // Time before next state
+    const state_t*      state;          // Pointer to current state record (Can't be NULL!)
+    uint32_t            flags;          // State flags for object
+    uint32_t            MObjHealth;     // Object's health
+    uint32_t            movedir;        // 0-7
+    uint32_t            movecount;      // When 0, select a new dir
+    mobj_t*             target;         // Thing being chased/attacked (or NULL); also the originator for missiles.
+    uint32_t            reactiontime;   // If non 0, don't attack yet; used by player to freeze a bit after teleporting.
+    uint32_t            threshold;      // If > 0, the target will be chased no matter what (even if shot)
+    player_t*           player;         // Only valid if type == MT_PLAYER
 };
 
 // Flags which can be used for map objects
@@ -92,13 +92,13 @@ static constexpr uint32_t MF_NOTDMATCH      = 0x2000000;    // Don't spawn in de
 static constexpr uint32_t MF_SEETARGET      = 0x4000000;    // Is target visible?
 
 void P_RemoveMobj(mobj_t* th);
-uint32_t SetMObjState(mobj_t* mobj, state_t* StatePtr);
+uint32_t SetMObjState(mobj_t* mobj, const state_t* StatePtr);
 void Sub1RandomTick(mobj_t* mobj);
 void ExplodeMissile(mobj_t* mo);
-mobj_t* SpawnMObj(Fixed x, Fixed y, Fixed z, mobjinfo_t* InfoPtr);
-void P_SpawnPlayer(mapthing_t* mthing);
-void SpawnMapThing(mapthing_t* mthing);
+mobj_t* SpawnMObj(Fixed x, Fixed y, Fixed z, const mobjinfo_t* InfoPtr);
+void P_SpawnPlayer(const mapthing_t* mthing);
+void SpawnMapThing(const mapthing_t* mthing);
 void P_SpawnPuff(Fixed x, Fixed y, Fixed z);
 void P_SpawnBlood(Fixed x, Fixed y, Fixed z, uint32_t damage);
-void P_SpawnMissile(mobj_t* source, mobj_t* dest, mobjinfo_t* InfoPtr);
-void SpawnPlayerMissile(mobj_t* source, mobjinfo_t* InfoPtr);
+void P_SpawnMissile(mobj_t* source, mobj_t* dest, const mobjinfo_t* InfoPtr);
+void SpawnPlayerMissile(mobj_t* source, const mobjinfo_t* InfoPtr);

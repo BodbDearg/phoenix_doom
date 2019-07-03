@@ -12,7 +12,7 @@
 
 #define SCREENGUNY -40      // Y offset to center the player's weapon properly
 
-uint32_t spropening[MAXSCREENWIDTH];        // clipped range
+uint32_t gSprOpening[MAXSCREENWIDTH];        // clipped range
 
 /**********************************
 
@@ -206,15 +206,15 @@ void DrawVisSprite(const vissprite_t* const pVisSprite) {
     if (x1<0) {                 // These could be offscreen
         x1 = 0;
     }
-    if (x2>=(int)ScreenWidth) {
-        x2 = ScreenWidth-1;
+    if (x2>=(int)gScreenWidth) {
+        x2 = gScreenWidth-1;
     }
     scalefrac = pVisSprite->yscale;     // Get the Z scale    
     Clipped = false;                    // Assume I don't clip
 
     // scan drawsegs from end to start for obscuring segs
     // the first drawseg that has a greater scale is the clip seg
-    ds = lastwallcmd;
+    ds = gLastWallCmd;
     do {
         --ds;           // Point to the next wall command
         
@@ -233,9 +233,9 @@ void DrawVisSprite(const vissprite_t* const pVisSprite) {
         if (!Clipped) {     // Never initialized?
             Clipped = true;
             x = x1;
-            opening = ScreenHeight;
+            opening = gScreenHeight;
             do {
-                spropening[x] = opening;        // Init the clip table
+                gSprOpening[x] = opening;       // Init the clip table
             } while (++x<=x2);
         }
         r1 = ds->LeftX < x1 ? x1 : ds->LeftX;       // Get the clip bounds
@@ -245,9 +245,9 @@ void DrawVisSprite(const vissprite_t* const pVisSprite) {
         silhouette = ds->WallActions & (AC_TOPSIL|AC_BOTTOMSIL|AC_SOLIDSIL);
         x=r1;
         if (silhouette == AC_SOLIDSIL) {
-            opening = ScreenHeight<<8;
+            opening = gScreenHeight<<8;
             do {
-                spropening[x] = opening;        // Clip these to blanks
+                gSprOpening[x] = opening;       // Clip these to blanks
             } while (++x<=r2);
             continue;
         }
@@ -257,33 +257,33 @@ void DrawVisSprite(const vissprite_t* const pVisSprite) {
 
         if (silhouette == AC_BOTTOMSIL) {   // bottom sil only
             do {
-                opening = spropening[x];
-                if ( (opening&0xff) == ScreenHeight) {
-                    spropening[x] = (opening&0xff00) + bottomsil[x];
+                opening = gSprOpening[x];
+                if ( (opening&0xff) == gScreenHeight) {
+                    gSprOpening[x] = (opening&0xff00) + bottomsil[x];
                 }
             } while (++x<=r2);
         } else if (silhouette == AC_TOPSIL) {   // top sil only
             do {
-                opening = spropening[x];
+                opening = gSprOpening[x];
                 if ( !(opening&0xff00)) {
-                    spropening[x] = (topsil[x]<<8) + (opening&0xff);
+                    gSprOpening[x] = (topsil[x]<<8) + (opening&0xff);
                 }
             } while (++x<=r2);
         } else if (silhouette == (AC_TOPSIL|AC_BOTTOMSIL) ) {   // both
             do {
-                top = spropening[x];
+                top = gSprOpening[x];
                 bottom = top&0xff;
                 top >>= 8;
-                if (bottom == ScreenHeight) {
+                if (bottom == gScreenHeight) {
                     bottom = bottomsil[x];
                 }
                 if (!top) {
                     top = topsil[x];
                 }
-                spropening[x] = (top<<8)+bottom;
+                gSprOpening[x] = (top<<8)+bottom;
             } while (++x<=r2);
         }
-    } while (ds!=viswalls);
+    } while (ds!=gVisWalls);
     
     // Now that I have created the clip regions, let's see if I need to do this    
     if (!Clipped) {                     // Do I have to clip at all?
@@ -297,13 +297,13 @@ void DrawVisSprite(const vissprite_t* const pVisSprite) {
     if (r1<0) {
         r1 = 0;     // Clip to screen coords
     }
-    if (r2>=(int)ScreenHeight) {
-        r2 = ScreenHeight;
+    if (r2>=(int)gScreenHeight) {
+        r2 = gScreenHeight;
     }
     x = x1;
     do {
-        top = spropening[x];
-        if (top!=ScreenHeight) {        // Clipped?
+        top = gSprOpening[x];
+        if (top!=gScreenHeight) {        // Clipped?
             bottom = top&0xff;
             top >>=8;
             if (r1<top || r2>=bottom) { // Needs manual clipping!
@@ -312,8 +312,8 @@ void DrawVisSprite(const vissprite_t* const pVisSprite) {
                     return;
                 }
                 do {
-                    top = spropening[x];
-                    if (top!=(ScreenHeight<<8)) {
+                    top = gSprOpening[x];
+                    if (top!=(gScreenHeight<<8)) {
                         bottom = top&0xff;
                         top >>=8;
                         if (r1<bottom && r2>=top) { // Is it even visible?
@@ -363,10 +363,10 @@ static void DrawAWeapon(pspdef_t *psp,uint32_t Shadow)
     // TODO: DC: Find a better place for these endian conversions
     int x = byteSwappedI16(Input[0]);
     int y = byteSwappedI16(Input[1]);
-    x = ((psp->WeaponX + x ) * (int) GunXScale) >> 20;
-    y = ((psp->WeaponY + SCREENGUNY + y) * (int) GunYScale) >> 16;
-    x += ScreenXOffset;
-    y += ScreenYOffset + 2;         // Add 2 pixels to cover up the hole in the bottom
+    x = ((psp->WeaponX + x ) * (int) gGunXScale) >> 20;
+    y = ((psp->WeaponY + SCREENGUNY + y) * (int) gGunYScale) >> 16;
+    x += gScreenXOffset;
+    y += gScreenYOffset + 2;         // Add 2 pixels to cover up the hole in the bottom
     DrawMShape(x, y, (const CelControlBlock*) &Input[2]);    // Draw the weapon's shape
     releaseResource(RezNum);
 }
@@ -383,10 +383,10 @@ void DrawWeapons(void)
     uint32_t Shadow;        // Flag for shadowing
     pspdef_t *psp;
     
-    psp = players.psprites; // Get the first sprite in the array 
+    psp = gPlayers.psprites; // Get the first sprite in the array 
     Shadow = false;         // Assume no shadow draw mode
-    if (players.mo->flags & MF_SHADOW) {    // Could be active?
-        i = players.powers[pw_invisibility];    // Get flash time
+    if (gPlayers.mo->flags & MF_SHADOW) {    // Could be active?
+        i = gPlayers.powers[pw_invisibility];    // Get flash time
         if (i>=(5*TICKSPERSEC) || i&0x10) { // On a long time or if flashing...
             Shadow = true;      // Draw as a shadow right now
         }
@@ -399,7 +399,7 @@ void DrawWeapons(void)
         ++psp;      // Next...
     } while (++i<NUMPSPRITES);  // All done?
     
-    i = ScreenSize+rBACKGROUNDMASK;         // Get the resource needed
+    i = gScreenSize+rBACKGROUNDMASK;         // Get the resource needed
 
     DrawMShape(0,0, (const CelControlBlock*) loadResourceData(i));      // Draw the border
     releaseResource(i);                                                 // Release the resource

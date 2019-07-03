@@ -41,44 +41,50 @@ enum {
     HANDLE
 };
 
-static uint32_t cursorframe;        // Skull animation frame 
-static uint32_t cursorcount;        // Time mark to animate the skull 
-static uint32_t cursorpos;          // Y position of the skull 
-static uint32_t movecount;          // Time mark to move the skull 
-static uint32_t CursorYs[NUMMENUITEMS] = {SFXVOLY-2,MUSICVOLY-2,JOYPADY-2,SIZEY-2};
+static uint32_t gCursorFrame;       // Skull animation frame 
+static uint32_t gCursorCount;       // Time mark to animate the skull 
+static uint32_t gCursorPos;         // Y position of the skull 
+static uint32_t gMoveCount;         // Time mark to move the skull 
 
-static const char* const SpeedTxt = "Speed";       // Local ASCII 
-static const char* const FireTxt = "Fire";
-static const char* const UseTxt = "Use";
-
-static const char* const buttona[NUMCONTROLOPTIONS] = {
-    SpeedTxt,
-    SpeedTxt,
-    FireTxt,
-    FireTxt,
-    UseTxt,
-    UseTxt
+static constexpr uint32_t CURSOR_Y_POS[NUMMENUITEMS] = {
+    SFXVOLY - 2,
+    MUSICVOLY - 2,
+    JOYPADY - 2,
+    SIZEY - 2
 };
 
-static const char* const buttonb[NUMCONTROLOPTIONS] = {
-    FireTxt,
-    UseTxt,
-    SpeedTxt,
-    UseTxt,
-    SpeedTxt,
-    FireTxt
+static constexpr char* SPEED_TEXT = "Speed";       // Local ASCII 
+static constexpr char* FIRE_TEXT = "Fire";
+static constexpr char* USE_TEXT = "Use";
+
+static constexpr char* BUTTON_A[NUMCONTROLOPTIONS] = {
+    SPEED_TEXT,
+    SPEED_TEXT,
+    FIRE_TEXT,
+    FIRE_TEXT,
+    USE_TEXT,
+    USE_TEXT
 };
 
-static const char* const buttonc[NUMCONTROLOPTIONS] = {
-    UseTxt,
-    FireTxt,
-    UseTxt,
-    SpeedTxt,
-    FireTxt,
-    SpeedTxt
+static constexpr char* BUTTON_B[NUMCONTROLOPTIONS] = {
+    FIRE_TEXT,
+    USE_TEXT,
+    SPEED_TEXT,
+    USE_TEXT,
+    SPEED_TEXT,
+    FIRE_TEXT
 };
 
-static uint32_t configuration[NUMCONTROLOPTIONS][3] = {
+static constexpr char* BUTTON_C[NUMCONTROLOPTIONS] = {
+    USE_TEXT,
+    FIRE_TEXT,
+    USE_TEXT,
+    SPEED_TEXT,
+    FIRE_TEXT,
+    SPEED_TEXT
+};
+
+static constexpr uint32_t CONFIGURATION[NUMCONTROLOPTIONS][3] = {
     { PadA, PadB, PadC },
     { PadA, PadC, PadB },
     { PadB, PadA, PadC },
@@ -95,12 +101,12 @@ static uint32_t configuration[NUMCONTROLOPTIONS][3] = {
 
 static void SetButtonsFromControltype(void)
 {
-    uint32_t *TablePtr;
+    const uint32_t *TablePtr;
 
-    TablePtr = &configuration[ControlType][0];  // Init table 
-    PadSpeed = TablePtr[0];     // Init the joypad settings 
-    PadAttack = TablePtr[1];
-    PadUse = TablePtr[2];
+    TablePtr = &CONFIGURATION[gControlType][0];  // Init table 
+    gPadSpeed = TablePtr[0];     // Init the joypad settings 
+    gPadAttack = TablePtr[1];
+    gPadUse = TablePtr[2];
     InitMathTables();               // Handle the math tables 
 }
 
@@ -116,9 +122,9 @@ void O_Init(void)
 // The prefs has set controltype, so set buttons from that 
 
     SetButtonsFromControltype();        // Init the joypad settings 
-    cursorcount = 0;        // Init skull cursor state 
-    cursorframe = 0;
-    cursorpos = 0;
+    gCursorCount = 0;        // Init skull cursor state 
+    gCursorFrame = 0;
+    gCursorPos = 0;
 }
 
 /**********************************
@@ -132,9 +138,9 @@ void O_Control(player_t *player)
 {
     uint32_t buttons;
 
-    buttons = JoyPadButtons;
+    buttons = gJoyPadButtons;
 
-    if (NewJoyPadButtons & PadX) {      // Toggled the option screen? 
+    if (gNewJoyPadButtons & PadX) {      // Toggled the option screen? 
         if (player) {
             player->AutomapFlags ^= AF_OPTIONSACTIVE;   // Toggle the flag 
             if (!(player->AutomapFlags & AF_OPTIONSACTIVE)) {   // Shut down? 
@@ -155,51 +161,51 @@ void O_Control(player_t *player)
     
 // Clear buttons so game player isn't moving around 
 
-    JoyPadButtons = buttons&PadX;   // Leave option status alone 
+    gJoyPadButtons = buttons&PadX;   // Leave option status alone 
 
 // animate skull 
 
-    cursorcount += gElapsedTime;
-    if (cursorcount >= (TICKSPERSEC/4)) {   // Time up? 
-        cursorframe ^= 1;       // Toggle the frame 
-        cursorcount = 0;        // Reset the timer 
+    gCursorCount += gElapsedTime;
+    if (gCursorCount >= (TICKSPERSEC/4)) {   // Time up? 
+        gCursorFrame ^= 1;       // Toggle the frame 
+        gCursorCount = 0;        // Reset the timer 
     }
 
 // Check for movement 
 
     if (! (buttons & (PadUp|PadDown|PadLeft|PadRight) ) ) {
-        movecount = TICKSPERSEC;        // move immediately on next press
+        gMoveCount = TICKSPERSEC;        // move immediately on next press
     } else {
-        movecount += gElapsedTime;
-        if ( (movecount >= (TICKSPERSEC/3)) ||      // Allow slow 
-            (cursorpos < controls && movecount >= (TICKSPERSEC/5))) {   // Fast? 
-            movecount = 0;      // Reset timer
+        gMoveCount += gElapsedTime;
+        if ( (gMoveCount >= (TICKSPERSEC/3)) ||      // Allow slow 
+            (gCursorPos < controls && gMoveCount >= (TICKSPERSEC/5))) {   // Fast? 
+            gMoveCount = 0;      // Reset timer
             
             // Try to move the cursor up or down... 
             
             if (buttons & PadDown) {        
-                ++cursorpos;
-                if (cursorpos >= NUMMENUITEMS) {
-                    cursorpos = 0;
+                ++gCursorPos;
+                if (gCursorPos >= NUMMENUITEMS) {
+                    gCursorPos = 0;
                 }
             }
             if (buttons & PadUp) {
-                if (!cursorpos) {
-                    cursorpos = NUMMENUITEMS;
+                if (!gCursorPos) {
+                    gCursorPos = NUMMENUITEMS;
                 }
-                --cursorpos;
+                --gCursorPos;
             }
             
-            switch (cursorpos) {        // Adjust the control 
+            switch (gCursorPos) {        // Adjust the control 
             case controls:          // Joypad?    
                 if (buttons & PadRight) {
-                    if (ControlType<(NUMCONTROLOPTIONS-1)) {
-                        ++ControlType;
+                    if (gControlType<(NUMCONTROLOPTIONS-1)) {
+                        ++gControlType;
                     }
                 }
                 if (buttons & PadLeft) {
-                    if (ControlType) {
-                        --ControlType;
+                    if (gControlType) {
+                        --gControlType;
                     }
                 }
                 break;
@@ -246,16 +252,16 @@ void O_Control(player_t *player)
             
             case size:          // Screen size 
                 if (buttons & PadLeft)  {
-                    if (ScreenSize<(6-1)) {
-                        ++ScreenSize;
+                    if (gScreenSize<(6-1)) {
+                        ++gScreenSize;
                         if (player) {
                             InitMathTables();               // Handle the math tables 
                         }
                     }
                 }
                 if (buttons & PadRight) {
-                    if (ScreenSize > 0) {       // Can it grow? 
-                        --ScreenSize;
+                    if (gScreenSize > 0) {       // Can it grow? 
+                        --gScreenSize;
                         if (player) {
                             InitMathTables();               // Handle the math tables 
                         }
@@ -275,14 +281,14 @@ void O_Control(player_t *player)
 void O_Drawer(void)
 {
     // Erase old and Draw new cursor frame
-    DrawMShape(CURSORX, CursorYs[cursorpos], GetShapeIndexPtr(loadResourceData(rSKULLS), cursorframe));
+    DrawMShape(CURSORX, CURSOR_Y_POS[gCursorPos], GetShapeIndexPtr(loadResourceData(rSKULLS), gCursorFrame));
     releaseResource(rSKULLS);
     const void* const pShapes = loadResourceData(rSLIDER);
 
     // Draw menu text
     PrintBigFontCenter(160, 10, "Options");
 
-    if (cursorpos < controls) {
+    if (gCursorPos < controls) {
         PrintBigFontCenter(160, SFXVOLY, "Sound Volume");
         PrintBigFontCenter(160, MUSICVOLY, "Music Volume");
 
@@ -306,13 +312,13 @@ void O_Drawer(void)
         PrintBigFont(JOYPADX + 10, JOYPADY + 20, "A");
         PrintBigFont(JOYPADX + 10, JOYPADY + 40, "B");
         PrintBigFont(JOYPADX + 10, JOYPADY + 60, "C");
-        PrintBigFont(JOYPADX + 40, JOYPADY + 20, buttona[ControlType]);
-        PrintBigFont(JOYPADX + 40, JOYPADY + 40, buttonb[ControlType]);
-        PrintBigFont(JOYPADX + 40, JOYPADY + 60, buttonc[ControlType]);
+        PrintBigFont(JOYPADX + 40, JOYPADY + 20, BUTTON_A[gControlType]);
+        PrintBigFont(JOYPADX + 40, JOYPADY + 40, BUTTON_B[gControlType]);
+        PrintBigFont(JOYPADX + 40, JOYPADY + 60, BUTTON_C[gControlType]);
         PrintBigFontCenter(160, SIZEY, "Screen Size");
         DrawMShape(SLIDERX, SIZEY + 20, GetShapeIndexPtr(pShapes, BAR));
         
-        const uint32_t offset = (5 - ScreenSize) * 18;
+        const uint32_t offset = (5 - gScreenSize) * 18;
         DrawMShape(SLIDERX + 5 + offset, SIZEY + 20, GetShapeIndexPtr(pShapes, HANDLE));
     }
 

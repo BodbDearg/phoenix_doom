@@ -13,7 +13,7 @@
     
 **********************************/
 
-static sector_t emptysector = { 0,0,-2,-2,-2 }; // -2 floorpic, ceilingpic, light
+static sector_t gEmptySector = { 0,0,-2,-2,-2 }; // -2 floorpic, ceilingpic, light
 
 /**********************************
 
@@ -29,11 +29,11 @@ static Fixed ScaleFromGlobalAngle(Fixed rw_distance,angle_t anglea,angle_t angle
 
 // both sines are always positive
 
-    SineTbl = &finesine[ANG90>>ANGLETOFINESHIFT];
+    SineTbl = &gFineSine[ANG90>>ANGLETOFINESHIFT];
     den = SineTbl[anglea>>ANGLETOFINESHIFT];
     num = SineTbl[angleb>>ANGLETOFINESHIFT];
     
-    num = fixedMul(StretchWidth ,num);
+    num = fixedMul(gStretchWidth ,num);
     den = fixedMul(rw_distance, den);
 
     if (den > num>>16) {
@@ -79,20 +79,20 @@ static void LatePrep(viswall_t *wc,seg_t *LineSeg,angle_t LeftAngle)
     PointDistance = PointToDist(LineSeg->v1.x, LineSeg->v1.y);
     wc->distance = rw_distance = fixedMul(
         PointDistance,
-        finesine[(ANG90 - offsetangle)>>ANGLETOFINESHIFT]
+        gFineSine[(ANG90 - offsetangle)>>ANGLETOFINESHIFT]
     );
 
 //
 // calc scales
 //
 
-    offsetangle = xtoviewangle[wc->LeftX];
+    offsetangle = gXToViewAngle[wc->LeftX];
     scalefrac = scale2 = wc->LeftScale = ScaleFromGlobalAngle(rw_distance,
-        offsetangle,(offsetangle+viewangle)-normalangle);
+        offsetangle,(offsetangle+gViewAngle)-normalangle);
     if (wc->RightX > wc->LeftX) {
-        offsetangle = xtoviewangle[wc->RightX];
+        offsetangle = gXToViewAngle[wc->RightX];
         scale2 = ScaleFromGlobalAngle(rw_distance,offsetangle,
-            (offsetangle+viewangle)-normalangle);
+            (offsetangle+gViewAngle)-normalangle);
         wc->ScaleStep = (int)(scale2 - scalefrac) / (int)(wc->RightX-wc->LeftX);
     }
     wc->RightScale = scale2;
@@ -113,12 +113,12 @@ static void LatePrep(viswall_t *wc,seg_t *LineSeg,angle_t LeftAngle)
         if (offsetangle > ANG90) {
             offsetangle = ANG90;        // Clip to maximum           
         }
-        scale2 = fixedMul(PointDistance, finesine[offsetangle >> ANGLETOFINESHIFT]);
+        scale2 = fixedMul(PointDistance, gFineSine[offsetangle >> ANGLETOFINESHIFT]);
         if (normalangle - LeftAngle < ANG180) {
             scale2 = -scale2;       // Reverse the texture anchor
         }
         wc->offset += scale2;
-        wc->CenterAngle = ANG90 + viewangle - normalangle;
+        wc->CenterAngle = ANG90 + gViewAngle - normalangle;
     }
 }
 
@@ -145,11 +145,11 @@ void WallPrep(uint32_t LeftX, uint32_t RightX, seg_t* LineSeg, angle_t LeftAngle
     Fixed b_floorheight;
     Fixed b_ceilingheight;
     
-    CurWallPtr = lastwallcmd;       // Get the first wall pointer
-    lastwallcmd = CurWallPtr+1;     // Inc my pointer
-    CurWallPtr->LeftX = LeftX;      // Set the edges of the visible wall
-    CurWallPtr->RightX = RightX;    // Right is inclusive!
-    CurWallPtr->SegPtr = LineSeg;   // For clipping
+    CurWallPtr = gLastWallCmd;          // Get the first wall pointer
+    gLastWallCmd = CurWallPtr + 1;      // Inc my pointer
+    CurWallPtr->LeftX = LeftX;          // Set the edges of the visible wall
+    CurWallPtr->RightX = RightX;        // Right is inclusive!
+    CurWallPtr->SegPtr = LineSeg;       // For clipping
     
     {
         line_t *LinePtr;
@@ -162,8 +162,8 @@ void WallPrep(uint32_t LeftX, uint32_t RightX, seg_t* LineSeg, angle_t LeftAngle
     FrontSecPtr = LineSeg->frontsector;                     // Get the front sector
     f_ceilingpic = FrontSecPtr->CeilingPic;                 // Store into locals
     f_lightlevel = FrontSecPtr->lightlevel;
-    f_floorheight = FrontSecPtr->floorheight - viewz;       // Adjust for camera z
-    f_ceilingheight = FrontSecPtr->ceilingheight - viewz;
+    f_floorheight = FrontSecPtr->floorheight - gViewZ;      // Adjust for camera z
+    f_ceilingheight = FrontSecPtr->ceilingheight - gViewZ;
     
     // Set the floor and ceiling shape handles & look up animated texture numbers.
     // Note that ceiling might NOT exist!
@@ -177,13 +177,13 @@ void WallPrep(uint32_t LeftX, uint32_t RightX, seg_t* LineSeg, angle_t LeftAngle
     
     BackSecPtr = LineSeg->backsector;   // Get the back sector
     if (!BackSecPtr) {                  // Invalid?
-        BackSecPtr = &emptysector;
+        BackSecPtr = &gEmptySector;
     }
     
     b_ceilingpic = BackSecPtr->CeilingPic;                  // Get backsector data into locals
     b_lightlevel = BackSecPtr->lightlevel;
-    b_floorheight = BackSecPtr->floorheight - viewz;        // Adjust for camera z
-    b_ceilingheight = BackSecPtr->ceilingheight - viewz;
+    b_floorheight = BackSecPtr->floorheight - gViewZ;       // Adjust for camera z
+    b_ceilingheight = BackSecPtr->ceilingheight - gViewZ;
     actionbits = 0;                                         // Reset vars for future storage
     
     // Add floors and ceilings if the wall needs one
@@ -218,7 +218,7 @@ void WallPrep(uint32_t LeftX, uint32_t RightX, seg_t* LineSeg, angle_t LeftAngle
     CurWallPtr->t_topheight = f_ceilingheight>>FIXEDTOHEIGHT;   // Y coord of the top texture
 
     // Single sided line? They only have a center texture
-    if (BackSecPtr == &emptysector) {   // Bogus back sector?
+    if (BackSecPtr == &gEmptySector) {  // Bogus back sector?
         CurWallPtr->t_texture = getWallAnimTexture(SidePtr->midtexture);
         int t_texturemid;
         
@@ -281,8 +281,8 @@ void WallPrep(uint32_t LeftX, uint32_t RightX, seg_t* LineSeg, angle_t LeftAngle
                 (f_floorheight < 0 && f_floorheight > b_floorheight)
             ) {
                 actionbits |= AC_BOTTOMSIL;     // There is a mask on the bottom
-                CurWallPtr->BottomSil = lastopening - LeftX;
-                lastopening += width;
+                CurWallPtr->BottomSil = gLastOpening - LeftX;
+                gLastOpening += width;
             }
             
             if (f_ceilingpic != -1 || b_ceilingpic != -1) {                             // Only if no sky
@@ -290,8 +290,8 @@ void WallPrep(uint32_t LeftX, uint32_t RightX, seg_t* LineSeg, angle_t LeftAngle
                     (f_ceilingheight > 0 && b_ceilingheight > f_ceilingheight)          // Top sil?
                 ) {
                     actionbits |= AC_TOPSIL;    // There is a mask on the bottom
-                    CurWallPtr->TopSil = lastopening - LeftX;
-                    lastopening += width;
+                    CurWallPtr->TopSil = gLastOpening - LeftX;
+                    gLastOpening += width;
                 }
             }
         }
@@ -300,7 +300,7 @@ void WallPrep(uint32_t LeftX, uint32_t RightX, seg_t* LineSeg, angle_t LeftAngle
     CurWallPtr->WallActions = actionbits;   // Save the action bits
     
     if (f_lightlevel < 240) {               // Get the light level
-        f_lightlevel += extralight;         // Add the light factor
+        f_lightlevel += gExtraLight;        // Add the light factor
         
         if (f_lightlevel > 240) {
             f_lightlevel = 240;

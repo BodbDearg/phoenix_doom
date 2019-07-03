@@ -40,7 +40,7 @@ struct plat_t {     // Structure for a moving platform
     bool crush;         // Can it crush things? 
 };
 
-static plat_t *MainPlatPtr;     // Pointer to the first plat in list 
+static plat_t * gMainPlatPtr;     // Pointer to the first plat in list 
 
 /**********************************
 
@@ -51,8 +51,8 @@ static plat_t *MainPlatPtr;     // Pointer to the first plat in list
 
 static void AddActivePlat(plat_t *PlatPtr)
 {
-    PlatPtr->next = MainPlatPtr;    // Insert into the chain 
-    MainPlatPtr = PlatPtr;      // Set this one as the first 
+    PlatPtr->next = gMainPlatPtr;    // Insert into the chain 
+    gMainPlatPtr = PlatPtr;      // Set this one as the first 
 }
 
 /**********************************
@@ -69,12 +69,12 @@ static void RemoveActivePlat(plat_t *PlatPtrKill)
     plat_t *PrevPtr;        // Previous pointer (For linked list) 
 
     PrevPtr = 0;            // Init the previous pointer 
-    PlatPtr = MainPlatPtr;  // Get the main list entry 
+    PlatPtr = gMainPlatPtr;  // Get the main list entry 
     while (PlatPtr) {       // Failsafe! 
         if (PlatPtr==PlatPtrKill) { // Master pointer matches? 
             PlatPtr = PlatPtr->next;    // Get the next link 
             if (!PrevPtr) {             // First one in chain? 
-                MainPlatPtr = PlatPtr;  // Make the next one the new head 
+                gMainPlatPtr = PlatPtr;  // Make the next one the new head 
             } else {
                 PrevPtr->next = PlatPtr;    // Remove the link 
             }
@@ -105,7 +105,7 @@ static void T_PlatRaise(plat_t *plat)
             res = T_MovePlane(plat->sector,plat->speed,plat->high,plat->crush,false,1);
             if (plat->type == raiseAndChange ||
                 plat->type == raiseToNearestAndChange) {
-                if (Tick2) {        // Make the rumbling sound 
+                if (gTick2) {   // Make the rumbling sound 
                     S_StartSound(&plat->sector->SoundX,sfx_stnmov);
                 }
             }
@@ -167,7 +167,7 @@ static void ActivateInStasis(uint32_t tag)
 {
     plat_t *PlatPtr;        // Temp pointer 
 
-    PlatPtr = MainPlatPtr;  // Get the main list entry 
+    PlatPtr = gMainPlatPtr;  // Get the main list entry 
     while (PlatPtr) {       // Scan all entries in the thinker list 
         if (PlatPtr->tag == tag && PlatPtr->status == in_stasis) {  // Match? 
             PlatPtr->status = PlatPtr->oldstatus;   // Restart the platform 
@@ -275,7 +275,7 @@ void EV_StopPlat(line_t *line)
     uint32_t tag;           // Get the ID tag 
 
     tag = line->tag;        // Cache the tag 
-    PlatPtr = MainPlatPtr;  // Get the main list entry 
+    PlatPtr = gMainPlatPtr;  // Get the main list entry 
     while (PlatPtr) {       // Scan all entries in the thinker list 
         if (PlatPtr->tag == tag && PlatPtr->status != in_stasis) {  // Match? 
             PlatPtr->oldstatus = PlatPtr->status;   // Save the platform's state 
@@ -295,5 +295,5 @@ void EV_StopPlat(line_t *line)
 
 void ResetPlats() {
     // FIXME: DC: Investigate if this is a leak
-    MainPlatPtr = 0;        // Forget about the linked list 
+    gMainPlatPtr = 0;        // Forget about the linked list 
 }
