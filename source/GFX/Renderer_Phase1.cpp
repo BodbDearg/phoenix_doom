@@ -1,13 +1,16 @@
+#include "Renderer_Internal.h"
+
 #include "Base/Macros.h"
 #include "Base/Tables.h"
 #include "CelUtils.h"
 #include "Game/Data.h"
 #include "Map/MapData.h"
 #include "Map/MapUtil.h"
-#include "Render.h"
 #include "Sprites.h"
 #include "Things/Info.h"
 #include "Things/MapObj.h"
+
+BEGIN_NAMESPACE(Renderer)
 
 static constexpr uint32_t MAXSEGS = 32;     // Maximum number of segs to scan
 
@@ -32,9 +35,6 @@ typedef struct {
     int LeftX;      // Left side of post
     int RightX;     // Right side of post
 } cliprange_t;
-
-uint32_t    gSpriteTotal;
-uint32_t*   gSortedSprites;
 
 static uint32_t     gSortBuffer[MAXVISSPRITES*2];
 static seg_t*       gCurLine;                       // Current line segment being processed
@@ -598,3 +598,5 @@ void bsp() noexcept {
     RenderBSPNode(gpBSPTreeRoot);           // Begin traversing the BSP tree for all walls in render range
     SortAllSprites();                       // Sort the sprites from front to back
 }
+
+END_NAMESPACE(Renderer)

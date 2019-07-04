@@ -10,7 +10,7 @@
 #include "DoomDefines.h"
 #include "DoomRez.h"
 #include "Game.h"
-#include "GFX/Render.h"
+#include "GFX/Renderer.h"
 #include "Map/Ceiling.h"
 #include "Map/Platforms.h"
 #include "Map/Setup.h"
@@ -272,7 +272,7 @@ void P_Drawer() {
         DrawPlaque(rPAUSED);                    // Draw 'Paused' plaque
         UpdateAndPageFlip(bAllowDebugClear);
     } else if (gPlayers.AutomapFlags & AF_OPTIONSACTIVE) {
-        R_RenderPlayerView();                   // Render the 3D view
+        Renderer::drawPlayerView();             // Render the 3D view
         ST_Drawer();                            // Draw the status bar
         O_Drawer();                             // Draw the console handler
         gRefreshDrawn = false;
@@ -282,7 +282,7 @@ void P_Drawer() {
         UpdateAndPageFlip(bAllowDebugClear);    // Update and page flip
         gRefreshDrawn = true;
     } else {
-        R_RenderPlayerView();                   // Render the 3D view
+        Renderer::drawPlayerView();             // Render the 3D view
         ST_Drawer();                            // Draw the status bar
         UpdateAndPageFlip(!bAllowDebugClear);   // Only allow debug clear if we are not going into pause mode
         gRefreshDrawn = true;

@@ -1,12 +1,14 @@
+#include "Renderer_Internal.h"
+
 #include "Base/Tables.h"
 #include "Game/Data.h"
-#include "Render.h"
 #include "Textures.h"
 #include "ThreeDO.h"
-
 #include <cstddef>
 
 #define OPENMARK ((MAXSCREENHEIGHT-1)<<8)
+
+BEGIN_NAMESPACE(Renderer)
 
 /**********************************
 
@@ -23,20 +25,17 @@
 static uint32_t gClipBoundTop[MAXSCREENWIDTH];          // Bounds top y for vertical clipping
 static uint32_t gClipBoundBottom[MAXSCREENWIDTH];       // Bounds bottom y for vertical clipping
 
-typedef struct {
-    const std::byte* data;      // Pointer to raw texture data
-    uint32_t width;             // Width of texture in pixels
-    uint32_t height;            // Height of texture in pixels
-    int topheight;              // Top texture height in global pixels
-    int bottomheight;           // Bottom texture height in global pixels
-    uint32_t texturemid;        // Anchor point for texture
-} drawtex_t;
+struct drawtex_t{
+    const std::byte*    data;               // Pointer to raw texture data
+    uint32_t            width;              // Width of texture in pixels
+    uint32_t            height;             // Height of texture in pixels
+    int32_t             topheight;          // Top texture height in global pixels
+    int32_t             bottomheight;       // Bottom texture height in global pixels
+    uint32_t            texturemid;         // Anchor point for texture
+};
 
-static drawtex_t gTopTex;           // Describe the upper texture
-static drawtex_t gBottomTex;        // Describe the lower texture
-
-uint32_t gTexX;                         // Screen x coord being drawn
-int gTexScale;                          // True scale value 0-0x7FFF
+static drawtex_t gTopTex;               // Describe the upper texture
+static drawtex_t gBottomTex;            // Describe the lower texture
 static uint32_t gTexTextureColumn;      // Column offset into source image
 
 /**********************************
@@ -452,3 +451,5 @@ void SegCommands(void)
     DisableHardwareClipping();      // Sprites require full screen management
     DrawSprites();                  // Draw all the sprites (ZSorted and clipped)
 }
+
+END_NAMESPACE(Renderer)

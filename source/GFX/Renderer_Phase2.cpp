@@ -1,9 +1,12 @@
+#include "Renderer_Internal.h"
+
 #include "Base/Tables.h"
 #include "Burger.h"
 #include "Map/MapData.h"
 #include "Map/MapUtil.h"
-#include "Render.h"
 #include "Textures.h"
+
+BEGIN_NAMESPACE(Renderer)
 
 /**********************************
 
@@ -14,6 +17,29 @@
 **********************************/
 
 static sector_t gEmptySector = { 0,0,-2,-2,-2 }; // -2 floorpic, ceilingpic, light
+
+Fixed point2dToDist(const Fixed px, const Fixed py) noexcept {
+    //------------------------------------------------------------------------------------------------------------------
+    // Get the distance from the view x,y from a point in 2D space.
+    // The normal formula for doing this is 'dist = sqrt(x*x + y*y)' but that can be slow to do. 
+    // Instead I first get the angle of the point and then rotate it so that it is directly ahead.
+    // The resulting point then is the distance...
+    //------------------------------------------------------------------------------------------------------------------    
+    Fixed x = std::abs(px - gViewX);    // Get the absolute value point offset from the camera 
+    Fixed y = std::abs(py - gViewY);
+    
+    if (y > x) {
+        const Fixed temp = x;
+        x = y;
+        y = temp;
+    }
+
+    const angle_t angle = SlopeAngle(y, x) >> ANGLETOFINESHIFT;     // x = denominator
+    x = (x >> (FRACBITS - 3)) * gFineCosine[angle];                 // Rotate the x
+    x += (y >> (FRACBITS - 3)) * gFineSine[angle];                  // Rotate the y and add it
+    x >>= 3;                                                        // Convert to fixed (I added 3 extra bits of precision)
+    return x;                                                       // This is the true distance
+}
 
 /**********************************
 
@@ -76,7 +102,7 @@ static void LatePrep(viswall_t *wc,seg_t *LineSeg,angle_t LeftAngle)
     if (offsetangle > ANG90) {
         offsetangle = ANG90;
     }
-    PointDistance = PointToDist(LineSeg->v1.x, LineSeg->v1.y);
+    PointDistance = point2dToDist(LineSeg->v1.x, LineSeg->v1.y);
     wc->distance = rw_distance = fixedMul(
         PointDistance,
         gFineSine[(ANG90 - offsetangle)>>ANGLETOFINESHIFT]
@@ -311,3 +337,5 @@ void WallPrep(uint32_t LeftX, uint32_t RightX, seg_t* LineSeg, angle_t LeftAngle
     CurWallPtr->offset = SidePtr->textureoffset + LineSeg->offset;  // Texture anchor X
     LatePrep(CurWallPtr, LineSeg, LeftAngle);
 }
+
+END_NAMESPACE(Renderer)

@@ -2,7 +2,7 @@
 
 #include "Base/Tables.h"
 #include "Game/Data.h"
-#include "GFX/Render.h"
+#include "GFX/Renderer.h"
 #include "MapData.h"
 #include "Things/MapObj.h"
 
@@ -70,40 +70,6 @@ angle_t PointToAngle(Fixed x1, Fixed y1, Fixed x2, Fixed y2)
         return (ANG270-1)-SlopeAngle(x2,y2);    // Octant 5 
     }
     return 0;       // In case of 0,0, return an angle of 0 
-}
-
-/**********************************
-
-    Get the distance from the view x,y from a point in 2D space
-    The normal formula is dist = sqrt(x*x+y*y). But this is bad.
-    Instead I first get the angle of the point and then rotate it so
-    that it is directly ahead, the resulting point is the distance.
-
-**********************************/
-
-Fixed PointToDist(Fixed x, Fixed y)
-{
-    angle_t angle;
-
-    x-=gViewX;       // Get the point offset from the camera 
-    if (x<0) {
-        x=-x;       // I only want the absolute value 
-    }
-    y-=gViewY;       // Adjust the Y 
-    if (y<0) {
-        y=-y;       // Abs value of Y 
-    }
-    if (y>x) {
-        Fixed temp;
-        temp = x;
-        x = y;
-        y = temp;
-    }
-    angle = SlopeAngle(y,x)>>ANGLETOFINESHIFT;      // x = denominator 
-    x = (x>>(FRACBITS-3))*gFineCosine[angle];        // Rotate the x 
-    x += (y>>(FRACBITS-3))*gFineSine[angle];         // Rotate the y and add it 
-    x >>= 3;        // Convert to fixed (I added 3 extra bits of precision) 
-    return x;           // This is the true distance 
 }
 
 /**********************************

@@ -66,3 +66,7 @@
 
 // Used to decorate exception throwing C++ functions
 #define THROWS noexcept(false)
+
+// Begin and end a namespace
+#define BEGIN_NAMESPACE(Name) namespace Name {
+#define END_NAMESPACE(Name) }

@@ -286,8 +286,11 @@ void F_Drawer(void)
             }
         } 
     } else {
-        PrintBigFontCenter(160,20, CAST_NAMES[gCastNum]);  // Print the name 
+        PrintBigFontCenter(160,20, CAST_NAMES[gCastNum]);  // Print the name
+        // FIXME: DC - Implement
+        #if 0
         DrawSpriteCenter(gCastState->SpriteFrame);       // Draw the sprite 
+        #endif
     }
     UpdateAndPageFlip(true);        // Show the frame 
 }

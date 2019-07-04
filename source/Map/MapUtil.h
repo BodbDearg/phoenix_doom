@@ -10,7 +10,6 @@ struct vector_t;
 
 angle_t SlopeAngle(uint32_t num, uint32_t den);
 angle_t PointToAngle(Fixed x1, Fixed y1, Fixed x2, Fixed y2);
-Fixed PointToDist(Fixed x, Fixed y);
 Fixed GetApproxDistance(Fixed dx, Fixed dy);
 uint32_t PointOnVectorSide(Fixed x, Fixed y, const vector_t* line);
 subsector_t* PointInSubsector(Fixed x, Fixed y);

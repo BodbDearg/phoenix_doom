@@ -1,8 +1,11 @@
+#include "Renderer_Internal.h"
+
 #include "Base/Tables.h"
 #include "Game/Data.h"
-#include "Render.h"
 #include "Textures.h"
 #include "ThreeDO.h"
+
+BEGIN_NAMESPACE(Renderer)
 
 #define OPENMARK ((MAXSCREENHEIGHT-1)<<8)
 
@@ -161,3 +164,5 @@ void DrawVisPlane(visplane_t *p)
         }
     } while (++x<=stop);
 }
+
+END_NAMESPACE(Renderer)

@@ -7,7 +7,7 @@
 #include "DoomDefines.h"
 #include "DoomRez.h"
 #include "Game.h"
-#include "GFX/Render.h"
+#include "GFX/Renderer.h"
 #include "Map/Setup.h"
 #include "Resources.h"
 #include "ThreeDO.h"
@@ -337,9 +337,9 @@ static void RunDemo(uint32_t demoname) {
 void D_DoomMain() {
     gBigNumFont = loadResourceData(rBIGNUMB);   // Cache the large numeric font (Needed always)
 
-    R_Init();   // Init refresh system
-    P_Init();   // Init main code
-    O_Init();   // Init controls
+    Renderer::init();   // Init refresh system
+    P_Init();           // Init main code
+    O_Init();           // Init controls
 
     for (;;) {
         RunTitle();         // Show the title page

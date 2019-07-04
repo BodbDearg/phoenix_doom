@@ -1,3 +1,5 @@
+#include "Renderer_Internal.h"
+
 #include "Base/Endian.h"
 #include "Base/Tables.h"
 #include "Burger.h"
@@ -5,14 +7,13 @@
 #include "Game/DoomRez.h"
 #include "Game/Resources.h"
 #include "Map/MapData.h"
-#include "Render.h"
 #include "Things/Info.h"
 #include "Things/MapObj.h"
 #include "ThreeDO.h"
 
 #define SCREENGUNY -40      // Y offset to center the player's weapon properly
 
-uint32_t gSprOpening[MAXSCREENWIDTH];        // clipped range
+BEGIN_NAMESPACE(Renderer)
 
 /**********************************
 
@@ -404,3 +405,5 @@ void DrawWeapons(void)
     DrawMShape(0,0, (const CelControlBlock*) loadResourceData(i));      // Draw the border
     releaseResource(i);                                                 // Release the resource
 }
+
+END_NAMESPACE(Renderer)

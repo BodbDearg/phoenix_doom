@@ -8,7 +8,7 @@
 #include "Game/DoomDefines.h"
 #include "Game/DoomRez.h"
 #include "Game/Resources.h"
-#include "GFX/Render.h"
+#include "GFX/Renderer.h"
 #include "Intermission_Main.h"
 #include "ThreeDO.h"
 
@@ -107,7 +107,7 @@ static void SetButtonsFromControltype(void)
     gPadSpeed = TablePtr[0];     // Init the joypad settings 
     gPadAttack = TablePtr[1];
     gPadUse = TablePtr[2];
-    InitMathTables();               // Handle the math tables 
+    Renderer::initMathTables();     // Handle the math tables 
 }
 
 /**********************************
@@ -255,7 +255,7 @@ void O_Control(player_t *player)
                     if (gScreenSize<(6-1)) {
                         ++gScreenSize;
                         if (player) {
-                            InitMathTables();               // Handle the math tables 
+                            Renderer::initMathTables();     // Handle the math tables 
                         }
                     }
                 }
@@ -263,7 +263,7 @@ void O_Control(player_t *player)
                     if (gScreenSize > 0) {       // Can it grow? 
                         --gScreenSize;
                         if (player) {
-                            InitMathTables();               // Handle the math tables 
+                            Renderer::initMathTables();     // Handle the math tables 
                         }
                     }
                 }
