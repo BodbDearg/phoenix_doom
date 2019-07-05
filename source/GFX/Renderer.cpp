@@ -36,7 +36,7 @@ viswall_t*      gLastWallCmd;
 visplane_t      gVisPlanes[MAXVISPLANES];
 visplane_t*     gLastVisPlane;
 vissprite_t     gVisSprites[MAXVISSPRITES];
-vissprite_t*    gpVisSprite;
+vissprite_t*    gpEndVisSprite;
 uint8_t         gOpenings[MAXOPENINGS];
 uint8_t*        gLastOpening;
 Fixed           gViewX;
@@ -48,8 +48,6 @@ Fixed           gViewSin;
 uint32_t        gExtraLight;
 angle_t         gClipAngle;
 angle_t         gDoubleClipAngle;
-uint32_t        gSpriteTotal;
-uint32_t*       gSortedSprites;
 uint32_t        gSprOpening[MAXSCREENWIDTH];
 uint32_t        gTexX;
 int32_t         gTexScale;
@@ -101,7 +99,7 @@ static void preDrawSetup() noexcept {
     gExtraLight = player.extralight << 6;   // Init the extra lighting value
     gLastVisPlane = gVisPlanes + 1;         // visplanes[0] is left empty
     gLastWallCmd = gVisWalls;               // No walls added yet
-    gpVisSprite = gVisSprites;              // No sprites added yet
+    gpEndVisSprite = gVisSprites;           // No sprites added yet
     gLastOpening = gOpenings;               // No openings found
 }
 

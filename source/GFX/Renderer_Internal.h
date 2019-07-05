@@ -119,7 +119,7 @@ namespace Renderer {
     extern visplane_t       gVisPlanes[MAXVISPLANES];       // Visible floor array
     extern visplane_t*      gLastVisPlane;                  // Pointer to free floor entry
     extern vissprite_t      gVisSprites[MAXVISSPRITES];     // Visible sprite array
-    extern vissprite_t*     gpVisSprite;                    // Pointer to free sprite entry
+    extern vissprite_t*     gpEndVisSprite;                 // Pointer to the next free sprite entry (also tells the number of sprites)
     extern uint8_t          gOpenings[MAXOPENINGS];
     extern uint8_t*         gLastOpening;
     extern Fixed            gViewX;                         // Camera x,y,z
@@ -131,8 +131,6 @@ namespace Renderer {
     extern uint32_t         gExtraLight;                    // Bumped light from gun blasts
     extern angle_t          gClipAngle;                     // Leftmost clipping angle
     extern angle_t          gDoubleClipAngle;               // Doubled leftmost clipping angle
-    extern uint32_t         gSpriteTotal;                   // Total number of sprites to render
-    extern uint32_t*        gSortedSprites;                 // Pointer to array of words of sprites to render
     extern std::byte*       gPlaneSource;                   // Pointer to floor shape
     extern Fixed            gPlaneY;                        // Latched viewx / viewy for floor drawing
     extern Fixed            gBaseXScale;
@@ -155,8 +153,7 @@ namespace Renderer {
 
     void SegCommands();
     void DrawVisPlane(visplane_t* PlanePtr);
-    uint32_t* SortWords(uint32_t* Before, uint32_t* After, uint32_t Total);
-    void DrawVisSprite(const vissprite_t* const pVisSprite);
+    void drawVisSprite(const vissprite_t& visSprite) noexcept;
     void DrawWeapons();
 
     // TODO: tidy all this up
@@ -180,8 +177,8 @@ namespace Renderer {
         Fixed ds_ystep
     );
 
-    void DrawSpriteNoClip(const vissprite_t* const pVisSprite);
-    void DrawSpriteClip(const uint32_t x1, const uint32_t x2, const vissprite_t* const pVisSprite);
+    void drawSpriteNoClip(const vissprite_t& visSprite) noexcept;
+    void drawSpriteClip(const uint32_t x1, const uint32_t x2, const vissprite_t& visSprite) noexcept;
     void DrawSpriteCenter(uint32_t SpriteNum);
     void DrawColors();
 

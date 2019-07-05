@@ -442,9 +442,9 @@ static uint32_t gSpriteWidth;
 // Get the pointer to the first pixel in a particular column of a sprite.
 // The input x coordinate is in 16.16 fixed point format and the output is clamped to sprite bounds.
 //-------------------------------------------------------------------------------------------------
-static const uint16_t* getSpriteColumn(const vissprite_t* const pVisSprite, const Fixed xFrac) {
+static const uint16_t* getSpriteColumn(const vissprite_t& visSprite, const Fixed xFrac) {
     const int32_t x = fixedToInt(xFrac);
-    const SpriteFrameAngle* const pSprite = pVisSprite->pSprite;
+    const SpriteFrameAngle* const pSprite = visSprite.pSprite;
     const int32_t xClamped = (x < 0) ? 0 : ((x >= pSprite->width) ? pSprite->width - 1 : x);
     return &pSprite->pTexture[pSprite->height * xClamped];
 }
@@ -474,14 +474,14 @@ static Fixed determineTexelStep(const uint32_t textureSize, const uint32_t rende
 // This routine will draw a scaled sprite during the game. It is called when there is no 
 // onscreen clipping needed or if the only clipping is to the screen bounds.
 //-------------------------------------------------------------------------------------------------
-void DrawSpriteNoClip(const vissprite_t* const pVisSprite) {
+void drawSpriteNoClip(const vissprite_t& visSprite) noexcept {
     // Get the left, right, top and bottom screen edges for the sprite to be rendered.
     // Also check if the sprite is completely offscreen, because the input is not clipped.
     // 3DO Doom originally relied on the hardware to clip in this routine...
-    int x1 = pVisSprite->x1;
-    int x2 = pVisSprite->x2;
-    int y1 = pVisSprite->y1;
-    int y2 = pVisSprite->y2;
+    int x1 = visSprite.x1;
+    int x2 = visSprite.x2;
+    int y1 = visSprite.y1;
+    int y2 = visSprite.y2;
 
     const bool bCompletelyOffscreen = (
         (x1 >= (int) gScreenWidth) ||
@@ -494,18 +494,18 @@ void DrawSpriteNoClip(const vissprite_t* const pVisSprite) {
         return;
 
     // Get the light multiplier to use for lighting the sprite
-    const Fixed lightMultiplier = getLightMultiplier(pVisSprite->colormap & 0xFF, MAX_SPRITE_LIGHT_VALUE);
+    const Fixed lightMultiplier = getLightMultiplier(visSprite.colormap & 0xFF, MAX_SPRITE_LIGHT_VALUE);
     
     // Get the width and height of the sprite and also the size that it will be rendered at.
     // Note that we expect no zero sizes here!
-    const SpriteFrameAngle* const pSpriteFrame = pVisSprite->pSprite;
+    const SpriteFrameAngle* const pSpriteFrame = visSprite.pSprite;
     
     const int32_t spriteW = pSpriteFrame->width;
     const int32_t spriteH = pSpriteFrame->height;
     ASSERT(spriteW > 0 && spriteH > 0);
 
-    const uint32_t renderW = (pVisSprite->x2 - pVisSprite->x1) + 1;
-    const uint32_t renderH = (pVisSprite->y2 - pVisSprite->y1) + 1;
+    const uint32_t renderW = (visSprite.x2 - visSprite.x1) + 1;
+    const uint32_t renderH = (visSprite.y2 - visSprite.y1) + 1;
     ASSERT(renderW > 0 && renderH > 0);
 
     // Figure out the step in texels we want per x and y pixel in 16.16 format
@@ -637,18 +637,16 @@ void DrawSpriteNoClip(const vissprite_t* const pVisSprite) {
 //-------------------------------------------------------------------------------------------------
 // Draws a column of a sprite that is clipped to the given top and bottom bounds
 //-------------------------------------------------------------------------------------------------
-static void OneSpriteLine(
+static void oneSpriteLine(
     const uint32_t screenX,
     const Fixed spriteX,
     const uint32_t topClipY,
     const uint32_t bottomClipY,
-    const vissprite_t* const pVisSprite
-)
-{
+    const vissprite_t& visSprite
+) noexcept {
     // Sanity checks
     ASSERT(topClipY >= 0 && topClipY <= gScreenHeight);
     ASSERT(bottomClipY >= 0 && bottomClipY <= gScreenHeight);
-    ASSERT(pVisSprite);
 
     // Get the top and bottom screen edges for the sprite columnn to be rendered.
     // Also check if the column is completely offscreen, because the input is not clipped.
@@ -656,8 +654,8 @@ static void OneSpriteLine(
     if (screenX < 0 || screenX >= (int) gScreenWidth)
         return;
     
-    int y1 = pVisSprite->y1;
-    int y2 = pVisSprite->y2;
+    int y1 = visSprite.y1;
+    int y2 = visSprite.y2;
     
     if (y1 >= (int) gScreenHeight || y2 < 0)
         return;
@@ -667,14 +665,14 @@ static void OneSpriteLine(
         return;
     
     // Get the light multiplier to use for lighting the sprite
-    const Fixed lightMultiplier = getLightMultiplier(pVisSprite->colormap & 0xFF, MAX_SPRITE_LIGHT_VALUE);
+    const Fixed lightMultiplier = getLightMultiplier(visSprite.colormap & 0xFF, MAX_SPRITE_LIGHT_VALUE);
     
     // Get the height of the sprite and also the height that it will be rendered at.
     // Note that we expect no zero sizes here!
-    const SpriteFrameAngle* const pSpriteFrame = pVisSprite->pSprite;
+    const SpriteFrameAngle* const pSpriteFrame = visSprite.pSprite;
     
     const int32_t spriteH = pSpriteFrame->height;
-    const uint32_t renderH = (pVisSprite->y2 - pVisSprite->y1) + 1;
+    const uint32_t renderH = (visSprite.y2 - visSprite.y1) + 1;
     ASSERT(spriteH > 0);
     ASSERT(renderH > 0);
     
@@ -705,7 +703,7 @@ static void OneSpriteLine(
     }
     
     // Render the sprite column
-    const uint16_t* const pImageCol = getSpriteColumn(pVisSprite, spriteX);
+    const uint16_t* const pImageCol = getSpriteColumn(visSprite, spriteX);
     Fixed texelYFrac = startTexelY;
     uint32_t* pDstPixel = &Video::gFrameBuffer[screenX + gScreenXOffset + (y1 + gScreenYOffset) * Video::SCREEN_WIDTH];
 
@@ -831,14 +829,14 @@ static void OneSpriteClipLine(Word x1,Byte *SpriteLinePtr,int Clip,int Run)
 //-------------------------------------------------------------------------------------------------
 // Draws a clipped sprite to the screen
 //-------------------------------------------------------------------------------------------------
-void DrawSpriteClip(const uint32_t x1, const uint32_t x2, const vissprite_t* const pVisSprite) {
-    gSpriteYScale = pVisSprite->yscale << 4;                     // Get scale Y factor
-    gStartLinePtr = (std::byte*) pVisSprite->pSprite->pTexture;  // Get pointer to first line of data
-    gSpriteWidth = pVisSprite->pSprite->width;
-    gSpritePIXC = (pVisSprite->colormap & 0x8000) ? 0x9C81 : gLightTable[(pVisSprite->colormap & 0xFF) >> LIGHTSCALESHIFT];
-    uint32_t y = pVisSprite->y1;
+void drawSpriteClip(const uint32_t x1, const uint32_t x2, const vissprite_t& visSprite) noexcept {
+    gSpriteYScale = visSprite.yscale << 4;                     // Get scale Y factor
+    gStartLinePtr = (std::byte*) visSprite.pSprite->pTexture;  // Get pointer to first line of data
+    gSpriteWidth = visSprite.pSprite->width;
+    gSpritePIXC = (visSprite.colormap & 0x8000) ? 0x9C81 : gLightTable[(visSprite.colormap & 0xFF) >> LIGHTSCALESHIFT];
+    uint32_t y = visSprite.y1;
     gSpriteY = (y + gScreenYOffset) << 16;    // Unmolested Y coord
-    uint32_t y2 = pVisSprite->y2;
+    uint32_t y2 = visSprite.y2;
     uint32_t MaxRun = y2 - y;
     
     if ((int) y < 0) {
@@ -850,15 +848,15 @@ void DrawSpriteClip(const uint32_t x1, const uint32_t x2, const vissprite_t* con
     }
     
     Fixed XFrac = 0;
-    Fixed XStep = 0xFFFFFFFFUL / (uint32_t) pVisSprite->xscale;   // Get the recipocal for the X scale
+    Fixed XStep = 0xFFFFFFFFUL / (uint32_t) visSprite.xscale;   // Get the recipocal for the X scale
     
-    if (pVisSprite->colormap & 0x4000) {
-        XStep = -XStep; // Step in the opposite direction
+    if (visSprite.colormap & 0x4000) {
+        XStep = -XStep;     // Step in the opposite direction
         XFrac = (gSpriteWidth << FRACBITS) - 1;
     }
     
-    if (pVisSprite->x1 != x1) { // How far should I skip?
-        XFrac += XStep * (x1 - pVisSprite->x1);
+    if (visSprite.x1 != x1) {   // How far should I skip?
+        XFrac += XStep * (x1 - visSprite.x1);
     }
     
     uint32_t x = x1;
@@ -867,16 +865,16 @@ void DrawSpriteClip(const uint32_t x1, const uint32_t x2, const vissprite_t* con
         uint32_t top = gSprOpening[x];  // Get the opening to the screen
         
         if (top == gScreenHeight) {  // Not clipped?
-            OneSpriteLine(x, XFrac, 0, gScreenHeight, pVisSprite);
+            oneSpriteLine(x, XFrac, 0, gScreenHeight, visSprite);
         } else {
             uint32_t bottom = top & 0xff;
             top >>= 8;
             
             if (top < bottom) { // Valid run?
                 if (y >= top && y2 < bottom) {
-                    OneSpriteLine(x, XFrac, 0, gScreenHeight, pVisSprite);
+                    oneSpriteLine(x, XFrac, 0, gScreenHeight, visSprite);
                 } else {
-                    int Clip = top - pVisSprite->y1;    // Number of pixels to clip
+                    int Clip = top - visSprite.y1;      // Number of pixels to clip
                     int Run = bottom - top;             // Allowable run
                     
                     if (Clip < 0) {     // Overrun?
@@ -889,7 +887,7 @@ void DrawSpriteClip(const uint32_t x1, const uint32_t x2, const vissprite_t* con
                             Run = MaxRun;       // Force largest...
                         }
                         
-                        OneSpriteLine(x, XFrac, top, bottom, pVisSprite);
+                        oneSpriteLine(x, XFrac, top, bottom, visSprite);
                     }
                 }
             }

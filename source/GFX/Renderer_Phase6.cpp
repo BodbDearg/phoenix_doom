@@ -361,27 +361,18 @@ static void SegLoop(viswall_t *segl)
     } while (++x<=segl->RightX);
 }
 
-/**********************************
+//----------------------------------------------------------------------------------------------------------------------
+// Draw all the sprites from back to front. 
+//----------------------------------------------------------------------------------------------------------------------
+static void drawAllSprites() noexcept {
+    const vissprite_t* pCurSprite = gVisSprites;
+    const vissprite_t* const pEndSprite = gpEndVisSprite;
 
-    Draw all the sprites from back to front.
-    
-**********************************/
-
-static void DrawSprites(void)
-{
-    uint32_t i;
-    uint32_t *LocalPtr;
-    vissprite_t *VisPtr;
-    
-    i = gSpriteTotal;    // Init the count
-    if (i) {        // Any sprites to speak of?
-        LocalPtr = gSortedSprites;   // Get the pointer to the sorted array
-        VisPtr = gVisSprites;    // Cache pointer to sprite array
-        do {
-            DrawVisSprite(&VisPtr[*LocalPtr++&0x7F]);   // Draw from back to front
-        } while (--i);
+    while (pCurSprite < pEndSprite) {
+        drawVisSprite(*pCurSprite);
+        ++pCurSprite;
     }
-} 
+}
 
 /**********************************
 
@@ -449,7 +440,7 @@ void SegCommands(void)
     }
 
     DisableHardwareClipping();      // Sprites require full screen management
-    DrawSprites();                  // Draw all the sprites (ZSorted and clipped)
+    drawAllSprites();               // Draw all the sprites (ZSorted and clipped)
 }
 
 END_NAMESPACE(Renderer)

@@ -17,142 +17,6 @@ BEGIN_NAMESPACE(Renderer)
 
 /**********************************
 
-    Perform a merge sort of two arrays of words.
-    Source1 and Source2 will be placed into Dest.
-    Count1 and Count2 are assumed to be NOT zero.
-    I will sort with the lowest value first, to the highest.
-    
-    Optimized for the ARM 6 microprocessor, your mileage may vary.
-
-**********************************/
-
-static void Merge(uint32_t *Source1,uint32_t Count1,uint32_t *Source2,uint32_t Count2,uint32_t *Dest)
-{
-    uint32_t Cache;
-    uint32_t Cache2;
-    
-    if (*Source1 < *Source2) {      // Do the initial compare for the sort
-mergefrom1:
-        Cache = *Source2;       // Cache into a register
-        Cache2 = *Source1;
-        do {
-            *Dest++ = Cache2;
-            if (!--Count1) {    
-                goto Finish2;   // Finish the list #2
-            }
-            Cache2 = *++Source1;
-        } while (Cache2 < Cache);
-    }
-    Cache = *Source1;
-    Cache2 = *Source2;
-    do {
-        *Dest++ = Cache2;
-        if (!--Count2) {        // Do this way to avoid killing the pipeline!
-            goto Finish1;
-        }
-        Cache2 = *++Source2;
-    } while (Cache2 < Cache);   
-    goto mergefrom1;
-
-Finish2:            // List #1 is empty, so I will copy the rest of list #2
-    *Dest++ = Cache;
-    if (--Count2) {
-        do {
-            *Dest++ = *++Source2;
-        } while (--Count2);
-    }
-    return;         // Bye!
-    
-Finish1:            // List #2 is empty, so I will copy the rest of list #1
-    *Dest++ = Cache;
-    if (--Count1) {
-        do {
-            *Dest++ = *++Source1;   // Copy an entry
-        } while (--Count1);         // Count down
-    }
-}
-
-/**********************************
-
-    Perform a merge sort of two arrays of words.
-    Start with a group of single entry lists and work your way until 
-    the whole mess is sorted.
-    
-    Calls Merge to perform the dirty work.
-    
-    Return a pointer to the sorted buffer
-
-**********************************/
-
-uint32_t* SortWords(uint32_t* Before, uint32_t* After, uint32_t Total)
-{
-    uint32_t ChunkSize;     // Number of elements to sort
-    uint32_t LoopCount;     // Number of times loop has executed
-    
-    if (Total<2) {          // Already sorted?
-        return Before;      // Exit now
-    }
-    ChunkSize = 1;      // Size of each list (Start with 1)
-    LoopCount = 1;      // Number of times executed
-        
-    for (;;) {
-        uint32_t *List1Ptr;     // First list pointer
-        uint32_t *List2Ptr;     // Second list pointer
-        uint32_t *DestPtr;      // Dest buffer pointer
-        {
-        uint32_t ChunkCount;    // Number of large chunks to merge
-        ChunkCount = Total>>LoopCount;  // Number of chunks
-                
-        List1Ptr = Before;  // First list
-        List2Ptr = Before + (ChunkCount <<  (LoopCount-1)); // Second list
-        DestPtr = After;
-        
-        // Merge sort the large blocks
-        
-        if (ChunkCount) {       // Any large blocks?
-            do {
-                Merge(List1Ptr,ChunkSize,List2Ptr,ChunkSize,DestPtr);
-                List1Ptr+=ChunkSize;    // Inc the pointers
-                List2Ptr+=ChunkSize;
-                DestPtr+=ChunkSize<<1;
-            } while (--ChunkCount); // Any more?
-        }
-        }
-        
-        // Copy or merge the remaining chunk fragment
-        
-        {
-        uint32_t Remainder;
-        Remainder = Total&((ChunkSize<<1)-1);
-        if (Remainder) {
-            if (Remainder > ChunkSize) {    
-                Merge(List2Ptr,ChunkSize,List2Ptr+ChunkSize,Remainder - ChunkSize,DestPtr);
-            } else  {   // Copy the rest then...
-                do {
-                    *DestPtr++ = *List2Ptr++;
-                } while (--Remainder);
-            }
-        }
-        }
-        
-        // Am I done yet?
-
-        ChunkSize <<= 1;        // Next block size
-        if (ChunkSize >= Total) {   // All done?
-            return After;       // Exit
-        }
-        ++LoopCount;        // Next loop count
-        {
-        uint32_t *Temp;
-        Temp = Before;      // Swap the pointers to the buffers
-        Before = After;
-        After = Temp;
-        }
-    }
-}
-
-/**********************************
-
     Using a point in space, determine if it is BEHIND a wall.
     Use a cross product to determine facing.
     
@@ -189,7 +53,7 @@ static uint32_t SegBehindPoint(viswall_t *ds,Fixed dx,Fixed dy)
 //--------------------------------------------------------------------------------------------------
 // See if a sprite needs clipping and if so, then draw it clipped
 //--------------------------------------------------------------------------------------------------
-void DrawVisSprite(const vissprite_t* const pVisSprite) {
+void drawVisSprite(const vissprite_t& visSprite) noexcept {
     viswall_t *ds;
     int x, r1, r2;
     int silhouette;
@@ -200,15 +64,15 @@ void DrawVisSprite(const vissprite_t* const pVisSprite) {
     uint32_t scalefrac;
     uint32_t Clipped;
 
-    x1 = pVisSprite->x1;        // Get the sprite's screen posts
-    x2 = pVisSprite->x2;
+    x1 = visSprite.x1;        // Get the sprite's screen posts
+    x2 = visSprite.x2;
     if (x1<0) {                 // These could be offscreen
         x1 = 0;
     }
     if (x2>=(int)gScreenWidth) {
         x2 = gScreenWidth-1;
     }
-    scalefrac = pVisSprite->yscale;     // Get the Z scale    
+    scalefrac = visSprite.yscale;     // Get the Z scale    
     Clipped = false;                    // Assume I don't clip
 
     // scan drawsegs from end to start for obscuring segs
@@ -225,7 +89,7 @@ void DrawVisSprite(const vissprite_t* const pVisSprite) {
         }
 
         if (ds->SmallScale<=scalefrac) {    // In range of the wall?
-            if (SegBehindPoint(ds,pVisSprite->thing->x, pVisSprite->thing->y)) {
+            if (SegBehindPoint(ds,visSprite.thing->x, visSprite.thing->y)) {
                 continue;           // Wall seg is behind sprite
             }
         }
@@ -286,13 +150,13 @@ void DrawVisSprite(const vissprite_t* const pVisSprite) {
     
     // Now that I have created the clip regions, let's see if I need to do this    
     if (!Clipped) {                     // Do I have to clip at all?
-        DrawSpriteNoClip(pVisSprite);   // Draw it using no clipping at all */
+        drawSpriteNoClip(visSprite);    // Draw it using no clipping at all */
         return;                         // Exit
     }
     
     // Check the Y bounds to see if the clip rect even touches the sprite    
-    r1 = pVisSprite->y1;
-    r2 = pVisSprite->y2;
+    r1 = visSprite.y1;
+    r2 = visSprite.y2;
     if (r1<0) {
         r1 = 0;     // Clip to screen coords
     }
@@ -307,7 +171,7 @@ void DrawVisSprite(const vissprite_t* const pVisSprite) {
             top >>=8;
             if (r1<top || r2>=bottom) { // Needs manual clipping!
                 if (x!=x1) {        // Was any part visible?
-                    DrawSpriteClip(x1,x2,pVisSprite);  // Draw it and exit
+                    drawSpriteClip(x1,x2, visSprite);  // Draw it and exit
                     return;
                 }
                 do {
@@ -316,7 +180,7 @@ void DrawVisSprite(const vissprite_t* const pVisSprite) {
                         bottom = top&0xff;
                         top >>=8;
                         if (r1<bottom && r2>=top) { // Is it even visible?
-                            DrawSpriteClip(x1,x2,pVisSprite);      // Draw it
+                            drawSpriteClip(x1,x2, visSprite);      // Draw it
                             return;
                         }
                     }
@@ -325,7 +189,7 @@ void DrawVisSprite(const vissprite_t* const pVisSprite) {
             }
         }
     } while (++x<=x2);
-    DrawSpriteNoClip(pVisSprite);      // It still didn't need clipping!!
+    drawSpriteNoClip(visSprite);      // It still didn't need clipping!!
 }
 
 /**********************************

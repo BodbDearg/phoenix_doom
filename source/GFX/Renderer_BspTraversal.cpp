@@ -1,14 +1,13 @@
 #include "Renderer_Internal.h"
 
-#include "Base/Macros.h"
 #include "Base/Tables.h"
-#include "CelUtils.h"
 #include "Game/Data.h"
 #include "Map/MapData.h"
 #include "Map/MapUtil.h"
 #include "Sprites.h"
 #include "Things/Info.h"
 #include "Things/MapObj.h"
+#include <algorithm>
 
 BEGIN_NAMESPACE(Renderer)
 
@@ -39,7 +38,7 @@ static uint32_t gCheckCoord[9][4] = {
     { BOXRIGHT, BOXTOP, BOXLEFT, BOXTOP },          // Above,Center
     { BOXRIGHT, BOXBOTTOM, BOXLEFT, BOXTOP },       // Above,Right
     { BOXLEFT, BOXTOP, BOXLEFT, BOXBOTTOM },        // Center,Left
-    { -1, 0, 0, 0 },                                // Center,Center
+    { UINT32_MAX, 0, 0, 0 },                        // Center,Center
     { BOXRIGHT, BOXBOTTOM, BOXRIGHT, BOXTOP },      // Center,Right
     { BOXLEFT, BOXTOP, BOXRIGHT, BOXBOTTOM },       // Below,Left
     { BOXLEFT, BOXBOTTOM, BOXRIGHT, BOXBOTTOM },    // Below,Center
@@ -50,25 +49,16 @@ static cliprange_t  gSolidsegs[MAXSEGS];    // List of valid ranges to scan thro
 static cliprange_t* gNewEnd;                // Pointer to the first free entry
 
 //----------------------------------------------------------------------------------------------------------------------
-// I will now find and try to display all objects and sprites in the 3D view. 
-// I throw out any sprites that are off the screen to the left or right. 
-// I don't check top to bottom.
+// Sorts all sprites submitted to the renderer from back to front
 //----------------------------------------------------------------------------------------------------------------------
-void sortAllSprites() noexcept {        
-    gSpriteTotal = (uint32_t)(gpVisSprite - gVisSprites);   // How many sprites to draw?
-
-    if (gSpriteTotal) {                         // Any sprites to speak of?
-        uint32_t* localPtr = gSortBuffer;       // Init buffer pointer
-        vissprite_t* pSprite = gVisSprites;
-
-        for (uint32_t i = 0; i < gSpriteTotal; ++i) {
-            *localPtr++ = (pSprite->yscale << 7) + i;   // Create array of indexs
-            ++pSprite;
+void sortAllSprites() noexcept {
+    std::sort(
+        gVisSprites,
+        gpEndVisSprite, 
+        [](const vissprite_t& pSpr1, const vissprite_t& pSpr2) noexcept {
+            return (pSpr1.yscale < pSpr2.yscale);
         }
-
-        // Sort the sprites
-        gSortedSprites = SortWords(gSortBuffer, &gSortBuffer[MAXVISSPRITES], gSpriteTotal);
-    }
+    );
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -96,8 +86,8 @@ static void addMapObjToFrame(const mobj_t& thing) noexcept {
     }
 
     // Don't draw the sprite if we have hit the maximum limit
-    vissprite_t* vis = gpVisSprite;
-    if (vis >= &gVisSprites[MAXVISSPRITES]) {
+    vissprite_t* pVisSprite = gpEndVisSprite;
+    if (pVisSprite >= &gVisSprites[MAXVISSPRITES]) {
         return;
     }
 
@@ -137,7 +127,7 @@ static void addMapObjToFrame(const mobj_t& thing) noexcept {
     // Store information in a vissprite.
     // I also will clip to screen coords.
     const Fixed xScale = fixedDiv(gCenterX << FRACBITS, tz);        // Get the scale factor
-    vis->xscale = xScale;                                           // Save it
+    pVisSprite->xscale = xScale;                                    // Save it
     tx -= (Fixed) pSpriteFrameAngle->leftOffset << FRACBITS;        // Adjust the x to the sprite's x
     int x1 = (fixedMul(tx, xScale) >> FRACBITS) + gCenterX;         // Scale to screen coords
 
@@ -153,11 +143,11 @@ static void addMapObjToFrame(const mobj_t& thing) noexcept {
     
     // Get light level
     const Fixed yScale = fixedMul(xScale, gStretch);    // Adjust for aspect ratio
-    vis->yscale = yScale;
-    vis->pSprite = pSpriteFrameAngle;
-    vis->x1 = x1;                                       // Save the edge coords
-    vis->x2 = x2;
-    vis->thing = &thing;
+    pVisSprite->yscale = yScale;
+    pVisSprite->pSprite = pSpriteFrameAngle;
+    pVisSprite->x1 = x1;                                // Save the edge coords
+    pVisSprite->x2 = x2;
+    pVisSprite->thing = &thing;
 
     if (thing.flags & MF_SHADOW) {                          // Draw a shadow...
         x1 = 0x8000U;
@@ -175,19 +165,19 @@ static void addMapObjToFrame(const mobj_t& thing) noexcept {
         x1 |= 0x4000;
     }
 
-    vis->colormap = x1;                                             // Save the light value
+    pVisSprite->colormap = x1;                                      // Save the light value
     tz = thing.z - gViewZ;
     tz += (((Fixed) pSpriteFrameAngle->topOffset) << FRACBITS);     // Height offset
 
     // Determine screen top and bottom Y for the sprite
     const Fixed topY = (gCenterY << FRACBITS) - fixedMul(tz, yScale);
     const Fixed botY = topY + fixedMul(pSpriteFrameAngle->height << FRACBITS, yScale);
-    vis->y1 = topY >> FRACBITS;
-    vis->y2 = botY >> FRACBITS;
+    pVisSprite->y1 = topY >> FRACBITS;
+    pVisSprite->y2 = botY >> FRACBITS;
 
     // Check if vertically offscreen, if not use the sprite record
-    if (vis->y2 >= 0 || vis->y1 < (int) gScreenHeight) {     
-        gpVisSprite = vis + 1;
+    if (pVisSprite->y2 >= 0 || pVisSprite->y1 < (int) gScreenHeight) {
+        gpEndVisSprite = pVisSprite + 1;
     }
 }
 
