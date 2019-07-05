@@ -49,9 +49,9 @@ static int          gSsy2;
 // Returns true if strace crosses the given node successfuly
 //---------------------------------------------------------------------------------------------------------------------
 static bool PA_CrossBSPNode(const node_t* pNode) {
-    if (isNodeChildASubSector(pNode)) {
+    if (isBspNodeASubSector(pNode)) {
         // N.B: pointer has to be fixed up due to prescence of a flag in the lowest bit!
-        const subsector_t* const pSubSector = reinterpret_cast<const subsector_t*>(getActualNodeChildPtr(pNode));
+        const subsector_t* const pSubSector = reinterpret_cast<const subsector_t*>(getActualBspNodePtr(pNode));
         return PA_CrossSubsector(pSubSector);
     }
     

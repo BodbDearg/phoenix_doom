@@ -120,7 +120,7 @@ uint32_t MiniLoop(
         static clock_t lastClock;
         clock_t curClock = clock();
 
-        if ((curClock - lastClock) / (double) CLOCKS_PER_SEC > 1.0 / 60.0) {
+        if ((curClock - lastClock) / (double) CLOCKS_PER_SEC > 1.0 / (float) TICKSPERSEC) {
             gElapsedTime = 1;
             lastClock = curClock;
         }
@@ -187,7 +187,7 @@ uint32_t MiniLoop(
 }
 
 //----------------------------------------------------------------------------------------------------------------------
-// If key's A,B or C was pressed or 8 seconds of demo was shown then abort the demo.
+// If key's A, B or C was pressed or 8 seconds of demo was shown then abort the demo.
 //----------------------------------------------------------------------------------------------------------------------
 static uint32_t TIC_Abortable() {
     if (gTotalGameTicks >= (8 * TICKSPERSEC)) {         // Time up?

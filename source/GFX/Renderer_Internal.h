@@ -64,11 +64,11 @@ namespace Renderer {
 
     // Describe a wall segment to be drawn
     struct viswall_t {        
-        uint32_t    LeftX;          // Leftmost x screen coord
-        uint32_t    RightX;         // Rightmost inclusive x coordinates
-        uint32_t    FloorPic;       // Picture handle to floor shape
-        uint32_t    CeilingPic;     // Picture handle to ceiling shape
-        uint32_t    WallActions;    // Actions to perform for draw
+        uint32_t        LeftX;              // Leftmost x screen coord
+        uint32_t        RightX;             // Rightmost inclusive x coordinates
+        uint32_t        FloorPic;           // Picture handle to floor shape
+        uint32_t        CeilingPic;         // Picture handle to ceiling shape
+        uint32_t        WallActions;        // Actions to perform for draw
 
         int32_t         t_topheight;        // Describe the top texture
         int32_t         t_bottomheight;
@@ -80,23 +80,23 @@ namespace Renderer {
         int32_t         b_texturemid;
         const Texture*  b_texture;          // Pointer to the bottom texture
     
-        int32_t     floorheight;
-        int32_t     floornewheight;
-        int32_t     ceilingheight;
-        int32_t     ceilingnewheight;
+        int32_t         floorheight;
+        int32_t         floornewheight;
+        int32_t         ceilingheight;
+        int32_t         ceilingnewheight;
 
-        Fixed       LeftScale;              // LeftX Scale
-        Fixed       RightScale;             // RightX scale
-        Fixed       SmallScale;
-        Fixed       LargeScale;
-        uint8_t*    TopSil;                 // YClips for the top line
-        uint8_t*    BottomSil;              // YClips for the bottom line
-        Fixed       ScaleStep;              // Scale step factor
-        angle_t     CenterAngle;            // Center angle
-        Fixed       offset;                 // Offset to the texture
-        uint32_t    distance;
-        uint32_t    seglightlevel;
-        seg_t*      SegPtr;                 // Pointer to line segment for clipping  
+        Fixed           LeftScale;              // LeftX Scale
+        Fixed           RightScale;             // RightX scale
+        Fixed           SmallScale;
+        Fixed           LargeScale;
+        uint8_t*        TopSil;                 // YClips for the top line
+        uint8_t*        BottomSil;              // YClips for the bottom line
+        Fixed           ScaleStep;              // Scale step factor
+        angle_t         CenterAngle;            // Center angle
+        Fixed           offset;                 // Offset to the texture
+        uint32_t        distance;
+        uint32_t        seglightlevel;
+        const seg_t*    SegPtr;                 // Pointer to line segment for clipping  
     };
 
     // Wall 'action' flags for a vis wall
@@ -144,8 +144,15 @@ namespace Renderer {
     //==================================================================================================================
     // Functions
     //==================================================================================================================
-    void bsp() noexcept;
-    void WallPrep(uint32_t LeftX, uint32_t RightX, seg_t* LineSeg, angle_t LineAngle);
+    void doBspTraversal() noexcept;
+    
+    void wallPrep(
+        const uint32_t leftX,
+        const uint32_t rightX,
+        const seg_t& lineSeg,
+        const angle_t lineAngle
+    ) noexcept;
+
     void SegCommands();
     void DrawVisPlane(visplane_t* PlanePtr);
     uint32_t* SortWords(uint32_t* Before, uint32_t* After, uint32_t Total);

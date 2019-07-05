@@ -117,16 +117,16 @@ struct node_t {
 // pointed to is a subsector or just another BSP node. These 3 functions help with checking for
 // the prescence of this flag and adding/removing it from a node child pointer.
 //---------------------------------------------------------------------------------------------------------------------
-static inline bool isNodeChildASubSector(const void* const pPtr) {
+static inline bool isBspNodeASubSector(const void* const pPtr) {
     return ((((uintptr_t) pPtr) & 1) != 0);
 }
 
-static inline const void* markNodeChildAsSubSector(const void* const pPtr) {
+static inline const void* markBspNodeAsSubSector(const void* const pPtr) {
     // Set the lowest bit to mark the node's child pointer as a subsector
     return (const void*)(((uintptr_t) pPtr) | 1);
 }
 
-static inline const void* getActualNodeChildPtr(const void* const pPtr) {
+static inline const void* getActualBspNodePtr(const void* const pPtr) {
     // Remove the lowest bit to get the actual child pointer for a node.
     // May be set in order to indicate that the child is a subsector:
     const uintptr_t mask = ~((uintptr_t) 1);

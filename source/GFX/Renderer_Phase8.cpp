@@ -162,9 +162,7 @@ static uint32_t SegBehindPoint(viswall_t *ds,Fixed dx,Fixed dy)
 {
     Fixed x1,y1;
     Fixed sdx,sdy;
-    seg_t *SegPtr;
-    
-    SegPtr = ds->SegPtr;
+    const seg_t *SegPtr = ds->SegPtr;
     
     x1 = SegPtr->v1.x;
     y1 = SegPtr->v1.y;

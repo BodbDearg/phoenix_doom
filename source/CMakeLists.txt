@@ -51,7 +51,7 @@ set(SOURCE_FILES
     "GFX/Renderer.h"
     "GFX/Renderer_Draw.cpp"
     "GFX/Renderer_Internal.h"
-    "GFX/Renderer_Phase1.cpp"
+    "GFX/Renderer_BspTraversal.cpp"
     "GFX/Renderer_Phase2.cpp"
     "GFX/Renderer_Phase6.cpp"
     "GFX/Renderer_Phase7.cpp"

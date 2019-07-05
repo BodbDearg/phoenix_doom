@@ -12,7 +12,7 @@ angle_t SlopeAngle(uint32_t num, uint32_t den);
 angle_t PointToAngle(Fixed x1, Fixed y1, Fixed x2, Fixed y2);
 Fixed GetApproxDistance(Fixed dx, Fixed dy);
 uint32_t PointOnVectorSide(Fixed x, Fixed y, const vector_t* line);
-subsector_t* PointInSubsector(Fixed x, Fixed y);
+subsector_t* PointInSubsector(const Fixed x, const Fixed y) noexcept;
 void MakeVector(line_t* li,vector_t* dl);
 Fixed InterceptVector(vector_t* v2, vector_t* v1);
 uint32_t LineOpening(line_t* linedef);

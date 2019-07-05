@@ -163,10 +163,10 @@ static bool PS_CrossSubsector(const subsector_t* sub)
 //---------------------------------------------------------------------------------------------------------------------
 // Returns true if strace crosses the given node successfuly
 //---------------------------------------------------------------------------------------------------------------------
-static bool PS_CrossBSPNode(const node_t* pNode) {
-    if (isNodeChildASubSector(pNode)) {
+static bool PS_CrossBSPNode(const node_t* const pNode) noexcept {
+    if (isBspNodeASubSector(pNode)) {
         // N.B: pointer has to be fixed up due to prescence of a flag in the lowest bit!
-        const subsector_t* const pSubSector = (const subsector_t*) getActualNodeChildPtr(pNode);
+        const subsector_t* const pSubSector = (const subsector_t*) getActualBspNodePtr(pNode);
         return PS_CrossSubsector(pSubSector);
     }
     

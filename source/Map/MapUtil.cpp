@@ -167,7 +167,7 @@ uint32_t PointOnVectorSide(Fixed x, Fixed y, const vector_t *line)
 // Return the pointer to a subsector record using an input x and y.
 // Uses the BSP tree to assist.
 //---------------------------------------------------------------------------------------------------------------------
-subsector_t* PointInSubsector(Fixed x, Fixed y) {
+subsector_t* PointInSubsector(const Fixed x, const Fixed y) noexcept {
     // Note: there is ALWAYS a BSP tree - no checks needed on loop start!
     const node_t* pNode = gpBSPTreeRoot;
     
@@ -177,11 +177,11 @@ subsector_t* PointInSubsector(Fixed x, Fixed y) {
         const uint32_t sidePointIsOn = PointOnVectorSide(x, y, &pNode->Line);
         pNode = (const node_t*) pNode->Children[sidePointIsOn];
         
-        if (isNodeChildASubSector(pNode))
+        if (isBspNodeASubSector(pNode))
             break;
     }
     
-    return (subsector_t*) getActualNodeChildPtr(pNode);     // N.B: Pointer needs flag removed via this!
+    return (subsector_t*) getActualBspNodePtr(pNode);       // N.B: Pointer needs flag removed via this!
 }
 
 /**********************************

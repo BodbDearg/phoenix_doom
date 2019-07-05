@@ -197,7 +197,7 @@ void initMathTables() noexcept {
 
 void drawPlayerView() noexcept {
     preDrawSetup();     // Init variables based on camera angle
-    bsp();              // Traverse the BSP tree for possible walls to render
+    doBspTraversal();   // Traverse the BSP tree for possible walls to render
     SegCommands();      // Draw all everything Z Sorted
     DrawColors();       // Draw color overlay if needed
     DrawWeapons();      // Draw the weapons on top of the screen
