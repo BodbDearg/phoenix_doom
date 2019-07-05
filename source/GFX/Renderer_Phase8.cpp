@@ -77,7 +77,7 @@ void drawVisSprite(const vissprite_t& visSprite) noexcept {
 
     // scan drawsegs from end to start for obscuring segs
     // the first drawseg that has a greater scale is the clip seg
-    ds = gLastWallCmd;
+    ds = gpEndVisWall;
     do {
         --ds;           // Point to the next wall command
         

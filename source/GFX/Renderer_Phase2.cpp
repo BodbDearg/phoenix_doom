@@ -175,8 +175,8 @@ void wallPrep(
     Fixed b_floorheight;
     Fixed b_ceilingheight;
     
-    CurWallPtr = gLastWallCmd;          // Get the first wall pointer
-    gLastWallCmd = CurWallPtr + 1;      // Inc my pointer
+    CurWallPtr = gpEndVisWall;          // Get the first wall pointer
+    gpEndVisWall = CurWallPtr + 1;      // Inc my pointer
     CurWallPtr->LeftX = leftX;          // Set the edges of the visible wall
     CurWallPtr->RightX = rightX;        // Right is inclusive!
     CurWallPtr->SegPtr = &lineSeg;      // For clipping
@@ -311,8 +311,8 @@ void wallPrep(
                 (f_floorheight < 0 && f_floorheight > b_floorheight)
             ) {
                 actionbits |= AC_BOTTOMSIL;     // There is a mask on the bottom
-                CurWallPtr->BottomSil = gLastOpening - leftX;
-                gLastOpening += width;
+                CurWallPtr->BottomSil = gpEndOpening - leftX;
+                gpEndOpening += width;
             }
             
             if (f_ceilingpic != -1 || b_ceilingpic != -1) {                             // Only if no sky
@@ -320,8 +320,8 @@ void wallPrep(
                     (f_ceilingheight > 0 && b_ceilingheight > f_ceilingheight)          // Top sil?
                 ) {
                     actionbits |= AC_TOPSIL;    // There is a mask on the bottom
-                    CurWallPtr->TopSil = gLastOpening - leftX;
-                    gLastOpening += width;
+                    CurWallPtr->TopSil = gpEndOpening - leftX;
+                    gpEndOpening += width;
                 }
             }
         }

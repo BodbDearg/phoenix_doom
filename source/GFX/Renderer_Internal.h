@@ -115,13 +115,13 @@ namespace Renderer {
     // Globals
     //==================================================================================================================
     extern viswall_t        gVisWalls[MAXWALLCMDS];         // Visible wall array
-    extern viswall_t*       gLastWallCmd;                   // Pointer to free wall entry
+    extern viswall_t*       gpEndVisWall;                   // End of the used viswalls range (also tells number of viswalls)
     extern visplane_t       gVisPlanes[MAXVISPLANES];       // Visible floor array
-    extern visplane_t*      gLastVisPlane;                  // Pointer to free floor entry
+    extern visplane_t*      gpEndVisPlane;                  // End of the used visplanes range (also tells number of visplanes)
     extern vissprite_t      gVisSprites[MAXVISSPRITES];     // Visible sprite array
-    extern vissprite_t*     gpEndVisSprite;                 // Pointer to the next free sprite entry (also tells the number of sprites)
+    extern vissprite_t*     gpEndVisSprite;                 // End of the used vissprites range (also tells the number of sprites)
     extern uint8_t          gOpenings[MAXOPENINGS];
-    extern uint8_t*         gLastOpening;
+    extern uint8_t*         gpEndOpening;
     extern Fixed            gViewX;                         // Camera x,y,z
     extern Fixed            gViewY;
     extern Fixed            gViewZ;

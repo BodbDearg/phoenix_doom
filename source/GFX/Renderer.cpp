@@ -32,13 +32,13 @@ BEGIN_NAMESPACE(Renderer)
 // Internal renderer cross module globals
 //----------------------------------------------------------------------------------------------------------------------
 viswall_t       gVisWalls[MAXWALLCMDS];
-viswall_t*      gLastWallCmd;
+viswall_t*      gpEndVisWall;
 visplane_t      gVisPlanes[MAXVISPLANES];
-visplane_t*     gLastVisPlane;
+visplane_t*     gpEndVisPlane;
 vissprite_t     gVisSprites[MAXVISSPRITES];
 vissprite_t*    gpEndVisSprite;
 uint8_t         gOpenings[MAXOPENINGS];
-uint8_t*        gLastOpening;
+uint8_t*        gpEndOpening;
 Fixed           gViewX;
 Fixed           gViewY;
 Fixed           gViewZ;
@@ -97,10 +97,10 @@ static void preDrawSetup() noexcept {
     }
 
     gExtraLight = player.extralight << 6;   // Init the extra lighting value
-    gLastVisPlane = gVisPlanes + 1;         // visplanes[0] is left empty
-    gLastWallCmd = gVisWalls;               // No walls added yet
+    gpEndVisPlane = gVisPlanes + 1;         // visplanes[0] is left empty
+    gpEndVisWall = gVisWalls;               // No walls added yet
     gpEndVisSprite = gVisSprites;           // No sprites added yet
-    gLastOpening = gOpenings;               // No openings found
+    gpEndOpening = gOpenings;               // No openings found
 }
 
 void init() noexcept {

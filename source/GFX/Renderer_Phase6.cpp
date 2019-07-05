@@ -188,7 +188,7 @@ static visplane_t* FindPlane(visplane_t *check, Fixed height, uint32_t PicHandle
     uint32_t *set;
 
     ++check;        // Automatically skip to the next plane
-    if (check<gLastVisPlane) {
+    if (check<gpEndVisPlane) {
         do {
             if (height == check->height &&      // Same plane as before?
                 PicHandle == check->PicHandle &&
@@ -202,13 +202,13 @@ static visplane_t* FindPlane(visplane_t *check, Fixed height, uint32_t PicHandle
                 }
                 return check;           // Use the same one as before
             }
-        } while (++check<gLastVisPlane);
+        } while (++check<gpEndVisPlane);
     }
     
 // make a new plane
     
-    check = gLastVisPlane;
-    ++gLastVisPlane;
+    check = gpEndVisPlane;
+    ++gpEndVisPlane;
     check->height = height;     // Init all the vars in the visplane
     check->PicHandle = PicHandle;
     check->minx = start;
@@ -389,11 +389,11 @@ void SegCommands(void)
         viswall_t *WallSegPtr;      // Pointer to the current wall
         viswall_t *LastSegPtr;
     
-    
-        WallSegPtr = gVisWalls;      // Get the first wall segment to process
-        LastSegPtr = gLastWallCmd;   // Last one to process
-        if (LastSegPtr == WallSegPtr) { // No walls to render?
-            return;             // Exit now!!
+        WallSegPtr = gVisWalls;             // Get the first wall segment to process
+        LastSegPtr = gpEndVisWall;          // Last one to process
+
+        if (LastSegPtr == WallSegPtr) {     // No walls to render?
+            return;                         // Exit now!!
         }
 
         EnableHardwareClipping();       // Turn on all hardware clipping to remove slop
@@ -426,7 +426,7 @@ void SegCommands(void)
         uint32_t WallScale;
         
         PlanePtr = gVisPlanes+1;     // Get the range of pointers
-        LastPlanePtr = gLastVisPlane;
+        LastPlanePtr = gpEndVisPlane;
     
         if (PlanePtr!=LastPlanePtr) {   // No planes generated?
             gPlaneY = -gViewY;        // Get the Y coord for camera
