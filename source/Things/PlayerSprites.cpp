@@ -423,6 +423,7 @@ void A_Punch(player_t *player,pspdef_t *psp)
     if (target) {       // Did I hit someone?
         // Point the player to the victim
         mo->angle = PointToAngle(mo->x,mo->y,target->x,target->y);
+        S_StartSound(&mo->x, sfx_punch);    // DC: Bug fix to 3DO version - was missing the punch sound!
     }
 }
 

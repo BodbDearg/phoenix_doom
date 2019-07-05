@@ -19,3 +19,6 @@ There was a bug in the 3DO code for monsters that caused very different AI behav
         [] There was also oddness sometimes when corpses slid down stairs far too quickly.
         [] Both these (and possibly other momentum related issues) are now fixed.
     [] Pulsing lights cycling up and down too fast.
+
+[] Fixed a bug where punching things made no punch sound.
+Not sure why this happened, there was no code to play the sound in the 3DO version but the sound existed. Now fixed.
