@@ -10,7 +10,7 @@
 
 static constexpr Fixed computeStretch(const uint32_t width, const uint32_t height) noexcept {
     return Fixed(
-        int32_t((160.0f / (float) width) * ((float) height / 180.0f) * 2.2f * 65536.0f)
+        floatToFixed((160.0f / (float) width) * ((float) height / 180.0f) * 2.2f)
     );
 }
 
@@ -194,11 +194,13 @@ void initMathTables() noexcept {
 }
 
 void drawPlayerView() noexcept {
-    preDrawSetup();     // Init variables based on camera angle
-    doBspTraversal();   // Traverse the BSP tree for possible walls to render
-    SegCommands();      // Draw all everything Z Sorted
-    DrawColors();       // Draw color overlay if needed
-    DrawWeapons();      // Draw the weapons on top of the screen
+    preDrawSetup();                 // Init variables based on camera angle
+    doBspTraversal();               // Traverse the BSP tree and build lists of walls, floors (visplanes) and sprites to render
+    SegCommands();                  // Draw all everything Z Sorted
+    drawAllVisPlanes();
+    drawAllMapObjectSprites();
+    DrawColors();                   // Draw color overlay if needed    
+    DrawWeapons();                  // Draw the weapons on top of the screen
 }
 
 END_NAMESPACE(Renderer)

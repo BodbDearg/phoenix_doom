@@ -4,7 +4,6 @@
 // Data structures and globals internal to the renderer.
 // Nothing here is used by outside code.
 //----------------------------------------------------------------------------------------------------------------------
-
 #include "Base/Angle.h"
 #include "Game/DoomDefines.h"
 #include "Renderer.h"
@@ -21,19 +20,23 @@ namespace Renderer {
     //==================================================================================================================
 
     // Limits
-    static constexpr uint32_t   MAXVISSPRITES       = 128;                      // Maximum number of visible sprites
-    static constexpr uint32_t   MAXVISPLANES        = 64;                       // Maximum number of visible floor and ceiling textures
-    static constexpr uint32_t   MAXWALLCMDS         = 128;                      // Maximum number of visible walls
-    static constexpr uint32_t   MAXOPENINGS         = MAXSCREENWIDTH * 64;      // Space for sil tables
-    static constexpr Fixed      MINZ                = FRACUNIT * 4;             // Closest z allowed (clip sprites closer than this etc.)
-    static constexpr uint32_t   FIELDOFVIEW         = 2048;                     // 90 degrees of view
+    static constexpr uint32_t   MAXVISSPRITES           = 128;                      // Maximum number of visible sprites
+    static constexpr uint32_t   MAXVISPLANES            = 64;                       // Maximum number of visible floor and ceiling textures
+    static constexpr uint32_t   MAXWALLCMDS             = 128;                      // Maximum number of visible walls
+    static constexpr uint32_t   MAXOPENINGS             = MAXSCREENWIDTH * 64;      // Space for sil tables
+    static constexpr Fixed      MINZ                    = FRACUNIT * 4;             // Closest z allowed (clip sprites closer than this etc.)
+    static constexpr uint32_t   FIELDOFVIEW             = 2048;                     // 90 degrees of view
+    static constexpr uint32_t   ANGLETOSKYSHIFT         = 22;                       // sky map is 256*128*4 maps
+    static constexpr uint8_t    MAX_WALL_LIGHT_VALUE    = 15;
+    static constexpr uint8_t    MAX_FLOOR_LIGHT_VALUE   = 15;
+    static constexpr uint8_t    MAX_SPRITE_LIGHT_VALUE  = 31;
 
     // Rendering constants
-    static constexpr uint32_t   HEIGHTBITS          = 6;                        // Number of bits for texture height
-    static constexpr uint32_t   FIXEDTOHEIGHT       = FRACBITS - HEIGHTBITS;    // Number of unused bits from fixed to SCALEBITS
-    static constexpr uint32_t   SCALEBITS           = 9;                        // Number of bits for texture scale
-    static constexpr uint32_t   FIXEDTOSCALE        = FRACBITS - SCALEBITS;     // Number of unused bits from fixed to HEIGHTBITS
-    static constexpr uint32_t   ANGLETOSKYSHIFT     = 22;                       // sky map is 256*128*4 maps
+    static constexpr uint32_t   HEIGHTBITS              = 6;                        // Number of bits for texture height
+    static constexpr uint32_t   FIXEDTOHEIGHT           = FRACBITS - HEIGHTBITS;    // Number of unused bits from fixed to SCALEBITS
+    static constexpr uint32_t   SCALEBITS               = 9;                        // Number of bits for texture scale
+    static constexpr uint32_t   FIXEDTOSCALE            = FRACBITS - SCALEBITS;     // Number of unused bits from fixed to HEIGHTBITS
+    static constexpr uint32_t   LIGHTSCALESHIFT         = 3;
 
     //==================================================================================================================
     // Data structures
@@ -112,7 +115,7 @@ namespace Renderer {
     static constexpr uint32_t AC_SOLIDSIL       = 0x200;
 
     //==================================================================================================================
-    // Globals
+    // Globals shared throughout the renderer - defined in Renderer.cpp
     //==================================================================================================================
     extern viswall_t        gVisWalls[MAXWALLCMDS];         // Visible wall array
     extern viswall_t*       gpEndVisWall;                   // End of the used viswalls range (also tells number of viswalls)
@@ -142,46 +145,26 @@ namespace Renderer {
     //==================================================================================================================
     // Functions
     //==================================================================================================================
-    void doBspTraversal() noexcept;
-    
-    void wallPrep(
-        const uint32_t leftX,
-        const uint32_t rightX,
-        const seg_t& lineSeg,
-        const angle_t lineAngle
-    ) noexcept;
 
+    void doBspTraversal() noexcept;
+    void wallPrep(const uint32_t leftX, const uint32_t rightX, const seg_t& lineSeg, const angle_t lineAngle) noexcept;
     void SegCommands();
-    void DrawVisPlane(visplane_t* PlanePtr);
-    void drawVisSprite(const vissprite_t& visSprite) noexcept;
+    void drawAllVisPlanes() noexcept;
+    void drawAllMapObjectSprites() noexcept;
+    void DrawColors();
     void DrawWeapons();
 
-    // TODO: tidy all this up
-    void DrawSkyLine();
-    void DrawWallColumn(
-        const uint32_t y,
-        const uint32_t Colnum,
-        const uint32_t ColY,
-        const uint32_t TexHeight,
-        const std::byte* const Source,
-        const uint32_t Run
-    );
-
-    void DrawFloorColumn(
-        uint32_t ds_y,
-        uint32_t ds_x1,
-        uint32_t Count,
-        uint32_t xfrac,
-        uint32_t yfrac,
-        Fixed ds_xstep,
-        Fixed ds_ystep
-    );
-
-    void drawSpriteNoClip(const vissprite_t& visSprite) noexcept;
-    void drawSpriteClip(const uint32_t x1, const uint32_t x2, const vissprite_t& visSprite) noexcept;
+    // TODO: FIXME - REMOVE FROM HERE
     void DrawSpriteCenter(uint32_t SpriteNum);
-    void DrawColors();
 
-    // Get the distance from the view x,y from a point in 2D space
-    Fixed point2dToDist(const Fixed px, const Fixed py) noexcept;
+    //------------------------------------------------------------------------------------------------------------------
+    // Utility: returns a fixed point multipler for the given texture light value (which is in 4.3 format)
+    // This can be used to scale RGB values due to lighting.
+    //------------------------------------------------------------------------------------------------------------------
+    inline Fixed getLightMultiplier(const uint32_t lightValue, const uint32_t maxLightValue) noexcept {
+        const Fixed maxLightValueFrac = intToFixed(maxLightValue);
+        const Fixed textureLightFrac = lightValue << (FRACBITS - LIGHTSCALESHIFT);
+        const Fixed lightMultiplier = fixedDiv(textureLightFrac, maxLightValueFrac);
+        return (lightMultiplier > FRACUNIT) ? FRACUNIT : lightMultiplier;
+    }
 }

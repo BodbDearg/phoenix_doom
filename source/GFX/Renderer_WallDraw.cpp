@@ -1,9 +1,11 @@
 #include "Renderer_Internal.h"
 
+#include "Base/Endian.h"
 #include "Base/Tables.h"
 #include "Game/Data.h"
 #include "Textures.h"
 #include "ThreeDO.h"
+#include "Video.h"
 #include <cstddef>
 
 #define OPENMARK ((MAXSCREENHEIGHT-1)<<8)
@@ -37,6 +39,168 @@ struct drawtex_t{
 static drawtex_t gTopTex;               // Describe the upper texture
 static drawtex_t gBottomTex;            // Describe the lower texture
 static uint32_t gTexTextureColumn;      // Column offset into source image
+
+/**********************************
+
+    Drawing the wall columns are a little trickier, so I'll do this next.
+    The parms are, 
+    gTexX = screen x coord for the virtual screen.
+    y = screen y coord for the virtual screen.
+    bottom = screen y coord for the BOTTOM of the pixel run. Subtract from top
+        to get the exact destination pixel run count.
+    colnum = index for which scan line to draw from the source image. Note that
+        this number has all bits set so I must mask off the unneeded bits for
+        texture wraparound.
+        
+    No light shading is used. The scale factor is a constant.
+    
+**********************************/
+static void DrawWallColumn(
+    const uint32_t y,
+    const uint32_t Colnum,
+    const uint32_t ColY,
+    const uint32_t TexHeight,
+    const std::byte* const Source,
+    const uint32_t Run
+)
+{
+    // TODO: TEMP - CLEANUP
+    const uint32_t numPixels = (Run * gTexScale) >> SCALEBITS;
+    const uint32_t numPixelsRounded = ((Run * gTexScale) & 0x1F0) != 0 ? numPixels + 1 : numPixels;    
+    const Fixed lightMultiplier = getLightMultiplier(gTxTextureLight, MAX_WALL_LIGHT_VALUE);
+
+    const uint16_t* const pPLUT = (const uint16_t*) Source;
+
+    for (uint32_t pixNum = 0; pixNum < numPixelsRounded; ++pixNum) {
+        const uint32_t dstY = y + pixNum;
+        if (dstY >= 0 && dstY < gScreenHeight) {
+            const uint32_t pixTexYOffsetFixed = (pixNum << (SCALEBITS + 1)) / gTexScale;
+            const uint32_t pixTexYOffset = pixTexYOffsetFixed & 1 ? (pixTexYOffsetFixed / 2) + 1 : pixTexYOffsetFixed / 2;
+            
+            const uint32_t texYOffset = (ColY + pixTexYOffset) % (TexHeight);
+            const uint32_t texOffset = Colnum + texYOffset;
+            
+            const uint8_t colorByte = (uint8_t) Source[32 + texOffset / 2];
+            const uint8_t colorIdx = (texOffset & 1) != 0 ? (colorByte & 0x0F) : (colorByte & 0xF0) >> 4;
+            
+            const uint16_t color = byteSwappedU16(pPLUT[colorIdx]);
+            const uint16_t texR = (color & 0b0111110000000000) >> 10;
+            const uint16_t texG = (color & 0b0000001111100000) >> 5;
+            const uint16_t texB = (color & 0b0000000000011111) >> 0;
+            
+            const Fixed texRFrac = intToFixed(texR);
+            const Fixed texGFrac = intToFixed(texG);
+            const Fixed texBFrac = intToFixed(texB);
+            const Fixed darkenedR = fixedMul(texRFrac, lightMultiplier);
+            const Fixed darkenedG = fixedMul(texGFrac, lightMultiplier);
+            const Fixed darkenedB = fixedMul(texBFrac, lightMultiplier);
+
+            const uint32_t finalColor = Video::fixedRgbToScreenCol(darkenedR, darkenedG, darkenedB);
+            const uint32_t screenX = gTexX + gScreenXOffset;
+            const uint32_t screenY = dstY + gScreenYOffset;
+
+            Video::gFrameBuffer[screenY * Video::SCREEN_WIDTH + screenX] = finalColor;
+        }
+    }
+    
+    // DC: FIXME: implement/replace
+    #if 0
+        MyCCB* DestCCB;         // Pointer to new CCB entry 
+        Word Colnum7;
+    
+        DestCCB = CurrentCCB;       // Copy pointer to local 
+        if (DestCCB>=&gCCBArray[CCBTotal]) {     // Am I full already? 
+            FlushCCBs();                // Draw all the CCBs/Lines 
+            DestCCB = gCCBArray;
+        }
+
+        Colnum7 = Colnum & 7;   // Get the pixel skip 
+        Colnum = Colnum>>1;     // Pixel to byte offset 
+        Colnum += 32;           // Index past the PLUT 
+        Colnum &= ~3;           // Long word align the source 
+        DestCCB[0].ccb_Flags = CCB_SPABS|CCB_LDSIZE|CCB_LDPRS|
+        CCB_LDPPMP|CCB_CCBPRE|CCB_YOXY|CCB_ACW|CCB_ACCW|
+        CCB_ACE|CCB_BGND|CCB_NOBLK|CCB_PPABS|CCB_LDPLUT|CCB_USEAV;  // ccb_flags 
+        DestCCB[0].ccb_PRE0 = (Colnum7<<24)|0x03;
+        DestCCB[0].ccb_PRE1 = 0x3E005000|(Colnum7+Run-1);   // Project the pixels 
+        DestCCB[0].ccb_PLUTPtr = Source;        // Get the palette ptr 
+        DestCCB[0].ccb_SourcePtr = (CelData *)&Source[Colnum];  // Get the source ptr 
+        DestCCB[0].ccb_XPos = gTexX<<16;     // Set the x and y coord for start 
+        DestCCB[0].ccb_YPos = (y<<16)+0xFF00;
+        DestCCB[0].ccb_HDX = 0<<20;     // Convert 6 bit frac to CCB scale 
+        DestCCB[0].ccb_HDY = (gTexScale<<11);
+        DestCCB[0].ccb_VDX = 1<<16;
+        DestCCB[0].ccb_VDY = 0<<16;
+        DestCCB[0].ccb_PIXC = gLightTable[tx_texturelight>>LIGHTSCALESHIFT];     // PIXC control 
+    
+        ++DestCCB;              // Next CCB 
+        CurrentCCB = DestCCB;   // Save the CCB pointer 
+    #endif
+}
+
+/**********************************
+
+    Drawing the sky is the easiest, so I'll do this first.
+    The parms are, 
+    gTexX = screen x coord for the virtual screen.
+    colnum = index for which scan line to draw from the source image. Note that
+        this number has all bits set so I must mask off the unneeded bits for
+        texture wraparound.
+        
+    No light shading is used for the sky. The scale factor is a constant.
+    
+**********************************/
+
+extern uint32_t gTexX;
+extern int gTexScale;
+
+static void DrawSkyLine()
+{
+    // Note: sky textures are 256 pixels wide so this wraps around
+    const uint32_t colNum = (((gXToViewAngle[gTexX] + gViewAngle) >> ANGLETOSKYSHIFT) & 0xFF);
+    
+    // Sky is always rendered at max light and 1.0 scale
+    gTxTextureLight = MAX_WALL_LIGHT_VALUE << LIGHTSCALESHIFT;
+    gTexScale = 1 << SCALEBITS;
+    
+    // Set source texture details
+    // TODO: don't keep doing this for each column
+    const Texture* const pTexture = (const Texture*) getWallTexture(getCurrentSkyTexNum());
+    const uint32_t texHeight = pTexture->height;
+    DrawWallColumn(0, colNum * texHeight, 0, texHeight, pTexture->pData, texHeight);
+    
+    // DC: FIXME: implement/replace
+    #if 0
+        Byte *Source;
+        Word Colnum;
+        MyCCB* DestCCB;         // Pointer to new CCB entry 
+    
+        DestCCB = CurrentCCB;       // Copy pointer to local 
+        if (DestCCB>=&gCCBArray[CCBTotal]) {     // Am I full already? 
+            FlushCCBs();                // Draw all the CCBs/Lines 
+            DestCCB = gCCBArray;
+        }
+        Colnum = (((xtoviewangle[gTexX]+viewangle)>>ANGLETOSKYSHIFT)&0xFF)*64;
+        Source = (Byte *)(*SkyTexture->data);   // Index to the true shape 
+
+        DestCCB[0].ccb_Flags = CCB_SPABS|CCB_LDSIZE|CCB_LDPRS|
+        CCB_LDPPMP|CCB_CCBPRE|CCB_YOXY|CCB_ACW|CCB_ACCW|
+        CCB_ACE|CCB_BGND|CCB_NOBLK|CCB_PPABS|CCB_LDPLUT;    // ccb_flags 
+        DestCCB[0].ccb_PRE0 = 0x03;
+        DestCCB[0].ccb_PRE1 = 0x3E005000|(128-1);   // Project the pixels 
+        DestCCB[0].ccb_PLUTPtr = Source;        // Get the palette ptr 
+        DestCCB[0].ccb_SourcePtr = (CelData *)&Source[Colnum+32];   // Get the source ptr 
+        DestCCB[0].ccb_XPos = gTexX<<16;     // Set the x and y coord for start 
+        DestCCB[0].ccb_YPos = 0<<16;
+        DestCCB[0].ccb_HDX = 0<<20;     // Convert 6 bit frac to CCB scale 
+        DestCCB[0].ccb_HDY = gSkyScales[ScreenSize]; // Video stretch factor 
+        DestCCB[0].ccb_VDX = 1<<16;
+        DestCCB[0].ccb_VDY = 0<<16;
+        DestCCB[0].ccb_PIXC = 0x1F00;       // PIXC control 
+        ++DestCCB;          // Next CCB 
+        CurrentCCB = DestCCB;   // Save the CCB pointer 
+    #endif
+}
 
 /**********************************
 
@@ -361,19 +525,6 @@ static void SegLoop(viswall_t *segl)
     } while (++x<=segl->RightX);
 }
 
-//----------------------------------------------------------------------------------------------------------------------
-// Draw all the sprites from back to front. 
-//----------------------------------------------------------------------------------------------------------------------
-static void drawAllSprites() noexcept {
-    const vissprite_t* pCurSprite = gVisSprites;
-    const vissprite_t* const pEndSprite = gpEndVisSprite;
-
-    while (pCurSprite < pEndSprite) {
-        drawVisSprite(*pCurSprite);
-        ++pCurSprite;
-    }
-}
-
 /**********************************
 
     Follow the list of walls and draw each
@@ -418,29 +569,6 @@ void SegCommands(void)
             DrawSeg(WallSegPtr);        // Draw the wall (Only if needed)
         } while (WallSegPtr!=LastSegPtr);   // All done?
     }
-
-    // Now we draw all the planes. They are already clipped and create no slop!
-    {   
-        visplane_t *PlanePtr;
-        visplane_t *LastPlanePtr;
-        uint32_t WallScale;
-        
-        PlanePtr = gVisPlanes+1;     // Get the range of pointers
-        LastPlanePtr = gpEndVisPlane;
-    
-        if (PlanePtr!=LastPlanePtr) {   // No planes generated?
-            gPlaneY = -gViewY;        // Get the Y coord for camera
-            WallScale = (gViewAngle-ANG90)>>ANGLETOFINESHIFT;    // left to right mapping
-            gBaseXScale = (gFineCosine[WallScale] / ((int)gScreenWidth/2));
-            gBaseYScale = -(gFineSine[WallScale] / ((int)gScreenWidth/2));
-            do {
-                DrawVisPlane(PlanePtr);     // Convert the plane
-            } while (++PlanePtr<LastPlanePtr);      // Loop for all
-        }
-    }
-
-    DisableHardwareClipping();      // Sprites require full screen management
-    drawAllSprites();               // Draw all the sprites (ZSorted and clipped)
 }
 
 END_NAMESPACE(Renderer)

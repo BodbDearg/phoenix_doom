@@ -7,7 +7,6 @@
 #include "Sprites.h"
 #include "Things/Info.h"
 #include "Things/MapObj.h"
-#include <algorithm>
 
 BEGIN_NAMESPACE(Renderer)
 
@@ -47,19 +46,6 @@ static uint32_t gCheckCoord[9][4] = {
 
 static cliprange_t  gSolidsegs[MAXSEGS];    // List of valid ranges to scan through
 static cliprange_t* gNewEnd;                // Pointer to the first free entry
-
-//----------------------------------------------------------------------------------------------------------------------
-// Sorts all sprites submitted to the renderer from back to front
-//----------------------------------------------------------------------------------------------------------------------
-void sortAllSprites() noexcept {
-    std::sort(
-        gVisSprites,
-        gpEndVisSprite, 
-        [](const vissprite_t& pSpr1, const vissprite_t& pSpr2) noexcept {
-            return (pSpr1.yscale < pSpr2.yscale);
-        }
-    );
-}
 
 //----------------------------------------------------------------------------------------------------------------------
 // Get the sprite angle (0-7) to render a thing with
@@ -550,7 +536,6 @@ void doBspTraversal() noexcept {
     gSolidsegs[1].rightX = 0x4000;
     gNewEnd = gSolidsegs + 2;               // Init the free memory pointer
     addBspNodeToFrame(gpBSPTreeRoot);       // Begin traversing the BSP tree for all walls in render range
-    sortAllSprites();                       // Sort the sprites from front to back
 }
 
 END_NAMESPACE(Renderer)

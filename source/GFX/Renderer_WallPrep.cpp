@@ -18,13 +18,13 @@ BEGIN_NAMESPACE(Renderer)
 
 static sector_t gEmptySector = { 0,0,-2,-2,-2 }; // -2 floorpic, ceilingpic, light
 
-Fixed point2dToDist(const Fixed px, const Fixed py) noexcept {
-    //------------------------------------------------------------------------------------------------------------------
-    // Get the distance from the view x,y from a point in 2D space.
-    // The normal formula for doing this is 'dist = sqrt(x*x + y*y)' but that can be slow to do. 
-    // Instead I first get the angle of the point and then rotate it so that it is directly ahead.
-    // The resulting point then is the distance...
-    //------------------------------------------------------------------------------------------------------------------    
+//----------------------------------------------------------------------------------------------------------------------
+// Get the distance from the view x,y from a point in 2D space.
+// The normal formula for doing this is 'dist = sqrt(x*x + y*y)' but that can be slow to do. 
+// Instead I first get the angle of the point and then rotate it so that it is directly ahead.
+// The resulting point then is the distance...
+//----------------------------------------------------------------------------------------------------------------------
+static Fixed point2dToDist(const Fixed px, const Fixed py) noexcept {    
     Fixed x = std::abs(px - gViewX);    // Get the absolute value point offset from the camera 
     Fixed y = std::abs(py - gViewY);
     
