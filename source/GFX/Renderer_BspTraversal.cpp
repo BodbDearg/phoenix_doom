@@ -11,18 +11,17 @@
 BEGIN_NAMESPACE(Renderer)
 
 //----------------------------------------------------------------------------------------------------------------------
-// By traversing the BSP tree, I will create a viswall_t array describing all walls are are visible to the
-// computer screen, they may be projected off the left and right sides but this is to allow for scaling of the textures
+// By traversing the BSP tree, I will create a viswall_t array describing all walls are are visible to the computer 
+// screen, they may be projected off the left and right sides but this is to allow for scaling of the textures
 // properly for clipping.
 // 
 // All backface walls are removed by casting two angles to the end points and seeing if the differance in the angles
 // creates a negative number (Reversed). The viswall_t record will contain the leftmost angle in unmodified 3 Space,
 // the clipped screen left x and right x and the line segment that needs to be rendered.
 //
-// I also create all the sprite records (Unsorted) so that they can be merged with the rendering system
-// to handle clipping.
+// I also create all the sprite records (Unsorted) so that they can be merged with the rendering system to 
+// handle clipping.
 //----------------------------------------------------------------------------------------------------------------------
-
 struct cliprange_t {
     int32_t leftX;      // Left side of post
     int32_t rightX;     // Right side of post

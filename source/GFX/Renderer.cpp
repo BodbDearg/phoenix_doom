@@ -1,12 +1,10 @@
 #include "Renderer_Internal.h"
 
-#include "Base/Mem.h"
 #include "Base/Tables.h"
 #include "Game/Data.h"
 #include "Sprites.h"
 #include "Textures.h"
 #include "Things/MapObj.h"
-#include "ThreeDO.h"
 
 static constexpr Fixed computeStretch(const uint32_t width, const uint32_t height) noexcept {
     return Fixed(

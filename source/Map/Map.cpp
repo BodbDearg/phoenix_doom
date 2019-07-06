@@ -231,10 +231,10 @@ static uint32_t PIT_RadiusAttack(mobj_t *thing)
     if (dist < 0) {     // Within the blast?
         dist = 0;       // Fix the distance
     }
-    if (dist < gBombDamage) {        // Within blast range?
+    if (dist < (int32_t) gBombDamage) {        // Within blast range?
         DamageMObj(thing,gBombSpot,gBombSource,gBombDamage-dist);
     }
-    return true;        // Continue
+    return true;    // Continue
 }
 
 //---------------------------------------------------------------------------------------------------------------------
