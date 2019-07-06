@@ -139,7 +139,6 @@ namespace Renderer {
     extern Fixed            gBaseXScale;
     extern Fixed            gBaseYScale;
     extern uint32_t         gSprOpening[MAXSCREENWIDTH];    // clipped range
-    extern int32_t          gTexScale;                      // True scale value 0-0x7FFF
 
     //==================================================================================================================
     // Functions

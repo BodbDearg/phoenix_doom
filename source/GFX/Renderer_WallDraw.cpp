@@ -5,6 +5,7 @@
 #include "Game/Data.h"
 #include "Textures.h"
 #include "Video.h"
+#include <algorithm>
 
 //----------------------------------------------------------------------------------------------------------------------
 // Code for drawing walls and skies in the game.
@@ -31,38 +32,34 @@ struct drawtex_t {
     uint32_t            texturemid;         // Anchor point for texture
 };
 
-static uint32_t gTexTextureColumn;      // Column offset into source image
-
 //----------------------------------------------------------------------------------------------------------------------
 // Draw a single column of a wall
 //----------------------------------------------------------------------------------------------------------------------
 static void drawWallColumn(
     const uint32_t viewX,
     const uint32_t viewY,
-    const uint32_t Colnum,
-    const uint32_t ColY,
-    const uint32_t TexHeight,
-    const std::byte* const Source,
-    const uint32_t Run
+    const uint32_t columnHeight,
+    const int32_t columnScale,
+    const uint32_t texX,
+    const uint32_t texY,
+    const std::byte* const pTexData,
+    const uint32_t texHeight    
 ) noexcept {
     // FIXME: CLEANUP AND OPTIMIZE!
-    const uint32_t numPixels = (Run * gTexScale) >> SCALEBITS;
-    const uint32_t numPixelsRounded = ((Run * gTexScale) & 0x1F0) != 0 ? numPixels + 1 : numPixels;    
     const Fixed lightMultiplier = getLightMultiplier(gTxTextureLight, MAX_WALL_LIGHT_VALUE);
+    const uint16_t* const pPLUT = (const uint16_t*) pTexData;
 
-    const uint16_t* const pPLUT = (const uint16_t*) Source;
-
-    for (uint32_t pixNum = 0; pixNum < numPixelsRounded; ++pixNum) {
+    for (uint32_t pixNum = 0; pixNum < columnHeight; ++pixNum) {
         const uint32_t dstY = viewY + pixNum;
 
         if (dstY >= 0 && dstY < gScreenHeight) {
-            const uint32_t pixTexYOffsetFixed = (pixNum << (SCALEBITS + 1)) / gTexScale;
+            const uint32_t pixTexYOffsetFixed = (pixNum << (SCALEBITS + 1)) / columnScale;
             const uint32_t pixTexYOffset = pixTexYOffsetFixed & 1 ? (pixTexYOffsetFixed / 2) + 1 : pixTexYOffsetFixed / 2;
             
-            const uint32_t texYOffset = (ColY + pixTexYOffset) % (TexHeight);
-            const uint32_t texOffset = Colnum + texYOffset;
+            const uint32_t texYOffset = (texY + pixTexYOffset) % (texHeight);
+            const uint32_t texOffset = (texX * texHeight) + texYOffset;
             
-            const uint8_t colorByte = (uint8_t) Source[32 + texOffset / 2];
+            const uint8_t colorByte = (uint8_t) pTexData[32 + texOffset / 2];
             const uint8_t colorIdx = (texOffset & 1) != 0 ? (colorByte & 0x0F) : (colorByte & 0xF0) >> 4;
             
             const uint16_t color = byteSwappedU16(pPLUT[colorIdx]);
@@ -91,11 +88,10 @@ static void drawWallColumn(
 //----------------------------------------------------------------------------------------------------------------------
 static void drawSkyColumn(const uint32_t viewX) noexcept {
     // Note: sky textures are 256 pixels wide so this wraps around
-    const uint32_t colNum = (((gXToViewAngle[viewX] + gViewAngle) >> ANGLETOSKYSHIFT) & 0xFF);
+    const uint32_t texX = (((gXToViewAngle[viewX] + gViewAngle) >> ANGLETOSKYSHIFT) & 0xFF);
     
     // Sky is always rendered at max light and 1.0 scale
     gTxTextureLight = MAX_WALL_LIGHT_VALUE << LIGHTSCALESHIFT;
-    gTexScale = 1 << SCALEBITS;
     
     // Set source texture details
     // FIXME: don't keep doing this for each column
@@ -105,10 +101,11 @@ static void drawSkyColumn(const uint32_t viewX) noexcept {
     drawWallColumn(
         viewX,
         0,
-        colNum * texHeight,
+        texHeight,          // FIXME: This needs to be scaled for view size!
+        1 << SCALEBITS,
+        texX,
         0,
-        texHeight,
-        pTexture->pData,
+        pTexture->pData,        
         texHeight
     );
 }
@@ -119,41 +116,35 @@ static void drawSkyColumn(const uint32_t viewX) noexcept {
 //----------------------------------------------------------------------------------------------------------------------
 static void drawTexturedColumn(
     const drawtex_t& tex, 
-    const uint32_t viewX
+    const uint32_t viewX,
+    const uint32_t texX,
+    const int32_t columnScale
 ) noexcept {
     // Compute height of column from source image height and make sure not invalid
-    const int32_t colHeightUnscaled = (tex.topheight - tex.bottomheight) >> HEIGHTBITS;     
-    if (colHeightUnscaled <= 0) {
+    const int32_t columnHeightUnscaled = (tex.topheight - tex.bottomheight) >> HEIGHTBITS;
+
+    if (columnHeightUnscaled <= 0)
         return;
-    }
+    
+    const uint32_t columnHeightFrac = uint32_t(columnHeightUnscaled * columnScale);
+    const uint32_t columnHeightCeilRound = (columnHeightFrac & 0x1FF) ? 1 : 0;
+    const uint32_t columnHeight = (columnHeightFrac >> SCALEBITS) + columnHeightCeilRound;
 
-    // View Y to draw at
-    const uint32_t viewY = gCenterY - uint32_t((gTexScale * tex.topheight) >> (HEIGHTBITS + SCALEBITS));
-
-    // Computing the column number in the texture
-    uint32_t colnum = gTexTextureColumn;                                    // Get the starting column offset in the texture
-    uint32_t frac = tex.texturemid - (tex.topheight << FIXEDTOHEIGHT);      // Get the anchor point
-    frac >>= FRACBITS;
-
-    while (frac & 0x8000) {
-        --colnum;
-        frac += tex.height;     // Make sure it's on the shape
-    }
-
-    frac &= 0x7f;                       // Zap unneeded bits
-    colnum &= (tex.width - 1);          // Wrap around the texture
-    colnum = (colnum * tex.height);     // Index to the shape
+    // View Y to draw at and y position in texture to use
+    const uint32_t viewY = gCenterY - uint32_t((columnScale * tex.topheight) >> (HEIGHTBITS + SCALEBITS));
+    const uint32_t texY = (uint32_t) fixedToInt(tex.texturemid - (tex.topheight << FIXEDTOHEIGHT));
 
     // Draw the column
     drawWallColumn(
         viewX,
         viewY,
-        colnum,
-        frac,
-        tex.height,
+        columnHeight,
+        columnScale,
+        (texX % tex.width),     // Wraparound texture x coord!
+        (texY % tex.height),    // Wraparound texture y coord!
         tex.data,
-        colHeightUnscaled
-    );   
+        tex.height
+    );
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -195,26 +186,22 @@ static void drawSeg(const viswall_t& seg) noexcept {
             bottomTex.data = pTex->pData;
         }
         
-        Fixed _scalefrac = seg.LeftScale;   // Init the scale fraction
+        Fixed columnScaleFrac = seg.LeftScale;   // Init the scale fraction
         
-        for (uint32_t x = seg.LeftX; x <= seg.RightX; ++x) {
-            int32_t scale = _scalefrac >> FIXEDTOSCALE;     // Current scaling factor            
-            if (scale >= 0x2000) {                          // Too large?
-                scale = 0x1fff;                             // Fix the scale to maximum
-            }
-            
+        for (uint32_t viewX = seg.LeftX; viewX <= seg.RightX; ++viewX) {
+            // Compute current scaling factor
+            const int32_t columnScale = std::min(int32_t(columnScaleFrac >> FIXEDTOSCALE), 0x1fff);
+
             // Calculate texture offset into shape
-            gTexTextureColumn = (
+            const uint32_t texX = (uint32_t) fixedToInt(
                 seg.offset - fixedMul(
-                    gFineTangent[(seg.CenterAngle + gXToViewAngle[x]) >> ANGLETOFINESHIFT],
+                    gFineTangent[(seg.CenterAngle + gXToViewAngle[viewX]) >> ANGLETOFINESHIFT],
                     seg.distance
                 )
-            ) >> FRACBITS;
-            
-            gTexScale = scale;      // 0-0x1FFF
+            );
             
             {
-                Fixed texturelight = ((scale * gLightCoef) >> 16) - gLightSub;                
+                Fixed texturelight = ((columnScale * gLightCoef) >> 16) - gLightSub;                
                 if (texturelight < gLightMin) {
                     texturelight = gLightMin;
                 }                
@@ -226,14 +213,14 @@ static void drawSeg(const viswall_t& seg) noexcept {
             
             // Daw the top and bottom textures (if present)
             if (actionBits & AC_TOPTEXTURE) {
-                drawTexturedColumn(topTex, x);
+                drawTexturedColumn(topTex, viewX, texX, columnScale);
             }
             if (actionBits & AC_BOTTOMTEXTURE) {
-                drawTexturedColumn(bottomTex, x);
+                drawTexturedColumn(bottomTex, viewX, texX, columnScale);
             }
             
             // Step to the next scale
-            _scalefrac += seg.ScaleStep;
+            columnScaleFrac += seg.ScaleStep;
         }
     }
 }
@@ -313,14 +300,14 @@ static void segLoop(const viswall_t& seg) noexcept {
     visplane_t* pCeilPlane = gVisPlanes;            // Reset the visplane pointers
     const uint32_t actionBits = seg.WallActions;
 
-    for (uint32_t x = seg.LeftX; x <= seg.RightX; ++x) {
+    for (uint32_t viewX = seg.LeftX; viewX <= seg.RightX; ++viewX) {
         int32_t scale = _scalefrac >> FIXEDTOSCALE;     // Current scaling factor
         if (scale >= 0x2000) {                          // Too large?
             scale = 0x1fff;                             // Fix the scale to maximum
         }
 
-        const int32_t ceilingClipY = gClipBoundTop[x];      // Get the top y clip
-        const int32_t floorClipY = gClipBoundBottom[x];     // Get the bottom y clip
+        const int32_t ceilingClipY = gClipBoundTop[viewX];      // Get the top y clip
+        const int32_t floorClipY = gClipBoundBottom[viewX];     // Get the bottom y clip
 
         // Shall I add the floor?
         if (actionBits & AC_ADDFLOOR) {
@@ -330,13 +317,13 @@ static void segLoop(const viswall_t& seg) noexcept {
             }
             int32_t bottom = floorClipY - 1;    // Draw to the bottom of the screen
 
-            if (top <= bottom) {                            // Valid span?
-                if (pFloorPlane->open[x] != OPENMARK) {     // Not already covered?
+            if (top <= bottom) {    // Valid span?
+                if (pFloorPlane->open[viewX] != OPENMARK) {     // Not already covered?
                     pFloorPlane = findPlane(
                         *pFloorPlane,
                         seg.floorheight,
                         seg.FloorPic,
-                        x,
+                        viewX,
                         seg.RightX,
                         seg.seglightlevel
                     );
@@ -344,7 +331,7 @@ static void segLoop(const viswall_t& seg) noexcept {
                 if (top) {
                     --top;
                 }
-                pFloorPlane->open[x] = (top << 8) + bottom;     // Set the new vertical span
+                pFloorPlane->open[viewX] = (top << 8) + bottom;     // Set the new vertical span
             }
         }
 
@@ -357,13 +344,13 @@ static void segLoop(const viswall_t& seg) noexcept {
                 bottom = floorClipY - 1;
             }
 
-            if (top <= bottom) {                            // Valid span?
-                if (pCeilPlane->open[x] != OPENMARK) {      // Already in use?
+            if (top <= bottom) {    // Valid span?
+                if (pCeilPlane->open[viewX] != OPENMARK) {      // Already in use?
                     pCeilPlane = findPlane(
                         *pCeilPlane,
                         seg.ceilingheight,
                         seg.CeilingPic,
-                        x,
+                        viewX,
                         seg.RightX,
                         seg.seglightlevel
                     );
@@ -371,7 +358,7 @@ static void segLoop(const viswall_t& seg) noexcept {
                 if (top) {
                     --top;
                 }
-                pCeilPlane->open[x] = (top << 8) + bottom;      // Set the vertical span
+                pCeilPlane->open[viewX] = (top << 8) + bottom;  // Set the vertical span
             }
         }
 
@@ -385,10 +372,10 @@ static void segLoop(const viswall_t& seg) noexcept {
                 low = 0;
             }
             if (actionBits & AC_BOTTOMSIL) {
-                seg.BottomSil[x] = low;
+                seg.BottomSil[viewX] = low;
             } 
             if (actionBits & AC_NEWFLOOR) {
-                gClipBoundBottom[x] = low;
+                gClipBoundBottom[viewX] = low;
             }
         }
 
@@ -401,10 +388,10 @@ static void segLoop(const viswall_t& seg) noexcept {
                 high = gScreenHeight - 1;
             }
             if (actionBits & AC_TOPSIL) {
-                seg.TopSil[x] = high + 1;
+                seg.TopSil[viewX] = high + 1;
             }
             if (actionBits & AC_NEWCEILING) {
-                gClipBoundTop[x] = high;
+                gClipBoundTop[viewX] = high;
             }
         }
 
@@ -416,7 +403,7 @@ static void segLoop(const viswall_t& seg) noexcept {
             }
 
             if (ceilingClipY + 1 < bottom) {    // Valid?
-                drawSkyColumn(x);               // Draw the sky
+                drawSkyColumn(viewX);           // Draw the sky
             }
         }
 

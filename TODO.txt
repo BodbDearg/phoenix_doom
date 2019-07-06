@@ -6,7 +6,6 @@
     - Need shape + animated shape manager
 - Cleanup and optimize render code
 - Intro logos
-- Fix sky warping
 - Fix face death anim on HUD
 - Intro videos? (maybe)
 - Fix view bob not working.
@@ -27,10 +26,11 @@
 - Cheats support
 - FPS counter
 - Investigate sprites poking through walls bug (visible on level 7 shotgun at start)
-- Fix bug with bottom of sprites rendering past walls (1 or 2px more than we should have?)
+- Fix bug with bottom of sprites rendering past walls (1 or 2px more than we should have?) (found on PC version also, thing data issue?)
 - Fix address sanitizer crash on angle LUT lookup (easy to reproduce on MacOS with Xcode)
 - Fix issue on level 10 with small crate textures - alignment issue?
 - Fix head not exploding on death
+- Fix sky scaling
 - Maybe add menu sounds?
 - Do lighting effects on player gun.
 - Maybe center numbers on HUD?
@@ -40,7 +40,7 @@
 - Is the pistol reload speed too slow?
 - Do overbright lighting of environment due to muzzle flash?
 - Anything that can be done about the artifacts when rendering flats when the eye is almost level with the flat?
-- Level 15: strange bug where wall in room beyond visible through sky after opening door.
+- Level 15: strange bug where wall in room beyond visible through sky after opening door (on PSX version also)
 Bug happens in courtyard area beyond the yellow door (courtyard with red key).
 - Ensure last map accessible via menu (wasn't on 3DO version?)
 - Change endian macros to be 'big endian to host' (more portable)

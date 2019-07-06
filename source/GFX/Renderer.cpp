@@ -47,7 +47,6 @@ uint32_t        gExtraLight;
 angle_t         gClipAngle;
 angle_t         gDoubleClipAngle;
 uint32_t        gSprOpening[MAXSCREENWIDTH];
-int32_t         gTexScale;
 
 //----------------------------------------------------------------------------------------------------------------------
 // Load in the "TextureInfo" array so that the game knows all about the wall and sky textures (Width,Height).
