@@ -9,6 +9,4 @@ void WritePrefsFile();
 void ClearPrefsFile();
 void ReadPrefsFile();
 void UpdateAndPageFlip(const bool bAllowDebugClear);
-void EnableHardwareClipping();
-void DisableHardwareClipping();
 void DrawPlaque(uint32_t RezNum);
