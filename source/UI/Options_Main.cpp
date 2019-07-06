@@ -9,6 +9,7 @@
 #include "Game/DoomRez.h"
 #include "Game/Resources.h"
 #include "GFX/Renderer.h"
+#include "GFX/Video.h"
 #include "Intermission_Main.h"
 #include "ThreeDO.h"
 
@@ -278,8 +279,7 @@ void O_Control(player_t *player)
 
 **********************************/
 
-void O_Drawer(void)
-{
+void O_Drawer(void) {
     // Erase old and Draw new cursor frame
     DrawMShape(CURSORX, CURSOR_Y_POS[gCursorPos], GetShapeIndexPtr(loadResourceData(rSKULLS), gCursorFrame));
     releaseResource(rSKULLS);
@@ -323,5 +323,5 @@ void O_Drawer(void)
     }
 
     releaseResource(rSLIDER);
-    UpdateAndPageFlip(true);
+    Video::present();
 }

@@ -107,7 +107,6 @@ void InitTools() {
 void ThreeDOMain() {
     InitTools();                // Init the 3DO tool system
     Video::init();
-    UpdateAndPageFlip(true);    // Init the video display's vars    
     ReadPrefsFile();            // Load defaults
     D_DoomMain();               // Start doom
     Video::shutdown();
@@ -209,57 +208,6 @@ void ReadPrefsFile()
     ) {
         ClearPrefsFile();
     }
-}
-
-/**********************************
-
-    Display the current framebuffer
-    If < 1/15th second has passed since the last display, busy wait.
-    15 fps is the maximum frame rate, and any faster displays will
-    only look ragged.
-
-**********************************/
-void UpdateAndPageFlip(const bool bAllowDebugClear) {
-    Video::present(bAllowDebugClear);
-
-    // DC: FIXME: implement/replace
-    #if 0
-        LongWord NewTick;
-
-        FlushCCBs();
-        if (DoWipe) {
-            Word PrevPage;
-            void *NewImage;
-            void *OldImage;
-            
-            DoWipe = false;
-            NewImage = VideoPointer;    // Pointer to the NEW image 
-            PrevPage = gWorkPage-1;  // Get the currently displayed page 
-            if (PrevPage==-1) {     // Wrapped? 
-                PrevPage = SCREENS-1;
-            }
-            SetMyScreen(PrevPage);      // Set videopointer to display buffer 
-            if (!PrevPage) {
-                PrevPage=SCREENS;
-            }
-            --PrevPage;
-            OldImage = (Byte *) &gScreenMaps[PrevPage][0];   // Get work buffer 
-            
-                // Copy the buffer from display to work 
-            memcpy(OldImage,VideoPointer,320*200*2);
-            WipeDoom((LongWord *)OldImage,(LongWord *)NewImage);            // Perform the wipe 
-        }
-        DisplayScreen(gScreenItems[gWorkPage],0);     // Display the hidden page 
-        if (++gWorkPage>=SCREENS) {      // Next screen in line 
-            gWorkPage = 0;
-        }
-        SetMyScreen(gWorkPage);      // Set the 3DO vars 
-        do {
-            NewTick = ReadTick();               // Get the time mark 
-            LastTics = NewTick - gLastTicCount;  // Get the time elapsed 
-        } while (!LastTics);                    // Hmmm, too fast?!?!? 
-        gLastTicCount = NewTick;                 // Save the time mark 
-    #endif
 }
 
 /**********************************

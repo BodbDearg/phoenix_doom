@@ -14,8 +14,12 @@ namespace Video {
     void init() noexcept;
     void shutdown() noexcept;
 
+    // Does a debug clear of the framebuffer to a known color - does nothing in release builds.
+    // Used to identify issues where parts of the screen are not being drawn to.
+    void debugClear() noexcept;
+
     // Presents the framebuffer to the screen
-    void present(const bool bAllowDebugClear) noexcept;
+    void present() noexcept;
 
     //------------------------------------------------------------------------------------------------------------------
     // Makes a framebuffer color from the given 16.16 fixed point RGB values.

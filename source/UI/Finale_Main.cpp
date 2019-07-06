@@ -6,9 +6,9 @@
 #include "Game/Data.h"
 #include "Game/DoomDefines.h"
 #include "Game/DoomRez.h"
+#include "GFX/Video.h"
 #include "Intermission_Main.h"
 #include "Things/Info.h"
-#include "ThreeDO.h"
 
 #define CASTCOUNT 8
 
@@ -267,9 +267,8 @@ stopattack:
     Draw the frame for the finale
 
 **********************************/
-
-void F_Drawer(void)
-{
+void F_Drawer() {
+    Video::debugClear();
     DrawRezShape(0,0,rBACKGRNDBROWN);       // Draw the background 
     
     if (gStatus==fin_endtext) {
@@ -292,5 +291,6 @@ void F_Drawer(void)
         DrawSpriteCenter(gCastState->SpriteFrame);       // Draw the sprite 
         #endif
     }
-    UpdateAndPageFlip(true);        // Show the frame 
+
+    Video::present();   // Show the frame
 }

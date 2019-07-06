@@ -5,6 +5,7 @@
 #include "Game/DoomDefines.h"
 #include "Game/DoomRez.h"
 #include "Game/Resources.h"
+#include "GFX/Video.h"
 #include "Intermission_Main.h"
 #include "Options_Main.h"
 #include "ThreeDO.h"
@@ -180,6 +181,7 @@ uint32_t M_Ticker(void)
 // Draw the main menu
 //--------------------------------------------------------------------------------------------------
 void M_Drawer() {    
+    Video::debugClear();
     DrawRezShape(0, 0, rMAINDOOM);
     
     if (gOptionActive) {
@@ -188,7 +190,7 @@ void M_Drawer() {
     else {    
         const void* const pShapes = loadResourceData(rMAINMENU);   // Load shape group
 
-        // Draw new skull
+        // Draw new skull        
         DrawMShape(CURSORX, gCursorYs[gCursorPos], GetShapeIndexPtr(loadResourceData(rSKULLS), gCursorFrame));
         releaseResource(rSKULLS);
 
@@ -203,6 +205,6 @@ void M_Drawer() {
         // Draw the options screen
         PrintBigFont(CURSORX + 24, OPTIONSY, "Options Menu");
         releaseResource(rMAINMENU);
-        UpdateAndPageFlip(true);
+        Video::present();
     }
 }

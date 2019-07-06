@@ -8,7 +8,7 @@
 #include "Game/DoomRez.h"
 #include "Game/Resources.h"
 #include "GFX/CelUtils.h"
-#include "ThreeDO.h"
+#include "GFX/Video.h"
 #include <cstring>
 
 #define KVALX   232
@@ -304,25 +304,25 @@ uint32_t IN_Ticker() {
     
 **********************************/
 void IN_Drawer() {
-    const void* IntermisShapes;         // Cached pointer 
+    Video::debugClear();
     DrawRezShape(0,0,rBACKGRNDBROWN);   // Load and draw the skulls 
     
-    IntermisShapes = loadResourceData(rINTERMIS);           // Load the intermission shapes 
-    PrintBigFontCenter(160,10, MAP_NAMES[gGameMap-1]);      // Print the current map name 
-    PrintBigFontCenter(160,34, FINISHED);                   // Print "Finished" 
+    const void* IntermisShapes = loadResourceData(rINTERMIS);   // Load the intermission shapes 
+    PrintBigFontCenter(160,10, MAP_NAMES[gGameMap-1]);          // Print the current map name 
+    PrintBigFontCenter(160,34, FINISHED);                       // Print "Finished" 
     
     if (gNextMap != 23) {
         PrintBigFontCenter(160,162, ENTERING);
         PrintBigFontCenter(160,182, MAP_NAMES[gNextMap-1]);
     }
     
-    DrawMShape(71,KVALY, GetShapeIndexPtr(IntermisShapes,KillShape));    // Draw the shapes 
+    DrawMShape(71,KVALY, GetShapeIndexPtr(IntermisShapes,KillShape));       // Draw the shapes 
     DrawMShape(65,IVALY, GetShapeIndexPtr(IntermisShapes,ItemsShape));
     DrawMShape(27,SVALY, GetShapeIndexPtr(IntermisShapes,SecretsShape));
 
-    PrintNumber(KVALX,KVALY,gKillValue, PNFLAGS_PERCENT|PNFLAGS_RIGHT);   // Print the numbers 
+    PrintNumber(KVALX,KVALY,gKillValue, PNFLAGS_PERCENT|PNFLAGS_RIGHT);     // Print the numbers 
     PrintNumber(IVALX,IVALY,gItemValue, PNFLAGS_PERCENT|PNFLAGS_RIGHT);
     PrintNumber(SVALX,SVALY,gSecretValue,PNFLAGS_PERCENT|PNFLAGS_RIGHT);
     releaseResource(rINTERMIS);
-    UpdateAndPageFlip(true);                // Show the screen 
+    Video::present();                                                       // Show the screen 
 }

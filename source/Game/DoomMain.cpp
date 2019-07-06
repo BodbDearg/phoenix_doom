@@ -8,6 +8,7 @@
 #include "DoomRez.h"
 #include "Game.h"
 #include "GFX/Renderer.h"
+#include "GFX/Video.h"
 #include "Map/Setup.h"
 #include "Resources.h"
 #include "ThreeDO.h"
@@ -226,8 +227,9 @@ static void STOP_Title() {
 // Draws the title page
 //----------------------------------------------------------------------------------------------------------------------
 static void DRAW_Title() {
+    Video::debugClear();
     DrawRezShape(0, 0, rTITLE);     // Draw the doom logo
-    UpdateAndPageFlip(true);
+    Video::present();
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -264,6 +266,8 @@ static uint32_t TIC_Credits() {
 // Draw the credits page
 //----------------------------------------------------------------------------------------------------------------------
 static void DRAW_Credits() {
+    Video::debugClear();
+
     switch (gCreditRezNum) {
         case rIDCREDITS:
             if (gTotalGameTicks >= ( 10 * TICKSPERSEC)) {
@@ -280,7 +284,7 @@ static void DRAW_Credits() {
     }
 
     DrawRezShape(0, 0, gCreditRezNum);  // Draw the credits
-    UpdateAndPageFlip(true);            // Page flip
+    Video::present();                   // Page flip
 }
 
 //----------------------------------------------------------------------------------------------------------------------

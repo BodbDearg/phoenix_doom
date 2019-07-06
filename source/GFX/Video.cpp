@@ -72,23 +72,22 @@ void Video::shutdown() noexcept {
     SDL_QuitSubSystem(SDL_INIT_VIDEO);
 }
 
-void Video::present(const bool bAllowDebugClear) noexcept {
-    SDL_UpdateTexture(gFramebufferTexture, NULL, gFrameBuffer, SCREEN_WIDTH * sizeof(uint32_t));    
-    SDL_RenderCopy(gRenderer, gFramebufferTexture, NULL, NULL);
-
+void Video::debugClear() noexcept {
     // Clear the framebuffer to pink to spot rendering gaps
     #if ASSERTS_ENABLED
-        if (bAllowDebugClear) {
-            const uint32_t pinkU32 = 0xFF00FFFF;
-            uint32_t* pPixel = gFrameBuffer;
-            uint32_t* const pEndPixel = gFrameBuffer + (SCREEN_WIDTH * SCREEN_HEIGHT);
+        const uint32_t pinkU32 = 0xFF00FFFF;
+        uint32_t* pPixel = gFrameBuffer;
+        uint32_t* const pEndPixel = gFrameBuffer + (SCREEN_WIDTH * SCREEN_HEIGHT);
 
-            while (pPixel < pEndPixel) {
-                *pPixel = pinkU32;
-                ++pPixel;
-            }
+        while (pPixel < pEndPixel) {
+            *pPixel = pinkU32;
+            ++pPixel;
         }
-    #endif
+    #endif    
+}
 
-    SDL_RenderPresent(gRenderer);    
+void Video::present() noexcept {
+    SDL_UpdateTexture(gFramebufferTexture, NULL, gFrameBuffer, SCREEN_WIDTH * sizeof(uint32_t));    
+    SDL_RenderCopy(gRenderer, gFramebufferTexture, NULL, NULL);
+    SDL_RenderPresent(gRenderer);
 }

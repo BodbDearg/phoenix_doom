@@ -11,6 +11,7 @@
 #include "DoomRez.h"
 #include "Game.h"
 #include "GFX/Renderer.h"
+#include "GFX/Video.h"
 #include "Map/Ceiling.h"
 #include "Map/Platforms.h"
 #include "Map/Setup.h"
@@ -269,22 +270,25 @@ void P_Drawer() {
     bool bAllowDebugClear = (!gGamePaused);
 
     if (gGamePaused && gRefreshDrawn) {
-        DrawPlaque(rPAUSED);                    // Draw 'Paused' plaque
-        UpdateAndPageFlip(bAllowDebugClear);
+        DrawPlaque(rPAUSED);            // Draw 'Paused' plaque
+        Video::present();
     } else if (gPlayers.AutomapFlags & AF_OPTIONSACTIVE) {
-        Renderer::drawPlayerView();             // Render the 3D view
-        ST_Drawer();                            // Draw the status bar
-        O_Drawer();                             // Draw the console handler
+        Video::debugClear();
+        Renderer::drawPlayerView();     // Render the 3D view
+        ST_Drawer();                    // Draw the status bar
+        O_Drawer();                     // Draw the console handler
         gRefreshDrawn = false;
     } else if (gPlayers.AutomapFlags & AF_ACTIVE) {
-        AM_Drawer();                            // Draw the automap
-        ST_Drawer();                            // Draw the status bar
-        UpdateAndPageFlip(bAllowDebugClear);    // Update and page flip
+        Video::debugClear();
+        AM_Drawer();                // Draw the automap
+        ST_Drawer();                // Draw the status bar
+        Video::present();           // Update and page flip
         gRefreshDrawn = true;
     } else {
-        Renderer::drawPlayerView();             // Render the 3D view
-        ST_Drawer();                            // Draw the status bar
-        UpdateAndPageFlip(!bAllowDebugClear);   // Only allow debug clear if we are not going into pause mode
+        Video::debugClear();
+        Renderer::drawPlayerView();     // Render the 3D view
+        ST_Drawer();                    // Draw the status bar
+        Video::present();               // Only allow debug clear if we are not going into pause mode
         gRefreshDrawn = true;
     }
 }

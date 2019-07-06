@@ -8,5 +8,4 @@ void ThreeDOMain();
 void WritePrefsFile();
 void ClearPrefsFile();
 void ReadPrefsFile();
-void UpdateAndPageFlip(const bool bAllowDebugClear);
 void DrawPlaque(uint32_t RezNum);
