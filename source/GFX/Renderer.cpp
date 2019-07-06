@@ -47,7 +47,6 @@ uint32_t        gExtraLight;
 angle_t         gClipAngle;
 angle_t         gDoubleClipAngle;
 uint32_t        gSprOpening[MAXSCREENWIDTH];
-uint32_t        gTexX;
 int32_t         gTexScale;
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -194,7 +193,7 @@ void initMathTables() noexcept {
 void drawPlayerView() noexcept {
     preDrawSetup();                 // Init variables based on camera angle
     doBspTraversal();               // Traverse the BSP tree and build lists of walls, floors (visplanes) and sprites to render
-    SegCommands();                  // Draw all everything Z Sorted
+    drawAllLineSegs();              // Draw all everything Z Sorted
     drawAllVisPlanes();
     drawAllMapObjectSprites();
     DrawColors();                   // Draw color overlay if needed    

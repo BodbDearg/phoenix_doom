@@ -139,7 +139,6 @@ namespace Renderer {
     extern Fixed            gBaseXScale;
     extern Fixed            gBaseYScale;
     extern uint32_t         gSprOpening[MAXSCREENWIDTH];    // clipped range
-    extern uint32_t         gTexX;                          // Screen x coord being drawn
     extern int32_t          gTexScale;                      // True scale value 0-0x7FFF
 
     //==================================================================================================================
@@ -148,7 +147,7 @@ namespace Renderer {
 
     void doBspTraversal() noexcept;
     void wallPrep(const uint32_t leftX, const uint32_t rightX, const seg_t& lineSeg, const angle_t lineAngle) noexcept;
-    void SegCommands();
+    void drawAllLineSegs() noexcept;
     void drawAllVisPlanes() noexcept;
     void drawAllMapObjectSprites() noexcept;
     void DrawColors();

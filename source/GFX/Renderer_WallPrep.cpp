@@ -46,7 +46,7 @@ static Fixed point2dToDist(const Fixed px, const Fixed py) noexcept {
 // Returns the texture mapping scale for the current line at the given angle.
 // Note: 'rwDistance' must be calculated first.
 //----------------------------------------------------------------------------------------------------------------------
-static Fixed ScaleFromGlobalAngle(const Fixed rwDistance, const angle_t angleA, const angle_t angleB) noexcept {
+static Fixed scaleFromGlobalAngle(const Fixed rwDistance, const angle_t angleA, const angle_t angleB) noexcept {
     // Both sines are always positive
     const Fixed* const pSineTable = &gFineSine[ANG90 >> ANGLETOFINESHIFT];
 
@@ -70,10 +70,10 @@ static Fixed ScaleFromGlobalAngle(const Fixed rwDistance, const angle_t angleA, 
 //----------------------------------------------------------------------------------------------------------------------
 // Calculate the wall scaling constants
 //----------------------------------------------------------------------------------------------------------------------
-static void LatePrep(viswall_t& wall, const seg_t& lineSeg, angle_t LeftAngle) noexcept {
+static void latePrep(viswall_t& wall, const seg_t& lineSeg, const angle_t leftAngle) noexcept {
     // Calculate normalangle and rwDistance for scale calculation and texture mapping
     const angle_t normalAngle = lineSeg.angle + ANG90;  // Angle to wall
-    angle_t offsetAngle = (normalAngle - LeftAngle);
+    angle_t offsetAngle = (normalAngle - leftAngle);
 
     if ((int32_t) offsetAngle < 0) {
         offsetAngle = (angle_t) -(int32_t) offsetAngle;
@@ -92,7 +92,7 @@ static void LatePrep(viswall_t& wall, const seg_t& lineSeg, angle_t LeftAngle) n
 
     // Calc scales
     offsetAngle = gXToViewAngle[wall.LeftX];
-    const Fixed scaleFrac = wall.LeftScale = ScaleFromGlobalAngle(
+    const Fixed scaleFrac = wall.LeftScale = scaleFromGlobalAngle(
         rwDistance,
         offsetAngle,
         (offsetAngle + gViewAngle) - normalAngle
@@ -101,7 +101,7 @@ static void LatePrep(viswall_t& wall, const seg_t& lineSeg, angle_t LeftAngle) n
 
     if (wall.RightX > wall.LeftX) {
         offsetAngle = gXToViewAngle[wall.RightX];
-        scale2 = ScaleFromGlobalAngle(
+        scale2 = scaleFromGlobalAngle(
             rwDistance,
             offsetAngle,
             (offsetAngle + gViewAngle) - normalAngle
@@ -120,7 +120,7 @@ static void LatePrep(viswall_t& wall, const seg_t& lineSeg, angle_t LeftAngle) n
     }
     
     if (wall.WallActions & (AC_TOPTEXTURE|AC_BOTTOMTEXTURE) ) {
-        offsetAngle = normalAngle - LeftAngle;
+        offsetAngle = normalAngle - leftAngle;
         
         if (offsetAngle > ANG180) {
             offsetAngle = (angle_t) -(int32_t) offsetAngle;     // Force unsigned
@@ -132,7 +132,7 @@ static void LatePrep(viswall_t& wall, const seg_t& lineSeg, angle_t LeftAngle) n
         
         scale2 = fixedMul(pointDistance, gFineSine[offsetAngle >> ANGLETOFINESHIFT]);
         
-        if (normalAngle - LeftAngle < ANG180) {
+        if (normalAngle - leftAngle < ANG180) {
             scale2 = -scale2;   // Reverse the texture anchor
         }
         
@@ -278,7 +278,7 @@ void wallPrep(
         if (b_floorheight >= f_ceilingheight || b_ceilingheight <= f_floorheight) {
             actionbits |= AC_SOLIDSIL;      // This is solid (For sprite masking)
         } else {
-            int32_t width = (rightX - leftX + 1);   // Get width of opening
+            const int32_t width = (rightX - leftX + 1);     // Get width of opening
             
             if ((b_floorheight > 0 && b_floorheight > f_floorheight) ||
                 (f_floorheight < 0 && f_floorheight > b_floorheight)
@@ -311,7 +311,7 @@ void wallPrep(
     
     curWall.seglightlevel = f_lightlevel;                       // Save the light level
     curWall.offset = sideDef.textureoffset + lineSeg.offset;    // Texture anchor X
-    LatePrep(curWall, lineSeg, lineAngle);
+    latePrep(curWall, lineSeg, lineAngle);
 }
 
 END_NAMESPACE(Renderer)

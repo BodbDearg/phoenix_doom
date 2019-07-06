@@ -4,30 +4,25 @@
 #include "Base/Tables.h"
 #include "Game/Data.h"
 #include "Textures.h"
-#include "ThreeDO.h"
 #include "Video.h"
-#include <cstddef>
 
-#define OPENMARK ((MAXSCREENHEIGHT-1)<<8)
-
+//----------------------------------------------------------------------------------------------------------------------
+// Code for drawing walls and skies in the game.
+//
+// Notes:
+//  (1) Clip values are the solid pixel bounding the range
+//  (2) floorclip starts out ScreenHeight
+//  (3) ceilingclip starts out -1
+//  (4) clipbounds[] = (ceilingclip +1 ) << 8 + floorclip
+//----------------------------------------------------------------------------------------------------------------------
 BEGIN_NAMESPACE(Renderer)
 
-/**********************************
-
-    This code will draw all the VERTICAL walls for
-    a screen.
-
-    Clip values are the solid pixel bounding the range
-    floorclip starts out ScreenHeight
-    ceilingclip starts out -1
-    clipbounds[] = (ceilingclip+1)<<8 + floorclip
-
-**********************************/
+static constexpr uint32_t OPENMARK = ((MAXSCREENHEIGHT - 1) << 8);
 
 static uint32_t gClipBoundTop[MAXSCREENWIDTH];          // Bounds top y for vertical clipping
 static uint32_t gClipBoundBottom[MAXSCREENWIDTH];       // Bounds bottom y for vertical clipping
 
-struct drawtex_t{
+struct drawtex_t {
     const std::byte*    data;               // Pointer to raw texture data
     uint32_t            width;              // Width of texture in pixels
     uint32_t            height;             // Height of texture in pixels
@@ -36,35 +31,21 @@ struct drawtex_t{
     uint32_t            texturemid;         // Anchor point for texture
 };
 
-static drawtex_t gTopTex;               // Describe the upper texture
-static drawtex_t gBottomTex;            // Describe the lower texture
 static uint32_t gTexTextureColumn;      // Column offset into source image
 
-/**********************************
-
-    Drawing the wall columns are a little trickier, so I'll do this next.
-    The parms are, 
-    gTexX = screen x coord for the virtual screen.
-    y = screen y coord for the virtual screen.
-    bottom = screen y coord for the BOTTOM of the pixel run. Subtract from top
-        to get the exact destination pixel run count.
-    colnum = index for which scan line to draw from the source image. Note that
-        this number has all bits set so I must mask off the unneeded bits for
-        texture wraparound.
-        
-    No light shading is used. The scale factor is a constant.
-    
-**********************************/
-static void DrawWallColumn(
-    const uint32_t y,
+//----------------------------------------------------------------------------------------------------------------------
+// Draw a single column of a wall
+//----------------------------------------------------------------------------------------------------------------------
+static void drawWallColumn(
+    const uint32_t viewX,
+    const uint32_t viewY,
     const uint32_t Colnum,
     const uint32_t ColY,
     const uint32_t TexHeight,
     const std::byte* const Source,
     const uint32_t Run
-)
-{
-    // TODO: TEMP - CLEANUP
+) noexcept {
+    // FIXME: CLEANUP AND OPTIMIZE!
     const uint32_t numPixels = (Run * gTexScale) >> SCALEBITS;
     const uint32_t numPixelsRounded = ((Run * gTexScale) & 0x1F0) != 0 ? numPixels + 1 : numPixels;    
     const Fixed lightMultiplier = getLightMultiplier(gTxTextureLight, MAX_WALL_LIGHT_VALUE);
@@ -72,7 +53,8 @@ static void DrawWallColumn(
     const uint16_t* const pPLUT = (const uint16_t*) Source;
 
     for (uint32_t pixNum = 0; pixNum < numPixelsRounded; ++pixNum) {
-        const uint32_t dstY = y + pixNum;
+        const uint32_t dstY = viewY + pixNum;
+
         if (dstY >= 0 && dstY < gScreenHeight) {
             const uint32_t pixTexYOffsetFixed = (pixNum << (SCALEBITS + 1)) / gTexScale;
             const uint32_t pixTexYOffset = pixTexYOffsetFixed & 1 ? (pixTexYOffsetFixed / 2) + 1 : pixTexYOffsetFixed / 2;
@@ -96,478 +78,376 @@ static void DrawWallColumn(
             const Fixed darkenedB = fixedMul(texBFrac, lightMultiplier);
 
             const uint32_t finalColor = Video::fixedRgbToScreenCol(darkenedR, darkenedG, darkenedB);
-            const uint32_t screenX = gTexX + gScreenXOffset;
+            const uint32_t screenX = viewX + gScreenXOffset;
             const uint32_t screenY = dstY + gScreenYOffset;
 
             Video::gFrameBuffer[screenY * Video::SCREEN_WIDTH + screenX] = finalColor;
         }
     }
-    
-    // DC: FIXME: implement/replace
-    #if 0
-        MyCCB* DestCCB;         // Pointer to new CCB entry 
-        Word Colnum7;
-    
-        DestCCB = CurrentCCB;       // Copy pointer to local 
-        if (DestCCB>=&gCCBArray[CCBTotal]) {     // Am I full already? 
-            FlushCCBs();                // Draw all the CCBs/Lines 
-            DestCCB = gCCBArray;
-        }
-
-        Colnum7 = Colnum & 7;   // Get the pixel skip 
-        Colnum = Colnum>>1;     // Pixel to byte offset 
-        Colnum += 32;           // Index past the PLUT 
-        Colnum &= ~3;           // Long word align the source 
-        DestCCB[0].ccb_Flags = CCB_SPABS|CCB_LDSIZE|CCB_LDPRS|
-        CCB_LDPPMP|CCB_CCBPRE|CCB_YOXY|CCB_ACW|CCB_ACCW|
-        CCB_ACE|CCB_BGND|CCB_NOBLK|CCB_PPABS|CCB_LDPLUT|CCB_USEAV;  // ccb_flags 
-        DestCCB[0].ccb_PRE0 = (Colnum7<<24)|0x03;
-        DestCCB[0].ccb_PRE1 = 0x3E005000|(Colnum7+Run-1);   // Project the pixels 
-        DestCCB[0].ccb_PLUTPtr = Source;        // Get the palette ptr 
-        DestCCB[0].ccb_SourcePtr = (CelData *)&Source[Colnum];  // Get the source ptr 
-        DestCCB[0].ccb_XPos = gTexX<<16;     // Set the x and y coord for start 
-        DestCCB[0].ccb_YPos = (y<<16)+0xFF00;
-        DestCCB[0].ccb_HDX = 0<<20;     // Convert 6 bit frac to CCB scale 
-        DestCCB[0].ccb_HDY = (gTexScale<<11);
-        DestCCB[0].ccb_VDX = 1<<16;
-        DestCCB[0].ccb_VDY = 0<<16;
-        DestCCB[0].ccb_PIXC = gLightTable[tx_texturelight>>LIGHTSCALESHIFT];     // PIXC control 
-    
-        ++DestCCB;              // Next CCB 
-        CurrentCCB = DestCCB;   // Save the CCB pointer 
-    #endif
 }
 
-/**********************************
-
-    Drawing the sky is the easiest, so I'll do this first.
-    The parms are, 
-    gTexX = screen x coord for the virtual screen.
-    colnum = index for which scan line to draw from the source image. Note that
-        this number has all bits set so I must mask off the unneeded bits for
-        texture wraparound.
-        
-    No light shading is used for the sky. The scale factor is a constant.
-    
-**********************************/
-
-extern uint32_t gTexX;
-extern int gTexScale;
-
-static void DrawSkyLine()
-{
+//----------------------------------------------------------------------------------------------------------------------
+// Draws a single column of the sky
+//----------------------------------------------------------------------------------------------------------------------
+static void drawSkyColumn(const uint32_t viewX) noexcept {
     // Note: sky textures are 256 pixels wide so this wraps around
-    const uint32_t colNum = (((gXToViewAngle[gTexX] + gViewAngle) >> ANGLETOSKYSHIFT) & 0xFF);
+    const uint32_t colNum = (((gXToViewAngle[viewX] + gViewAngle) >> ANGLETOSKYSHIFT) & 0xFF);
     
     // Sky is always rendered at max light and 1.0 scale
     gTxTextureLight = MAX_WALL_LIGHT_VALUE << LIGHTSCALESHIFT;
     gTexScale = 1 << SCALEBITS;
     
     // Set source texture details
-    // TODO: don't keep doing this for each column
+    // FIXME: don't keep doing this for each column
     const Texture* const pTexture = (const Texture*) getWallTexture(getCurrentSkyTexNum());
     const uint32_t texHeight = pTexture->height;
-    DrawWallColumn(0, colNum * texHeight, 0, texHeight, pTexture->pData, texHeight);
-    
-    // DC: FIXME: implement/replace
-    #if 0
-        Byte *Source;
-        Word Colnum;
-        MyCCB* DestCCB;         // Pointer to new CCB entry 
-    
-        DestCCB = CurrentCCB;       // Copy pointer to local 
-        if (DestCCB>=&gCCBArray[CCBTotal]) {     // Am I full already? 
-            FlushCCBs();                // Draw all the CCBs/Lines 
-            DestCCB = gCCBArray;
-        }
-        Colnum = (((xtoviewangle[gTexX]+viewangle)>>ANGLETOSKYSHIFT)&0xFF)*64;
-        Source = (Byte *)(*SkyTexture->data);   // Index to the true shape 
 
-        DestCCB[0].ccb_Flags = CCB_SPABS|CCB_LDSIZE|CCB_LDPRS|
-        CCB_LDPPMP|CCB_CCBPRE|CCB_YOXY|CCB_ACW|CCB_ACCW|
-        CCB_ACE|CCB_BGND|CCB_NOBLK|CCB_PPABS|CCB_LDPLUT;    // ccb_flags 
-        DestCCB[0].ccb_PRE0 = 0x03;
-        DestCCB[0].ccb_PRE1 = 0x3E005000|(128-1);   // Project the pixels 
-        DestCCB[0].ccb_PLUTPtr = Source;        // Get the palette ptr 
-        DestCCB[0].ccb_SourcePtr = (CelData *)&Source[Colnum+32];   // Get the source ptr 
-        DestCCB[0].ccb_XPos = gTexX<<16;     // Set the x and y coord for start 
-        DestCCB[0].ccb_YPos = 0<<16;
-        DestCCB[0].ccb_HDX = 0<<20;     // Convert 6 bit frac to CCB scale 
-        DestCCB[0].ccb_HDY = gSkyScales[ScreenSize]; // Video stretch factor 
-        DestCCB[0].ccb_VDX = 1<<16;
-        DestCCB[0].ccb_VDY = 0<<16;
-        DestCCB[0].ccb_PIXC = 0x1F00;       // PIXC control 
-        ++DestCCB;          // Next CCB 
-        CurrentCCB = DestCCB;   // Save the CCB pointer 
-    #endif
+    drawWallColumn(
+        viewX,
+        0,
+        colNum * texHeight,
+        0,
+        texHeight,
+        pTexture->pData,
+        texHeight
+    );
 }
 
-/**********************************
-
-    Calculate texturecolumn and iscale for the rendertexture routine
-
-**********************************/
-
-static void DrawTexture(drawtex_t *tex)
-{
-    int top;
-    uint32_t Run;
-    uint32_t colnum;    // Column in the texture
-    uint32_t frac;
-
-    Run = (tex->topheight-tex->bottomheight)>>HEIGHTBITS;   // Source image height
-    if ((int)Run<=0) {      // Invalid?
+//----------------------------------------------------------------------------------------------------------------------
+// Compute the screen location and part of the texture to use for the given draw texture and then draw a single wall
+// column based on that information.
+//----------------------------------------------------------------------------------------------------------------------
+static void drawTexturedColumn(
+    const drawtex_t& tex, 
+    const uint32_t viewX
+) noexcept {
+    // Compute height of column from source image height and make sure not invalid
+    const int32_t colHeightUnscaled = (tex.topheight - tex.bottomheight) >> HEIGHTBITS;     
+    if (colHeightUnscaled <= 0) {
         return;
     }
-    top = gCenterY-((gTexScale*tex->topheight)>>(HEIGHTBITS+SCALEBITS));  // Screen Y
 
-    colnum = gTexTextureColumn;  // Get the starting column offset
-    frac = tex->texturemid - (tex->topheight<<FIXEDTOHEIGHT);   // Get the anchor point
+    // View Y to draw at
+    const uint32_t viewY = gCenterY - uint32_t((gTexScale * tex.topheight) >> (HEIGHTBITS + SCALEBITS));
+
+    // Computing the column number in the texture
+    uint32_t colnum = gTexTextureColumn;                                    // Get the starting column offset in the texture
+    uint32_t frac = tex.texturemid - (tex.topheight << FIXEDTOHEIGHT);      // Get the anchor point
     frac >>= FRACBITS;
-    while (frac&0x8000) {
-        --colnum;
-        frac += tex->height;        // Make sure it's on the shape
-    }
-    frac&=0x7f;                         // Zap unneeded bits
-    colnum &= (tex->width-1);           // Wrap around the texture
-    colnum = (colnum * tex->height);    // Index to the shape
 
-    // Project it
-    DrawWallColumn(
-        top,
+    while (frac & 0x8000) {
+        --colnum;
+        frac += tex.height;     // Make sure it's on the shape
+    }
+
+    frac &= 0x7f;                       // Zap unneeded bits
+    colnum &= (tex.width - 1);          // Wrap around the texture
+    colnum = (colnum * tex.height);     // Index to the shape
+
+    // Draw the column
+    drawWallColumn(
+        viewX,
+        viewY,
         colnum,
         frac,
-        tex->height,
-        tex->data,
-        Run
+        tex.height,
+        tex.data,
+        colHeightUnscaled
     );   
 }
 
-/**********************************
-
-    Draw a single wall texture.
-    Also save states for pending ceiling, floor and future clipping
-
-**********************************/
-
-static void DrawSeg(viswall_t *segl)
-{
-    uint32_t x;        // Current x coord
-    int scale;
-    int _scalefrac;
-    uint32_t ActionBits;
-    ActionBits = segl->WallActions;
+//----------------------------------------------------------------------------------------------------------------------
+// Draw a single wall texture.
+// Also save states for pending ceiling, floor and future clipping
+//----------------------------------------------------------------------------------------------------------------------
+static void drawSeg(const viswall_t& seg) noexcept {
+    const uint32_t actionBits = seg.WallActions;
     
-    if (ActionBits & (AC_TOPTEXTURE|AC_BOTTOMTEXTURE)) {
-        x = segl->seglightlevel;
-        gLightMin = gLightMins[x];
-        gLightMax = x;
-        gLightSub = gLightSubs[x];
-        gLightCoef = gLightCoefs[x];
+    if (actionBits & (AC_TOPTEXTURE|AC_BOTTOMTEXTURE)) {
+        const uint32_t lightLevel = seg.seglightlevel;
+        gLightMin = gLightMins[lightLevel];
+        gLightMax = lightLevel;
+        gLightSub = gLightSubs[lightLevel];
+        gLightCoef = gLightCoefs[lightLevel];
+
+        drawtex_t topTex;
+        drawtex_t bottomTex;
         
-        if (ActionBits & AC_TOPTEXTURE) {   // Is there a top wall?
-            gTopTex.topheight = segl->t_topheight;   // Init the top texture
-            gTopTex.bottomheight = segl->t_bottomheight;
-            gTopTex.texturemid = segl->t_texturemid;
-            
-            const Texture* const pTex = segl->t_texture;
-            gTopTex.width = pTex->width;
-            gTopTex.height = pTex->height;
-            gTopTex.data = pTex->pData;
+        if (actionBits & AC_TOPTEXTURE) {   // Is there a top wall?
+            const Texture* const pTex = seg.t_texture;
+
+            topTex.topheight = seg.t_topheight;
+            topTex.bottomheight = seg.t_bottomheight;
+            topTex.texturemid = seg.t_texturemid;           
+            topTex.width = pTex->width;
+            topTex.height = pTex->height;
+            topTex.data = pTex->pData;
         }
         
-        if (ActionBits & AC_BOTTOMTEXTURE) {  // Is there a bottom wall?
-            gBottomTex.topheight = segl->b_topheight;
-            gBottomTex.bottomheight = segl->b_bottomheight;
-            gBottomTex.texturemid = segl->b_texturemid;
-            
-            const Texture* const pTex = segl->b_texture;
-            gBottomTex.width = pTex->width;
-            gBottomTex.height = pTex->height;
-            gBottomTex.data = pTex->pData;
+        if (actionBits & AC_BOTTOMTEXTURE) {  // Is there a bottom wall?
+            const Texture* const pTex = seg.b_texture;
+
+            bottomTex.topheight = seg.b_topheight;
+            bottomTex.bottomheight = seg.b_bottomheight;
+            bottomTex.texturemid = seg.b_texturemid;
+            bottomTex.width = pTex->width;
+            bottomTex.height = pTex->height;
+            bottomTex.data = pTex->pData;
         }
         
-        _scalefrac = segl->LeftScale;   // Init the scale fraction
-        x = segl->LeftX;                // Init the x coord
+        Fixed _scalefrac = seg.LeftScale;   // Init the scale fraction
         
-        do {                                        // Loop for each X coord
-            scale = _scalefrac >> FIXEDTOSCALE;     // Current scaling factor
-            
-            if (scale >= 0x2000) {                  // Too large?
-                scale = 0x1fff;                     // Fix the scale to maximum
+        for (uint32_t x = seg.LeftX; x <= seg.RightX; ++x) {
+            int32_t scale = _scalefrac >> FIXEDTOSCALE;     // Current scaling factor            
+            if (scale >= 0x2000) {                          // Too large?
+                scale = 0x1fff;                             // Fix the scale to maximum
             }
             
-            gTexX = x;   // Pass the X coord
-
             // Calculate texture offset into shape
             gTexTextureColumn = (
-                segl->offset - fixedMul(
-                    gFineTangent[(segl->CenterAngle + gXToViewAngle[x]) >> ANGLETOFINESHIFT],
-                    segl->distance
+                seg.offset - fixedMul(
+                    gFineTangent[(seg.CenterAngle + gXToViewAngle[x]) >> ANGLETOFINESHIFT],
+                    seg.distance
                 )
             ) >> FRACBITS;
             
-            gTexScale = scale;   // 0-0x1FFF
+            gTexScale = scale;      // 0-0x1FFF
             
             {
-                int texturelight = ((scale * gLightCoef) >> 16) - gLightSub;
-                
+                Fixed texturelight = ((scale * gLightCoef) >> 16) - gLightSub;                
                 if (texturelight < gLightMin) {
                     texturelight = gLightMin;
-                }
-                
+                }                
                 if (texturelight > gLightMax) {
                     texturelight = gLightMax;
-                }
-                
+                }                
                 gTxTextureLight = texturelight;
             }
             
-            if (ActionBits&AC_TOPTEXTURE) {
-                DrawTexture(&gTopTex);          // Draw upper texture
+            // Daw the top and bottom textures (if present)
+            if (actionBits & AC_TOPTEXTURE) {
+                drawTexturedColumn(topTex, x);
+            }
+            if (actionBits & AC_BOTTOMTEXTURE) {
+                drawTexturedColumn(bottomTex, x);
             }
             
-            if (ActionBits&AC_BOTTOMTEXTURE) {
-                DrawTexture(&gBottomTex);       // Draw lower texture
-            }
-            
-            _scalefrac += segl->ScaleStep;      // Step to the next scale
-            
-        } while (++x <= segl->RightX);
+            // Step to the next scale
+            _scalefrac += seg.ScaleStep;
+        }
     }
 }
 
-/**********************************
+//----------------------------------------------------------------------------------------------------------------------
+// Given a span of pixels, see if it is already defined in a record somewhere.
+// If it is, then merge it otherwise make a new plane definition.
+//----------------------------------------------------------------------------------------------------------------------
+static visplane_t* findPlane(
+    visplane_t& plane,
+    const Fixed height,
+    const uint32_t picHandle,
+    const int32_t start,
+    const int32_t stop,
+    const uint32_t light
+) noexcept {
+    visplane_t* pPlane = &plane + 1;    // Automatically skip to the next plane
 
-    Given a span of pixels, see if it is already defined
-    in a record somewhere. If it is, then merge it otherwise
-    make a new plane definition.
-
-**********************************/
-
-static visplane_t* FindPlane(visplane_t *check, Fixed height, uint32_t PicHandle, int start, int stop, uint32_t Light)
-{
-    uint32_t i;
-    uint32_t j;
-    uint32_t *set;
-
-    ++check;        // Automatically skip to the next plane
-    if (check<gpEndVisPlane) {
-        do {
-            if (height == check->height &&      // Same plane as before?
-                PicHandle == check->PicHandle &&
-                Light == check->PlaneLight &&
-                check->open[start] == OPENMARK) {   // Not defined yet?
-                if (start < check->minx) {  // In range of the plane?
-                    check->minx = start;    // Mark the new edge
-                }
-                if (stop > check->maxx) {
-                    check->maxx = stop;     // Mark the new edge
-                }
-                return check;           // Use the same one as before
+    while (pPlane < gpEndVisPlane) {
+        if ((height == pPlane->height) &&           // Same plane as before?
+            (picHandle == pPlane->PicHandle) &&
+            (light == pPlane->PlaneLight) &&
+            (pPlane->open[start] == OPENMARK)       // Not defined yet?
+        ) {
+            if (start < pPlane->minx) {     // In range of the plane?
+                pPlane->minx = start;       // Mark the new edge
             }
-        } while (++check<gpEndVisPlane);
+            if (stop > pPlane->maxx) {
+                pPlane->maxx = stop;        // Mark the new edge
+            }
+            return pPlane;                  // Use the same one as before
+        }
+
+        ++pPlane;
     }
     
-// make a new plane
-    
-    check = gpEndVisPlane;
+    // Make a new plane
+    ASSERT_LOG(gpEndVisPlane - gVisPlanes < MAXVISPLANES, "No more visplanes!");
+    pPlane = gpEndVisPlane;
     ++gpEndVisPlane;
-    check->height = height;     // Init all the vars in the visplane
-    check->PicHandle = PicHandle;
-    check->minx = start;
-    check->maxx = stop;
-    check->PlaneLight = Light;      // Set the light level
 
-// Quickly fill in the visplane table
+    pPlane->height = height;            // Init all the vars in the visplane
+    pPlane->PicHandle = picHandle;
+    pPlane->minx = start;
+    pPlane->maxx = stop;
+    pPlane->PlaneLight = light;         // Set the light level
 
-    i = OPENMARK;
-    set = check->open;  // A brute force method to fill in the visplane record FAST!
-    j = gScreenWidth/8;
-    do {
-        set[0] = i;
-        set[1] = i;
-        set[2] = i;
-        set[3] = i;
-        set[4] = i;
-        set[5] = i;
-        set[6] = i;
-        set[7] = i;
-        set+=8;
-    } while (--j);
-    return check;
+    // Quickly fill in the visplane table:
+    // A brute force method to fill in the visplane record FAST!
+    {
+        uint32_t* pSet = pPlane->open;  
+
+        for (uint32_t j = gScreenWidth / 8; j > 0; --j) {
+            pSet[0] = OPENMARK;
+            pSet[1] = OPENMARK;
+            pSet[2] = OPENMARK;
+            pSet[3] = OPENMARK;
+            pSet[4] = OPENMARK;
+            pSet[5] = OPENMARK;
+            pSet[6] = OPENMARK;
+            pSet[7] = OPENMARK;
+            pSet += 8;
+        }
+    }
+
+    return pPlane;
 }
 
+//----------------------------------------------------------------------------------------------------------------------
+// Do a fake wall rendering so I can get all the visplane records.
+// This is a fake-o routine so I can later draw the wall segments from back to front.
+//----------------------------------------------------------------------------------------------------------------------
+static void segLoop(const viswall_t& seg) noexcept {
+    // Note: visplanes[0] is zero to force a FindPlane on the first pass    
+    Fixed _scalefrac = seg.LeftScale;               // Init the scale fraction
+    visplane_t* pFloorPlane = gVisPlanes;           // Reset the visplane pointers
+    visplane_t* pCeilPlane = gVisPlanes;            // Reset the visplane pointers
+    const uint32_t actionBits = seg.WallActions;
 
-/**********************************
+    for (uint32_t x = seg.LeftX; x <= seg.RightX; ++x) {
+        int32_t scale = _scalefrac >> FIXEDTOSCALE;     // Current scaling factor
+        if (scale >= 0x2000) {                          // Too large?
+            scale = 0x1fff;                             // Fix the scale to maximum
+        }
 
-    Do a fake wall rendering so I can get all the visplane records.
-    This is a fake-o routine so I can later draw the wall segments from back to front.
+        const int32_t ceilingClipY = gClipBoundTop[x];      // Get the top y clip
+        const int32_t floorClipY = gClipBoundBottom[x];     // Get the bottom y clip
 
-**********************************/
+        // Shall I add the floor?
+        if (actionBits & AC_ADDFLOOR) {
+            int32_t top = (int32_t) gCenterY - ((scale * seg.floorheight) >> (HEIGHTBITS + SCALEBITS));   // Y coord of top of floor
+            if (top <= ceilingClipY) {
+                top = ceilingClipY + 1;       // Clip the top of floor to the bottom of the visible area
+            }
+            int32_t bottom = floorClipY - 1;    // Draw to the bottom of the screen
 
-static void SegLoop(viswall_t *segl)
-{
-    uint32_t x;        // Current x coord
-    int scale;
-    int _scalefrac;
-    uint32_t ActionBits;
-    visplane_t *FloorPlane,*CeilingPlane;
-    int ceilingclipy,floorclipy;
-    
-    _scalefrac = segl->LeftScale;       // Init the scale fraction
+            if (top <= bottom) {                            // Valid span?
+                if (pFloorPlane->open[x] != OPENMARK) {     // Not already covered?
+                    pFloorPlane = findPlane(
+                        *pFloorPlane,
+                        seg.floorheight,
+                        seg.FloorPic,
+                        x,
+                        seg.RightX,
+                        seg.seglightlevel
+                    );
+                }
+                if (top) {
+                    --top;
+                }
+                pFloorPlane->open[x] = (top << 8) + bottom;     // Set the new vertical span
+            }
+        }
 
-            // visplanes[0] is zero to force a FindPlane on the first pass
+        // Handle ceilings
+        if (actionBits & AC_ADDCEILING) {
+            int32_t top = ceilingClipY + 1;     // Start from the ceiling
+            int32_t bottom = (int32_t) gCenterY - 1 - ((scale * seg.ceilingheight) >> (HEIGHTBITS + SCALEBITS));   // Bottom of the height
             
-    FloorPlane = CeilingPlane = gVisPlanes;      // Reset the visplane pointers
-    ActionBits = segl->WallActions;
-    x = segl->LeftX;                // Init the x coord
-    do {                            // Loop for each X coord
-        scale = _scalefrac>>FIXEDTOSCALE;   // Current scaling factor
-        if (scale >= 0x2000) {      // Too large?
-            scale = 0x1fff;         // Fix the scale to maximum
-        }
-        ceilingclipy = gClipBoundTop[x];    // Get the top y clip
-        floorclipy = gClipBoundBottom[x];   // Get the bottom y clip
-
-// Shall I add the floor?
-
-        if (ActionBits & AC_ADDFLOOR) {
-            int top,bottom;
-            top = gCenterY-((scale*segl->floorheight)>>(HEIGHTBITS+SCALEBITS));  // Y coord of top of floor
-            if (top <= ceilingclipy) {
-                top = ceilingclipy+1;       // Clip the top of floor to the bottom of the visible area
+            if (bottom >= floorClipY) {     // Clip the bottom?
+                bottom = floorClipY - 1;
             }
-            bottom = floorclipy-1;      // Draw to the bottom of the screen
-            if (top <= bottom) {        // Valid span?
-                if (FloorPlane->open[x] != OPENMARK) {  // Not already covered?
-                    FloorPlane = FindPlane(FloorPlane,segl->floorheight,
-                        segl->FloorPic,x,segl->RightX,segl->seglightlevel);
+
+            if (top <= bottom) {                            // Valid span?
+                if (pCeilPlane->open[x] != OPENMARK) {      // Already in use?
+                    pCeilPlane = findPlane(
+                        *pCeilPlane,
+                        seg.ceilingheight,
+                        seg.CeilingPic,
+                        x,
+                        seg.RightX,
+                        seg.seglightlevel
+                    );
                 }
                 if (top) {
                     --top;
                 }
-                FloorPlane->open[x] = (top<<8)+bottom;  // Set the new vertical span
+                pCeilPlane->open[x] = (top << 8) + bottom;      // Set the vertical span
             }
         }
 
-// Handle ceilings
-
-        if (ActionBits & AC_ADDCEILING) {
-            int top,bottom;
-            top = ceilingclipy+1;       // Start from the ceiling
-            bottom = gCenterY-1-((scale*segl->ceilingheight)>>(HEIGHTBITS+SCALEBITS));   // Bottom of the height
-            if (bottom >= floorclipy) {     // Clip the bottom?
-                bottom = floorclipy-1;
-            }
-            if (top <= bottom) {
-                if (CeilingPlane->open[x] != OPENMARK) {        // Already in use?
-                    CeilingPlane = FindPlane(CeilingPlane,segl->ceilingheight,
-                        segl->CeilingPic,x,segl->RightX,segl->seglightlevel);
-                }
-                if (top) {
-                    --top;
-                }
-                CeilingPlane->open[x] = (top<<8)+bottom;        // Set the vertical span
-            }
-        }
-
-// Sprite clip sils
-
-        if (ActionBits & (AC_BOTTOMSIL|AC_NEWFLOOR)) {
-            int low;
-            low = gCenterY-((scale*segl->floornewheight)>>(HEIGHTBITS+SCALEBITS));
-            if (low > floorclipy) {
-                low = floorclipy;
+        // Sprite clip sils
+        if (actionBits & (AC_BOTTOMSIL|AC_NEWFLOOR)) {
+            int32_t low = gCenterY - ((scale * seg.floornewheight) >> (HEIGHTBITS + SCALEBITS));
+            if (low > floorClipY) {
+                low = floorClipY;
             }
             if (low < 0) {
                 low = 0;
             }
-            if (ActionBits & AC_BOTTOMSIL) {
-                segl->BottomSil[x] = low;
+            if (actionBits & AC_BOTTOMSIL) {
+                seg.BottomSil[x] = low;
             } 
-            if (ActionBits & AC_NEWFLOOR) {
+            if (actionBits & AC_NEWFLOOR) {
                 gClipBoundBottom[x] = low;
             }
         }
 
-        if (ActionBits & (AC_TOPSIL|AC_NEWCEILING)) {
-            int high;
-            high = (gCenterY-1)-((scale*segl->ceilingnewheight)>>(HEIGHTBITS+SCALEBITS));
-            if (high < ceilingclipy) {
-                high = ceilingclipy;
+        if (actionBits & (AC_TOPSIL|AC_NEWCEILING)) {
+            int32_t high = (gCenterY - 1) - ((scale * seg.ceilingnewheight) >> (HEIGHTBITS + SCALEBITS));
+            if (high < ceilingClipY) {
+                high = ceilingClipY;
             }
-            if (high > (int)gScreenHeight-1) {
-                high = gScreenHeight-1;
+            if (high > (int32_t) gScreenHeight - 1) {
+                high = gScreenHeight - 1;
             }
-            if (ActionBits & AC_TOPSIL) {
-                segl->TopSil[x] = high+1;
+            if (actionBits & AC_TOPSIL) {
+                seg.TopSil[x] = high + 1;
             }
-            if (ActionBits & AC_NEWCEILING) {
+            if (actionBits & AC_NEWCEILING) {
                 gClipBoundTop[x] = high;
             }
         }
 
-// I can draw the sky right now!!
-
-        if (ActionBits & AC_ADDSKY) {
-            int bottom;
-            bottom = gCenterY-((scale*segl->ceilingheight)>>(HEIGHTBITS+SCALEBITS));
-            if (bottom > floorclipy) {
-                bottom = floorclipy;
+        // I can draw the sky right now!!
+        if (actionBits & AC_ADDSKY) {
+            int32_t bottom = gCenterY - ((scale * seg.ceilingheight) >> (HEIGHTBITS + SCALEBITS));
+            if (bottom > floorClipY) {
+                bottom = floorClipY;
             }
-            if ((ceilingclipy+1) < bottom) {        // Valid?
-                gTexX = x;          // Pass the X coord
-                DrawSkyLine();      // Draw the sky
+
+            if (ceilingClipY + 1 < bottom) {    // Valid?
+                drawSkyColumn(x);               // Draw the sky
             }
         }
-        _scalefrac += segl->ScaleStep;      // Step to the next scale
-    } while (++x<=segl->RightX);
+
+        // Step to the next scale
+        _scalefrac += seg.ScaleStep;
+    }
 }
 
-/**********************************
+//----------------------------------------------------------------------------------------------------------------------
+// Follow the list of walls and draw each and every wall fragment.
+// Note : I draw the walls closest to farthest and I maintain a ZBuffer
+//----------------------------------------------------------------------------------------------------------------------
+void drawAllLineSegs() noexcept {
+    // Init the vertical clipping records
+    for (uint32_t i = 0; i < gScreenWidth; ++i) {
+        gClipBoundTop[i] = -1;                  // Allow to the ceiling
+        gClipBoundBottom[i] = gScreenHeight;    // Stop at the floor
+    }
 
-    Follow the list of walls and draw each
-    and every wall fragment.
-    Note : I draw the walls closest to farthest and I maintain a ZBuffet
+    // Process all the wall segments: create the visplanes and draw the sky only
+    viswall_t* const pStartWall = gVisWalls;
+    viswall_t* const pEndWall = gpEndVisWall;
 
-**********************************/
-
-void SegCommands(void)
-{
-    {
-        uint32_t i;     // Temp index
-        viswall_t *WallSegPtr;      // Pointer to the current wall
-        viswall_t *LastSegPtr;
+    for (viswall_t* pWall = pStartWall; pWall < pEndWall; ++pWall) {
+        segLoop(*pWall);
+    }
     
-        WallSegPtr = gVisWalls;             // Get the first wall segment to process
-        LastSegPtr = gpEndVisWall;          // Last one to process
-
-        if (LastSegPtr == WallSegPtr) {     // No walls to render?
-            return;                         // Exit now!!
-        }
-
-        EnableHardwareClipping();       // Turn on all hardware clipping to remove slop
-    
-        i = 0;      // Init the vertical clipping records
-        do {
-            gClipBoundTop[i] = -1;       // Allow to the ceiling
-            gClipBoundBottom[i] = gScreenHeight;  // Stop at the floor
-        } while (++i<gScreenWidth);
-
-        // Process all the wall segments
-
-        do {
-            SegLoop(WallSegPtr);            // Create the viswall records and draw the sky only
-        } while (++WallSegPtr<LastSegPtr);  // Next wall in chain
-    
-        // Now I actually draw the walls back to front to allow for clipping because of slop
-    
-        LastSegPtr = gVisWalls;      // Stop at the last one
-        do {
-            --WallSegPtr;           // Last go backwards!!
-            DrawSeg(WallSegPtr);        // Draw the wall (Only if needed)
-        } while (WallSegPtr!=LastSegPtr);   // All done?
+    // Now I actually draw the walls back to front to allow for clipping because of slop.
+    // Each wall is only drawn if needed...
+    for (viswall_t* pWall = gpEndVisWall - 1; pWall >= pStartWall; --pWall) {
+        drawSeg(*pWall);
     }
 }
 

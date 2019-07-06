@@ -8,8 +8,6 @@
 #include "Things/Info.h"
 #include "Things/MapObj.h"
 
-BEGIN_NAMESPACE(Renderer)
-
 //----------------------------------------------------------------------------------------------------------------------
 // By traversing the BSP tree, I will create a viswall_t array describing all walls are are visible to the computer 
 // screen, they may be projected off the left and right sides but this is to allow for scaling of the textures
@@ -22,6 +20,9 @@ BEGIN_NAMESPACE(Renderer)
 // I also create all the sprite records (Unsorted) so that they can be merged with the rendering system to 
 // handle clipping.
 //----------------------------------------------------------------------------------------------------------------------
+
+BEGIN_NAMESPACE(Renderer)
+
 struct cliprange_t {
     int32_t leftX;      // Left side of post
     int32_t rightX;     // Right side of post
