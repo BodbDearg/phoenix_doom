@@ -196,7 +196,7 @@ void drawPlayerView() noexcept {
     drawAllVisPlanes();
     drawAllMapObjectSprites();
     drawWeapons();                  // Draw the weapons on top of the screen
-    DrawColors();                   // Draw color overlay if needed    
+    doPostFx();                     // Draw color overlay if needed    
 }
 
 END_NAMESPACE(Renderer)

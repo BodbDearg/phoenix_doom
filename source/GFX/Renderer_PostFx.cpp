@@ -1,22 +1,18 @@
 #include "Renderer_Internal.h"
 
 #include "Base/Tables.h"
+#include "Game/Data.h"
 #include "Video.h"
 
 BEGIN_NAMESPACE(Renderer)
 
-/**********************************
+static void doInvunerabilityEffect() noexcept {
+    // The invunerability effect in 3DO Doom was a simple bit inverse.
+    // The 3DO game did not use the palette switching technique that the PC version did because there was no palette...
+    const uint32_t screenH = gScreenHeight;
 
-    Draw a screen color overlay if needed
-    
-**********************************/
-
-void DrawColors()
-{
-    return;
-
-    // TODO: TEST INVULNERABILITY EFFECT
-    for (int32_t y = 0; y <= (int32_t) gScreenHeight; ++y) {
+    for (uint32_t y = 0; y <= screenH; ++y) {
+        // Process this row of pixels and invert RGB values
         uint32_t* pPixel = &Video::gFrameBuffer[gScreenXOffset + (gScreenYOffset + y) * Video::SCREEN_WIDTH];
         uint32_t* const pEndPixel = pPixel + gScreenWidth;
 
@@ -25,6 +21,26 @@ void DrawColors()
             *pPixel = (~color) | 0x000000FF;
             ++pPixel;
         }
+    }
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+// Does post processing fx on the entire 3D view
+//----------------------------------------------------------------------------------------------------------------------
+void doPostFx() noexcept {    
+    const player_t& player = gPlayers;
+
+    // See if we are to do the invunerability effect.
+    // If this effect is in place then do that exclusively and nothing else:
+    const uint32_t invunTicksLeft = player.powers[pw_invulnerability];
+    const bool bDoInvunFx = (
+        (invunTicksLeft > TICKSPERSEC * 4) ||   // Full strength?
+        (invunTicksLeft & 0x10)                 // Flashing?
+    );
+
+    if (bDoInvunFx) {
+        doInvunerabilityEffect();
+        return;
     }
 
     // DC: FIXME: implement/replace

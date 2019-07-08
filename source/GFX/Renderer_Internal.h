@@ -166,9 +166,9 @@ namespace Renderer {
     void wallPrep(const int32_t leftX, const int32_t rightX, const seg_t& lineSeg, const angle_t lineAngle) noexcept;
     void drawAllLineSegs() noexcept;
     void drawAllVisPlanes() noexcept;
-    void drawAllMapObjectSprites() noexcept;
-    void DrawColors();
+    void drawAllMapObjectSprites() noexcept;    
     void drawWeapons() noexcept;
+    void doPostFx() noexcept;
 
     // TODO: FIXME - REMOVE FROM HERE
     void DrawSpriteCenter(uint32_t SpriteNum);
