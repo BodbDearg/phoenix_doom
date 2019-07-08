@@ -55,12 +55,12 @@ namespace Renderer {
         const mobj_t*               thing;          // Used for clipping...
     };
 
-    // Describes a column in a vis plane
-    struct VisPlaneCol {
+    // Describes the vertical bounds of a column on the screen
+    struct ColumnYBounds {
         uint16_t topY;
         uint16_t bottomY;
 
-        inline constexpr bool operator == (const VisPlaneCol& other) const noexcept {
+        inline constexpr bool operator == (const ColumnYBounds& other) const noexcept {
             return (topY == other.topY && bottomY == other.bottomY);
         }
 
@@ -72,14 +72,14 @@ namespace Renderer {
             return (!isUndefined());
         }
 
-        static inline constexpr VisPlaneCol UNDEFINED() noexcept {
-            return VisPlaneCol{ UINT16_MAX, 0 };
+        static inline constexpr ColumnYBounds UNDEFINED() noexcept {
+            return ColumnYBounds{ UINT16_MAX, 0 };
         }
     };
 
     // Describes a floor area to be drawn
     struct visplane_t {
-        VisPlaneCol     cols[MAXSCREENWIDTH + 1];
+        ColumnYBounds   cols[MAXSCREENWIDTH + 1];
         Fixed           height;                     // Height of the floor
         uint32_t        picHandle;                  // Texture handle
         uint32_t        planeLight;                 // Light override

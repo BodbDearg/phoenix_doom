@@ -131,13 +131,13 @@ void drawVisPlane(
     uint32_t stop = plane.maxX + 1;         // Maximum x coord
     uint32_t x = plane.minX;                // Starting x
 
-    VisPlaneCol* const pPlaneCols = plane.cols;         // Init the pointer to the open Y's
+    ColumnYBounds* const pPlaneCols = plane.cols;           // Init the pointer to the open Y's
     
-    VisPlaneCol prevCol = { MAXSCREENHEIGHT - 1, 0 };    // Set posts to stop drawing
+    ColumnYBounds prevCol = { MAXSCREENHEIGHT - 1, 0 };     // Set posts to stop drawing
     pPlaneCols[stop] = prevCol;
 
     do {
-        const VisPlaneCol newCol = pPlaneCols[x];   // Fetch the NEW top and bottom
+        const ColumnYBounds newCol = pPlaneCols[x];     // Fetch the NEW top and bottom
         const bool bSameColBounds = (
             (prevCol.topY == newCol.topY) && 
             (prevCol.bottomY == newCol.bottomY)
