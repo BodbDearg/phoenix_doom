@@ -288,15 +288,18 @@ void ST_Drawer()
         i = GODFACE;        // God mode 
         gGibFrame = 0;
     } else if (gGibDraw) {       // Got gibbed 
-        gGibDelay-=gElapsedTime;      // Time down gibbing 
-        i = FIRSTSPLAT+gGibFrame;
-        if (gGibDelay&0x8000) {
+        if (gGibDelay > 0) {
+            gGibDelay-=gElapsedTime;
+        }
+        else {
             ++gGibFrame;
             gGibDelay = GIBTIME;
             if (gGibFrame >= 7) {        // All frames shown? 
                 gGibDraw = false;        // Shut it off 
             }
         }
+
+        i = FIRSTSPLAT+gGibFrame;
     } else if (!p->health) {
         i = FIRSTSPLAT+gGibFrame;    // Dead man 
     } else {

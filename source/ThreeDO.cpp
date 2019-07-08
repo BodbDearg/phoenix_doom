@@ -29,13 +29,6 @@ static void WipeDoom(LongWord *OldScreen,LongWord *NewScreen);
 
 // DC: TODO: unused currently
 #if 0
-static LongWord gLastTicCount;               // Time mark for page flipping 
-#endif
-
-uint32_t gLastTics;                                     // Time elapsed since last page flip 
-
-// DC: TODO: unused currently
-#if 0
 uint8_t gSpanArray[MAXSCREENWIDTH*MAXSCREENHEIGHT];     // Buffer for floor textures 
 uint8_t* gSpanPtr = gSpanArray;                         // Pointer to empty buffer 
 #endif

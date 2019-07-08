@@ -16,8 +16,9 @@
 #include "UI/Options_Main.h"
 
 // FIXME: DC: TEMP - REMOVE
-#include <SDL.h>
+#include <algorithm>
 #include <ctime>
+#include <SDL.h>
 
 //----------------------------------------------------------------------------------------------------------------------
 // Grow a box if needed to encompass a point
@@ -118,31 +119,29 @@ uint32_t MiniLoop(
         SDL_PumpEvents();
 
         // FIXME: DC: TEMP
-        static clock_t lastClock;
-        clock_t curClock = clock();
+        {
+            static clock_t lastClock;
+            const clock_t curClock = clock();            
+            const clock_t clocksElapsed = curClock - lastClock;
+            const double secondsElapsed = (double) clocksElapsed / (double) CLOCKS_PER_SEC;
 
-        if ((curClock - lastClock) / (double) CLOCKS_PER_SEC > 1.0 / (float) TICKSPERSEC) {
-            gElapsedTime = 1;
-            lastClock = curClock;
+            double ticksElapsed = secondsElapsed * (double) TICKSPERSEC;
+            ticksElapsed = std::max(ticksElapsed, 0.0);
+            ticksElapsed = std::min(ticksElapsed, 8.0);     // 7.5 FPS minimum framerate!
+
+            gElapsedTime = (uint32_t) ticksElapsed;
+
+            if (gElapsedTime <= 0) {
+                continue;
+            }
+            else {
+                lastClock = curClock;
+            }
         }
-        else {
-            gElapsedTime = 0;
-            continue;
-        }        
-
+        
         // Run the tic immediately
         gTotalGameTicks += gElapsedTime;    // Add to the VBL count
         exit = ticker();                    // Process the keypad commands
-
-        // Adaptive timing based on previous frame
-        if (gDemoPlayback || gDemoRecording) {
-            gElapsedTime = 4;                       // Force 15 FPS
-        } else {
-            gElapsedTime = (uint32_t) gLastTics;    // Get the true time count
-            if (gElapsedTime >= 9) {                // Too slow?
-                gElapsedTime = 8;                   // Make 7.5 fps as my mark
-            }
-        }
 
         // Get buttons for next tic
         gPrevJoyPadButtons = gJoyPadButtons;        // Pass through the latest keypad info

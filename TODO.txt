@@ -5,10 +5,8 @@
     - Need shape + animated shape manager
 - Cleanup and optimize render code
 - Intro logos
-- Fix face death anim on HUD
 - Intro videos? (maybe)
 - Fix view bob not working.
-- Fix lost souls jumping UP suddenly when starting to fly
 - Fake contrast on walls
 - Tweak light diminishing (longer falloff + darker)
 - Tweak wall column rendering, looks a bit 'fuzzy' right now.
@@ -25,7 +23,6 @@
 - Cheats support
 - FPS counter
 - Fix address sanitizer crash on angle LUT lookup (easy to reproduce on MacOS with Xcode)
-- Fix issue on level 10 with small crate textures - alignment issue?
 - Fix sky scaling
 - Maybe add menu sounds?
 - Do lighting effects on player gun.
@@ -36,6 +33,7 @@
 - Do overbright lighting of environment due to muzzle flash?
 - Ensure last map accessible via menu (wasn't on 3DO version?)
 - Change endian macros to be 'big endian to host' (more portable)
+- Fix lost souls jumping UP suddenly when starting to fly
 
 Possible original 3DO or PC Doom bugs:
 
@@ -45,3 +43,4 @@ Possible original 3DO or PC Doom bugs:
 Bug happens in courtyard area beyond the yellow door (courtyard with red key).
 - Fix bug with bottom of sprites rendering past walls (1 or 2px more than we should have?) (found on PC version also, renderer or thing data issue?)
 - Investigate sprites poking through walls bug (visible on level 7 shotgun at start)
+- Issue on level 10 with small crate textures (found this in 3DO version - data problem?)

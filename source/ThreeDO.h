@@ -2,8 +2,6 @@
 
 #include <cstdint>
 
-extern uint32_t gLastTics;      // Time elapsed since last page flip
-
 void ThreeDOMain();
 void WritePrefsFile();
 void ClearPrefsFile();
