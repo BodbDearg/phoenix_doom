@@ -4,52 +4,29 @@
 #include "Base/Tables.h"
 #include "Game/Data.h"
 #include "Textures.h"
-#include "ThreeDO.h"
 #include "Video.h"
 
 BEGIN_NAMESPACE(Renderer)
 
-#define OPENMARK ((MAXSCREENHEIGHT-1)<<8)
+static constexpr uint32_t OPENMARK = ((MAXSCREENHEIGHT - 1) << 8);
 
-std::byte*  gPlaneSource;
-Fixed       gPlaneY;
-Fixed       gBaseXScale;
-Fixed       gBaseYScale;
-uint32_t    gPlaneDistance;
-
-static uint32_t gPlaneHeight;
 static uint32_t gSpanStart[MAXSCREENHEIGHT];
 
-/**********************************
-
-    Drawing the floor and ceiling is the hardest, so I'll do this last.
-    The parms are, 
-    x = screen x coord for the virtual screen. Must be offset
-        to the true screen coords.
-    top = screen y coord for the virtual screen. Must also be offset
-        to the true screen coords.
-    bottom = screen y coord for the BOTTOM of the pixel run. Subtract from top
-        to get the exact destination pixel run count.
-    colnum = index for which scan line to draw from the source image. Note that
-        this number has all bits set so I must mask off the unneeded bits for
-        texture wraparound.
-
-    gSpanPtr is a pointer to the gSpanArray buffer, this is where I store the
-    processed floor textures.
-    No light shading is used. The scale factor is a constant.
-    
-**********************************/
-static void DrawFloorColumn(
-    uint32_t ds_y,
-    uint32_t ds_x1,
-    uint32_t Count,
-    uint32_t xfrac,
-    uint32_t yfrac,
-    Fixed ds_xstep,
-    Fixed ds_ystep
-) {
-    // TODO: TEMP - CLEANUP
-    const uint16_t* const pPLUT = (const uint16_t*) gPlaneSource;
+//----------------------------------------------------------------------------------------------------------------------
+// Draws a horizontal span of the floor.
+//----------------------------------------------------------------------------------------------------------------------
+static void drawFloorColumn(
+    const uint32_t ds_y,
+    const uint32_t ds_x1,
+    const uint32_t Count,
+    const uint32_t xfrac,
+    const uint32_t yfrac,
+    const Fixed ds_xstep,
+    const Fixed ds_ystep,
+    const std::byte* const pTexData
+) noexcept {
+    // FIXME: TEMP - CLEANUP & OPTIMIZE
+    const uint16_t* const pPLUT = (const uint16_t*) pTexData;
     const Fixed lightMultiplier = getLightMultiplier(gTxTextureLight, MAX_FLOOR_LIGHT_VALUE);
 
     for (uint32_t pixelNum = 0; pixelNum < Count; ++pixelNum) {
@@ -57,7 +34,7 @@ static void DrawFloorColumn(
         Fixed ty = ((yfrac + ds_ystep * pixelNum) >> FRACBITS) & 63;    // assumes 64x64
 
         Fixed offset = ty * 64 + tx;
-        const uint8_t lutByte = ((uint8_t) gPlaneSource[64 + offset]) & 31;
+        const uint8_t lutByte = ((uint8_t) pTexData[64 + offset]) & 31;
         ASSERT(lutByte < 32);
         uint8_t colorIdx = lutByte;
 
@@ -80,207 +57,176 @@ static void DrawFloorColumn(
 
         Video::gFrameBuffer[screenY * Video::SCREEN_WIDTH + screenX] = finalColor;
     }
+}
 
-    // DC: FIXME: implement/replace
-    #if 0
-        Byte *DestPtr;
-        MyCCB *DestCCB;
+//----------------------------------------------------------------------------------------------------------------------
+// This is the basic function to draw horizontal lines quickly 
+//----------------------------------------------------------------------------------------------------------------------
+static void mapPlane(
+    const uint32_t x2,
+    const uint32_t y,
+    const Fixed planeY,
+    const Fixed planeHeight,
+    const Fixed baseXScale,
+    const Fixed baseYScale,
+    const std::byte* const pTexData
+) noexcept {
+    //------------------------------------------------------------------------------------------------------------------
+    // planeheight is 10.6
+    // yslope is 6.10, distscale is 1.15
+    // distance is 12.4
+    // length is 11.5
+    //------------------------------------------------------------------------------------------------------------------
+    const uint32_t x1 = gSpanStart[y];
+    const uint32_t distance = (gYSlope[y] * planeHeight) >> 12;     // Get the offset for the plane height
+    const Fixed length = (gDistScale[x1] * distance) >> 14;
+    const angle_t angle = (gXToViewAngle[x1] + gViewAngle) >> ANGLETOFINESHIFT;
 
-        DestCCB = CurrentCCB;       // Copy pointer to local 
-        if (DestCCB>=&gCCBArray[CCBTotal]) {     // Am I full already? 
-            FlushCCBs();                // Draw all the CCBs/Lines 
-            DestCCB=gCCBArray;
+    // xfrac, yfrac, xstep, ystep
+    const Fixed xfrac = (((gFineCosine[angle] >> 1) * length) >> 4) + gViewX;
+    const Fixed yfrac = planeY - (((gFineSine[angle] >> 1) * length) >> 4);
+
+    const Fixed xstep = ((Fixed) distance * baseXScale) >> 4;
+    const Fixed ystep = ((Fixed) distance * baseYScale) >> 4;
+
+    {
+        const uint32_t distanceDiv = (distance > 0) ? distance : 1;         // DC: fix division by zero when using the noclip cheat
+        Fixed lightValue = gLightCoef / (Fixed) distanceDiv - gLightSub;
+
+        if (lightValue < gLightMin) {
+            lightValue = gLightMin;
         }
-        DestPtr = gSpanPtr;
-        DrawASpan(Count,xfrac,yfrac,ds_xstep,ds_ystep,DestPtr);
-
-        DestCCB->ccb_Flags = CCB_SPABS|CCB_LDSIZE|CCB_LDPRS|
-        CCB_LDPPMP|CCB_CCBPRE|CCB_YOXY|CCB_ACW|CCB_ACCW|
-        CCB_ACE|CCB_BGND|CCB_NOBLK|CCB_PPABS|CCB_LDPLUT|CCB_USEAV;  // ccb_flags 
-
-        DestCCB->ccb_PRE0 = 0x00000005;     // Preamble (Coded 8 bit) 
-        DestCCB->ccb_PRE1 = 0x3E005000|(Count-1);       // Second preamble 
-        DestCCB->ccb_SourcePtr = (CelData *)DestPtr;    // Save the source ptr 
-        DestCCB->ccb_PLUTPtr = PlaneSource;     // Get the palette ptr 
-        DestCCB->ccb_XPos = ds_x1<<16;      // Set the x and y coord for start 
-        DestCCB->ccb_YPos = ds_y<<16;
-        DestCCB->ccb_HDX = 1<<20;       // OK 
-        DestCCB->ccb_HDY = 0<<20;
-        DestCCB->ccb_VDX = 0<<16;
-        DestCCB->ccb_VDY = 1<<16;
-        DestCCB->ccb_PIXC = gLightTable[tx_texturelight>>LIGHTSCALESHIFT];           // PIXC control 
     
-        Count = (Count+3)&(~3);     // Round to nearest longword 
-        DestPtr += Count;
-        gSpanPtr = DestPtr;
-        ++DestCCB;              // Next CCB 
-        CurrentCCB = DestCCB;   // Save the CCB pointer 
-    #endif
+        if (lightValue > gLightMax) {
+            lightValue = gLightMax;
+        }
+
+        gTxTextureLight = (uint32_t) lightValue;
+    }
+
+    drawFloorColumn(y, x1, x2 - x1, xfrac, yfrac, xstep, ystep, pTexData);
 }
 
-/**********************************
-
-basexscale
-baseyscale
-planey
-
-    This is the basic primitive to draw horizontal lines quickly
+//----------------------------------------------------------------------------------------------------------------------
+// Draw a plane by scanning the open records. 
+// The open records are an array of top and bottom Y's for a graphical plane.
+// I traverse the array to find out the horizontal spans I need to draw; this is a bottleneck routine.
+//----------------------------------------------------------------------------------------------------------------------
+void drawVisPlane(
+    visplane_t& plane,
+    const Fixed planeY,
+    const Fixed baseXScale,
+    const Fixed baseYScale
+) noexcept {
+    const Texture* const pTex = getFlatAnimTexture((uint32_t) plane.PicHandle);
+    const std::byte* const pTexData = (std::byte*) pTex->pData;
+    const Fixed planeHeight = std::abs(plane.height);
     
-**********************************/
-static void MapPlane(uint32_t x2, uint32_t y)
-{
-    angle_t angle;
-    uint32_t distance;
-    Fixed length;
-    Fixed xfrac,yfrac,xstep,ystep;
-    uint32_t x1;
-
-// planeheight is 10.6
-// yslope is 6.10, distscale is 1.15
-// distance is 12.4
-// length is 11.5
-
-    x1 = gSpanStart[y];
-    distance = (gYSlope[y]*gPlaneHeight)>>12; // Get the offset for the plane height
-    length = (gDistScale[x1]*distance)>>14;
-    angle = (gXToViewAngle[x1]+gViewAngle)>>ANGLETOFINESHIFT;
-
-// xfrac, yfrac, xstep, ystep
-
-    xfrac = (((gFineCosine[angle]>>1)*length)>>4)+gViewX;
-    yfrac = gPlaneY - (((gFineSine[angle]>>1)*length)>>4);
-
-    xstep = ((Fixed)distance*gBaseXScale)>>4;
-    ystep = ((Fixed)distance*gBaseYScale)>>4;
-
-    distance = (distance > 0) ? distance : 1;               // DC: fix division by zero when using the noclip cheat
-    length = gLightCoef / (Fixed) distance - gLightSub;
-
-    if (length < gLightMin) {
-        length = gLightMin;
+    {
+        const uint32_t lightLevel = plane.PlaneLight;
+        gLightMin = gLightMins[lightLevel];
+        gLightMax = lightLevel;
+        gLightSub = gLightSubs[lightLevel];
+        gLightCoef = gPlaneLightCoef[lightLevel];
     }
     
-    if (length > gLightMax) {
-        length = gLightMax;
-    }
-
-    gTxTextureLight = length;
-    DrawFloorColumn(y,x1,x2-x1,xfrac,yfrac,xstep,ystep);
-}
-
-/**********************************
-    
-    Draw a plane by scanning the open records. 
-    The open records are an array of top and bottom Y's for
-    a graphical plane. I traverse the array to find out the horizontal
-    spans I need to draw. This is a bottleneck routine.
-
-**********************************/
-
-void DrawVisPlane(visplane_t *p)
-{
-    uint32_t x;
-    uint32_t stop;
-    uint32_t oldtop;
-    uint32_t *open;
-
-    const Texture* const pTex = getFlatAnimTexture((uint32_t) p->PicHandle);
-    gPlaneSource = (std::byte*) pTex->pData;
-    x = p->height;
-    if ((int)x<0) {
-        x = -x;
-    }
-    gPlaneHeight = x;
-    
-    stop = p->PlaneLight;
-    gLightMin = gLightMins[stop];
-    gLightMax = stop;
-    gLightSub = gLightSubs[stop];
-    gLightCoef = gPlaneLightCoef[stop];
-    
-    stop = p->maxx+1;   // Maximum x coord
-    x = p->minx;        // Starting x
-    open = p->open;     // Init the pointer to the open Y's
-    oldtop = OPENMARK;  // Get the top and bottom Y's
-    open[stop] = oldtop;    // Set posts to stop drawing
+    uint32_t stop = plane.maxx + 1;         // Maximum x coord
+    uint32_t x = plane.minx;                // Starting x
+    uint32_t* const pOpen = plane.open;     // Init the pointer to the open Y's
+    uint32_t oldtop = OPENMARK;             // Get the top and bottom Y's
+    pOpen[stop] = oldtop;                   // Set posts to stop drawing
 
     do {
-        uint32_t newtop;
-        newtop = open[x];       // Fetch the NEW top and bottom
-        if (oldtop!=newtop) {
-            uint32_t PrevTopY,NewTopY;      // Previous and dest Y coords for top line
-            uint32_t PrevBottomY,NewBottomY;    // Previous and dest Y coords for bottom line
-            PrevTopY = oldtop>>8;       // Starting Y coords
-            PrevBottomY = oldtop&0xFF;
-            NewTopY = newtop>>8;
-            NewBottomY = newtop&0xff;
+        const uint32_t newtop = pOpen[x];   // Fetch the NEW top and bottom
+
+        if (oldtop == newtop)
+            continue;
+
+        uint32_t prevTopY = oldtop >> 8;        // Previous and dest Y coords for top and bottom line
+        uint32_t prevBottomY = oldtop & 0xFF;
+        uint32_t newTopY = newtop >> 8;
+        uint32_t newBottomY = newtop & 0xff;
         
-            // For lines on the top, check if the entry is going down
-            
-            if (PrevTopY < NewTopY && PrevTopY<=PrevBottomY) {  // Valid?
-                uint32_t Count;
-                    
-                Count = PrevBottomY+1;  // Convert to <
-                if (NewTopY<Count) {    // Use the lower
-                    Count = NewTopY;    // This is smaller
-                }
-                do {
-                    MapPlane(x,PrevTopY);       // Draw to this x
-                } while (++PrevTopY<Count); // Keep counting
+        // For lines on the top, check if the entry is going down            
+        if (prevTopY < newTopY && prevTopY <= prevBottomY) {        // Valid?
+            uint32_t count = prevBottomY + 1;                       // Convert to <
+            if (newTopY < count) {                                  // Use the lower
+                count = newTopY;                                    // This is smaller
             }
-            if (NewTopY < PrevTopY && NewTopY<=NewBottomY) {
-                uint32_t Count;
-                Count = NewBottomY+1;
-                if (PrevTopY<Count) {
-                    Count = PrevTopY;
-                }
-                do {
-                    gSpanStart[NewTopY] = x; // Mark the starting x's
-                } while (++NewTopY<Count);
-            }
-        
-            if (PrevBottomY > NewBottomY && PrevBottomY>=PrevTopY) {
-                int Count;
-                Count = PrevTopY-1;
-                if (Count<(int)NewBottomY) {
-                    Count = NewBottomY;
-                }
-                do {
-                    MapPlane(x,PrevBottomY);    // Draw to this x
-                } while ((int)--PrevBottomY>Count);
-            }
-            if (NewBottomY > PrevBottomY && NewBottomY>=NewTopY) {
-                int Count;
-                Count = NewTopY-1;
-                if (Count<(int)PrevBottomY) {
-                    Count = PrevBottomY;
-                }
-                do {
-                    gSpanStart[NewBottomY] = x;      // Mark the starting x's
-                } while ((int)--NewBottomY>Count);
-            }
-            oldtop=newtop;
+
+            do {
+                // Draw to this x
+                mapPlane(
+                    x,
+                    prevTopY,
+                    planeY,
+                    planeHeight,
+                    baseXScale,
+                    baseYScale,
+                    pTexData
+                );
+            } while (++prevTopY < count);   // Keep counting
         }
-    } while (++x<=stop);
+
+        if (newTopY < prevTopY && newTopY <= newBottomY) {
+            uint32_t count = newBottomY + 1;
+            if (prevTopY < count) {
+                count = prevTopY;
+            }
+
+            do {
+                gSpanStart[newTopY] = x;    // Mark the starting x's
+            } while (++newTopY < count);
+        }
+            
+        if (prevBottomY > newBottomY && prevBottomY >= prevTopY) {
+            int count = prevTopY - 1;
+            if (count < (int) newBottomY) {
+                count = newBottomY;
+            }
+
+            do {
+                // Draw to this x
+                mapPlane(
+                    x,
+                    prevBottomY,
+                    planeY,
+                    planeHeight,
+                    baseXScale,
+                    baseYScale,
+                    pTexData
+                );
+            } while ((int) --prevBottomY > count);
+        }
+
+        if (newBottomY > prevBottomY && newBottomY >= newTopY) {
+            int count = newTopY - 1;
+            if (count < (int) prevBottomY) {
+                count = prevBottomY;
+            }
+
+            do {
+                gSpanStart[newBottomY] = x; // Mark the starting x's
+            } while ((int) --newBottomY > count);
+        }
+
+        oldtop = newtop;
+    } while (++x <= stop);
 }
 
 void drawAllVisPlanes() noexcept {
-    visplane_t *PlanePtr;
-    visplane_t *LastPlanePtr;
-    uint32_t WallScale;
-        
-    PlanePtr = gVisPlanes+1;     // Get the range of pointers
-    LastPlanePtr = gpEndVisPlane;
+    const uint32_t wallScale = (gViewAngle - ANG90) >> ANGLETOFINESHIFT;                    // Left to right mapping
+    const Fixed baseXScale = (gFineCosine[wallScale] / ((int32_t) gScreenWidth / 2));
+    const Fixed baseYScale = -(gFineSine[wallScale] / ((int32_t) gScreenWidth / 2));
+    const Fixed planeY = -gViewY;                                                           // Get the Y coord for camera
+
+    visplane_t* pPlane = gVisPlanes + 1;
+    visplane_t* const pEndPlane = gpEndVisPlane;
     
-    if (PlanePtr!=LastPlanePtr) {   // No planes generated?
-        gPlaneY = -gViewY;        // Get the Y coord for camera
-        WallScale = (gViewAngle-ANG90)>>ANGLETOFINESHIFT;    // left to right mapping
-        gBaseXScale = (gFineCosine[WallScale] / ((int)gScreenWidth/2));
-        gBaseYScale = -(gFineSine[WallScale] / ((int)gScreenWidth/2));
-        do {
-            DrawVisPlane(PlanePtr);     // Convert the plane
-        } while (++PlanePtr<LastPlanePtr);      // Loop for all
-    }    
+    while (pPlane < pEndPlane) {
+        drawVisPlane(*pPlane, planeY, baseXScale, baseYScale);
+        ++pPlane;
+    }
 }
 
 END_NAMESPACE(Renderer)

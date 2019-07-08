@@ -134,10 +134,6 @@ namespace Renderer {
     extern uint32_t         gExtraLight;                    // Bumped light from gun blasts
     extern angle_t          gClipAngle;                     // Leftmost clipping angle
     extern angle_t          gDoubleClipAngle;               // Doubled leftmost clipping angle
-    extern std::byte*       gPlaneSource;                   // Pointer to floor shape
-    extern Fixed            gPlaneY;                        // Latched viewx / viewy for floor drawing
-    extern Fixed            gBaseXScale;
-    extern Fixed            gBaseYScale;
     extern uint32_t         gSprOpening[MAXSCREENWIDTH];    // clipped range
 
     //==================================================================================================================
