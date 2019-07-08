@@ -27,7 +27,7 @@ struct drawtex_t {
     uint32_t            height;             // Height of texture in pixels
     int32_t             topheight;          // Top texture height in global pixels
     int32_t             bottomheight;       // Bottom texture height in global pixels
-    uint32_t            texturemid;         // Anchor point for texture
+    Fixed               texturemid;         // Anchor point for texture
 };
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -130,7 +130,8 @@ static void drawTexturedColumn(
 
     // View Y to draw at and y position in texture to use
     const uint32_t viewY = gCenterY - uint32_t((columnScale * tex.topheight) >> (HEIGHTBITS + SCALEBITS));
-    const uint32_t texY = (uint32_t) fixedToInt(tex.texturemid - (tex.topheight << FIXEDTOHEIGHT));
+    const uint32_t texYNotOffset = fixedToInt(tex.texturemid - (tex.topheight << FIXEDTOHEIGHT));
+    const uint32_t texY = ((int32_t) texYNotOffset < 0) ? texYNotOffset + tex.height : texYNotOffset;   // DC: This is required for correct vertical alignment in some cases
 
     // Draw the column
     drawWallColumn(
