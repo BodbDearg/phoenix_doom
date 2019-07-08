@@ -8,24 +8,20 @@
 #include "Game/Resources.h"
 #include "Things/Info.h"
 #include "Things/MapObj.h"
-#include "Things/Player.h"
 
 BEGIN_NAMESPACE(Renderer)
 
-#define SCREENGUNY -40      // Y offset to center the player's weapon properly
+static constexpr int32_t SCREENGUNY = -40;  // Y offset to center the player's weapon properly
 
-/**********************************
-
-    Draw a single weapon or muzzle flash on the screen
-
-**********************************/
-
-static void DrawAWeapon(pspdef_t *psp,uint32_t Shadow)
-{
-    const state_t* const StatePtr = psp->StatePtr;                                      // Get the state struct pointer
-    const uint32_t RezNum = StatePtr->SpriteFrame >> FF_SPRITESHIFT;                        // Get the file
-    const uint16_t* Input = (uint16_t*)loadResourceData(RezNum);                        // Get the main pointer
-    Input = (uint16_t*) GetShapeIndexPtr(Input,StatePtr->SpriteFrame & FF_FRAMEMASK);   // Pointer to the xy offset'd shape
+//----------------------------------------------------------------------------------------------------------------------
+// Draw a single weapon or muzzle flash on the screen
+//----------------------------------------------------------------------------------------------------------------------
+static void DrawAWeapon(const pspdef_t& psp, const bool bShadow) noexcept {
+    // FIXME: DC: clean this up
+    const state_t* const StatePtr = psp.StatePtr;                                               // Get the state struct pointer
+    const uint32_t rezNum = StatePtr->SpriteFrame >> FF_SPRITESHIFT;                            // Get the file
+    const uint16_t* input = (uint16_t*) loadResourceData(rezNum);                               // Get the main pointer
+    input = (const uint16_t*) GetShapeIndexPtr(input, StatePtr->SpriteFrame & FF_FRAMEMASK);    // Pointer to the xy offset'd shape
     
     // FIXME: DC: Reimplement/replace
     #if 0
@@ -46,48 +42,50 @@ static void DrawAWeapon(pspdef_t *psp,uint32_t Shadow)
     #endif
 
     // TODO: DC: Find a better place for these endian conversions
-    int x = byteSwappedI16(Input[0]);
-    int y = byteSwappedI16(Input[1]);
-    x = ((psp->WeaponX + x ) * (int) gGunXScale) >> 20;
-    y = ((psp->WeaponY + SCREENGUNY + y) * (int) gGunYScale) >> 16;
+    int32_t x = byteSwappedI16(input[0]);
+    int32_t y = byteSwappedI16(input[1]);
+    x = ((psp.WeaponX + x ) * (int32_t) gGunXScale) >> 20;
+    y = ((psp.WeaponY + SCREENGUNY + y) * (int32_t) gGunYScale) >> 16;
     x += gScreenXOffset;
-    y += gScreenYOffset + 2;         // Add 2 pixels to cover up the hole in the bottom
-    DrawMShape(x, y, (const CelControlBlock*) &Input[2]);    // Draw the weapon's shape
-    releaseResource(RezNum);
+    y += gScreenYOffset + 2;                                    // Add 2 pixels to cover up the hole in the bottom
+    DrawMShape(x, y, (const CelControlBlock*) &input[2]);       // Draw the weapon's shape
+    releaseResource(rezNum);
 }
 
-/**********************************
+//----------------------------------------------------------------------------------------------------------------------
+// Draw the player's weapon in the foreground
+//----------------------------------------------------------------------------------------------------------------------
+void drawWeapons() noexcept {
+    // Determine whether to draw the weapon partially invisible
+    bool bShadow = false;
+    if (gPlayers.mo->flags & MF_SHADOW) {
+        const uint32_t powerTicksLeft = gPlayers.powers[pw_invisibility];               // Get flash time
+        bShadow = (
+            (powerTicksLeft >= (5 * TICKSPERSEC)) ||    // Is there a long time left for the power still?
+            ((powerTicksLeft & 0x10) != 0)              // Allowed to show while flashing off?
+        );
+    }
 
-    Draw the player's weapon in the foreground
+    // Draw the sprites (if valid)
+    {
+        const pspdef_t* pSprite = gPlayers.psprites;                // Get the first sprite in the array 
+        const pspdef_t* const pEndSprite = pSprite + NUMPSPRITES;
 
-**********************************/
-
-void DrawWeapons(void)
-{
-    uint32_t i;
-    uint32_t Shadow;        // Flag for shadowing
-    pspdef_t *psp;
-    
-    psp = gPlayers.psprites; // Get the first sprite in the array 
-    Shadow = false;         // Assume no shadow draw mode
-    if (gPlayers.mo->flags & MF_SHADOW) {    // Could be active?
-        i = gPlayers.powers[pw_invisibility];    // Get flash time
-        if (i>=(5*TICKSPERSEC) || i&0x10) { // On a long time or if flashing...
-            Shadow = true;      // Draw as a shadow right now
+        while (pSprite < pEndSprite) {
+            if (pSprite->StatePtr) {                // Valid state record?
+                DrawAWeapon(*pSprite, bShadow);     // Draw the weapon
+            }
+            
+            ++pSprite;
         }
     }
-    i = 0;      // Init counter
-    do {
-        if (psp->StatePtr) {        // Valid state record?
-            DrawAWeapon(psp,Shadow);    // Draw the weapon
-        }
-        ++psp;      // Next...
-    } while (++i<NUMPSPRITES);  // All done?
-    
-    i = gScreenSize+rBACKGROUNDMASK;         // Get the resource needed
 
-    DrawMShape(0,0, (const CelControlBlock*) loadResourceData(i));      // Draw the border
-    releaseResource(i);                                                 // Release the resource
+    // Draw the border
+    {
+        const uint32_t borderRezNum = gScreenSize + rBACKGROUNDMASK;
+        DrawMShape(0,0, (const CelControlBlock*) loadResourceData(borderRezNum));      
+        releaseResource(borderRezNum);
+    }
 }
 
 END_NAMESPACE(Renderer)

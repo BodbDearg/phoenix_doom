@@ -195,8 +195,8 @@ void drawPlayerView() noexcept {
     drawAllLineSegs();              // Draw all everything Z Sorted
     drawAllVisPlanes();
     drawAllMapObjectSprites();
+    drawWeapons();                  // Draw the weapons on top of the screen
     DrawColors();                   // Draw color overlay if needed    
-    DrawWeapons();                  // Draw the weapons on top of the screen
 }
 
 END_NAMESPACE(Renderer)

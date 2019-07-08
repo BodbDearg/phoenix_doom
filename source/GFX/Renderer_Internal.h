@@ -168,7 +168,7 @@ namespace Renderer {
     void drawAllVisPlanes() noexcept;
     void drawAllMapObjectSprites() noexcept;
     void DrawColors();
-    void DrawWeapons();
+    void drawWeapons() noexcept;
 
     // TODO: FIXME - REMOVE FROM HERE
     void DrawSpriteCenter(uint32_t SpriteNum);
