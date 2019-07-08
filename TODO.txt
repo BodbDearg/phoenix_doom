@@ -1,4 +1,3 @@
-- Screen tint fx (pain etc.)
 - Screen wipes
 - Sprites need light diminishing
 - Finale drawing
@@ -25,22 +24,24 @@
 - Loading and saving the save file with preferences and map reached.
 - Cheats support
 - FPS counter
-- Investigate sprites poking through walls bug (visible on level 7 shotgun at start)
-- Fix bug with bottom of sprites rendering past walls (1 or 2px more than we should have?) (found on PC version also, thing data issue?)
 - Fix address sanitizer crash on angle LUT lookup (easy to reproduce on MacOS with Xcode)
 - Fix issue on level 10 with small crate textures - alignment issue?
-- Fix head not exploding on death
 - Fix sky scaling
 - Maybe add menu sounds?
 - Do lighting effects on player gun.
 - Maybe center numbers on HUD?
 - Optimize audio mixing for different channel counts and bit depths
 - Fix gun scale on HUD. (especially on smaller screen sizes)
-- Wall sliding sometimes 'sticking' (may be original doom behavior - investigate)
 - Is the pistol reload speed too slow?
 - Do overbright lighting of environment due to muzzle flash?
-- Anything that can be done about the artifacts when rendering flats when the eye is almost level with the flat?
-- Level 15: strange bug where wall in room beyond visible through sky after opening door (on PSX version also)
-Bug happens in courtyard area beyond the yellow door (courtyard with red key).
 - Ensure last map accessible via menu (wasn't on 3DO version?)
 - Change endian macros to be 'big endian to host' (more portable)
+
+Possible original 3DO or PC Doom bugs:
+
+- Anything that can be done about the artifacts when rendering flats when the eye is almost level with the flat?
+- Wall sliding sometimes 'sticking' (may be original Doom behavior - investigate)
+- Level 15: strange bug where wall in room beyond visible through sky after opening door (on 3DO orig + PSX version also)
+Bug happens in courtyard area beyond the yellow door (courtyard with red key).
+- Fix bug with bottom of sprites rendering past walls (1 or 2px more than we should have?) (found on PC version also, renderer or thing data issue?)
+- Investigate sprites poking through walls bug (visible on level 7 shotgun at start)

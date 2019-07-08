@@ -22,3 +22,8 @@ There was a bug in the 3DO code for monsters that caused very different AI behav
 
 [] Fixed a bug where punching things made no punch sound.
 Not sure why this happened, there was no code to play the sound in the 3DO version but the sound existed. Now fixed.
+
+[] Post processing FX is applied to the player's weapon in addition to the 3D environment.
+In the original 3DO version the player's weapon was exempt from the invulnerability effect and screen tints. I added this change to help improve the immersiveness of the effect; looked odd that the weapon was excluded!
+
+[] Screen tint FX method changed and minor tweaks applied. I switched from the 3DO technique of doing a blend with a solid color to doing a color multiply instead. The intent with this change is to hopefully help preserve color detail and prevent the 3D display from looking washed out when heavy amounts of FX are applied.

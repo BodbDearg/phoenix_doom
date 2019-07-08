@@ -3,10 +3,11 @@
 #include "Base/Tables.h"
 #include "Game/Data.h"
 #include "Video.h"
+#include <algorithm>
 
 BEGIN_NAMESPACE(Renderer)
 
-static void doInvunerabilityEffect() noexcept {
+static void doInvulnerabilityEffect() noexcept {
     // The invunerability effect in 3DO Doom was a simple bit inverse.
     // The 3DO game did not use the palette switching technique that the PC version did because there was no palette...
     const uint32_t screenH = gScreenHeight;
@@ -24,13 +25,61 @@ static void doInvunerabilityEffect() noexcept {
     }
 }
 
+static void doTintEffect(const uint32_t r5, const uint32_t g5, const uint32_t b5) noexcept {
+    // If there is no effect do nothing
+    if (r5 == 0 && g5 == 0 && b5 == 0)
+        return;
+
+    // Create a fixed point multiplier for RGB values
+    constexpr Fixed COL5_MAX_FRAC = intToFixed(31);
+    constexpr Fixed COL8_MAX_FRAC = intToFixed(255);
+    constexpr Fixed EFFECT_STRENGHT = intToFixed(2);
+
+    const Fixed rMul = FRACUNIT + fixedMul(fixedDiv(intToFixed(r5), COL5_MAX_FRAC), EFFECT_STRENGHT);
+    const Fixed gMul = FRACUNIT + fixedMul(fixedDiv(intToFixed(g5), COL5_MAX_FRAC), EFFECT_STRENGHT);
+    const Fixed bMul = FRACUNIT + fixedMul(fixedDiv(intToFixed(b5), COL5_MAX_FRAC), EFFECT_STRENGHT);
+
+    // Modulate all of the RGB values in the framebuffer
+    const uint32_t screenH = gScreenHeight;
+
+    for (uint32_t y = 0; y <= screenH; ++y) {
+        // Process this row of pixels
+        uint32_t* pPixel = &Video::gFrameBuffer[gScreenXOffset + (gScreenYOffset + y) * Video::SCREEN_WIDTH];
+        uint32_t* const pEndPixel = pPixel + gScreenWidth;
+
+        while (pPixel < pEndPixel) {
+            // Get the old colors from 0-1
+            const uint32_t color = *pPixel;
+            const Fixed oldRFrac = intToFixed(color >> 24);
+            const Fixed oldGFrac = intToFixed((color >> 16) & 0xFFu);
+            const Fixed oldBFrac = intToFixed((color >> 8) & 0xFFu);
+
+            // Modulate and clamp
+            const Fixed rFrac = std::min(fixedMul(oldRFrac, rMul), 255 * FRACUNIT);
+            const Fixed gFrac = std::min(fixedMul(oldGFrac, gMul), 255 * FRACUNIT);
+            const Fixed bFrac = std::min(fixedMul(oldBFrac, bMul), 255 * FRACUNIT);
+
+            // Make a framebuffer color
+            const uint32_t finalColor = (
+                ((uint32_t) fixedToInt(rFrac) << 24) |
+                ((uint32_t) fixedToInt(gFrac) << 16) |
+                ((uint32_t) fixedToInt(bFrac) << 8) |
+                0x000000FFu
+            );
+
+            *pPixel = finalColor;
+            ++pPixel;
+        }
+    }
+}
+
 //----------------------------------------------------------------------------------------------------------------------
 // Does post processing fx on the entire 3D view
 //----------------------------------------------------------------------------------------------------------------------
 void doPostFx() noexcept {    
     const player_t& player = gPlayers;
 
-    // See if we are to do the invunerability effect.
+    // See if we are to do the invulnerability effect.
     // If this effect is in place then do that exclusively and nothing else:
     const uint32_t invunTicksLeft = player.powers[pw_invulnerability];
     const bool bDoInvunFx = (
@@ -39,86 +88,40 @@ void doPostFx() noexcept {
     );
 
     if (bDoInvunFx) {
-        doInvunerabilityEffect();
+        doInvulnerabilityEffect();
         return;
     }
 
-    // DC: FIXME: implement/replace
-    #if 0
-        MyCCB* DestCCB;         // Pointer to new CCB entry 
-        player_t *player;
-        Word ccb,color;
-        Word red,green,blue;
-    
-        player = &players;
-        if (player->powers[pw_invulnerability] > 240        // Full strength 
-            || (player->powers[pw_invulnerability]&16) ) {  // Flashing... 
-            color = 0x7FFF<<16;
-            ccb = CCB_LDSIZE|CCB_LDPRS|CCB_PXOR|
-            CCB_LDPPMP|CCB_CCBPRE|CCB_YOXY|CCB_ACW|CCB_ACCW|
-            CCB_ACE|CCB_BGND|CCB_NOBLK;
-            goto DrawIt;
-        }
-    
-        red = player->damagecount;      // Get damage inflicted 
-        green = player->bonuscount>>2;
-        red += green;
-        blue = 0;
-    
-        if (player->powers[pw_ironfeet] > 240       // Radiation suit? 
-            || (player->powers[pw_ironfeet]&16) ) { // Flashing... 
-            green = 10;         // Add some green 
-        }
+    // Do color effects due to other powerups and pain/item-pickup
+    const uint32_t pickupFx = player.bonuscount / 2;
 
-        if (player->powers[pw_strength]         // Berserker pack? 
-            && (player->powers[pw_strength]< 255) ) {
-            color = 255-player->powers[pw_strength];
-            color >>= 4;
-            red+=color;     // Feeling good! 
-        }
+    uint32_t redFx = player.damagecount + pickupFx;
+    uint32_t greenFx = pickupFx;
+    uint32_t blueFx = 0;
 
-        if (red>=32) {
-            red = 31;
-        }
-        if (green>=32) {
-            green =31;
-        }
-        if (blue>=32) {
-            blue = 31;
-        }
+    const uint32_t radSuitTicksLeft = player.powers[pw_ironfeet];
+    const uint32_t beserkTicksLeft = player.powers[pw_strength];
 
-        color = (red<<10)|(green<<5)|blue;
-    
-        if (!color) {
-            return;
-        }
-        color <<=16;
-        ccb = CCB_LDSIZE|CCB_LDPRS|
-            CCB_LDPPMP|CCB_CCBPRE|CCB_YOXY|CCB_ACW|CCB_ACCW|
-            CCB_ACE|CCB_BGND|CCB_NOBLK;
+    const bool bDoRadSuitFx = (
+        (radSuitTicksLeft > TICKSPERSEC * 4) ||   // Full strength?
+        (radSuitTicksLeft & 0x10)                 // Flashing?
+    );
 
-    DrawIt:
-        DestCCB = CurrentCCB;       // Copy pointer to local 
-        if (DestCCB>=&gCCBArray[CCBTotal]) {     // Am I full already? 
-            FlushCCBs();                // Draw all the CCBs/Lines 
-            DestCCB=gCCBArray;
-        }
-    
-        DestCCB->ccb_Flags =ccb;    // ccb_flags 
-        DestCCB->ccb_PIXC = 0x1F80;     // PIXC control 
-        DestCCB->ccb_PRE0 = 0x40000016;     // Preamble 
-        DestCCB->ccb_PRE1 = 0x03FF1000;     // Second preamble 
-        DestCCB->ccb_SourcePtr = (CelData *)0;  // Save the source ptr 
-        DestCCB->ccb_PLUTPtr = (void *)color;       // Set the color pixel 
-        DestCCB->ccb_XPos = ScreenXOffset<<16;      // Set the x and y coord for start 
-        DestCCB->ccb_YPos = ScreenYOffset<<16;
-        DestCCB->ccb_HDX = ScreenWidth<<20;     // OK 
-        DestCCB->ccb_HDY = 0<<20;
-        DestCCB->ccb_VDX = 0<<16;
-        DestCCB->ccb_VDY = ScreenHeight<<16;
-        ++DestCCB;          // Next CCB 
-        CurrentCCB = DestCCB;   // Save the CCB pointer 
-    #endif
+    if (bDoRadSuitFx) {
+        greenFx = 15;
+    }
+
+    if (beserkTicksLeft > 0 && beserkTicksLeft < 255) {
+        uint32_t color = 255 - beserkTicksLeft;
+        color >>= 4;
+        redFx += color;     // Feeling good!         
+    }
+
+    redFx = std::min(redFx, 31u);
+    greenFx = std::min(greenFx, 31u);
+    blueFx = std::min(blueFx, 31u);
+
+    doTintEffect(redFx, greenFx, blueFx);
 }
 
 END_NAMESPACE(Renderer)
