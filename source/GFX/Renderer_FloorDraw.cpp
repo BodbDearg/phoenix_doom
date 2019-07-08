@@ -8,8 +8,6 @@
 
 BEGIN_NAMESPACE(Renderer)
 
-static constexpr uint32_t OPENMARK = ((MAXSCREENHEIGHT - 1) << 8);
-
 static uint32_t gSpanStart[MAXSCREENHEIGHT];
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -118,34 +116,40 @@ void drawVisPlane(
     const Fixed baseXScale,
     const Fixed baseYScale
 ) noexcept {
-    const Texture* const pTex = getFlatAnimTexture((uint32_t) plane.PicHandle);
+    const Texture* const pTex = getFlatAnimTexture((uint32_t) plane.picHandle);
     const std::byte* const pTexData = (std::byte*) pTex->pData;
     const Fixed planeHeight = std::abs(plane.height);
     
     {
-        const uint32_t lightLevel = plane.PlaneLight;
+        const uint32_t lightLevel = plane.planeLight;
         gLightMin = gLightMins[lightLevel];
         gLightMax = lightLevel;
         gLightSub = gLightSubs[lightLevel];
         gLightCoef = gPlaneLightCoef[lightLevel];
     }
     
-    uint32_t stop = plane.maxx + 1;         // Maximum x coord
-    uint32_t x = plane.minx;                // Starting x
-    uint32_t* const pOpen = plane.open;     // Init the pointer to the open Y's
-    uint32_t oldtop = OPENMARK;             // Get the top and bottom Y's
-    pOpen[stop] = oldtop;                   // Set posts to stop drawing
+    uint32_t stop = plane.maxX + 1;         // Maximum x coord
+    uint32_t x = plane.minX;                // Starting x
+
+    VisPlaneCol* const pPlaneCols = plane.cols;         // Init the pointer to the open Y's
+    
+    VisPlaneCol prevCol = { MAXSCREENHEIGHT - 1, 0 };    // Set posts to stop drawing
+    pPlaneCols[stop] = prevCol;
 
     do {
-        const uint32_t newtop = pOpen[x];   // Fetch the NEW top and bottom
+        const VisPlaneCol newCol = pPlaneCols[x];   // Fetch the NEW top and bottom
+        const bool bSameColBounds = (
+            (prevCol.topY == newCol.topY) && 
+            (prevCol.bottomY == newCol.bottomY)
+        );
 
-        if (oldtop == newtop)
+        if (prevCol == newCol)
             continue;
-
-        uint32_t prevTopY = oldtop >> 8;        // Previous and dest Y coords for top and bottom line
-        uint32_t prevBottomY = oldtop & 0xFF;
-        uint32_t newTopY = newtop >> 8;
-        uint32_t newBottomY = newtop & 0xff;
+        
+        uint32_t prevTopY = prevCol.topY;        // Previous and dest Y coords for top and bottom line
+        uint32_t prevBottomY = prevCol.bottomY;
+        uint32_t newTopY = newCol.topY;
+        uint32_t newBottomY = newCol.bottomY;
         
         // For lines on the top, check if the entry is going down            
         if (prevTopY < newTopY && prevTopY <= prevBottomY) {        // Valid?
@@ -210,7 +214,7 @@ void drawVisPlane(
             } while ((int) --newBottomY > count);
         }
 
-        oldtop = newtop;
+        prevCol = newCol;
     } while (++x <= stop);
 }
 

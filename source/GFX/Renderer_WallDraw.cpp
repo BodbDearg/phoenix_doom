@@ -18,8 +18,6 @@
 //----------------------------------------------------------------------------------------------------------------------
 BEGIN_NAMESPACE(Renderer)
 
-static constexpr uint32_t OPENMARK = ((MAXSCREENHEIGHT - 1) << 8);
-
 static uint32_t gClipBoundTop[MAXSCREENWIDTH];          // Bounds top y for vertical clipping
 static uint32_t gClipBoundBottom[MAXSCREENWIDTH];       // Bounds bottom y for vertical clipping
 
@@ -241,16 +239,18 @@ static visplane_t* findPlane(
 
     while (pPlane < gpEndVisPlane) {
         if ((height == pPlane->height) &&           // Same plane as before?
-            (picHandle == pPlane->PicHandle) &&
-            (light == pPlane->PlaneLight) &&
-            (pPlane->open[start] == OPENMARK)       // Not defined yet?
+            (picHandle == pPlane->picHandle) &&
+            (light == pPlane->planeLight) &&
+            (pPlane->cols[start].isUndefined())     // Not defined yet?
         ) {
-            if (start < pPlane->minx) {     // In range of the plane?
-                pPlane->minx = start;       // Mark the new edge
+            if (start < pPlane->minX) {     // In range of the plane?
+                pPlane->minX = start;       // Mark the new edge
             }
-            if (stop > pPlane->maxx) {
-                pPlane->maxx = stop;        // Mark the new edge
+            
+            if (stop > pPlane->maxX) {
+                pPlane->maxX = stop;        // Mark the new edge
             }
+
             return pPlane;                  // Use the same one as before
         }
 
@@ -263,25 +263,25 @@ static visplane_t* findPlane(
     ++gpEndVisPlane;
 
     pPlane->height = height;            // Init all the vars in the visplane
-    pPlane->PicHandle = picHandle;
-    pPlane->minx = start;
-    pPlane->maxx = stop;
-    pPlane->PlaneLight = light;         // Set the light level
+    pPlane->picHandle = picHandle;
+    pPlane->minX = start;
+    pPlane->maxX = stop;
+    pPlane->planeLight = light;         // Set the light level
 
     // Quickly fill in the visplane table:
     // A brute force method to fill in the visplane record FAST!
     {
-        uint32_t* pSet = pPlane->open;  
+        VisPlaneCol* pSet = pPlane->cols;  
 
         for (uint32_t j = gScreenWidth / 8; j > 0; --j) {
-            pSet[0] = OPENMARK;
-            pSet[1] = OPENMARK;
-            pSet[2] = OPENMARK;
-            pSet[3] = OPENMARK;
-            pSet[4] = OPENMARK;
-            pSet[5] = OPENMARK;
-            pSet[6] = OPENMARK;
-            pSet[7] = OPENMARK;
+            pSet[0] = VisPlaneCol::UNDEFINED();
+            pSet[1] = VisPlaneCol::UNDEFINED();
+            pSet[2] = VisPlaneCol::UNDEFINED();
+            pSet[3] = VisPlaneCol::UNDEFINED();
+            pSet[4] = VisPlaneCol::UNDEFINED();
+            pSet[5] = VisPlaneCol::UNDEFINED();
+            pSet[6] = VisPlaneCol::UNDEFINED();
+            pSet[7] = VisPlaneCol::UNDEFINED();
             pSet += 8;
         }
     }
@@ -318,7 +318,7 @@ static void segLoop(const viswall_t& seg) noexcept {
             int32_t bottom = floorClipY - 1;    // Draw to the bottom of the screen
 
             if (top <= bottom) {    // Valid span?
-                if (pFloorPlane->open[viewX] != OPENMARK) {     // Not already covered?
+                if (pFloorPlane->cols[viewX].isDefined()) {     // Not already covered?
                     pFloorPlane = findPlane(
                         *pFloorPlane,
                         seg.floorheight,
@@ -331,7 +331,7 @@ static void segLoop(const viswall_t& seg) noexcept {
                 if (top) {
                     --top;
                 }
-                pFloorPlane->open[viewX] = (top << 8) + bottom;     // Set the new vertical span
+                pFloorPlane->cols[viewX] = VisPlaneCol{ (uint16_t) top, (uint16_t) bottom };    // Set the new vertical span
             }
         }
 
@@ -345,7 +345,7 @@ static void segLoop(const viswall_t& seg) noexcept {
             }
 
             if (top <= bottom) {    // Valid span?
-                if (pCeilPlane->open[viewX] != OPENMARK) {      // Already in use?
+                if (pCeilPlane->cols[viewX].isDefined()) {      // Already in use?
                     pCeilPlane = findPlane(
                         *pCeilPlane,
                         seg.ceilingheight,
@@ -358,7 +358,7 @@ static void segLoop(const viswall_t& seg) noexcept {
                 if (top) {
                     --top;
                 }
-                pCeilPlane->open[viewX] = (top << 8) + bottom;  // Set the vertical span
+                pCeilPlane->cols[viewX] = { (uint16_t) top, (uint16_t) bottom };    // Set the vertical span
             }
         }
 
