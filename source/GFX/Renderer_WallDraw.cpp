@@ -186,7 +186,7 @@ static void drawSeg(const viswall_t& seg) noexcept {
         
         Fixed columnScaleFrac = seg.LeftScale;   // Init the scale fraction
         
-        for (uint32_t viewX = seg.LeftX; viewX <= seg.RightX; ++viewX) {
+        for (int32_t viewX = seg.leftX; viewX <= seg.rightX; ++viewX) {
             // Compute current scaling factor
             const int32_t columnScale = std::min(int32_t(columnScaleFrac >> FIXEDTOSCALE), 0x1fff);
 
@@ -300,7 +300,7 @@ static void segLoop(const viswall_t& seg) noexcept {
     visplane_t* pCeilPlane = gVisPlanes;            // Reset the visplane pointers
     const uint32_t actionBits = seg.WallActions;
 
-    for (uint32_t viewX = seg.LeftX; viewX <= seg.RightX; ++viewX) {
+    for (int32_t viewX = seg.leftX; viewX <= seg.rightX; ++viewX) {
         int32_t scale = _scalefrac >> FIXEDTOSCALE;     // Current scaling factor
         if (scale >= 0x2000) {                          // Too large?
             scale = 0x1fff;                             // Fix the scale to maximum
@@ -324,7 +324,7 @@ static void segLoop(const viswall_t& seg) noexcept {
                         seg.floorheight,
                         seg.FloorPic,
                         viewX,
-                        seg.RightX,
+                        seg.rightX,
                         seg.seglightlevel
                     );
                 }
@@ -351,7 +351,7 @@ static void segLoop(const viswall_t& seg) noexcept {
                         seg.ceilingheight,
                         seg.CeilingPic,
                         viewX,
-                        seg.RightX,
+                        seg.rightX,
                         seg.seglightlevel
                     );
                 }

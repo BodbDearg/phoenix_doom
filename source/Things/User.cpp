@@ -473,7 +473,7 @@ static void P_DeathThink(player_t *player)
         angle = PointToAngle(player->mo->x,player->mo->y,
             player->attacker->x,player->attacker->y);
         delta = angle - player->mo->angle;      // Get differance 
-        if (delta < ANG5 || delta >= (uint32_t)-ANG5) {
+        if (delta < ANG5 || delta >= negateAngle(ANG5)) {
             // looking at killer, so fade damage flash down 
             player->mo->angle = angle;      // Set the angle 
             goto DownDamage;            // Fade down 

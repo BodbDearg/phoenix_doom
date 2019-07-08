@@ -48,11 +48,11 @@ angle_t PointToAngle(Fixed x1, Fixed y1, Fixed x2, Fixed y2)
                 if (x2>y2) {        // Octant 0? 
                     return SlopeAngle(y2,x2);     // Octant 0 
                 }
-                return (ANG90-1)-SlopeAngle(x2,y2);  // Octant 1 
+                return (ANG90 - 1) - SlopeAngle(x2,y2);  // Octant 1 
             }
             y2 = -y2;       // Get the absolute value of y (Was negative) 
             if (x2>y2) {    // Octant 6 
-                return -SlopeAngle(y2,x2);      // Octant 6 
+                return negateAngle(SlopeAngle(y2,x2));      // Octant 6 
             }
             return SlopeAngle(x2,y2)+ANG270;    // Octant 7 
         }

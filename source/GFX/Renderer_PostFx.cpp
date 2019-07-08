@@ -16,7 +16,7 @@ void DrawColors()
     return;
 
     // TODO: TEST INVULNERABILITY EFFECT
-    for (int y = 0; y <= gScreenHeight; ++y) {
+    for (int32_t y = 0; y <= (int32_t) gScreenHeight; ++y) {
         uint32_t* pPixel = &Video::gFrameBuffer[gScreenXOffset + (gScreenYOffset + y) * Video::SCREEN_WIDTH];
         uint32_t* const pEndPixel = pPixel + gScreenWidth;
 

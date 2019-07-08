@@ -76,7 +76,7 @@ static void latePrep(viswall_t& wall, const seg_t& lineSeg, const angle_t leftAn
     angle_t offsetAngle = (normalAngle - leftAngle);
 
     if ((int32_t) offsetAngle < 0) {
-        offsetAngle = (angle_t) -(int32_t) offsetAngle;
+        offsetAngle = negateAngle(offsetAngle);
     }
 
     if (offsetAngle > ANG90) {
@@ -91,7 +91,7 @@ static void latePrep(viswall_t& wall, const seg_t& lineSeg, const angle_t leftAn
     wall.distance = rwDistance;
 
     // Calc scales
-    offsetAngle = gXToViewAngle[wall.LeftX];
+    offsetAngle = gXToViewAngle[wall.leftX];
     const Fixed scaleFrac = wall.LeftScale = scaleFromGlobalAngle(
         rwDistance,
         offsetAngle,
@@ -99,14 +99,14 @@ static void latePrep(viswall_t& wall, const seg_t& lineSeg, const angle_t leftAn
     );
     Fixed scale2 = scaleFrac;
 
-    if (wall.RightX > wall.LeftX) {
-        offsetAngle = gXToViewAngle[wall.RightX];
+    if (wall.rightX > wall.leftX) {
+        offsetAngle = gXToViewAngle[wall.rightX];
         scale2 = scaleFromGlobalAngle(
             rwDistance,
             offsetAngle,
             (offsetAngle + gViewAngle) - normalAngle
         );
-        wall.ScaleStep = (int32_t)(scale2 - scaleFrac) / (int32_t)(wall.RightX - wall.LeftX);
+        wall.ScaleStep = (int32_t)(scale2 - scaleFrac) / (int32_t)(wall.rightX - wall.leftX);
     }
 
     wall.RightScale = scale2;
@@ -123,7 +123,7 @@ static void latePrep(viswall_t& wall, const seg_t& lineSeg, const angle_t leftAn
         offsetAngle = normalAngle - leftAngle;
         
         if (offsetAngle > ANG180) {
-            offsetAngle = (angle_t) -(int32_t) offsetAngle;     // Force unsigned
+            offsetAngle = negateAngle(offsetAngle);     // Force unsigned
         }
 
         if (offsetAngle > ANG90) {
@@ -145,15 +145,15 @@ static void latePrep(viswall_t& wall, const seg_t& lineSeg, const angle_t leftAn
 // Calculate the wall scaling constants
 //----------------------------------------------------------------------------------------------------------------------
 void wallPrep(
-    const uint32_t leftX,
-    const uint32_t rightX,
+    const int32_t leftX,
+    const int32_t rightX,
     const seg_t& lineSeg,
     const angle_t lineAngle
 ) noexcept {
     viswall_t& curWall = *gpEndVisWall;     // Get the first wall pointer
     ++gpEndVisWall;                         // Inc my pointer
-    curWall.LeftX = leftX;                  // Set the edges of the visible wall
-    curWall.RightX = rightX;                // Right is inclusive!
+    curWall.leftX = leftX;                  // Set the edges of the visible wall
+    curWall.rightX = rightX;                // Right is inclusive!
     curWall.SegPtr = &lineSeg;              // For clipping
 
     line_t& lineDef = *lineSeg.linedef;

@@ -89,8 +89,8 @@ namespace Renderer {
 
     // Describe a wall segment to be drawn
     struct viswall_t {        
-        uint32_t        LeftX;              // Leftmost x screen coord
-        uint32_t        RightX;             // Rightmost inclusive x coordinates
+        int32_t         leftX;              // Leftmost x screen coord
+        int32_t         rightX;             // Rightmost inclusive x coordinates
         uint32_t        FloorPic;           // Picture handle to floor shape
         uint32_t        CeilingPic;         // Picture handle to ceiling shape
         uint32_t        WallActions;        // Actions to perform for draw
@@ -163,7 +163,7 @@ namespace Renderer {
     //==================================================================================================================
 
     void doBspTraversal() noexcept;
-    void wallPrep(const uint32_t leftX, const uint32_t rightX, const seg_t& lineSeg, const angle_t lineAngle) noexcept;
+    void wallPrep(const int32_t leftX, const int32_t rightX, const seg_t& lineSeg, const angle_t lineAngle) noexcept;
     void drawAllLineSegs() noexcept;
     void drawAllVisPlanes() noexcept;
     void drawAllMapObjectSprites() noexcept;

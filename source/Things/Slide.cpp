@@ -169,12 +169,12 @@ Fixed P_CompletableFrac(Fixed dx, Fixed dy) {
         yl = 0;
     }
     
-    if (xh >= gBlockMapWidth) {
-        xh = gBlockMapWidth - 1;
+    if (xh >= (int32_t) gBlockMapWidth) {
+        xh = (int32_t) gBlockMapWidth - 1;
     }
     
-    if (yh >= gBlockMapHeight) {
-        yh = gBlockMapHeight - 1;
+    if (yh >= (int32_t) gBlockMapHeight) {
+        yh = (int32_t) gBlockMapHeight - 1;
     }
 
     for (int bx = xl; bx <= xh; bx++) {
@@ -443,12 +443,12 @@ void SL_CheckSpecialLines(int32_t x1, int32_t y1, int32_t x2, int32_t y2) {
         byl = 0;
     }
     
-    if (bxh >= gBlockMapWidth) {
-        bxh = gBlockMapWidth - 1;
+    if (bxh >= (int32_t) gBlockMapWidth) {
+        bxh = (int32_t) gBlockMapWidth - 1;
     }
     
-    if (byh >= gBlockMapHeight) {
-        byh = gBlockMapHeight - 1;
+    if (byh >= (int32_t) gBlockMapHeight) {
+        byh = (int32_t) gBlockMapHeight - 1;
     }
     
     gSpecialLine = 0;

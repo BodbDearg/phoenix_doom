@@ -55,9 +55,9 @@ static uint8_t getThingSpriteAngleForViewpoint(
     const Fixed viewpointY,
     const mobj_t& thing
 ) noexcept {
-    angle_t ang = PointToAngle(gViewX, gViewY, thing.x, thing.y);           // Get angle to thing
-    ang -= thing.angle;                                                     // Adjust for which way the thing is facing
-    const uint8_t angleIdx = (ang + (angle_t)((ANG45 / 2) * 9U)) >> 29;     // Compute and return angle index (0-7)
+    angle_t ang = PointToAngle(gViewX, gViewY, thing.x, thing.y);       // Get angle to thing
+    ang -= thing.angle;                                                 // Adjust for which way the thing is facing
+    const uint8_t angleIdx = (ang + (ANG45 / 2) * 9U) >> 29;            // Compute and return angle index (0-7)
     return angleIdx;
 }
 

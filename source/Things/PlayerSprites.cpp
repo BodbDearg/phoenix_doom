@@ -436,7 +436,7 @@ void A_Punch(player_t *player,pspdef_t *psp)
 void A_Saw(player_t *player,pspdef_t *psp)
 {
     angle_t angle;      // Angle of attack
-    long testangle;     // Must be SIGNED!
+    angle_t testangle;     // Must be SIGNED!
     uint32_t damage;
     mobj_t *mo,*target;
 
@@ -461,7 +461,7 @@ void A_Saw(player_t *player,pspdef_t *psp)
     angle = PointToAngle(mo->x,mo->y,target->x,target->y);  // Get the angle
     testangle = angle-mo->angle;
     if (testangle > ANG180) {       // Handle the chainsaw jiggle
-        if (testangle < (-(ANG90/20))) {
+        if (testangle < negateAngle(ANG90/20)) {
             mo->angle = angle + (ANG90/21);
         } else {
             mo->angle -= (ANG90/20);
