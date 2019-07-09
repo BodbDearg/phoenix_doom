@@ -22,12 +22,10 @@ static uint32_t gClipBoundTop[MAXSCREENWIDTH];          // Bounds top y for vert
 static uint32_t gClipBoundBottom[MAXSCREENWIDTH];       // Bounds bottom y for vertical clipping
 
 struct drawtex_t {
-    const std::byte*    data;               // Pointer to raw texture data
-    uint32_t            width;              // Width of texture in pixels
-    uint32_t            height;             // Height of texture in pixels
-    int32_t             topheight;          // Top texture height in global pixels
-    int32_t             bottomheight;       // Bottom texture height in global pixels
-    Fixed               texturemid;         // Anchor point for texture
+    const ImageData*    pData;          // Image data for the texture
+    int32_t             topheight;      // Top texture height in global pixels
+    int32_t             bottomheight;   // Bottom texture height in global pixels
+    Fixed               texturemid;     // Anchor point for texture
 };
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -40,30 +38,28 @@ static void drawWallColumn(
     const int32_t columnScale,
     const uint32_t texX,
     const uint32_t texY,
-    const std::byte* const pTexData,
-    const uint32_t texHeight    
+    const ImageData& texData
 ) noexcept {
     // FIXME: CLEANUP AND OPTIMIZE!
+    const uint32_t texHeight = texData.height;
+    const uint16_t* const pTexPixels = (const uint16_t*) texData.pPixels;
+
     const Fixed lightMultiplier = getLightMultiplier(gTxTextureLight, MAX_WALL_LIGHT_VALUE);
-    const uint16_t* const pPLUT = (const uint16_t*) pTexData;
 
     for (uint32_t pixNum = 0; pixNum < columnHeight; ++pixNum) {
         const uint32_t dstY = viewY + pixNum;
 
         if (dstY >= 0 && dstY < gScreenHeight) {
             const uint32_t pixTexYOffsetFixed = (pixNum << (SCALEBITS + 1)) / columnScale;
-            const uint32_t pixTexYOffset = pixTexYOffsetFixed & 1 ? (pixTexYOffsetFixed / 2) + 1 : pixTexYOffsetFixed / 2;
-            
+            const uint32_t pixTexYOffset = pixTexYOffsetFixed & 1 ? (pixTexYOffsetFixed / 2) + 1 : pixTexYOffsetFixed / 2;            
             const uint32_t texYOffset = (texY + pixTexYOffset) % (texHeight);
-            const uint32_t texOffset = (texX * texHeight) + texYOffset;
             
-            const uint8_t colorByte = (uint8_t) pTexData[32 + texOffset / 2];
-            const uint8_t colorIdx = (texOffset & 1) != 0 ? (colorByte & 0x0F) : (colorByte & 0xF0) >> 4;
-            
-            const uint16_t color = byteSwappedU16(pPLUT[colorIdx]);
-            const uint16_t texR = (color & 0b0111110000000000) >> 10;
-            const uint16_t texG = (color & 0b0000001111100000) >> 5;
-            const uint16_t texB = (color & 0b0000000000011111) >> 0;
+            const uint16_t colorRGBA5551 = pTexPixels[texX * texHeight + texYOffset];
+
+            int32_t texR;
+            int32_t texG;
+            int32_t texB;
+            ImageDataUtils::decodePixelToRGB(colorRGBA5551, texR, texG, texB);
             
             const Fixed texRFrac = intToFixed(texR);
             const Fixed texGFrac = intToFixed(texG);
@@ -94,17 +90,15 @@ static void drawSkyColumn(const uint32_t viewX) noexcept {
     // Set source texture details
     // FIXME: don't keep doing this for each column
     const Texture* const pTexture = (const Texture*) getWallTexture(getCurrentSkyTexNum());
-    const uint32_t texHeight = pTexture->height;
 
     drawWallColumn(
         viewX,
         0,
-        texHeight,          // FIXME: This needs to be scaled for view size!
+        pTexture->data.height,  // FIXME: This needs to be scaled for view size!
         1 << SCALEBITS,
         texX,
         0,
-        pTexture->pData,        
-        texHeight
+        pTexture->data
     );
 }
 
@@ -129,9 +123,13 @@ static void drawTexturedColumn(
     const uint32_t columnHeight = (columnHeightFrac >> SCALEBITS) + columnHeightCeilRound;
 
     // View Y to draw at and y position in texture to use
+    const ImageData& texData = *tex.pData;
+    const uint32_t texWidth = texData.width;
+    const uint32_t texHeight = texData.height;
+
     const uint32_t viewY = gCenterY - uint32_t((columnScale * tex.topheight) >> (HEIGHTBITS + SCALEBITS));
     const uint32_t texYNotOffset = fixedToInt(tex.texturemid - (tex.topheight << FIXEDTOHEIGHT));
-    const uint32_t texY = ((int32_t) texYNotOffset < 0) ? texYNotOffset + tex.height : texYNotOffset;   // DC: This is required for correct vertical alignment in some cases
+    const uint32_t texY = ((int32_t) texYNotOffset < 0) ? texYNotOffset + texHeight : texYNotOffset;    // DC: This is required for correct vertical alignment in some cases
 
     // Draw the column
     drawWallColumn(
@@ -139,10 +137,9 @@ static void drawTexturedColumn(
         viewY,
         columnHeight,
         columnScale,
-        (texX % tex.width),     // Wraparound texture x coord!
-        (texY % tex.height),    // Wraparound texture y coord!
-        tex.data,
-        tex.height
+        (texX % texWidth),      // Wraparound texture x coord!
+        (texY % texHeight),     // Wraparound texture y coord!
+        texData
     );
 }
 
@@ -168,10 +165,8 @@ static void drawSeg(const viswall_t& seg) noexcept {
 
             topTex.topheight = seg.t_topheight;
             topTex.bottomheight = seg.t_bottomheight;
-            topTex.texturemid = seg.t_texturemid;           
-            topTex.width = pTex->width;
-            topTex.height = pTex->height;
-            topTex.data = pTex->pData;
+            topTex.texturemid = seg.t_texturemid;         
+            topTex.pData = &pTex->data;
         }
         
         if (actionBits & AC_BOTTOMTEXTURE) {  // Is there a bottom wall?
@@ -180,9 +175,7 @@ static void drawSeg(const viswall_t& seg) noexcept {
             bottomTex.topheight = seg.b_topheight;
             bottomTex.bottomheight = seg.b_bottomheight;
             bottomTex.texturemid = seg.b_texturemid;
-            bottomTex.width = pTex->width;
-            bottomTex.height = pTex->height;
-            bottomTex.data = pTex->pData;
+            bottomTex.pData = &pTex->data;
         }
         
         Fixed columnScaleFrac = seg.LeftScale;   // Init the scale fraction

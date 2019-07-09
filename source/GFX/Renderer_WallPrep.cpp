@@ -225,7 +225,7 @@ void wallPrep(
         int32_t t_texturemid;
         
         if (lineFlags & ML_DONTPEGBOTTOM) {     
-            t_texturemid = f_floorheight + (curWall.t_texture->height << FRACBITS);     // Bottom of texture at bottom
+            t_texturemid = f_floorheight + (curWall.t_texture->data.height << FRACBITS);    // Bottom of texture at bottom
         } else {
             t_texturemid = f_ceilingheight;     // Top of texture at top
         }
@@ -264,7 +264,7 @@ void wallPrep(
             if (lineFlags & ML_DONTPEGTOP) {
                 t_texturemid = f_ceilingheight;     // Top of texture at top
             } else {
-                t_texturemid = b_ceilingheight + (curWall.t_texture->height << FRACBITS);
+                t_texturemid = b_ceilingheight + (curWall.t_texture->data.height << FRACBITS);
             }
             
             t_texturemid += sideDef.rowoffset;      // Anchor the top texture

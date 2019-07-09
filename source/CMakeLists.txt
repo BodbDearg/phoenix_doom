@@ -47,6 +47,7 @@ set(SOURCE_FILES
     "Game/Tick.h"
     "GFX/CelUtils.cpp"
     "GFX/CelUtils.h"
+    "GFX/ImageData.h"
     "GFX/Renderer.cpp"
     "GFX/Renderer.h"
     "GFX/Renderer_BspTraversal.cpp"

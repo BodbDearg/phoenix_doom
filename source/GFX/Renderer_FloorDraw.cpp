@@ -21,25 +21,22 @@ static void drawFloorColumn(
     const uint32_t yfrac,
     const Fixed ds_xstep,
     const Fixed ds_ystep,
-    const std::byte* const pTexData
+    const ImageData& texData
 ) noexcept {
     // FIXME: TEMP - CLEANUP & OPTIMIZE
-    const uint16_t* const pPLUT = (const uint16_t*) pTexData;
+    const uint16_t* const pTexPixels = texData.pPixels;
     const Fixed lightMultiplier = getLightMultiplier(gTxTextureLight, MAX_FLOOR_LIGHT_VALUE);
 
     for (uint32_t pixelNum = 0; pixelNum < Count; ++pixelNum) {
         Fixed tx = ((xfrac + ds_xstep * pixelNum) >> FRACBITS) & 63;    // assumes 64x64
         Fixed ty = ((yfrac + ds_ystep * pixelNum) >> FRACBITS) & 63;    // assumes 64x64
 
-        Fixed offset = ty * 64 + tx;
-        const uint8_t lutByte = ((uint8_t) pTexData[64 + offset]) & 31;
-        ASSERT(lutByte < 32);
-        uint8_t colorIdx = lutByte;
+        const uint16_t colorRGBA5551 = pTexPixels[ty * 64 + tx];
 
-        const uint16_t color = byteSwappedU16(pPLUT[colorIdx]);
-        const uint16_t texR = (color & 0b0111110000000000) >> 10;
-        const uint16_t texG = (color & 0b0000001111100000) >> 5;
-        const uint16_t texB = (color & 0b0000000000011111) >> 0;
+        int32_t texR;
+        int32_t texG;
+        int32_t texB;
+        ImageDataUtils::decodePixelToRGB(colorRGBA5551, texR, texG, texB);
 
         const Fixed texRFrac = intToFixed(texR);
         const Fixed texGFrac = intToFixed(texG);
@@ -67,7 +64,7 @@ static void mapPlane(
     const Fixed planeHeight,
     const Fixed baseXScale,
     const Fixed baseYScale,
-    const std::byte* const pTexData
+    const ImageData& texData
 ) noexcept {
     //------------------------------------------------------------------------------------------------------------------
     // planeheight is 10.6
@@ -102,7 +99,7 @@ static void mapPlane(
         gTxTextureLight = (uint32_t) lightValue;
     }
 
-    drawFloorColumn(y, x1, x2 - x1, xfrac, yfrac, xstep, ystep, pTexData);
+    drawFloorColumn(y, x1, x2 - x1, xfrac, yfrac, xstep, ystep, texData);
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -117,7 +114,7 @@ void drawVisPlane(
     const Fixed baseYScale
 ) noexcept {
     const Texture* const pTex = getFlatAnimTexture((uint32_t) plane.picHandle);
-    const std::byte* const pTexData = (std::byte*) pTex->pData;
+    const ImageData& texData = pTex->data;
     const Fixed planeHeight = std::abs(plane.height);
     
     {
@@ -167,7 +164,7 @@ void drawVisPlane(
                     planeHeight,
                     baseXScale,
                     baseYScale,
-                    pTexData
+                    texData
                 );
             } while (++prevTopY < count);   // Keep counting
         }
@@ -198,7 +195,7 @@ void drawVisPlane(
                     planeHeight,
                     baseXScale,
                     baseYScale,
-                    pTexData
+                    texData
                 );
             } while ((int) --prevBottomY > count);
         }

@@ -37,16 +37,139 @@ static uint32_t                 gFirstFlatTexResourceNum;
 static std::vector<Texture>     gWallTextures;
 static std::vector<Texture>     gFlatTextures;
 
-static void loadTexture(Texture& tex, uint32_t textureNum) noexcept {    
-    tex.pData = loadResourceData(tex.resourceNum);
-    tex.animTexNum = textureNum;    // Initially redirects to itself for animation
+//----------------------------------------------------------------------------------------------------------------------
+// Decode a 3DO Doom wall texture to an RGBA5551 image for rendering.
+//----------------------------------------------------------------------------------------------------------------------
+static void decodeWallTextureImage(Texture& tex, const std::byte* const pBytes) noexcept {
+    // I'm not sure how to handle odd sized images, might need to align to next nearest byte on a column end maybe...
+    // I don't think this happens in reality however so I'll just assert this assumption for now:
+    ASSERT((tex.data.width & 0x1) == 0);
+    ASSERT((tex.data.height & 0x1) == 0);
+
+    // The pixel lookup table is always at the start and consists of 16 ARGB1555 pixels (32 bytes).
+    // Each pixel itself is encoded as 4-bit values (16 colors).
+    const uint16_t* const pPLUT = reinterpret_cast<const uint16_t*>(pBytes);
+    const uint8_t* const pSrcPixels = reinterpret_cast<const uint8_t*>(pBytes + 32);
+
+    // Allocate the output iamge
+    const uint32_t numPixels = tex.data.width * tex.data.height;
+    tex.data.pPixels = reinterpret_cast<uint16_t*>(MemAlloc(numPixels * sizeof(uint16_t)));
+
+    // Decode all the pixels, doing 2 at a time.
+    // Each pixel is a 4-bit index into the pixel lookup table, and 2 pixels are packed into each byte.
+    {
+        const uint8_t* pCurSrcPixels = pSrcPixels;
+        uint16_t* pCurDstPixels = tex.data.pPixels;
+        uint16_t* const pEndDstPixels = tex.data.pPixels + numPixels;
+
+        while (pCurDstPixels < pEndDstPixels) {
+            // Read the color indexes for these two source pixels (4-bits each)
+            const uint8_t colorIndexes = *pCurSrcPixels;
+            const uint8_t color1Idx = colorIndexes >> 4;
+            const uint8_t color2Idx = colorIndexes & uint8_t(0x0F);
+            ++pCurSrcPixels;
+
+            // Read the ARGBA1555 pixels (note: need to correct endian too)
+            const uint16_t color1ARGBA = byteSwappedU16(pPLUT[color1Idx]);
+            const uint16_t color2ARGBA = byteSwappedU16(pPLUT[color2Idx]);
+            
+            // Save the RGBA pixels
+            const uint16_t color1RGBA = (color1ARGBA << 1) | ((color1ARGBA & 0x8000) ? uint16_t(1) : uint16_t(0));
+            const uint16_t color2RGBA = (color2ARGBA << 1) | ((color2ARGBA & 0x8000) ? uint16_t(1) : uint16_t(0));
+
+            pCurDstPixels[0] = color1RGBA;
+            pCurDstPixels[1] = color2RGBA;
+
+            pCurDstPixels += 2;
+        }
+    }
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+// Decode a 3DO Doom flat texture to an RGBA5551 image for rendering.
+//----------------------------------------------------------------------------------------------------------------------
+static void decodeFlatTextureImage(Texture& tex, const std::byte* const pBytes) noexcept {
+    // Flats should always be 64x64 in 3DO Doom!
+    ASSERT(tex.data.width == 64);
+    ASSERT(tex.data.height == 64);
+
+    // The pixel lookup table is always at the start and consists of 32 ARGB1555 pixels (64 bytes).
+    // Each pixel itself is encoded as 5-bit values (32 colors) in an 8-bit byte.
+    const uint16_t* const pPLUT = reinterpret_cast<const uint16_t*>(pBytes);
+    const uint8_t* const pSrcPixels = reinterpret_cast<const uint8_t*>(pBytes + 64);
+
+    // Allocate the output image
+    constexpr uint32_t numPixels = 64 * 64;
+    tex.data.pPixels = reinterpret_cast<uint16_t*>(MemAlloc(numPixels * sizeof(uint16_t)));
+
+    // Decode all the pixels, doing 8 at a time (to allow for more CPU pipelining)
+    {
+        const uint8_t* pCurSrcPixels = pSrcPixels;
+        uint16_t* pCurDstPixels = tex.data.pPixels;
+        uint16_t* const pEndDstPixels = tex.data.pPixels + numPixels;
+
+        while (pCurDstPixels < pEndDstPixels) {
+            // Read the color indexes for the 8 source pixels and ensure only 5-bits are used (32 colors max)
+            const uint8_t color1Idx = pCurSrcPixels[0] & uint8_t(0x1F);
+            const uint8_t color2Idx = pCurSrcPixels[1] & uint8_t(0x1F);
+            const uint8_t color3Idx = pCurSrcPixels[2] & uint8_t(0x1F);
+            const uint8_t color4Idx = pCurSrcPixels[3] & uint8_t(0x1F);
+            const uint8_t color5Idx = pCurSrcPixels[4] & uint8_t(0x1F);
+            const uint8_t color6Idx = pCurSrcPixels[5] & uint8_t(0x1F);
+            const uint8_t color7Idx = pCurSrcPixels[6] & uint8_t(0x1F);
+            const uint8_t color8Idx = pCurSrcPixels[7] & uint8_t(0x1F);
+            pCurSrcPixels += 8;
+
+            // Read the ARGBA1555 pixels (note: need to correct endian too)
+            const uint16_t color1ARGBA = byteSwappedU16(pPLUT[color1Idx]);
+            const uint16_t color2ARGBA = byteSwappedU16(pPLUT[color2Idx]);
+            const uint16_t color3ARGBA = byteSwappedU16(pPLUT[color3Idx]);
+            const uint16_t color4ARGBA = byteSwappedU16(pPLUT[color4Idx]);
+            const uint16_t color5ARGBA = byteSwappedU16(pPLUT[color5Idx]);
+            const uint16_t color6ARGBA = byteSwappedU16(pPLUT[color6Idx]);
+            const uint16_t color7ARGBA = byteSwappedU16(pPLUT[color7Idx]);
+            const uint16_t color8ARGBA = byteSwappedU16(pPLUT[color8Idx]);
+            
+            // Save the RGBA pixels
+            const uint16_t color1RGBA = (color1ARGBA << 1) | ((color1ARGBA & 0x8000) ? uint16_t(1) : uint16_t(0));
+            const uint16_t color2RGBA = (color2ARGBA << 1) | ((color2ARGBA & 0x8000) ? uint16_t(1) : uint16_t(0));
+            const uint16_t color3RGBA = (color3ARGBA << 1) | ((color3ARGBA & 0x8000) ? uint16_t(1) : uint16_t(0));
+            const uint16_t color4RGBA = (color4ARGBA << 1) | ((color4ARGBA & 0x8000) ? uint16_t(1) : uint16_t(0));
+            const uint16_t color5RGBA = (color5ARGBA << 1) | ((color5ARGBA & 0x8000) ? uint16_t(1) : uint16_t(0));
+            const uint16_t color6RGBA = (color6ARGBA << 1) | ((color6ARGBA & 0x8000) ? uint16_t(1) : uint16_t(0));
+            const uint16_t color7RGBA = (color7ARGBA << 1) | ((color7ARGBA & 0x8000) ? uint16_t(1) : uint16_t(0));
+            const uint16_t color8RGBA = (color8ARGBA << 1) | ((color8ARGBA & 0x8000) ? uint16_t(1) : uint16_t(0));
+
+            pCurDstPixels[0] = color1RGBA;
+            pCurDstPixels[1] = color2RGBA;
+            pCurDstPixels[2] = color3RGBA;
+            pCurDstPixels[3] = color4RGBA;
+            pCurDstPixels[4] = color5RGBA;
+            pCurDstPixels[5] = color6RGBA;
+            pCurDstPixels[6] = color7RGBA;
+            pCurDstPixels[7] = color8RGBA;
+
+            pCurDstPixels += 8;
+        }
+    }
+}
+
+static void loadTexture(Texture& tex, uint32_t textureNum, const bool bIsWallTexture) noexcept {
+    const std::byte* const pRawTexBytes = loadResourceData(tex.resourceNum);
+
+    if (bIsWallTexture) {
+        decodeWallTextureImage(tex, pRawTexBytes);
+    }
+    else {
+        decodeFlatTextureImage(tex, pRawTexBytes);
+    }
+
+    freeResource(tex.resourceNum);      // Don't need the raw data anymore!
+    tex.animTexNum = textureNum;        // Initially the texture is not animated to display another frame
 }
 
 static void freeTexture(Texture& tex) noexcept {
-    if (tex.pData) {
-        freeResource(tex.resourceNum);
-        tex.pData = nullptr;
-    }
+    MEM_FREE_AND_NULL(tex.data.pPixels);
 }
 
 static void freeTextures(std::vector<Texture>& textures) noexcept {
@@ -60,7 +183,7 @@ static void clearTextures(std::vector<Texture>& textures) noexcept {
     textures.clear();
 }
 
-void texturesInit() {
+void texturesInit() noexcept {
     // Read the header for all the texture info.
     // Note that we do NOT byte swap the original resources the may be cached and reused multiple times.
     // If we byte swapped the originals then we might double swap back to big endian accidently...
@@ -86,8 +209,8 @@ void texturesInit() {
             pData += sizeof(TextureInfoEntry);
             
             Texture& texture = gWallTextures[wallTexNum];
-            texture.width = info.width;
-            texture.height = info.height;
+            texture.data.width = info.width;
+            texture.data.height = info.height;
             texture.resourceNum = header.firstWallTexture + wallTexNum;
             texture.animTexNum = wallTexNum;    // Points to itself initallly (no anim)
         }
@@ -103,46 +226,46 @@ void texturesInit() {
         
         for (uint32_t flatTexNum = 0; flatTexNum < numFlatTex; ++flatTexNum) {
             Texture& texture = gFlatTextures[flatTexNum];
-            texture.width = 64;
-            texture.height = 64;
+            texture.data.width = 64;
+            texture.data.height = 64;
             texture.resourceNum = header.firstFlatTexture + flatTexNum;
         }
     }
 }
-    
-void texturesShutdown() {
+
+void texturesShutdown() noexcept {
     clearTextures(gWallTextures);
     clearTextures(gFlatTextures);
     gFirstWallTexResourceNum = 0;
     gFirstFlatTexResourceNum = 0;
 }
 
-void texturesFreeAll() {
+void texturesFreeAll() noexcept {
     freeTextures(gWallTextures);
     freeTextures(gFlatTextures);
 }
 
-uint32_t getNumWallTextures() {
+uint32_t getNumWallTextures() noexcept {
     return (uint32_t) gWallTextures.size();
 }
 
-uint32_t getNumFlatTextures() {
+uint32_t getNumFlatTextures() noexcept {
     return (uint32_t) gFlatTextures.size();
 }
 
-uint32_t getSky1TexNum() {
+uint32_t getSky1TexNum() noexcept {
     return (uint32_t) rSKY1 - gFirstWallTexResourceNum;
 }
 
-uint32_t getSky2TexNum() {
+uint32_t getSky2TexNum() noexcept {
     return (uint32_t) rSKY2 - gFirstWallTexResourceNum;
 }
 
-uint32_t getSky3TexNum() {
+uint32_t getSky3TexNum() noexcept {
     return (uint32_t) rSKY3 - gFirstWallTexResourceNum;
 }
 
-uint32_t getCurrentSkyTexNum() {
+uint32_t getCurrentSkyTexNum() noexcept {
     if (gGameMap < 9 || gGameMap == 24) {
         return getSky1TexNum();
     } else if (gGameMap < 18) {
@@ -152,54 +275,54 @@ uint32_t getCurrentSkyTexNum() {
     }
 }
 
-const Texture* getWallTexture(const uint32_t num) {
+const Texture* getWallTexture(const uint32_t num) noexcept {
     ASSERT(num < gWallTextures.size());
     return &gWallTextures[num];
 }
 
-const Texture* getFlatTexture(const uint32_t num) {
+const Texture* getFlatTexture(const uint32_t num) noexcept {
     ASSERT(num < gFlatTextures.size());
     return &gFlatTextures[num];
 }
 
-void loadWallTexture(const uint32_t num) {
+void loadWallTexture(const uint32_t num) noexcept {
     ASSERT(num < gWallTextures.size());
-    loadTexture(gWallTextures[num], num);
+    loadTexture(gWallTextures[num], num, true);
 }
 
-void loadFlatTexture(const uint32_t num) {
+void loadFlatTexture(const uint32_t num) noexcept {
     ASSERT(num < gFlatTextures.size());
-    loadTexture(gFlatTextures[num], num);
+    loadTexture(gFlatTextures[num], num, false);
 }
 
-void freeWallTexture(const uint32_t num) {
+void freeWallTexture(const uint32_t num) noexcept {
     ASSERT(num < gWallTextures.size());
     freeTexture(gWallTextures[num]);
 }
 
-void freeFlatTexture(const uint32_t num) {
+void freeFlatTexture(const uint32_t num) noexcept {
     ASSERT(num < gFlatTextures.size());
     freeTexture(gFlatTextures[num]);
 }
 
-void setWallAnimTexNum(const uint32_t num, const uint32_t animTexNum) {
+void setWallAnimTexNum(const uint32_t num, const uint32_t animTexNum) noexcept {
     ASSERT(num < gWallTextures.size());
     ASSERT(animTexNum < gWallTextures.size());
     gWallTextures[num].animTexNum = animTexNum;
 }
 
-void setFlatAnimTexNum(const uint32_t num, const uint32_t animTexNum) {
+void setFlatAnimTexNum(const uint32_t num, const uint32_t animTexNum) noexcept {
     ASSERT(num < gFlatTextures.size());
     ASSERT(animTexNum < gFlatTextures.size());
     gFlatTextures[num].animTexNum = animTexNum;
 }
 
-const Texture* getWallAnimTexture(const uint32_t num) {
+const Texture* getWallAnimTexture(const uint32_t num) noexcept {
     const Texture* const pOrigTexture = getWallTexture(num);
     return getWallTexture(pOrigTexture->animTexNum);
 }
 
-const Texture* getFlatAnimTexture(const uint32_t num) {
+const Texture* getFlatAnimTexture(const uint32_t num) noexcept {
     const Texture* const pOrigTexture = getFlatTexture(num);
     return getFlatTexture(pOrigTexture->animTexNum);
 }

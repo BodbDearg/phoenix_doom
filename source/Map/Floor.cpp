@@ -235,7 +235,7 @@ bool EV_DoFloor(line_t *line,floor_e floortype)
                         
                         if (!(side->bottomtexture & 0x8000)) {  // Valid texture?
                             const Texture* const pBottomTex = getWallTexture(side->bottomtexture);
-                            Height = pBottomTex->height;
+                            Height = pBottomTex->data.height;
                             
                             if (Height < minsize) {
                                 minsize = Height;
@@ -246,7 +246,7 @@ bool EV_DoFloor(line_t *line,floor_e floortype)
                         
                         if (!(side->bottomtexture & 0x8000)) {  // Valid texture?
                             const Texture* const pBottomTex = getWallTexture(side->bottomtexture);
-                            Height = pBottomTex->height;
+                            Height = pBottomTex->data.height;
                             
                             if (Height < minsize) {
                                 minsize = Height;
