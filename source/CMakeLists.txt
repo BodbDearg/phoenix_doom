@@ -45,6 +45,7 @@ set(SOURCE_FILES
     "Game/Resources.h"
     "Game/Tick.cpp"
     "Game/Tick.h"
+    "GFX/Blit.h"
     "GFX/CelUtils.cpp"
     "GFX/CelUtils.h"
     "GFX/ImageData.h"

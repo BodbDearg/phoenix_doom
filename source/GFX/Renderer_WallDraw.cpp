@@ -2,6 +2,7 @@
 
 #include "Base/Endian.h"
 #include "Base/Tables.h"
+#include "Blit.h"
 #include "Game/Data.h"
 #include "Textures.h"
 #include "Video.h"
@@ -32,49 +33,55 @@ struct drawtex_t {
 // Draw a single column of a wall
 //----------------------------------------------------------------------------------------------------------------------
 static void drawWallColumn(
-    const uint32_t viewX,
-    const uint32_t viewY,
+    const int32_t viewX,
+    const int32_t viewY,
     const uint32_t columnHeight,
     const int32_t columnScale,
     const uint32_t texX,
     const uint32_t texY,
     const ImageData& texData
 ) noexcept {
-    // FIXME: CLEANUP AND OPTIMIZE!
-    const uint32_t texHeight = texData.height;
-    const uint16_t* const pTexPixels = (const uint16_t*) texData.pPixels;
+    // Clip to bottom of the screen
+    if (viewY >= (int32_t) gScreenHeight)
+        return;
+    
+    // Clip to top of the screen
+    const Fixed texYStep = fixedDiv(FRACUNIT, columnScale << (FRACBITS - SCALEBITS));
+    const uint32_t numTopPixelsOffscreen = (viewY < 0) ? -viewY : 0;
 
+    if (numTopPixelsOffscreen >= columnHeight)
+        return;
+    
+    // Compute clipped view y and texture coordinate
+    const int32_t clippedViewY = viewY + numTopPixelsOffscreen;
+    const uint32_t maxColumnHeight = gScreenHeight - clippedViewY;
+    const uint32_t clippedColumnHeight = std::min(columnHeight - numTopPixelsOffscreen, maxColumnHeight);
+    const Fixed clippedTexY = intToFixed((int32_t) texY) + texYStep * numTopPixelsOffscreen;
+
+    // Compute light multiplier
     const Fixed lightMultiplier = getLightMultiplier(gTxTextureLight, MAX_WALL_LIGHT_VALUE);
 
-    for (uint32_t pixNum = 0; pixNum < columnHeight; ++pixNum) {
-        const uint32_t dstY = viewY + pixNum;
-
-        if (dstY >= 0 && dstY < gScreenHeight) {
-            const uint32_t pixTexYOffsetFixed = (pixNum << (SCALEBITS + 1)) / columnScale;
-            const uint32_t pixTexYOffset = pixTexYOffsetFixed & 1 ? (pixTexYOffsetFixed / 2) + 1 : pixTexYOffsetFixed / 2;            
-            const uint32_t texYOffset = (texY + pixTexYOffset) % (texHeight);
-            
-            const uint16_t colorRGBA5551 = pTexPixels[texX * texHeight + texYOffset];
-
-            int32_t texR;
-            int32_t texG;
-            int32_t texB;
-            ImageDataUtils::decodePixelToRGB(colorRGBA5551, texR, texG, texB);
-            
-            const Fixed texRFrac = intToFixed(texR);
-            const Fixed texGFrac = intToFixed(texG);
-            const Fixed texBFrac = intToFixed(texB);
-            const Fixed darkenedR = fixedMul(texRFrac, lightMultiplier);
-            const Fixed darkenedG = fixedMul(texGFrac, lightMultiplier);
-            const Fixed darkenedB = fixedMul(texBFrac, lightMultiplier);
-
-            const uint32_t finalColor = Video::fixedRgbToScreenCol(darkenedR, darkenedG, darkenedB);
-            const uint32_t screenX = viewX + gScreenXOffset;
-            const uint32_t screenY = dstY + gScreenYOffset;
-
-            Video::gFrameBuffer[screenY * Video::SCREEN_WIDTH + screenX] = finalColor;
-        }
-    }
+    // Do the blit
+    Blit::blitColumn<
+        Blit::BCF_STEP_Y |
+        Blit::BCF_V_WRAP_WRAP |
+        Blit::BCF_COLOR_MULT_RGB
+    >(
+        texData,
+        intToFixed(texX),
+        clippedTexY,
+        Video::gFrameBuffer,
+        Video::SCREEN_WIDTH,
+        Video::SCREEN_HEIGHT,
+        viewX + gScreenXOffset,
+        clippedViewY + gScreenYOffset,
+        clippedColumnHeight,
+        0,
+        texYStep,
+        lightMultiplier,
+        lightMultiplier,
+        lightMultiplier
+    );
 }
 
 //----------------------------------------------------------------------------------------------------------------------
