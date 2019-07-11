@@ -30,9 +30,9 @@ struct drawtex_t {
 };
 
 //----------------------------------------------------------------------------------------------------------------------
-// Draw a single column of a wall
+// Draw a single column of a wall clipped to the 3D view
 //----------------------------------------------------------------------------------------------------------------------
-static void drawWallColumn(
+static void drawClippedWallColumn(
     const int32_t viewX,
     const int32_t viewY,
     const uint32_t columnHeight,
@@ -46,17 +46,18 @@ static void drawWallColumn(
         return;
     
     // Clip to top of the screen
-    const Fixed texYStep = fixedDiv(FRACUNIT, columnScale << (FRACBITS - SCALEBITS));
-    const uint32_t numTopPixelsOffscreen = (viewY < 0) ? -viewY : 0;
+    const uint32_t pixelsOffscreenAtTop = (viewY < 0) ? -viewY : 0;
 
-    if (numTopPixelsOffscreen >= columnHeight)
+    if (pixelsOffscreenAtTop >= columnHeight)
         return;
     
-    // Compute clipped view y and texture coordinate
-    const int32_t clippedViewY = viewY + numTopPixelsOffscreen;
+    // Compute clipped column height and texture coordinate
+    const int32_t clippedViewY = viewY + pixelsOffscreenAtTop;
     const uint32_t maxColumnHeight = gScreenHeight - clippedViewY;
-    const uint32_t clippedColumnHeight = std::min(columnHeight - numTopPixelsOffscreen, maxColumnHeight);
-    const Fixed clippedTexY = intToFixed((int32_t) texY) + texYStep * numTopPixelsOffscreen;
+    const uint32_t clippedColumnHeight = std::min(columnHeight - pixelsOffscreenAtTop, maxColumnHeight);
+
+    const Fixed texYStep = fixedDiv(FRACUNIT, columnScale << (FRACBITS - SCALEBITS));
+    const Fixed clippedTexY = intToFixed((int32_t) texY) + texYStep * pixelsOffscreenAtTop;
 
     // Compute light multiplier
     const Fixed lightMultiplier = getLightMultiplier(gTxTextureLight, MAX_WALL_LIGHT_VALUE);
@@ -98,7 +99,7 @@ static void drawSkyColumn(const uint32_t viewX) noexcept {
     // FIXME: don't keep doing this for each column
     const Texture* const pTexture = (const Texture*) getWallTexture(getCurrentSkyTexNum());
 
-    drawWallColumn(
+    drawClippedWallColumn(
         viewX,
         0,
         pTexture->data.height,  // FIXME: This needs to be scaled for view size!
@@ -139,7 +140,7 @@ static void drawTexturedColumn(
     const uint32_t texY = ((int32_t) texYNotOffset < 0) ? texYNotOffset + texHeight : texYNotOffset;    // DC: This is required for correct vertical alignment in some cases
 
     // Draw the column
-    drawWallColumn(
+    drawClippedWallColumn(
         viewX,
         viewY,
         columnHeight,
@@ -199,6 +200,7 @@ static void drawSeg(const viswall_t& seg) noexcept {
                 )
             );
             
+            // Save lighting params
             {
                 Fixed texturelight = ((columnScale * gLightCoef) >> 16) - gLightSub;                
                 if (texturelight < gLightMin) {

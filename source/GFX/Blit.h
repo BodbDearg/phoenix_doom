@@ -21,16 +21,19 @@ namespace Blit {
     //------------------------------------------------------------------------------------------------------------------
     static constexpr uint32_t BCF_HORZ_COLUMN       = 0x00000001;       // Instead of blitting to a vertical column of pixels, blit to a horizontal column.
     static constexpr uint32_t BCF_ROW_MAJOR_IMG     = 0x00000002;       // The source image is stored in row major format instead of column major (default).
+    
     static constexpr uint32_t BCF_STEP_X            = 0x00000004;       // Step the texture coordinate in the X direction for each pixel blitted.
     static constexpr uint32_t BCF_STEP_Y            = 0x00000008;       // Step the texture coordinate in the Y direction for each pixel blitted.
     static constexpr uint32_t BCF_STEP_ANY = (
         BCF_STEP_X |
         BCF_STEP_Y
     );
+    
     static constexpr uint32_t BCF_ALPHA_TEST        = 0x00000010;       // Check the alpha of source image pixels and do not blit if alpha '0'.
     static constexpr uint32_t BCF_COLOR_MULT_RGB    = 0x00000020;       // Multiply the RGB values of the source image by the given 16.16 fixed point color.
     static constexpr uint32_t BCF_COLOR_MULT_A      = 0x00000040;       // Multiply the alpha value of the source image by the given 16.16 fixed point color.
     static constexpr uint32_t BCF_ALPHA_BLEND       = 0x00000080;       // Alpha blend by the alpha value of the source image. Note that you need use color multiply in order to get values other than '0' or '1' due to 1 bit alpha!
+
     static constexpr uint32_t BCF_H_WRAP_WRAP       = 0x00000400;       // Horizontal texture wrap mode: wrap. The source 'x' texture coord wraps around.
     static constexpr uint32_t BCF_H_WRAP_CLAMP      = 0x00000800;       // Horizontal texture wrap mode: clamp. The source 'x' texture coord is clamped.
     static constexpr uint32_t BCF_H_WRAP_64         = 0x00001000;       // Horizontal texture wrap mode: wrap. (faster/specialized version, texture *MUST* be 64 units wide)
