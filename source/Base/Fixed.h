@@ -10,6 +10,7 @@ typedef int32_t Fixed;      // Typedef for a 16.16 fixed point number
 
 static constexpr uint32_t   FRACBITS    = 16;                   // Number of fraction bits in Fixed
 static constexpr Fixed      FRACUNIT    = 1 << FRACBITS;        // 1.0 in fixed point
+static constexpr Fixed      FRACMASK    = int32_t(0x0000FFFF);  // Masks out the fractional bits
 static constexpr Fixed      FIXED_MIN   = INT32_MIN;            // Min and max value for a 16.16 fixed point number
 static constexpr Fixed      FIXED_MAX   = INT32_MAX;
 

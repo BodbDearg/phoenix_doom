@@ -92,18 +92,22 @@ static void drawSkyColumn(const uint32_t viewX) noexcept {
     // Note: sky textures are 256 pixels wide so this wraps around
     const uint32_t texX = (((gXToViewAngle[viewX] + gViewAngle) >> ANGLETOSKYSHIFT) & 0xFF);
     
-    // Sky is always rendered at max light and 1.0 scale
+    // Sky is always rendered at max light
     gTxTextureLight = MAX_WALL_LIGHT_VALUE << LIGHTSCALESHIFT;
-    
-    // Set source texture details
-    // FIXME: don't keep doing this for each column
-    const Texture* const pTexture = (const Texture*) getWallTexture(getCurrentSkyTexNum());
+
+    // Figure out the sky column height and then draw the column
+    const Texture* const pTexture = (const Texture*) getWallTexture(getCurrentSkyTexNum()); // FIXME: don't keep doing this for each column
+    const Fixed skyScale = fixedDiv(intToFixed(gScreenHeight), intToFixed(Renderer::REFERENCE_3D_VIEW_HEIGHT));
+
+    const Fixed scaledColHeight = fixedMul(intToFixed(pTexture->data.height), skyScale);
+    const uint32_t roundColHeight = ((scaledColHeight & FRACMASK) != 0) ? 1 : 0;
+    const uint32_t colHeight = (uint32_t) fixedToInt(scaledColHeight) + roundColHeight;
 
     drawClippedWallColumn(
         viewX,
         0,
-        pTexture->data.height,  // FIXME: This needs to be scaled for view size!
-        1 << SCALEBITS,
+        colHeight,
+        (skyScale >> FIXEDTOSCALE),
         texX,
         0,
         pTexture->data

@@ -8,7 +8,11 @@
 
 static constexpr Fixed computeStretch(const uint32_t width, const uint32_t height) noexcept {
     return Fixed(
-        floatToFixed((160.0f / (float) width) * ((float) height / 180.0f) * 2.2f)
+        floatToFixed(
+            (160.0f / (float) width) *
+            ((float) height / (float) Renderer::REFERENCE_3D_VIEW_HEIGHT) *
+            2.2f
+        )
     );
 }
 

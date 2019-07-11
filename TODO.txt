@@ -9,6 +9,7 @@
 - Fix view bob not working.
 - Fake contrast on walls
 - Tweak light diminishing (longer falloff + darker)
+- Don't do light diminishing outdoors
 - Tweak wall column rendering, looks a bit 'fuzzy' right now.
 - Fix weird chainsaw sound
 - Fix odd floor 'twitching' issue in level 2, near the entrance to the chainsaw area (by blinking lights).
@@ -23,7 +24,6 @@
 - Cheats support
 - FPS counter
 - Fix address sanitizer crash on angle LUT lookup (easy to reproduce on MacOS with Xcode)
-- Fix sky scaling
 - Maybe add menu sounds?
 - Do lighting effects on player gun.
 - Maybe center numbers on HUD?
