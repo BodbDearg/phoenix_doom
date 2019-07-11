@@ -1,6 +1,7 @@
 #include "Renderer_Internal.h"
 
 #include "Base/Tables.h"
+#include "Blit.h"
 #include "Map/MapData.h"
 #include "Sprites.h"
 #include "Things/MapObj.h"
@@ -18,27 +19,6 @@ static const uint16_t* getSpriteColumn(const vissprite_t& visSprite, const Fixed
     const SpriteFrameAngle* const pSprite = visSprite.pSprite;
     const int32_t xClamped = (x < 0) ? 0 : ((x >= pSprite->width) ? pSprite->width - 1 : x);
     return &pSprite->pTexture[pSprite->height * xClamped];
-}
-
-//----------------------------------------------------------------------------------------------------------------------
-// Utility that determines how much to step (in texels) per pixel to render the entire of the given
-// sprite dimension in the given render area dimension (both in pixels).
-//----------------------------------------------------------------------------------------------------------------------
-static Fixed determineTexelStep(const uint32_t textureSize, const uint32_t renderSize) {
-    if (textureSize <= 1 || renderSize <= 1) {
-        return 0;
-    }
-    
-    // The way the math works here helps ensure the last pixel drawn is pretty much always the last pixel
-    // of the texture. This ensures that edges/borders around sprites etc. don't seem to vanish... 
-    // I used to have issues with the bottom rows of the explosive barrels cutting out before adopting this method.
-    const int32_t numPixelSteps = (int32_t) renderSize - 1;
-    const Fixed step = fixedDiv(
-        intToFixed(textureSize) - 1,    // N.B: never let it reach 'textureSize' - keep below, as that is an out of bounds index!
-        intToFixed(numPixelSteps)
-    );
-
-    return step;
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -80,8 +60,8 @@ static void drawSpriteNoClip(const vissprite_t& visSprite) noexcept {
     ASSERT(renderW > 0 && renderH > 0);
 
     // Figure out the step in texels we want per x and y pixel in 16.16 format
-    const Fixed texelStepX_NoFlip = determineTexelStep(spriteW, renderW);
-    const Fixed texelStepY = determineTexelStep(spriteH, renderH);
+    const Fixed texelStepX_NoFlip = Blit::calcTexelStep(spriteW, renderW);
+    const Fixed texelStepY = Blit::calcTexelStep(spriteH, renderH);
 
     // Computing start texel x coord (y is '0' for now) and step due to sprite flipping
     Fixed texelStepX;
@@ -220,7 +200,7 @@ static void oneSpriteLine(
     ASSERT(renderH > 0);
     
     // Figure out the step in texels we want per y pixel in 16.16 format
-    const Fixed texelStepY = determineTexelStep(spriteH, renderH);
+    const Fixed texelStepY = Blit::calcTexelStep(spriteH, renderH);
 
     // Sanity check in debug that we won't go out of bounds of the texture (shouldn't)
     #if ASSERTS_ENABLED == 1

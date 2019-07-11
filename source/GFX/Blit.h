@@ -59,11 +59,30 @@ namespace Blit {
         BCF_V_WRAP_256
     );
 
+    //----------------------------------------------------------------------------------------------------------------------
+    // Utility that determines how much to step (in texels) per pixel to render the entire of the given
+    // texture dimension in the given render area dimension (both in pixels).
+    //----------------------------------------------------------------------------------------------------------------------
+    inline constexpr Fixed calcTexelStep(const uint32_t textureSize, const uint32_t renderSize) noexcept {
+        if (textureSize <= 1 || renderSize <= 1)
+            return 0;
+        
+        // The way the math works here helps to ensure that the last texel chosen for the given render size is pretty much
+        // always the last texel according to the given texture dimension:
+        const int32_t numPixelSteps = (int32_t) renderSize - 1;
+        const Fixed step = fixedDiv(
+            intToFixed(textureSize) - 1,    // N.B: never let it reach 'textureSize' (i.e out of bounds) - keep *just* below!
+            intToFixed(numPixelSteps)
+        );
+
+        return step;
+    }
+
     //------------------------------------------------------------------------------------------------------------------
     // Wrap (or not) an X coordinate to the given width for the given blit column flags.
     //------------------------------------------------------------------------------------------------------------------
     template <uint32_t BC_FLAGS>
-    inline uint32_t wrapXCoord(int32_t x, [[maybe_unused]] const uint32_t width) noexcept {
+    inline constexpr uint32_t wrapXCoord(int32_t x, [[maybe_unused]] const uint32_t width) noexcept {
         BLIT_ASSERT(width > 0);
 
         if constexpr ((BC_FLAGS & BCF_H_WRAP_ANY) == 0) {
@@ -102,7 +121,7 @@ namespace Blit {
     // Wrap (or not) an Y coordinate to the given height for the given blit column flags.
     //------------------------------------------------------------------------------------------------------------------
     template <uint32_t BC_FLAGS>
-    inline uint32_t wrapYCoord(int32_t y, [[maybe_unused]] const uint32_t height) noexcept {
+    inline constexpr uint32_t wrapYCoord(int32_t y, [[maybe_unused]] const uint32_t height) noexcept {
         BLIT_ASSERT(height > 0);
 
         if constexpr ((BC_FLAGS & BCF_V_WRAP_ANY) == 0) {
