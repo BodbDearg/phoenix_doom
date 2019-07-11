@@ -3,6 +3,7 @@
 #include "Base/Fixed.h"
 #include "Base/Macros.h"
 #include "ImageData.h"
+#include <algorithm>
 
 // Set to '1' to enable heavy duty bounds checking on blitting.
 // This can slow down stuff a lot, but can be useful to sanity check blit code. 

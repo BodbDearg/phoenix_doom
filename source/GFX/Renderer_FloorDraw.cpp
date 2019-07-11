@@ -2,6 +2,7 @@
 
 #include "Base/Endian.h"
 #include "Base/Tables.h"
+#include "Blit.h"
 #include "Game/Data.h"
 #include "Textures.h"
 #include "Video.h"
@@ -11,47 +12,44 @@ BEGIN_NAMESPACE(Renderer)
 static uint32_t gSpanStart[MAXSCREENHEIGHT];
 
 //----------------------------------------------------------------------------------------------------------------------
-// Draws a horizontal span of the floor.
+// Draws a horizontal span of the floor
 //----------------------------------------------------------------------------------------------------------------------
 static void drawFloorColumn(
-    const uint32_t ds_y,
-    const uint32_t ds_x1,
-    const uint32_t Count,
-    const uint32_t xfrac,
-    const uint32_t yfrac,
-    const Fixed ds_xstep,
-    const Fixed ds_ystep,
+    const uint32_t colY,
+    const uint32_t colX,
+    const uint32_t numPixels,
+    const uint32_t texXFrac,
+    const uint32_t texYFrac,
+    const Fixed texXStep,
+    const Fixed texYStep,
     const ImageData& texData
 ) noexcept {
-    // FIXME: TEMP - CLEANUP & OPTIMIZE
-    const uint16_t* const pTexPixels = texData.pPixels;
     const Fixed lightMultiplier = getLightMultiplier(gTxTextureLight, MAX_FLOOR_LIGHT_VALUE);
 
-    for (uint32_t pixelNum = 0; pixelNum < Count; ++pixelNum) {
-        Fixed tx = ((xfrac + ds_xstep * pixelNum) >> FRACBITS) & 63;    // assumes 64x64
-        Fixed ty = ((yfrac + ds_ystep * pixelNum) >> FRACBITS) & 63;    // assumes 64x64
-
-        const uint16_t colorRGBA5551 = pTexPixels[ty * 64 + tx];
-
-        int32_t texR;
-        int32_t texG;
-        int32_t texB;
-        ImageDataUtils::decodePixelToRGB(colorRGBA5551, texR, texG, texB);
-
-        const Fixed texRFrac = intToFixed(texR);
-        const Fixed texGFrac = intToFixed(texG);
-        const Fixed texBFrac = intToFixed(texB);
-
-        const Fixed darkenedR = fixedMul(texRFrac, lightMultiplier);
-        const Fixed darkenedG = fixedMul(texGFrac, lightMultiplier);
-        const Fixed darkenedB = fixedMul(texBFrac, lightMultiplier);
-
-        const uint32_t finalColor = Video::fixedRgbToScreenCol(darkenedR, darkenedG, darkenedB);        
-        const uint32_t screenX = ds_x1 + pixelNum + gScreenXOffset;
-        const uint32_t screenY = ds_y + gScreenYOffset;
-
-        Video::gFrameBuffer[screenY * Video::SCREEN_WIDTH + screenX] = finalColor;
-    }
+    Blit::blitColumn<
+        Blit::BCF_HORZ_COLUMN |     // Column is horizontal rather than vertical
+        Blit::BCF_ROW_MAJOR_IMG |   // Floor textures are stored in row major format (unlike sprites and walls)
+        Blit::BCF_STEP_X |
+        Blit::BCF_STEP_Y |
+        Blit::BCF_H_WRAP_64 |       // Floor textures are always 64x64!
+        Blit::BCF_V_WRAP_64 |
+        Blit::BCF_COLOR_MULT_RGB
+    >(
+        texData,
+        texXFrac,
+        texYFrac,
+        Video::gFrameBuffer,
+        Video::SCREEN_WIDTH,
+        Video::SCREEN_HEIGHT,
+        colX + gScreenXOffset,
+        colY + gScreenYOffset,
+        numPixels,
+        texXStep,
+        texYStep,
+        lightMultiplier,
+        lightMultiplier,
+        lightMultiplier
+    );
 }
 
 //----------------------------------------------------------------------------------------------------------------------

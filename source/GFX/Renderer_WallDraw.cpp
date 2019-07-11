@@ -100,6 +100,7 @@ static void drawSkyColumn(const uint32_t viewX) noexcept {
     const Fixed scaledColHeight = fixedMul(intToFixed(skyTexH), skyScale);
     const uint32_t roundColHeight = ((scaledColHeight & FRACMASK) != 0) ? 1 : 0;
     const uint32_t colHeight = (uint32_t) fixedToInt(scaledColHeight) + roundColHeight;
+    BLIT_ASSERT(colHeight < gScreenHeight);
 
     const Fixed texYStep = Blit::calcTexelStep(skyTexH, colHeight);
 
