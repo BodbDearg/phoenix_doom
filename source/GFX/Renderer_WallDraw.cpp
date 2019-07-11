@@ -89,28 +89,35 @@ static void drawClippedWallColumn(
 // Draws a single column of the sky
 //----------------------------------------------------------------------------------------------------------------------
 static void drawSkyColumn(const uint32_t viewX) noexcept {
-    // Note: sky textures are 256 pixels wide so this wraps around
+    // Note: sky textures are 256 pixels wide so the mask wraps it around
     const uint32_t texX = (((gXToViewAngle[viewX] + gViewAngle) >> ANGLETOSKYSHIFT) & 0xFF);
-    
-    // Sky is always rendered at max light
-    gTxTextureLight = MAX_WALL_LIGHT_VALUE << LIGHTSCALESHIFT;
 
-    // Figure out the sky column height and then draw the column
-    const Texture* const pTexture = (const Texture*) getWallTexture(getCurrentSkyTexNum()); // FIXME: don't keep doing this for each column
+    // Figure out the sky column height and texel step (y)
+    const Texture* const pTexture = (const Texture*) getWallTexture(getCurrentSkyTexNum());     // FIXME: don't keep doing this for each column
+    const uint32_t skyTexH = pTexture->data.height;
+
     const Fixed skyScale = fixedDiv(intToFixed(gScreenHeight), intToFixed(Renderer::REFERENCE_3D_VIEW_HEIGHT));
-
-    const Fixed scaledColHeight = fixedMul(intToFixed(pTexture->data.height), skyScale);
+    const Fixed scaledColHeight = fixedMul(intToFixed(skyTexH), skyScale);
     const uint32_t roundColHeight = ((scaledColHeight & FRACMASK) != 0) ? 1 : 0;
     const uint32_t colHeight = (uint32_t) fixedToInt(scaledColHeight) + roundColHeight;
 
-    drawClippedWallColumn(
-        viewX,
+    const Fixed texYStep = Blit::calcTexelStep(skyTexH, colHeight);
+
+    // Draw the sky column
+    Blit::blitColumn<
+        Blit::BCF_STEP_Y
+    >(
+        pTexture->data,
+        intToFixed(texX),
         0,
+        Video::gFrameBuffer,
+        Video::SCREEN_WIDTH,
+        Video::SCREEN_HEIGHT,
+        viewX + gScreenXOffset,
+        gScreenYOffset,
         colHeight,
-        (skyScale >> FIXEDTOSCALE),
-        texX,
         0,
-        pTexture->data
+        texYStep
     );
 }
 
@@ -118,7 +125,7 @@ static void drawSkyColumn(const uint32_t viewX) noexcept {
 // Compute the screen location and part of the texture to use for the given draw texture and then draw a single wall
 // column based on that information.
 //----------------------------------------------------------------------------------------------------------------------
-static void drawTexturedColumn(
+static void drawWallColumn(
     const drawtex_t& tex, 
     const uint32_t viewX,
     const uint32_t texX,
@@ -218,10 +225,10 @@ static void drawSeg(const viswall_t& seg) noexcept {
             
             // Daw the top and bottom textures (if present)
             if (actionBits & AC_TOPTEXTURE) {
-                drawTexturedColumn(topTex, viewX, texX, columnScale);
+                drawWallColumn(topTex, viewX, texX, columnScale);
             }
             if (actionBits & AC_BOTTOMTEXTURE) {
-                drawTexturedColumn(bottomTex, viewX, texX, columnScale);
+                drawWallColumn(bottomTex, viewX, texX, columnScale);
             }
             
             // Step to the next scale
