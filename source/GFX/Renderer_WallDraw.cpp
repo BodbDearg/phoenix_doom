@@ -135,7 +135,7 @@ static void drawWallColumn(
     const Fixed invColumnScale
 ) noexcept {
     // Compute height of column from source image height and make sure not invalid
-    const Fixed columnHeightFrac = wallBottomY - wallTopY + (FRACUNIT / 4);
+    const Fixed columnHeightFrac = wallBottomY - wallTopY;
 
     if (columnHeightFrac < 0)
         return;

@@ -119,7 +119,7 @@ static void latePrep(viswall_t& wall, const seg_t& lineSeg, const angle_t leftAn
         wall.SmallScale = scaleFrac;
     }
     
-    if (wall.WallActions & (AC_TOPTEXTURE|AC_BOTTOMTEXTURE) ) {
+    if ((wall.WallActions & (AC_TOPTEXTURE|AC_BOTTOMTEXTURE)) != 0) {
         offsetAngle = normalAngle - leftAngle;
         
         if (offsetAngle > ANG180) {
