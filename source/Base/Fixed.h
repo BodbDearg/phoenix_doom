@@ -53,3 +53,10 @@ static inline constexpr float fixedToFloat(const Fixed num) noexcept {
     const double doubleVal = (double) num;
     return (float) (doubleVal / 65536.0);
 }
+
+//----------------------------------------------------------------------------------------------------------------------
+// Yields a reciprocal of the given 16.16 number.
+//----------------------------------------------------------------------------------------------------------------------
+static inline constexpr Fixed fixedInvert(const Fixed num) noexcept {
+    return fixedDiv(FRACUNIT, num);
+}
