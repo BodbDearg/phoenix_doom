@@ -494,7 +494,7 @@ void A_PosAttack(mobj_t* const pActor) noexcept {
         angle_t angle = pActor->angle;                          // Get the angle
         angle += (255 - Random::nextU32(511)) << 20;            // Angle of error
         const uint32_t damage = (Random::nextU32(7) + 1) * 3;   // 1D8 * 3
-        LineAttack(pActor, angle, MISSILERANGE, FIXED_MAX, damage);
+        LineAttack(pActor, angle, MISSILERANGE, FRACMAX, damage);
     }
 }
 
@@ -510,7 +510,7 @@ void A_SPosAttack(mobj_t* const pActor) noexcept {
         for (uint32_t i = 0; i < 3u; ++i) {
             const angle_t angle = bAngle + ((255 - Random::nextU32(511)) << 20);
             const uint32_t damage = (Random::nextU32(7) + 1 ) * 3;
-            LineAttack(pActor, angle, MISSILERANGE, FIXED_MAX, damage);
+            LineAttack(pActor, angle, MISSILERANGE, FRACMAX, damage);
         }
     }
 }

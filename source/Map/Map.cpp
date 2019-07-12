@@ -313,7 +313,7 @@ void LineAttack(mobj_t *t1,angle_t angle,Fixed distance,Fixed slope, uint32_t da
     gAttackRange = distance;
     gAttackAngle = angle;
 
-    if (slope == FIXED_MAX) {
+    if (slope == FRACMAX) {
         gAimTopSlope = 100*FRACUNIT/160; // can't shoot outside view angles
         gAimBottomSlope = -100*FRACUNIT/160;
     } else {

@@ -85,8 +85,8 @@ static void GroupLines(void)
     i = gNumSectors;                    // Get the sector count 
     
     do {
-        bbox[BOXTOP] = bbox[BOXRIGHT] = FIXED_MIN;     // Invalidate the rect 
-        bbox[BOXBOTTOM] = bbox[BOXLEFT] = FIXED_MAX;
+        bbox[BOXTOP] = bbox[BOXRIGHT] = FRACMIN;     // Invalidate the rect 
+        bbox[BOXBOTTOM] = bbox[BOXLEFT] = FRACMAX;
         sector->lines = linebuffer;                 // Get the current list entry 
         li = gpLines;                               // Init the line array pointer 
         j = gNumLines;

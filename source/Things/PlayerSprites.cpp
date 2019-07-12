@@ -418,7 +418,7 @@ void A_Punch(player_t *player,pspdef_t *psp)
     mo = player->mo;            // Get the object into a local
     angle = mo->angle;          // Get the player's angle
     angle += (255-Random::nextU32(511))<<18;  // Adjust for direction of attack
-    LineAttack(mo,angle,MELEERANGE,FIXED_MAX,damage);  // Attack!
+    LineAttack(mo,angle,MELEERANGE,FRACMAX,damage);  // Attack!
     target = gLineTarget;
     if (target) {       // Did I hit someone?
         // Point the player to the victim
@@ -447,7 +447,7 @@ void A_Saw(player_t *player,pspdef_t *psp)
 
 // use meleerange + 1 so the puff doesn't skip the flash
 
-    LineAttack(mo,angle,MELEERANGE+1,FIXED_MAX,damage);
+    LineAttack(mo,angle,MELEERANGE+1,FRACMAX,damage);
     target = gLineTarget;
     if (!target) {          // Anyone hit?
         S_StartSound(&mo->x,sfx_sawful);    // Loud saw sound effect
@@ -530,7 +530,7 @@ static void GunShot(mobj_t *mo, bool accurate)
     if (!accurate) {
         angle += (255-Random::nextU32(511))<<18;  // Make it a little random
     }
-    LineAttack(mo,angle,MISSILERANGE,FIXED_MAX,damage);    // Inflict damage
+    LineAttack(mo,angle,MISSILERANGE,FRACMAX,damage);    // Inflict damage
 }
 
 /**********************************

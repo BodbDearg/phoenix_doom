@@ -14,8 +14,8 @@ static constexpr Fixed      VIEWHEIGHT      = 41 * FRACUNIT;        // Height to
 // Gameplay/simulation related constants
 static constexpr uint32_t   TICKSPERSEC     = 60;                   // The game timebase (ticks per second)
 static constexpr uint32_t   MAPBLOCKSHIFT   = FRACBITS + 7;         // Shift value to convert Fixed to 128 pixel blocks
-static constexpr Fixed      ONFLOORZ        = FIXED_MIN;            // Attach object to floor with this z
-static constexpr Fixed      ONCEILINGZ      = FIXED_MAX;            // Attach object to ceiling with this z
+static constexpr Fixed      ONFLOORZ        = FRACMIN;              // Attach object to floor with this z
+static constexpr Fixed      ONCEILINGZ      = FRACMAX;              // Attach object to ceiling with this z
 static constexpr Fixed      GRAVITY         = 4 * FRACUNIT;         // Rate of fall
 static constexpr Fixed      MAXMOVE         = 16 * FRACUNIT;        // Maximum velocity
 static constexpr Fixed      MAXRADIUS       = 32 * FRACUNIT;        // Largest radius of any critter

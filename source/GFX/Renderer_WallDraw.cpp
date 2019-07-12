@@ -36,7 +36,7 @@ static void drawClippedWallColumn(
     const int32_t viewX,
     const int32_t viewY,
     const uint32_t columnHeight,
-    const int32_t columnScale,
+    const Fixed columnScale,
     const uint32_t texX,
     const uint32_t texY,
     const ImageData& texData
@@ -130,15 +130,15 @@ static void drawWallColumn(
     const drawtex_t& tex, 
     const uint32_t viewX,
     const uint32_t texX,
-    const int32_t columnScale
+    const Fixed columnScale
 ) noexcept {
     // Compute height of column from source image height and make sure not invalid
-    const int32_t columnHeightUnscaled = (tex.topheight - tex.bottomheight) >> HEIGHTBITS;
+    const Fixed columnHeightUnscaled = (tex.topheight - tex.bottomheight) >> HEIGHTBITS;
 
     if (columnHeightUnscaled <= 0)
         return;
     
-    const uint32_t columnHeightFrac = uint32_t(columnHeightUnscaled * columnScale);
+    const Fixed columnHeightFrac = uint32_t(columnHeightUnscaled * columnScale);
     const uint32_t columnHeightCeilRound = (columnHeightFrac & 0x1FF) ? 1 : 0;
     const uint32_t columnHeight = (columnHeightFrac >> SCALEBITS) + columnHeightCeilRound;
 

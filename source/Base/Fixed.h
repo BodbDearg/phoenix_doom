@@ -3,16 +3,20 @@
 #include <cstdint>
 
 //----------------------------------------------------------------------------------------------------------------------
-// Engine fixed point type: Doom uses 16.16 signed fixed point numbers throughout a lot of the game.
+// Engine fixed point defines: 
+// Doom uses 16.16 signed fixed point numbers (in twos complement format) throughout a lot of the game.
+// In some places the format is different however, but generally when you see 'Fixed' it means 16.16.
 //----------------------------------------------------------------------------------------------------------------------
 
-typedef int32_t Fixed;      // Typedef for a 16.16 fixed point number
+// Typedef for a fixed point number - mainly for code readability.
+// IMPORTANT: does *NOT* have to be 16.16, even though in most places throughout the game it will be!
+typedef int32_t Fixed;
 
-static constexpr uint32_t   FRACBITS    = 16;                   // Number of fraction bits in Fixed
-static constexpr Fixed      FRACUNIT    = 1 << FRACBITS;        // 1.0 in fixed point
-static constexpr Fixed      FRACMASK    = int32_t(0x0000FFFF);  // Masks out the fractional bits
-static constexpr Fixed      FIXED_MIN   = INT32_MIN;            // Min and max value for a 16.16 fixed point number
-static constexpr Fixed      FIXED_MAX   = INT32_MAX;
+static constexpr uint32_t   FRACBITS    = 16;                   // Number of fraction bits *USUALLY* in a Fixed (16.16 format)
+static constexpr Fixed      FRACUNIT    = 1 << FRACBITS;        // 1.0 in a 16.16 format fixed point number
+static constexpr Fixed      FRACMASK    = int32_t(0x0000FFFF);  // Masks out the fractional bits in a 16.16 number
+static constexpr Fixed      FRACMIN     = INT32_MIN;            // Min and max value for a 16.16 fixed point number
+static constexpr Fixed      FRACMAX     = INT32_MAX;
 
 //----------------------------------------------------------------------------------------------------------------------
 // Multiply and divide 16.16 fixed point numbers.
