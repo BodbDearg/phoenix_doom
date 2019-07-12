@@ -36,7 +36,7 @@ static void drawClippedWallColumn(
     const int32_t viewX,
     const int32_t viewY,
     const uint32_t columnHeight,
-    const Fixed columnScale,
+    const Fixed invColumnScale,
     const uint32_t texX,
     const uint32_t texY,
     const ImageData& texData
@@ -56,7 +56,7 @@ static void drawClippedWallColumn(
     const uint32_t maxColumnHeight = gScreenHeight - clippedViewY;
     const uint32_t clippedColumnHeight = std::min(columnHeight - pixelsOffscreenAtTop, maxColumnHeight);
 
-    const Fixed texYStep = fixedDiv(FRACUNIT, columnScale << (FRACBITS - SCALEBITS));
+    const Fixed texYStep = invColumnScale;
     const Fixed clippedTexY = intToFixed((int32_t) texY) + texYStep * pixelsOffscreenAtTop;
 
     // Compute light multiplier
@@ -78,7 +78,7 @@ static void drawClippedWallColumn(
         clippedViewY + gScreenYOffset,
         clippedColumnHeight,
         0,
-        texYStep,
+        invColumnScale,
         lightMultiplier,
         lightMultiplier,
         lightMultiplier
@@ -130,7 +130,8 @@ static void drawWallColumn(
     const drawtex_t& tex, 
     const uint32_t viewX,
     const uint32_t texX,
-    const Fixed columnScale
+    const Fixed columnScale,
+    const Fixed invColumnScale
 ) noexcept {
     // Compute height of column from source image height and make sure not invalid
     const Fixed columnHeightUnscaled = (tex.topheight - tex.bottomheight) >> HEIGHTBITS;
@@ -156,7 +157,7 @@ static void drawWallColumn(
         viewX,
         viewY,
         columnHeight,
-        columnScale,
+        invColumnScale,
         (texX % texWidth),      // Wraparound texture x coord!
         (texY % texHeight),     // Wraparound texture y coord!
         texData
@@ -225,11 +226,13 @@ static void drawSeg(const viswall_t& seg) noexcept {
             }
             
             // Daw the top and bottom textures (if present)
+            const Fixed invColumnScale = fixedInvert(columnScaleFrac);
+
             if (actionBits & AC_TOPTEXTURE) {
-                drawWallColumn(topTex, viewX, texX, columnScale);
+                drawWallColumn(topTex, viewX, texX, columnScale, invColumnScale);
             }
             if (actionBits & AC_BOTTOMTEXTURE) {
-                drawWallColumn(bottomTex, viewX, texX, columnScale);
+                drawWallColumn(bottomTex, viewX, texX, columnScale, invColumnScale);
             }
             
             // Step to the next scale
