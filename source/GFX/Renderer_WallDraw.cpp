@@ -140,8 +140,7 @@ static void drawWallColumn(
         return;
     
     const Fixed columnHeightFrac = uint32_t(columnHeightUnscaled * columnScale);
-    const uint32_t columnHeightCeilRound = (columnHeightFrac & 0x1FF) ? 1 : 0;
-    const uint32_t columnHeight = (columnHeightFrac >> SCALEBITS) + columnHeightCeilRound;
+    const uint32_t columnHeight = (columnHeightFrac >> SCALEBITS) + 1;
 
     // View Y to draw at and y position in texture to use
     const ImageData& texData = *tex.pData;
@@ -226,7 +225,7 @@ static void drawSeg(const viswall_t& seg) noexcept {
             }
             
             // Daw the top and bottom textures (if present)
-            const Fixed invColumnScale = fixedInvert(columnScaleFrac);
+            const Fixed invColumnScale = (Fixed) (0xFFFFFFFFu / (uint32_t) columnScaleFrac);    // DC: Trick to get an approx reciprocal quickly
 
             if (actionBits & AC_TOPTEXTURE) {
                 drawWallColumn(topTex, viewX, texX, columnScale, invColumnScale);
