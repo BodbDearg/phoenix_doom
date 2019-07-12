@@ -130,24 +130,24 @@ static void drawWallColumn(
     const drawtex_t& tex, 
     const uint32_t viewX,
     const uint32_t texX,
-    const Fixed columnScale,
+    const Fixed wallTopY,
+    const Fixed wallBottomY,
     const Fixed invColumnScale
 ) noexcept {
     // Compute height of column from source image height and make sure not invalid
-    const Fixed columnHeightUnscaled = (tex.topheight - tex.bottomheight) >> HEIGHTBITS;
+    const Fixed columnHeightFrac = wallBottomY - wallTopY + (FRACUNIT / 4);
 
-    if (columnHeightUnscaled <= 0)
+    if (columnHeightFrac < 0)
         return;
     
-    const Fixed columnHeightFrac = uint32_t(columnHeightUnscaled * columnScale);
-    const uint32_t columnHeight = (columnHeightFrac >> SCALEBITS) + 1;
+    const uint32_t columnHeight = fixedToInt(columnHeightFrac) + 1;
 
     // View Y to draw at and y position in texture to use
     const ImageData& texData = *tex.pData;
     const uint32_t texWidth = texData.width;
     const uint32_t texHeight = texData.height;
 
-    const uint32_t viewY = gCenterY - uint32_t((columnScale * tex.topheight) >> (HEIGHTBITS + SCALEBITS));
+    const uint32_t viewY = fixedToInt(wallTopY);
     const uint32_t texYNotOffset = fixedToInt(tex.texturemid - (tex.topheight << FIXEDTOHEIGHT));
     const uint32_t texY = ((int32_t) texYNotOffset < 0) ? texYNotOffset + texHeight : texYNotOffset;    // DC: This is required for correct vertical alignment in some cases
 
@@ -168,75 +168,116 @@ static void drawWallColumn(
 // Also save states for pending ceiling, floor and future clipping
 //----------------------------------------------------------------------------------------------------------------------
 static void drawSeg(const viswall_t& seg) noexcept {
+    // If there is nothing (no upper or lower part) to draw for this seg then just bail immediately...
     const uint32_t actionBits = seg.WallActions;
     
-    if (actionBits & (AC_TOPTEXTURE|AC_BOTTOMTEXTURE)) {
-        const uint32_t lightLevel = seg.seglightlevel;
-        gLightMin = gLightMins[lightLevel];
-        gLightMax = lightLevel;
-        gLightSub = gLightSubs[lightLevel];
-        gLightCoef = gLightCoefs[lightLevel];
+    if ((actionBits & (AC_TOPTEXTURE|AC_BOTTOMTEXTURE)) == 0)
+        return;
 
-        drawtex_t topTex;
-        drawtex_t bottomTex;
+    // Lighting stuff
+    const uint32_t lightLevel = seg.seglightlevel;
+    gLightMin = gLightMins[lightLevel];
+    gLightMax = lightLevel;
+    gLightSub = gLightSubs[lightLevel];
+    gLightCoef = gLightCoefs[lightLevel];
+
+    // Y center of the screen in 16.16 format
+    const Fixed viewCenterYFrac = intToFixed(gCenterY);
+
+    // Store the current y coordinate for the top and bottom of the top and bottom walls here.
+    // Also store the step per pixel in y for the top and bottom coords.
+    // This helps make the result sub-pixel accurate.
+    Fixed topTexTYStep;
+    Fixed topTexBYStep;
+    Fixed topTexTYFrac;
+    Fixed topTexBYFrac;
+    Fixed bottomTexTYStep;
+    Fixed bottomTexBYStep;
+    Fixed bottomTexTYFrac;
+    Fixed bottomTexBYFrac;
+
+    // Storing some texture related params here
+    drawtex_t topTex;
+    drawtex_t bottomTex;
+
+    // Setup parameters for the top and bottom wall (if present).
+    // Note that if the seg is solid the 'top' wall is actually the entire wall.        
+    if (actionBits & AC_TOPTEXTURE) {   
+        const Texture* const pTex = seg.t_texture;
+
+        topTex.topheight = seg.t_topheight;
+        topTex.bottomheight = seg.t_bottomheight;
+        topTex.texturemid = seg.t_texturemid;         
+        topTex.pData = &pTex->data;
+
+        const Fixed topWorldTY = seg.t_topheight << FIXEDTOHEIGHT;
+        const Fixed topWorldBY = seg.t_bottomheight << FIXEDTOHEIGHT;
+
+        topTexTYStep = -fixedMul(seg.ScaleStep, topWorldTY);
+        topTexBYStep = -fixedMul(seg.ScaleStep, topWorldBY);
+        topTexTYFrac = viewCenterYFrac - fixedMul(topWorldTY, seg.LeftScale);
+        topTexBYFrac = viewCenterYFrac - fixedMul(topWorldBY, seg.LeftScale);
+    }
         
-        if (actionBits & AC_TOPTEXTURE) {   // Is there a top wall?
-            const Texture* const pTex = seg.t_texture;
+    if (actionBits & AC_BOTTOMTEXTURE) {
+        const Texture* const pTex = seg.b_texture;
 
-            topTex.topheight = seg.t_topheight;
-            topTex.bottomheight = seg.t_bottomheight;
-            topTex.texturemid = seg.t_texturemid;         
-            topTex.pData = &pTex->data;
+        bottomTex.topheight = seg.b_topheight;
+        bottomTex.bottomheight = seg.b_bottomheight;
+        bottomTex.texturemid = seg.b_texturemid;
+        bottomTex.pData = &pTex->data;
+
+        const Fixed bottomWorldTY = seg.b_topheight << FIXEDTOHEIGHT;
+        const Fixed bottomWorldBY = seg.b_bottomheight << FIXEDTOHEIGHT;
+
+        bottomTexTYStep = -fixedMul(seg.ScaleStep, bottomWorldTY);
+        bottomTexBYStep = -fixedMul(seg.ScaleStep, bottomWorldBY);
+        bottomTexTYFrac = viewCenterYFrac - fixedMul(bottomWorldTY, seg.LeftScale);
+        bottomTexBYFrac = viewCenterYFrac - fixedMul(bottomWorldBY, seg.LeftScale);
+    }
+        
+    // Init the scale fraction and step through all the columns in the seg
+    Fixed columnScaleFrac = seg.LeftScale;   
+
+    for (int32_t viewX = seg.leftX; viewX <= seg.rightX; ++viewX) {
+        // Compute current scaling factor and reciprocal using a faster approx method
+        const Fixed columnScale = std::min(int32_t(columnScaleFrac >> FIXEDTOSCALE), 0x1fff);
+        const Fixed invColumnScale = (Fixed) (0xFFFFFFFFu / (uint32_t) columnScaleFrac);
+
+        // Calculate texture offset into shape
+        const uint32_t texX = (uint32_t) fixedToInt(
+            seg.offset - fixedMul(
+                gFineTangent[(seg.CenterAngle + gXToViewAngle[viewX]) >> ANGLETOFINESHIFT],
+                seg.distance
+            )
+        );
+            
+        // Save lighting params
+        {
+            Fixed texturelight = ((columnScale * gLightCoef) >> 16) - gLightSub;                
+            if (texturelight < gLightMin) {
+                texturelight = gLightMin;
+            }                
+            if (texturelight > gLightMax) {
+                texturelight = gLightMax;
+            }                
+            gTxTextureLight = texturelight;
         }
         
-        if (actionBits & AC_BOTTOMTEXTURE) {  // Is there a bottom wall?
-            const Texture* const pTex = seg.b_texture;
-
-            bottomTex.topheight = seg.b_topheight;
-            bottomTex.bottomheight = seg.b_bottomheight;
-            bottomTex.texturemid = seg.b_texturemid;
-            bottomTex.pData = &pTex->data;
+        // Daw the top and bottom textures (if present) and update increments for the next column
+        if (actionBits & AC_TOPTEXTURE) {
+            drawWallColumn(topTex, viewX, texX, topTexTYFrac, topTexBYFrac, invColumnScale);
+            topTexTYFrac += topTexTYStep;
+            topTexBYFrac += topTexBYStep;
         }
-        
-        Fixed columnScaleFrac = seg.LeftScale;   // Init the scale fraction
-        
-        for (int32_t viewX = seg.leftX; viewX <= seg.rightX; ++viewX) {
-            // Compute current scaling factor
-            const int32_t columnScale = std::min(int32_t(columnScaleFrac >> FIXEDTOSCALE), 0x1fff);
 
-            // Calculate texture offset into shape
-            const uint32_t texX = (uint32_t) fixedToInt(
-                seg.offset - fixedMul(
-                    gFineTangent[(seg.CenterAngle + gXToViewAngle[viewX]) >> ANGLETOFINESHIFT],
-                    seg.distance
-                )
-            );
-            
-            // Save lighting params
-            {
-                Fixed texturelight = ((columnScale * gLightCoef) >> 16) - gLightSub;                
-                if (texturelight < gLightMin) {
-                    texturelight = gLightMin;
-                }                
-                if (texturelight > gLightMax) {
-                    texturelight = gLightMax;
-                }                
-                gTxTextureLight = texturelight;
-            }
-            
-            // Daw the top and bottom textures (if present)
-            const Fixed invColumnScale = (Fixed) (0xFFFFFFFFu / (uint32_t) columnScaleFrac);    // DC: Trick to get an approx reciprocal quickly
-
-            if (actionBits & AC_TOPTEXTURE) {
-                drawWallColumn(topTex, viewX, texX, columnScale, invColumnScale);
-            }
-            if (actionBits & AC_BOTTOMTEXTURE) {
-                drawWallColumn(bottomTex, viewX, texX, columnScale, invColumnScale);
-            }
-            
-            // Step to the next scale
-            columnScaleFrac += seg.ScaleStep;
+        if (actionBits & AC_BOTTOMTEXTURE) {
+            drawWallColumn(bottomTex, viewX, texX, bottomTexTYFrac, bottomTexBYFrac, invColumnScale);
+            bottomTexTYFrac += bottomTexTYStep;
+            bottomTexBYFrac += bottomTexBYStep;
         }
+            
+        columnScaleFrac += seg.ScaleStep;
     }
 }
 
