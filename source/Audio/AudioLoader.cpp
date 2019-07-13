@@ -422,11 +422,14 @@ static bool readFormChunk(const IffChunk& formChunk, AudioData& audioData) THROW
     audioData.numChannels = numChannels;
     audioData.bitDepth = bitDepth;
     
+    // Read the actual sound data itself
+    MemStream soundChunkStream = pSoundChunk->toStream();
+    
     if (compressionType == ID_NONE) {
-        return readRawSoundData(pSoundChunk->toStream(), audioData);
+        return readRawSoundData(soundChunkStream, audioData);
     }
     else if (compressionType == ID_SDX2) {
-        return readSdx2CompressedSoundData(pSoundChunk->toStream(), audioData);
+        return readSdx2CompressedSoundData(soundChunkStream, audioData);
     }
     else {
         return false;   // Unknown compression type!

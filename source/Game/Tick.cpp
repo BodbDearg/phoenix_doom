@@ -267,8 +267,6 @@ uint32_t P_Ticker()
 // Draw current display
 //--------------------------------------------------------------------------------------------------
 void P_Drawer() {
-    bool bAllowDebugClear = (!gGamePaused);
-
     if (gGamePaused && gRefreshDrawn) {
         DrawPlaque(rPAUSED);            // Draw 'Paused' plaque
         Video::present();

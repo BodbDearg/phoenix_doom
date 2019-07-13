@@ -118,7 +118,7 @@ void AudioOutputDevice::audioCallback(
     int32_t bufferSize
 ) noexcept {
     ASSERT(pUserData);
-    ASSERT(pBuffer > 0);
+    ASSERT(pBuffer);
     ASSERT(bufferSize > 0);
 
     // Figure out how many samples

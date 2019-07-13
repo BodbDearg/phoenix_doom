@@ -94,23 +94,23 @@ namespace Blit {
             return (uint32_t) x;
         }
         else {
-            if constexpr (BC_FLAGS & BCF_H_WRAP_WRAP) {
+            if constexpr ((BC_FLAGS & BCF_H_WRAP_WRAP) != 0) {
                 x = (int32_t)((uint32_t) x % width);
             }
 
-            if constexpr (BC_FLAGS & BCF_H_WRAP_CLAMP) {
+            if constexpr ((BC_FLAGS & BCF_H_WRAP_CLAMP) != 0) {
                 x = (x >= 0) ? ((x < width) ? x : width - 1) : 0;
             }
 
-            if constexpr (BC_FLAGS & BCF_H_WRAP_64) {
+            if constexpr ((BC_FLAGS & BCF_H_WRAP_64) != 0) {
                 x &= (int32_t) 0x3F;
             }
 
-            if constexpr (BC_FLAGS & BCF_H_WRAP_128) {
+            if constexpr ((BC_FLAGS & BCF_H_WRAP_128) != 0) {
                 x &= (int32_t) 0x7F;
             }
 
-            if constexpr (BC_FLAGS & BCF_H_WRAP_256) {
+            if constexpr ((BC_FLAGS & BCF_H_WRAP_256) != 0) {
                 x &= (int32_t) 0xFF;
             }
 
@@ -327,17 +327,17 @@ namespace Blit {
                 if constexpr ((BC_FLAGS & BCF_ALPHA_BLEND) != 0) {
                     // Read the destination pixel RGB and convert to 16.16 fixed
                     const uint16_t dstPixelRGBA5551 = *pDstPixel;
-
-                    const uint16_t dstR = (srcPixelRGBA5551 >> 11) << 3;
-                    const uint16_t dstG = (srcPixelRGBA5551 >> 6) << 3;
-                    const uint16_t dstB = (srcPixelRGBA5551 >> 1) << 3;
+                    
+                    const uint16_t dstR = (dstPixelRGBA5551 >> 11) << 3;
+                    const uint16_t dstG = (dstPixelRGBA5551 >> 6) << 3;
+                    const uint16_t dstB = (dstPixelRGBA5551 >> 1) << 3;
 
                     const Fixed dstRFrac = intToFixed(dstR);
                     const Fixed dstGFrac = intToFixed(dstG);
                     const Fixed dstBFrac = intToFixed(dstB);
                     
                     // Source and destination blend factors
-                    const Fixed srcFactor = srcAFrac;
+                    const Fixed srcFactor = aFrac;
                     const Fixed dstFactor = FRACUNIT - aFrac;
 
                     // Do the blend

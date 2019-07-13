@@ -503,7 +503,7 @@ mobjinfo_t gMObjInfo[NUMMOBJTYPES] = {
         &gStates[S_PLAY_XDIE1],                                   // Gross death
         16 * FRACUNIT,                                            // Radius
         56 * FRACUNIT,                                            // Height
-        -1,                                                       // Spawn number
+        UINT32_MAX,                                               // Spawn number
         100,                                                      // Health
         255,                                                      // Pain chance
         100,                                                      // Mass
@@ -743,7 +743,7 @@ mobjinfo_t gMObjInfo[NUMMOBJTYPES] = {
         NULL_STATE,                                               // Gross death
         6 * FRACUNIT,                                             // Radius
         8 * FRACUNIT,                                             // Height
-        -1,                                                       // Spawn number
+        UINT32_MAX,                                               // Spawn number
         1000,                                                     // Health
         0,                                                        // Pain chance
         100,                                                      // Mass
@@ -767,7 +767,7 @@ mobjinfo_t gMObjInfo[NUMMOBJTYPES] = {
         NULL_STATE,                                               // Gross death
         6 * FRACUNIT,                                             // Radius
         8 * FRACUNIT,                                             // Height
-        -1,                                                       // Spawn number
+        UINT32_MAX,                                               // Spawn number
         1000,                                                     // Health
         0,                                                        // Pain chance
         100,                                                      // Mass
@@ -791,7 +791,7 @@ mobjinfo_t gMObjInfo[NUMMOBJTYPES] = {
         NULL_STATE,                                               // Gross death
         6 * FRACUNIT,                                             // Radius
         8 * FRACUNIT,                                             // Height
-        -1,                                                       // Spawn number
+        UINT32_MAX,                                               // Spawn number
         1000,                                                     // Health
         0,                                                        // Pain chance
         100,                                                      // Mass
@@ -815,7 +815,7 @@ mobjinfo_t gMObjInfo[NUMMOBJTYPES] = {
         NULL_STATE,                                               // Gross death
         11 * FRACUNIT,                                            // Radius
         8 * FRACUNIT,                                             // Height
-        -1,                                                       // Spawn number
+        UINT32_MAX,                                               // Spawn number
         1000,                                                     // Health
         0,                                                        // Pain chance
         100,                                                      // Mass
@@ -839,7 +839,7 @@ mobjinfo_t gMObjInfo[NUMMOBJTYPES] = {
         NULL_STATE,                                               // Gross death
         13 * FRACUNIT,                                            // Radius
         8 * FRACUNIT,                                             // Height
-        -1,                                                       // Spawn number
+        UINT32_MAX,                                               // Spawn number
         1000,                                                     // Health
         0,                                                        // Pain chance
         100,                                                      // Mass
@@ -863,7 +863,7 @@ mobjinfo_t gMObjInfo[NUMMOBJTYPES] = {
         NULL_STATE,                                               // Gross death
         13 * FRACUNIT,                                            // Radius
         8 * FRACUNIT,                                             // Height
-        -1,                                                       // Spawn number
+        UINT32_MAX,                                               // Spawn number
         1000,                                                     // Health
         0,                                                        // Pain chance
         100,                                                      // Mass
@@ -887,7 +887,7 @@ mobjinfo_t gMObjInfo[NUMMOBJTYPES] = {
         NULL_STATE,                                               // Gross death
         20 * FRACUNIT,                                            // Radius
         16 * FRACUNIT,                                            // Height
-        -1,                                                       // Spawn number
+        UINT32_MAX,                                               // Spawn number
         1000,                                                     // Health
         0,                                                        // Pain chance
         100,                                                      // Mass
@@ -911,7 +911,7 @@ mobjinfo_t gMObjInfo[NUMMOBJTYPES] = {
         NULL_STATE,                                               // Gross death
         20 * FRACUNIT,                                            // Radius
         16 * FRACUNIT,                                            // Height
-        -1,                                                       // Spawn number
+        UINT32_MAX,                                               // Spawn number
         1000,                                                     // Health
         0,                                                        // Pain chance
         100,                                                      // Mass
@@ -935,7 +935,7 @@ mobjinfo_t gMObjInfo[NUMMOBJTYPES] = {
         NULL_STATE,                                               // Gross death
         20 * FRACUNIT,                                            // Radius
         16 * FRACUNIT,                                            // Height
-        -1,                                                       // Spawn number
+        UINT32_MAX,                                               // Spawn number
         1000,                                                     // Health
         0,                                                        // Pain chance
         100,                                                      // Mass
@@ -959,7 +959,7 @@ mobjinfo_t gMObjInfo[NUMMOBJTYPES] = {
         NULL_STATE,                                               // Gross death
         20 * FRACUNIT,                                            // Radius
         16 * FRACUNIT,                                            // Height
-        -1,                                                       // Spawn number
+        UINT32_MAX,                                               // Spawn number
         1000,                                                     // Health
         0,                                                        // Pain chance
         100,                                                      // Mass
@@ -1007,7 +1007,7 @@ mobjinfo_t gMObjInfo[NUMMOBJTYPES] = {
         NULL_STATE,                                               // Gross death
         20 * FRACUNIT,                                            // Radius
         16 * FRACUNIT,                                            // Height
-        -1,                                                       // Spawn number
+        UINT32_MAX,                                               // Spawn number
         1000,                                                     // Health
         0,                                                        // Pain chance
         100,                                                      // Mass
