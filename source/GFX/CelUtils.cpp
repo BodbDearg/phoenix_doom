@@ -150,8 +150,7 @@ static void decodeUnpackedCelImageData(
     uint16_t* const pImageOut
 ) noexcept {
     // Setup for reading
-    BitStream bitStream(pImageData);    
-    const uint32_t numPixels = uint32_t(imageW) * uint32_t(imageH);
+    BitStream bitStream(pImageData);
     uint16_t* pCurOutputPixel = pImageOut;
     
     // Read the entire image

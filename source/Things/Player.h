@@ -83,7 +83,7 @@ struct player_t {
     uint32_t        killcount;                  // Number of critters killed
     uint32_t        itemcount;                  // Number of items gathered
     uint32_t        secretcount;                // Number of secret sectors touched
-    char*           message;                    // Hint messages
+    const char*     message;                    // Hint messages
     mobj_t*         attacker;                   // Who did damage (NULL for floors)
     uint32_t        extralight;                 // so gun flashes light up areas
     uint32_t        fixedcolormap;              // can be set to REDCOLORMAP, etc

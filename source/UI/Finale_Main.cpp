@@ -17,7 +17,7 @@ typedef enum {
     fin_charcast
 } final_e;
 
-static constexpr char* CAST_NAMES[] = {        // Names of all the critters 
+static constexpr const char* const CAST_NAMES[] = {        // Names of all the critters
     "Zombieman",
     "Shotgun Guy",
     "Imp",
@@ -28,7 +28,7 @@ static constexpr char* CAST_NAMES[] = {        // Names of all the critters
     "Our Hero"
 };
 
-static constexpr mobjinfo_t* CAST_ORDER[] = {  // Pointer to the critter's base information 
+static constexpr mobjinfo_t* const CAST_ORDER[] = {  // Pointer to the critter's base information 
     &gMObjInfo[MT_POSSESSED],
     &gMObjInfo[MT_SHOTGUY],
     &gMObjInfo[MT_TROOP],

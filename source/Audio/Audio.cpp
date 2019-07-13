@@ -35,10 +35,9 @@ void audioInit() {
     audioSetSoundVolume(gSoundVolume);
 }
 
-void audioLoadAllSounds() {    
-    const uint32_t numSounds = NUMSFX;
+void audioLoadAllSounds() {
     gSoundAudioDataHandles[0] = AudioDataMgr::INVALID_HANDLE;    // The 'none' sound
-
+    
     for (uint32_t soundNum = 1; soundNum < NUMSFX; ++soundNum) {
         char fileName[128];
         std::snprintf(fileName, sizeof(fileName), "Sounds/Sound%02d.aiff", int(soundNum));

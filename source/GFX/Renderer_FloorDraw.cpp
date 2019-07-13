@@ -133,11 +133,7 @@ void drawVisPlane(
 
     do {
         const ColumnYBounds newCol = pPlaneCols[x];     // Fetch the NEW top and bottom
-        const bool bSameColBounds = (
-            (prevCol.topY == newCol.topY) && 
-            (prevCol.bottomY == newCol.bottomY)
-        );
-
+        
         if (prevCol == newCol)
             continue;
         

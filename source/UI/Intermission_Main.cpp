@@ -31,7 +31,7 @@ enum {      // Intermission shape group
 
 **********************************/
 
-static constexpr char* MAP_NAMES[] = {
+static constexpr const char* const MAP_NAMES[] = {
     "Hangar",
     "Nuclear Plant",
     "Toxin Refinery",
@@ -58,8 +58,8 @@ static constexpr char* MAP_NAMES[] = {
     "Military Base"
 };
 
-static constexpr char* FINISHED = "Finished";
-static constexpr char* ENTERING = "Entering";
+static constexpr const char* const FINISHED = "Finished";
+static constexpr const char* const ENTERING = "Entering";
 
 static uint32_t gKillPercent;        // Percent to attain 
 static uint32_t gItemPercent;

@@ -54,11 +54,11 @@ static constexpr uint32_t CURSOR_Y_POS[NUMMENUITEMS] = {
     SIZEY - 2
 };
 
-static constexpr char* SPEED_TEXT = "Speed";       // Local ASCII 
-static constexpr char* FIRE_TEXT = "Fire";
-static constexpr char* USE_TEXT = "Use";
+static constexpr const char* const SPEED_TEXT = "Speed";       // Local ASCII
+static constexpr const char* const FIRE_TEXT = "Fire";
+static constexpr const char* const USE_TEXT = "Use";
 
-static constexpr char* BUTTON_A[NUMCONTROLOPTIONS] = {
+static constexpr const char* const BUTTON_A[NUMCONTROLOPTIONS] = {
     SPEED_TEXT,
     SPEED_TEXT,
     FIRE_TEXT,
@@ -67,7 +67,7 @@ static constexpr char* BUTTON_A[NUMCONTROLOPTIONS] = {
     USE_TEXT
 };
 
-static constexpr char* BUTTON_B[NUMCONTROLOPTIONS] = {
+static constexpr const char* const BUTTON_B[NUMCONTROLOPTIONS] = {
     FIRE_TEXT,
     USE_TEXT,
     SPEED_TEXT,
@@ -76,7 +76,7 @@ static constexpr char* BUTTON_B[NUMCONTROLOPTIONS] = {
     FIRE_TEXT
 };
 
-static constexpr char* BUTTON_C[NUMCONTROLOPTIONS] = {
+static constexpr const char* const BUTTON_C[NUMCONTROLOPTIONS] = {
     USE_TEXT,
     FIRE_TEXT,
     USE_TEXT,

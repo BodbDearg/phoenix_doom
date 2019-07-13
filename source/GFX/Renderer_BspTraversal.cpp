@@ -30,8 +30,6 @@ struct cliprange_t {
 
 static constexpr uint32_t MAXSEGS = 32;     // Maximum number of segs to scan
 
-static uint32_t gSortBuffer[MAXVISSPRITES * 2];
-
 static uint32_t gCheckCoord[9][4] = {
     { BOXRIGHT, BOXTOP, BOXLEFT, BOXBOTTOM },       // Above,Left
     { BOXRIGHT, BOXTOP, BOXLEFT, BOXTOP },          // Above,Center
