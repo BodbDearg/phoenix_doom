@@ -313,6 +313,8 @@ endif()
 if (PLATFORM_MAC)
     list(APPEND SOURCE_FILES
         "${INCLUDE_DIR}/SDL_config_macosx.h"
+        "${SRC_DIR}/audio/coreaudio/SDL_coreaudio.h"
+        "${SRC_DIR}/audio/coreaudio/SDL_coreaudio.m"
         "${SRC_DIR}/events/scancodes_darwin.h"
         "${SRC_DIR}/file/cocoa/SDL_rwopsbundlesupport.h"
         "${SRC_DIR}/file/cocoa/SDL_rwopsbundlesupport.m"
@@ -384,8 +386,10 @@ endif()
 
 if (PLATFORM_MAC)
     FIND_LIBRARY(APP_KIT_FRAMEWORK              AppKit)
+    FIND_LIBRARY(AUDIO_TOOLBOX_FRAMEWORK        AudioToolbox)
     FIND_LIBRARY(CARBON_FRAMEWORK               Carbon)
     FIND_LIBRARY(COCOA_FRAMEWORK                Cocoa)
+    FIND_LIBRARY(CORE_AUDIO_FRAMEWORK           CoreAudio)
     FIND_LIBRARY(CORE_FOUNDATION_FRAMEWORK      CoreFoundation)
     FIND_LIBRARY(CORE_VIDEO_FRAMEWORK           CoreVideo)
     FIND_LIBRARY(FORCE_FEEDBACK_FRAMEWORK       ForceFeedback)
@@ -394,8 +398,10 @@ if (PLATFORM_MAC)
 
     target_link_libraries(${LIBSDL_NAME}
         ${APP_KIT_FRAMEWORK}
+        ${AUDIO_TOOLBOX_FRAMEWORK}
         ${CARBON_FRAMEWORK}
         ${COCOA_FRAMEWORK}
+        ${CORE_AUDIO_FRAMEWORK}
         ${CORE_FOUNDATION_FRAMEWORK}
         ${CORE_VIDEO_FRAMEWORK}
         ${FORCE_FEEDBACK_FRAMEWORK}
