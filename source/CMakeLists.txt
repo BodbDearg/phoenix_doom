@@ -22,6 +22,7 @@ set(SOURCE_FILES
     "Base/Endian.h"
     "Base/Finally.h"
     "Base/Fixed.h"
+    "Base/FloatMath.h"
     "Base/Macros.h"
     "Base/Mem.h"
     "Base/Random.cpp"
