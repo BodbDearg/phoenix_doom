@@ -4,7 +4,10 @@
 #include "Fixed.h"
 #include <cmath>
 
-namespace FloatMath {
+//----------------------------------------------------------------------------------------------------------------------
+// Floating point math functions
+//----------------------------------------------------------------------------------------------------------------------
+namespace FMath {
     //------------------------------------------------------------------------------------------------------------------
     // Commonly used float angles (in radians)
     //------------------------------------------------------------------------------------------------------------------
@@ -47,5 +50,15 @@ namespace FloatMath {
     template <class T>
     inline Fixed floatToDoomFixed16(const T value) noexcept {
         return Fixed((double) value * 65536.0);
+    }
+    
+    //------------------------------------------------------------------------------------------------------------------
+    // Get the angle from one point to another in radians
+    //------------------------------------------------------------------------------------------------------------------
+    template <class T>
+    static T angleFromPointToPoint(const T p1x, const T p1y, const T p2x, const T p2y) noexcept {
+        const T dx = p2x - p1x;
+        const T dy = p2y - p1y;
+        return std::atan2(dy, dx);
     }
 }

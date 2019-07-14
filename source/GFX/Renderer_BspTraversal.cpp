@@ -1,5 +1,6 @@
 #include "Renderer_Internal.h"
 
+#include "Base/FMath.h"
 #include "Base/Tables.h"
 #include "Game/Data.h"
 #include "Map/MapData.h"
@@ -44,6 +45,17 @@ static uint32_t gCheckCoord[9][4] = {
 
 static cliprange_t  gSolidsegs[MAXSEGS];    // List of valid ranges to scan through
 static cliprange_t* gNewEnd;                // Pointer to the first free entry
+
+//----------------------------------------------------------------------------------------------------------------------
+// Compute the angle between two 16.16 points very precisely.
+// Uses actual trig functions.
+//----------------------------------------------------------------------------------------------------------------------
+static angle_t AngleFromPointToPoint(const Fixed p1x, const Fixed p1y, const Fixed p2x, const Fixed p2y) noexcept {
+    const float dx = FMath::doomFixed16ToFloat<float>(p2x - p1x);
+    const float dy = FMath::doomFixed16ToFloat<float>(p2y - p1y);
+    const float angle = std::atan2(dy, dx);
+    return FMath::radiansToDoomAngle(angle);
+}
 
 //----------------------------------------------------------------------------------------------------------------------
 // Get the sprite angle (0-7) to render a thing with
@@ -321,10 +333,10 @@ static void clipPassWallSegment(
 // Clips the given segment and adds any visible pieces to the line list.
 // I also add to the solid wall list so that I can rule out BSP sections quickly.
 //----------------------------------------------------------------------------------------------------------------------
-static void addLineToFrame(seg_t& line, sector_t& frontSector) noexcept {
-    angle_t angle1 = PointToAngle(gViewX, gViewY, line.v1.x, line.v1.y);    // Calc the angle for the left edge
-    angle_t angle2 = PointToAngle(gViewX, gViewY, line.v2.x, line.v2.y);    // Now the right edge
-
+static void addSegToFrame(seg_t& seg, sector_t& frontSector) noexcept {
+    angle_t angle1 = AngleFromPointToPoint(gViewX, gViewY, seg.v1.x, seg.v1.y);     // Calc the angle for the left edge
+    angle_t angle2 = AngleFromPointToPoint(gViewX, gViewY, seg.v2.x, seg.v2.y);     // Now the right edge
+    
     const angle_t span = angle1 - angle2;   // Get the line span
     if (span >= ANG180) {                   // Backwards?
         return;                             // Don't handle backwards lines
@@ -364,13 +376,13 @@ static void addLineToFrame(seg_t& line, sector_t& frontSector) noexcept {
     }
 
     --angle2;                                           // Make the right side inclusive
-    sector_t* const pBackSector = line.backsector;      // Get the back sector
+    sector_t* const pBackSector = seg.backsector;       // Get the back sector
 
     if ((!pBackSector) ||                                               // Single sided line?
         (pBackSector->ceilingheight <= frontSector.floorheight) ||      // Closed door?
         (pBackSector->floorheight >= frontSector.ceilingheight)
     ) {
-        clipSolidWallSegment(angle1, angle2, line, lineAngle);          // Make a SOLID wall
+        clipSolidWallSegment(angle1, angle2, seg, lineAngle);           // Make a SOLID wall
         return;
     }
 
@@ -379,9 +391,9 @@ static void addLineToFrame(seg_t& line, sector_t& frontSector) noexcept {
         (pBackSector->CeilingPic != frontSector.CeilingPic) ||          // Different texture
         (pBackSector->FloorPic != frontSector.FloorPic) ||              // Floor texture
         (pBackSector->lightlevel != frontSector.lightlevel) ||          // Differant light?
-        line.sidedef->midtexture                                        // Center wall texture?
+        seg.sidedef->midtexture                                         // Center wall texture?
     ) {
-        clipPassWallSegment(angle1, angle2, line, lineAngle);           // Render but allow walls behind it
+        clipPassWallSegment(angle1, angle2, seg, lineAngle);            // Render but allow walls behind it
     }
 }
 
@@ -392,12 +404,13 @@ static void addSubsectorToFrame(subsector_t& sub) noexcept {
     sector_t& sector = *sub.sector;     // Get the front sector  
     addSectorSpritesToFrame(sector);    // Prepare sprites for rendering
     
+    // Pass all line segments in the subsector to the renderer
     seg_t* pLineSeg = sub.firstline;
     seg_t* const pEndLineSeg = pLineSeg + sub.numsublines;
-
+    
     while (pLineSeg < pEndLineSeg) {
-        addLineToFrame(*pLineSeg, sector);      // Render each line
-        ++pLineSeg;                             // Inc the line pointer
+        addSegToFrame(*pLineSeg, sector);
+        ++pLineSeg;
     }
 }
 
