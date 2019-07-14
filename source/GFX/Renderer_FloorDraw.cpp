@@ -1,6 +1,7 @@
 #include "Renderer_Internal.h"
 
 #include "Base/Endian.h"
+#include "Base/FMath.h"
 #include "Base/Tables.h"
 #include "Blit.h"
 #include "Game/Data.h"
@@ -36,16 +37,16 @@ static void drawFloorColumn(
         Blit::BCF_COLOR_MULT_RGB
     >(
         texData,
-        texXFrac,
-        texYFrac,
+        FMath::doomFixed16ToFloat<float>(texXFrac),
+        FMath::doomFixed16ToFloat<float>(texYFrac),
         Video::gFrameBuffer,
         Video::SCREEN_WIDTH,
         Video::SCREEN_HEIGHT,
         colX + gScreenXOffset,
         colY + gScreenYOffset,
         numPixels,
-        texXStep,
-        texYStep,
+        FMath::doomFixed16ToFloat<float>(texXStep),
+        FMath::doomFixed16ToFloat<float>(texYStep),
         lightMultiplier,
         lightMultiplier,
         lightMultiplier
@@ -79,8 +80,8 @@ static void mapPlane(
     const Fixed xfrac = (((gFineCosine[angle] >> 1) * length) >> 4) + gViewX;
     const Fixed yfrac = planeY - (((gFineSine[angle] >> 1) * length) >> 4);
 
-    const Fixed xstep = ((Fixed) distance * baseXScale) >> 4;
-    const Fixed ystep = ((Fixed) distance * baseYScale) >> 4;
+    const float xstep = ((Fixed) distance * baseXScale) >> 4;
+    const float ystep = ((Fixed) distance * baseYScale) >> 4;
 
     {
         const uint32_t distanceDiv = (distance > 0) ? distance : 1;         // DC: fix division by zero when using the noclip cheat

@@ -176,16 +176,16 @@ namespace Blit {
     template <uint32_t BC_FLAGS>
     inline void blitColumn(
         const ImageData& srcImg,                        // Input texture and dimensions
-        const Fixed srcX,                               // Where to start blitting from in the input texture: x
-        const Fixed srcY,                               // Where to start blitting from in the input texture: y
+        const float srcX,                               // Where to start blitting from in the input texture: x
+        const float srcY,                               // Where to start blitting from in the input texture: y
         uint32_t* const pDstPixels,                     // Output image pixels
         const uint32_t dstW,                            // Output image width
         [[maybe_unused]] const uint32_t dstH,           // Output image height
         const uint32_t dstX,                            // Where to start blitting to in output image: x
         const uint32_t dstY,                            // Where to start blitting to in output image: y
         const uint32_t dstCount,                        // How many pixels to blit to the output image (in positive x or y direction)
-        [[maybe_unused]] const Fixed srcXStep,          // Texture coordinate x step
-        [[maybe_unused]] const Fixed srcYStep,          // Texture coordinate y step
+        [[maybe_unused]] const float srcXStep,          // Texture coordinate x step
+        [[maybe_unused]] const float srcYStep,          // Texture coordinate y step
         [[maybe_unused]] const Fixed r = FRACUNIT,      // 16.16 color multiply value: red
         [[maybe_unused]] const Fixed g = FRACUNIT,      // 16.16 color multiply value: green
         [[maybe_unused]] const Fixed b = FRACUNIT,      // 16.16 color multiply value: blue
@@ -235,13 +235,13 @@ namespace Blit {
         // then we can just index into a column rather than doing full two dimensional addressing.
         #if BLIT_ASSERT_ENABLED == 1
             if constexpr ((BC_FLAGS & BCF_H_WRAP_ANY) == 0) {
-                BLIT_ASSERT(fixedToInt(srcX) >= 0);
-                BLIT_ASSERT((uint32_t) fixedToInt(srcX) < srcW);
+                BLIT_ASSERT((int32_t) srcX >= 0);
+                BLIT_ASSERT((int32_t) srcX < srcW);
             }
 
             if constexpr ((BC_FLAGS & BCF_V_WRAP_ANY) == 0) {
-                BLIT_ASSERT(fixedToInt(srcY) >= 0);
-                BLIT_ASSERT((uint32_t) fixedToInt(srcY) < srcH);
+                BLIT_ASSERT((int32_t) srcY >= 0);
+                BLIT_ASSERT((int32_t) srcY < srcH);
             }
         #endif
 
@@ -255,33 +255,33 @@ namespace Blit {
         if constexpr (USE_SRC_ROW_INDEXING) {
             // Stepping in x direction in a row major image.
             // Will index into a row instead of doing 2d indexing.
-            pSrcRowOrCol = pSrcPixels + wrapYCoord<BC_FLAGS>(fixedToInt(srcY), srcH) * srcW;
+            pSrcRowOrCol = pSrcPixels + wrapYCoord<BC_FLAGS>((int32_t) srcY, srcH) * srcW;
         }
         else if constexpr (USE_SRC_COL_INDEXING) {
             // Stepping in y direction in a column major image.
             // Will index into a column instead of doing 2d indexing.
-            pSrcRowOrCol = pSrcPixels + wrapXCoord<BC_FLAGS>(fixedToInt(srcX), srcW) * srcH;
+            pSrcRowOrCol = pSrcPixels + wrapXCoord<BC_FLAGS>((int32_t) srcX, srcW) * srcH;
         }
 
         // Main pixel blitting loop
-        [[maybe_unused]] Fixed curSrcX = srcX;
-        [[maybe_unused]] Fixed curSrcY = srcY;
+        [[maybe_unused]] float curSrcX = srcX;
+        [[maybe_unused]] float curSrcY = srcY;
 
         while (pDstPixel < pEndDstPixel) {
             // Get the source pixel (RGBA5551 format)
             uint16_t srcPixelRGBA5551;
 
             if constexpr (USE_SRC_ROW_INDEXING) {
-                const uint32_t curSrcXInt = wrapXCoord<BC_FLAGS>(fixedToInt(curSrcX), srcW);
+                const uint32_t curSrcXInt = wrapXCoord<BC_FLAGS>((int32_t) curSrcX, srcW);
                 srcPixelRGBA5551 = pSrcRowOrCol[curSrcXInt];
             }
             else if constexpr (USE_SRC_COL_INDEXING) {
-                const uint32_t curSrcYInt = wrapYCoord<BC_FLAGS>(fixedToInt(curSrcY), srcH);
+                const uint32_t curSrcYInt = wrapYCoord<BC_FLAGS>((int32_t) curSrcY, srcH);
                 srcPixelRGBA5551 = pSrcRowOrCol[curSrcYInt];
             }
             else {
-                const uint32_t curSrcXInt = wrapXCoord<BC_FLAGS>(fixedToInt(curSrcX), srcW);
-                const uint32_t curSrcYInt = wrapYCoord<BC_FLAGS>(fixedToInt(curSrcY), srcH);
+                const uint32_t curSrcXInt = wrapXCoord<BC_FLAGS>((int32_t) curSrcX, srcW);
+                const uint32_t curSrcYInt = wrapYCoord<BC_FLAGS>((int32_t) curSrcY, srcH);
 
                 if constexpr (IS_SRC_COL_MAJOR) {
                     srcPixelRGBA5551 = pSrcPixels[curSrcXInt * srcH + curSrcYInt];

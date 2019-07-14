@@ -30,7 +30,7 @@ extern uint32_t     gScreenXOffset;                     // True X coord for proj
 extern uint32_t     gScreenYOffset;                     // True Y coord for projected screen
 extern uint32_t     gGunXScale;                         // Scale factor for player's weapon for X
 extern uint32_t     gGunYScale;                         // Scale factor for player's weapon for Y
-extern Fixed        gLightMins[256];                    // Minimum light factors
-extern Fixed        gLightSubs[256];                    // Light subtraction
+extern uint32_t     gLightMins[256];                    // Minimum light factors
+extern uint32_t     gLightSubs[256];                    // Light subtraction
 extern Fixed        gLightCoefs[256];                   // Light coeffecient
 extern Fixed        gPlaneLightCoef[256];               // Plane light coeffecient
