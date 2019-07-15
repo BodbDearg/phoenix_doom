@@ -1,5 +1,6 @@
 #include "Renderer_Internal.h"
 
+#include "Base/FMath.h"
 #include "Base/Tables.h"
 #include "Game/Data.h"
 #include "Sprites.h"
@@ -201,6 +202,22 @@ void drawPlayerView() noexcept {
     drawAllMapObjectSprites();
     drawWeapons();                  // Draw the weapons on top of the screen
     doPostFx();                     // Draw color overlay if needed    
+}
+
+float getViewAngleForX(const int32_t x) noexcept {
+    const float screenWHalf = (float)(gScreenWidth - 1) * 0.5f;
+    const float xf = (float) x - screenWHalf;
+    const float xNorm = xf / screenWHalf;
+
+    if (xNorm <= -1.0f) {
+        return -FMath::ANGLE_45<float>;
+    }
+    else if (xNorm >= 1.0f) {
+        return FMath::ANGLE_45<float>;
+    }
+
+    const float angle = std::atan(xNorm);
+    return angle;
 }
 
 END_NAMESPACE(Renderer)

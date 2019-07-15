@@ -185,9 +185,10 @@ static void drawSeg(const viswall_t& seg) noexcept {
     // Y center of the screen
     const float viewCenterY = (float) gCenterY;
     
-    // How much to step scale for each x pixel
+    // How much to step scale for each x pixel and seg center angle
     const float segLeftScale = seg.LeftScale;
     const float segScaleStep = seg.ScaleStep;
+    const float segCenterAngle = FMath::doomAngleToRadians<float>(seg.CenterAngle);
 
     // Store the current y coordinate for the top and bottom of the top and bottom walls here.
     // Also store the step per pixel in y for the top and bottom coords.
@@ -241,7 +242,7 @@ static void drawSeg(const viswall_t& seg) noexcept {
         bottomTexBY = viewCenterY - bottomWorldBY * segLeftScale;
     }
         
-    // Init the scale fraction and step through all the columns in the seg
+    // Init the scale fraction and step through all the columns in the seg    
     uint32_t numColumnsDone = 0;
     
     for (int32_t viewX = seg.leftX; viewX <= seg.rightX; ++viewX) {
@@ -251,7 +252,7 @@ static void drawSeg(const viswall_t& seg) noexcept {
         // Calculate texture offset into shape
         const uint32_t texX = (uint32_t)(
             seg.offset - (
-                std::tan(FMath::doomAngleToRadians<float>(seg.CenterAngle + gXToViewAngle[viewX])) *
+                std::tan(segCenterAngle - getViewAngleForX(viewX)) *
                 seg.distance
             )
         );

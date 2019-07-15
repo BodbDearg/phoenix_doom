@@ -175,6 +175,9 @@ namespace Renderer {
     // TODO: FIXME - REMOVE FROM HERE
     void DrawSpriteCenter(uint32_t SpriteNum);
 
+    // Returns the view angle for the given x screen coordinate
+    float getViewAngleForX(const int32_t x) noexcept;
+
     //------------------------------------------------------------------------------------------------------------------
     // Utility: returns a fixed point multipler for the given texture light value (which is in 4.3 format)
     // This can be used to scale RGB values due to lighting.
