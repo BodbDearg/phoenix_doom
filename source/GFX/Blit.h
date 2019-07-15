@@ -236,12 +236,12 @@ namespace Blit {
         #if BLIT_ASSERT_ENABLED == 1
             if constexpr ((BC_FLAGS & BCF_H_WRAP_ANY) == 0) {
                 BLIT_ASSERT((int32_t) srcX >= 0);
-                BLIT_ASSERT((int32_t) srcX < srcW);
+                BLIT_ASSERT((int32_t) srcX < (int32_t) srcW);
             }
 
             if constexpr ((BC_FLAGS & BCF_V_WRAP_ANY) == 0) {
                 BLIT_ASSERT((int32_t) srcY >= 0);
-                BLIT_ASSERT((int32_t) srcY < srcH);
+                BLIT_ASSERT((int32_t) srcY < (int32_t) srcH);
             }
         #endif
 

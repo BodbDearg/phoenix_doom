@@ -48,13 +48,13 @@ static void drawClippedWallColumn(
     
     // Clip to top of the screen
     const float pixelsOffscreenAtTopF = (viewY < 0) ? -viewY : 0;
-    const uint32_t pixelsOffscreenAtTopI = (uint32_t) pixelsOffscreenAtTopF;
+    const int32_t pixelsOffscreenAtTopI = (int32_t) pixelsOffscreenAtTopF;
 
-    if (pixelsOffscreenAtTopI >= columnHeight)
+    if (pixelsOffscreenAtTopI >= (int32_t) columnHeight)
         return;
     
     // Compute clipped column height and texture coordinate
-    const int32_t clippedViewY = viewY + pixelsOffscreenAtTopI;
+    const int32_t clippedViewY = (int32_t) viewY + pixelsOffscreenAtTopI;
     const uint32_t maxColumnHeight = gScreenHeight - clippedViewY;
     const uint32_t clippedColumnHeight = std::min(columnHeight - pixelsOffscreenAtTopI, maxColumnHeight);
 
