@@ -268,10 +268,9 @@ static void drawSeg(const viswall_t& seg) noexcept {
     }
         
     // Init the scale fraction and step through all the columns in the seg    
-    uint32_t numColumnsDone = 0;
+    float columnScale = segLeftScale;
     
     for (int32_t viewX = seg.leftX; viewX <= seg.rightX; ++viewX) {
-        const float columnScale = segLeftScale + segScaleStep * (float) numColumnsDone;
         const float invColumnScale = 1.0f / columnScale;
         
         // Calculate texture offset into shape
@@ -307,7 +306,7 @@ static void drawSeg(const viswall_t& seg) noexcept {
             bottomTexBY += bottomTexBYStep;
         }
         
-        ++numColumnsDone;
+        columnScale += seg.ScaleStep;
     }
 }
 
