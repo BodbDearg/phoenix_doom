@@ -42,24 +42,48 @@ static void drawClippedWallColumn(
     const float texY,
     const ImageData& texData
 ) noexcept {
+    // Get integer Y coordinate
+    const int32_t viewYI = std::floor(viewY);
+
     // Clip to bottom of the screen
-    if (viewY >= (int32_t) gScreenHeight)
+    if (viewYI >= (int32_t) gScreenHeight)
         return;
     
-    // Clip to top of the screen
-    const float pixelsOffscreenAtTopF = (viewY < 0) ? -viewY : 0;
-    const int32_t pixelsOffscreenAtTopI = (int32_t) pixelsOffscreenAtTopF;
+    // The y texture coordinate and step
+    const float texYStep = invColumnScale;
+    float texYClipped = texY;
 
-    if (pixelsOffscreenAtTopI >= (int32_t) columnHeight)
+    // Clip to top of the screen
+    const uint32_t pixelsOffscreenAtTop = (uint32_t) (viewYI < 0) ? -viewYI : 0;
+
+    if (pixelsOffscreenAtTop >= (int32_t) columnHeight)
         return;
+    
+    const float pixelsOffscreenAtTopF = (viewY < 0.0f) ? -viewY : 0.0f;
+
+    // Do adjustments to the y texture coordinate:
+    //
+    // (1) If the column is being clipped then we need to skip past the offscreen portion.
+    // (2) For more 'solid', less 'fuzzy' and temporally stable texture mapping, we also need
+    //     to adjustments based on the sub pixel y-position of the column. If for example the
+    //     true pixel Y position is 0.25 units above it's integer position then count 0.25
+    //     pixels as already having been stepped and adjust the texture coordinate accordingly.
+    {
+        float pixelSkip;
+
+        if (pixelsOffscreenAtTop > 0) {
+            pixelSkip = pixelsOffscreenAtTopF + 1.0f;
+        } else {            
+            pixelSkip = 1.0f - std::fmod(viewY, 1.0f);
+        }
+
+        texYClipped += pixelSkip * texYStep;
+    }
     
     // Compute clipped column height and texture coordinate
-    const int32_t clippedViewY = (int32_t) viewY + pixelsOffscreenAtTopI;
+    const int32_t clippedViewY = viewYI + pixelsOffscreenAtTop;
     const uint32_t maxColumnHeight = gScreenHeight - clippedViewY;
-    const uint32_t clippedColumnHeight = std::min(columnHeight - pixelsOffscreenAtTopI, maxColumnHeight);
-
-    const float texYStep = invColumnScale;
-    const float clippedTexY = texY + texYStep * pixelsOffscreenAtTopF;
+    const uint32_t clippedColumnHeight = std::min(columnHeight - pixelsOffscreenAtTop, maxColumnHeight);
 
     // Compute light multiplier
     const Fixed lightMultiplier = getLightMultiplier(gTxTextureLight, MAX_WALL_LIGHT_VALUE);
@@ -72,7 +96,7 @@ static void drawClippedWallColumn(
     >(
         texData,
         (float) texX,
-        clippedTexY,
+        texYClipped,
         Video::gFrameBuffer,
         Video::SCREEN_WIDTH,
         Video::SCREEN_HEIGHT,
