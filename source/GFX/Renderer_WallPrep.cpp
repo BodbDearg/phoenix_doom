@@ -1,5 +1,6 @@
 #include "Renderer_Internal.h"
 
+#include "Base/FMath.h"
 #include "Base/Tables.h"
 #include "Map/MapData.h"
 #include "Map/MapUtil.h"
@@ -20,51 +21,34 @@ static sector_t gEmptySector = {
 };
 
 //----------------------------------------------------------------------------------------------------------------------
-// Get the distance from the view x,y from a point in 2D space.
-// The normal formula for doing this is 'dist = sqrt(x*x + y*y)' but that can be slow to do. 
-// Instead I first get the angle of the point and then rotate it so that it is directly ahead.
-// The resulting point then is the distance...
+// Get the distance from the view xy to the given point
 //----------------------------------------------------------------------------------------------------------------------
-static Fixed point2dToDist(const Fixed px, const Fixed py) noexcept {    
-    Fixed x = std::abs(px - gViewX);    // Get the absolute value point offset from the camera 
-    Fixed y = std::abs(py - gViewY);
-    
-    if (y > x) {
-        const Fixed temp = x;
-        x = y;
-        y = temp;
-    }
-
-    const angle_t angle = SlopeAngle(y, x) >> ANGLETOFINESHIFT;     // x = denominator
-    x = (x >> (FRACBITS - 3)) * gFineCosine[angle];                 // Rotate the x
-    x += (y >> (FRACBITS - 3)) * gFineSine[angle];                  // Rotate the y and add it
-    x >>= 3;                                                        // Convert to fixed (I added 3 extra bits of precision)
-    return x;                                                       // This is the true distance
+static float viewToPointDist(const Fixed px, const Fixed py) noexcept {    
+    const float dx = FMath::doomFixed16ToFloat<float>(px - gViewX);
+    const float dy = FMath::doomFixed16ToFloat<float>(py - gViewY);
+    return std::sqrt(dx * dx + dy * dy);
 }
 
 //----------------------------------------------------------------------------------------------------------------------
 // Returns the texture mapping scale for the current line at the given angle.
 // Note: 'rwDistance' must be calculated first.
 //----------------------------------------------------------------------------------------------------------------------
-static Fixed scaleFromGlobalAngle(const Fixed rwDistance, const angle_t angleA, const angle_t angleB) noexcept {
-    // Both sines are always positive
-    const Fixed* const pSineTable = &gFineSine[ANG90 >> ANGLETOFINESHIFT];
+static float scaleFromGlobalAngle(const float rwDistance, const angle_t angleA, const angle_t angleB) noexcept {
+    // Note: both sines are always positive
+    const float angleARad = FMath::doomAngleToRadians<float>(angleA) + FMath::ANGLE_90<float>;
+    const float angleBRad = FMath::doomAngleToRadians<float>(angleB) + FMath::ANGLE_90<float>;
 
-    Fixed den = pSineTable[angleA >> ANGLETOFINESHIFT];
-    Fixed num = pSineTable[angleB >> ANGLETOFINESHIFT];    
-    num = fixedMul(gStretchWidth, num);
-    den = fixedMul(rwDistance, den);
+    const float stretchWidth = FMath::doomFixed16ToFloat<float>(gStretchWidth);
+    const float den = std::sin(angleARad) * rwDistance;
+    const float num = std::sin(angleBRad) * stretchWidth;
 
-    if (den > num >> 16) {
-        num = fixedDiv(num, den);       // Place scale in numerator
-        if (num < 64 * FRACUNIT) {
-            if (num >= 256) {
-                return num;
-            }
-            return 256;     // Minimum scale value
-        }
+    if (den != 0) {
+        const float scale = num / den;
+        return std::fmin(std::fmax(scale, MIN_RENDER_SCALE), MAX_RENDER_SCALE);
     }
-    return 64 * FRACUNIT;   // Maximum scale value
+    else {
+        return MAX_RENDER_SCALE;
+    }
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -83,21 +67,18 @@ static void latePrep(viswall_t& wall, const seg_t& lineSeg, const angle_t leftAn
         offsetAngle = ANG90;
     }
 
-    const Fixed pointDistance = point2dToDist(lineSeg.v1.x, lineSeg.v1.y);  // Distance to end wall point
-    const Fixed rwDistance = fixedMul(
-        pointDistance,
-        gFineSine[(ANG90 - offsetAngle) >> ANGLETOFINESHIFT]
-    );
+    const float pointDistance = viewToPointDist(lineSeg.v1.x, lineSeg.v1.y);    // Distance to end wall point
+    const float rwDistance = pointDistance * std::sinf(FMath::doomAngleToRadians<float>(ANG90 - offsetAngle));
     wall.distance = rwDistance;
 
     // Calc scales
     offsetAngle = gXToViewAngle[wall.leftX];
-    const Fixed scaleFrac = wall.LeftScale = scaleFromGlobalAngle(
+    const float scale = wall.LeftScale = scaleFromGlobalAngle(
         rwDistance,
         offsetAngle,
         (offsetAngle + gViewAngle) - normalAngle
     );
-    Fixed scale2 = scaleFrac;
+    float scale2 = scale;
 
     if (wall.rightX > wall.leftX) {
         offsetAngle = gXToViewAngle[wall.rightX];
@@ -106,17 +87,17 @@ static void latePrep(viswall_t& wall, const seg_t& lineSeg, const angle_t leftAn
             offsetAngle,
             (offsetAngle + gViewAngle) - normalAngle
         );
-        wall.ScaleStep = (int32_t)(scale2 - scaleFrac) / (int32_t)(wall.rightX - wall.leftX);
+        wall.ScaleStep = (scale2 - scale) / (float)(wall.rightX - wall.leftX);
     }
 
     wall.RightScale = scale2;
     
-    if (scale2 < scaleFrac) {
-        wall.SmallScale = scale2;
-        wall.LargeScale = scaleFrac;
+    if (scale2 < scale) {
+        wall.SmallScale = FMath::floatToDoomFixed16(scale2);
+        wall.LargeScale = FMath::floatToDoomFixed16(scale);
     } else {
-        wall.LargeScale = scale2;
-        wall.SmallScale = scaleFrac;
+        wall.LargeScale = FMath::floatToDoomFixed16(scale2);
+        wall.SmallScale = FMath::floatToDoomFixed16(scale);
     }
     
     if ((wall.WallActions & (AC_TOPTEXTURE|AC_BOTTOMTEXTURE)) != 0) {
@@ -130,14 +111,14 @@ static void latePrep(viswall_t& wall, const seg_t& lineSeg, const angle_t leftAn
             offsetAngle = ANG90;    // Clip to maximum           
         }
         
-        scale2 = fixedMul(pointDistance, gFineSine[offsetAngle >> ANGLETOFINESHIFT]);
+        scale2 = pointDistance * std::sin(FMath::doomAngleToRadians<float>(offsetAngle));
         
         if (normalAngle - leftAngle < ANG180) {
             scale2 = -scale2;   // Reverse the texture anchor
         }
         
         wall.offset += scale2;
-        wall.CenterAngle = ANG90 + gViewAngle - normalAngle;
+        wall.CenterAngle = gViewAngle - normalAngle;
     }
 }
 
@@ -196,7 +177,7 @@ void wallPrep(
             (b_ceilingheight == b_floorheight)                      // No thickness line?
         )
     ) {
-        curWall.floorheight = curWall.floornewheight = f_floorheight>>FIXEDTOHEIGHT;
+        curWall.floorheight = curWall.floornewheight = f_floorheight >> FIXEDTOHEIGHT;
         actionbits = (AC_ADDFLOOR|AC_NEWFLOOR);     // Create floor
     }
 
@@ -208,7 +189,7 @@ void wallPrep(
             (b_ceilingheight == b_floorheight)              // Thin dividing line?
         )
     ) {
-        curWall.ceilingheight = curWall.ceilingnewheight = f_ceilingheight >>FIXEDTOHEIGHT;
+        curWall.ceilingheight = curWall.ceilingnewheight = f_ceilingheight >> FIXEDTOHEIGHT;
         
         if (f_ceilingpic == -1) {
             actionbits |= AC_ADDSKY | AC_NEWCEILING;        // Add sky to the ceiling
@@ -232,7 +213,7 @@ void wallPrep(
         
         t_texturemid += sideDef.rowoffset;                          // Add texture anchor offset
         curWall.t_texturemid = t_texturemid;                        // Save the top texture anchor var
-        curWall.t_bottomheight = f_floorheight>>FIXEDTOHEIGHT;
+        curWall.t_bottomheight = f_floorheight >> FIXEDTOHEIGHT;
         actionbits |= (AC_TOPTEXTURE | AC_SOLIDSIL);                // Draw the middle texture only
     } else {
         // Two sided lines are more tricky since I may be able to see through it.
@@ -250,8 +231,8 @@ void wallPrep(
             
             b_texturemid += sideDef.rowoffset;      // Add the adjustment
             curWall.b_texturemid = b_texturemid;
-            curWall.b_topheight = curWall.floornewheight = b_floorheight>>FIXEDTOHEIGHT;
-            curWall.b_bottomheight = f_floorheight>>FIXEDTOHEIGHT;
+            curWall.b_topheight = curWall.floornewheight = b_floorheight >> FIXEDTOHEIGHT;
+            curWall.b_bottomheight = f_floorheight >> FIXEDTOHEIGHT;
 
             actionbits |= AC_NEWFLOOR|AC_BOTTOMTEXTURE;     // Generate a floor and bottom wall texture
         }
@@ -309,8 +290,8 @@ void wallPrep(
         }
     }
     
-    curWall.seglightlevel = f_lightlevel;                       // Save the light level
-    curWall.offset = sideDef.textureoffset + lineSeg.offset;    // Texture anchor X
+    curWall.seglightlevel = f_lightlevel;                                                       // Save the light level
+    curWall.offset = FMath::doomFixed16ToFloat<float>(sideDef.textureoffset + lineSeg.offset);  // Texture anchor X
     latePrep(curWall, lineSeg, lineAngle);
 }
 

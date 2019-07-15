@@ -37,6 +37,8 @@ namespace Renderer {
     static constexpr uint32_t   SCALEBITS               = 9;                        // Number of bits for texture scale
     static constexpr uint32_t   FIXEDTOSCALE            = FRACBITS - SCALEBITS;     // Number of unused bits from fixed to HEIGHTBITS
     static constexpr uint32_t   LIGHTSCALESHIFT         = 3;
+    static constexpr float      MIN_RENDER_SCALE        = 1 / 256.0f;
+    static constexpr float      MAX_RENDER_SCALE        = 64.0f;
 
     //==================================================================================================================
     // Data structures
@@ -110,16 +112,16 @@ namespace Renderer {
         int32_t         ceilingheight;
         int32_t         ceilingnewheight;
 
-        Fixed           LeftScale;              // LeftX Scale
-        Fixed           RightScale;             // RightX scale
+        float           LeftScale;              // LeftX Scale
+        float           RightScale;             // RightX scale
         Fixed           SmallScale;
         Fixed           LargeScale;
         uint8_t*        TopSil;                 // YClips for the top line
         uint8_t*        BottomSil;              // YClips for the bottom line
-        Fixed           ScaleStep;              // Scale step factor
+        float           ScaleStep;              // Scale step factor
         angle_t         CenterAngle;            // Center angle
-        Fixed           offset;                 // Offset to the texture
-        uint32_t        distance;
+        float           offset;                 // Offset to the texture
+        float           distance;
         uint32_t        seglightlevel;
         const seg_t*    SegPtr;                 // Pointer to line segment for clipping  
     };

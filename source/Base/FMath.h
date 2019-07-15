@@ -51,6 +51,19 @@ namespace FMath {
     inline Fixed floatToDoomFixed16(const T value) noexcept {
         return Fixed((double) value * 65536.0);
     }
+
+    //------------------------------------------------------------------------------------------------------------------
+    // Convert a Doom 26.6 fixed point number (used for sector height values) to float and back again
+    //------------------------------------------------------------------------------------------------------------------
+    template <class T>
+    inline T doomFixed6ToFloat(const Fixed fixed) noexcept {
+        return T((double) fixed * (1.0 / 64.0));
+    }
+    
+    template <class T>
+    inline Fixed floatToDoomFixed6(const T value) noexcept {
+        return Fixed((double) value * 64.0);
+    }
     
     //------------------------------------------------------------------------------------------------------------------
     // Get the angle from one point to another in radians
