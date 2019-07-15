@@ -35,11 +35,11 @@ struct drawtex_t {
 //----------------------------------------------------------------------------------------------------------------------
 static void drawClippedWallColumn(
     const int32_t viewX,
-    const int32_t viewY,
+    const float viewY,
     const uint32_t columnHeight,
     const float invColumnScale,
     const uint32_t texX,
-    const uint32_t texY,
+    const float texY,
     const ImageData& texData
 ) noexcept {
     // Clip to bottom of the screen
@@ -47,18 +47,19 @@ static void drawClippedWallColumn(
         return;
     
     // Clip to top of the screen
-    const uint32_t pixelsOffscreenAtTop = (viewY < 0) ? -viewY : 0;
+    const float pixelsOffscreenAtTopF = (viewY < 0) ? -viewY : 0;
+    const uint32_t pixelsOffscreenAtTopI = (uint32_t) pixelsOffscreenAtTopF;
 
-    if (pixelsOffscreenAtTop >= columnHeight)
+    if (pixelsOffscreenAtTopI >= columnHeight)
         return;
     
     // Compute clipped column height and texture coordinate
-    const int32_t clippedViewY = viewY + pixelsOffscreenAtTop;
+    const int32_t clippedViewY = viewY + pixelsOffscreenAtTopI;
     const uint32_t maxColumnHeight = gScreenHeight - clippedViewY;
-    const uint32_t clippedColumnHeight = std::min(columnHeight - pixelsOffscreenAtTop, maxColumnHeight);
+    const uint32_t clippedColumnHeight = std::min(columnHeight - pixelsOffscreenAtTopI, maxColumnHeight);
 
     const float texYStep = invColumnScale;
-    const float clippedTexY = (float) texY + texYStep * (float) pixelsOffscreenAtTop;
+    const float clippedTexY = texY + texYStep * pixelsOffscreenAtTopF;
 
     // Compute light multiplier
     const Fixed lightMultiplier = getLightMultiplier(gTxTextureLight, MAX_WALL_LIGHT_VALUE);
@@ -71,7 +72,7 @@ static void drawClippedWallColumn(
     >(
         texData,
         (float) texX,
-        (float) clippedTexY,
+        clippedTexY,
         Video::gFrameBuffer,
         Video::SCREEN_WIDTH,
         Video::SCREEN_HEIGHT,
@@ -148,9 +149,9 @@ static void drawWallColumn(
     const uint32_t texWidth = texData.width;
     const uint32_t texHeight = texData.height;
 
-    const uint32_t viewY = (uint32_t) wallTopY;
-    const uint32_t texYNotOffset = fixedToInt(tex.texturemid - (tex.topheight << FIXEDTOHEIGHT));
-    const uint32_t texY = ((int32_t) texYNotOffset < 0) ? texYNotOffset + texHeight : texYNotOffset;    // DC: This is required for correct vertical alignment in some cases
+    const float viewY = wallTopY;
+    const float texYNotOffset = FMath::doomFixed16ToFloat<float>(tex.texturemid - (tex.topheight << FIXEDTOHEIGHT));
+    const float texY = (texYNotOffset < 0.0f) ? texYNotOffset + texHeight : texYNotOffset;  // DC: This is required for correct vertical alignment in some cases
 
     // Draw the column
     drawClippedWallColumn(
@@ -158,8 +159,8 @@ static void drawWallColumn(
         viewY,
         columnHeight,
         invColumnScale,
-        (texX % texWidth),      // Wraparound texture x coord!
-        (texY % texHeight),     // Wraparound texture y coord!
+        (texX % texWidth),  // Wraparound texture x coord!
+        texY,
         texData
     );
 }
@@ -250,7 +251,7 @@ static void drawSeg(const viswall_t& seg) noexcept {
         const float invColumnScale = 1.0f / columnScale;
         
         // Calculate texture offset into shape
-        const uint32_t texX = (uint32_t)(
+        const uint32_t texX = (uint32_t) std::round(
             seg.offset - (
                 std::tan(segCenterAngle - getViewAngleForX(viewX)) *
                 seg.distance
