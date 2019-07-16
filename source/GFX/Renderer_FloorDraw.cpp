@@ -97,7 +97,7 @@ void drawVisPlane(
     const Texture* const pTex = getFlatAnimTexture((uint32_t) plane.picHandle);
     const ImageData& texData = pTex->data;
     const float planeHeight = std::abs(plane.height);
-    const LightParams lightParams = getLightParams(plane.planeLight, true);
+    const LightParams lightParams = getLightParams(plane.planeLight);
     
     // Start the draw loop
     const int32_t stop = plane.maxX + 1;    // Maximum x coord

@@ -201,7 +201,7 @@ static void drawSeg(const viswall_t& seg) noexcept {
         return;
 
     // Grab lighting stuff
-    LightParams lightParams = getLightParams(seg.seglightlevel, false);
+    LightParams lightParams = getLightParams(seg.seglightlevel);
     
     // Y center of the screen and scaled half view width
     const float viewCenterY = (float) gCenterY;

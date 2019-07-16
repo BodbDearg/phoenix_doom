@@ -181,9 +181,9 @@ void initMathTables() noexcept {
     // Create the lighting tables
     for (uint32_t i = 0; i < 256; ++i) {
         constexpr float LIGHT_MIN_PERCENT = 1.0f / 5.0f;
-        constexpr float MAX_BRIGHT_RANGE_SCALE = 2.0f;
-        constexpr float LIGHT_COEF_BASE = 10.0f;
-        constexpr float LIGHT_COEF_ADJUST_FACTOR = 8.0f;
+        constexpr float MAX_BRIGHT_RANGE_SCALE = 1.0f;
+        constexpr float LIGHT_COEF_BASE = 9.0f;
+        constexpr float LIGHT_COEF_ADJUST_FACTOR = 7.0f;
         
         const float lightLevel = (float) i / 255.0f;
         const float maxBrightRange = lightLevel * MAX_BRIGHT_RANGE_SCALE;
@@ -217,7 +217,7 @@ float LightParams::getLightMulForDist(const float dist) const noexcept {
     return lightMul;
 }
 
-LightParams getLightParams(const uint32_t sectorLightLevel, const bool bIsFloor) noexcept {
+LightParams getLightParams(const uint32_t sectorLightLevel) noexcept {
     const uint32_t lightMax = std::min(sectorLightLevel, C_ARRAY_SIZE(gLightCoefs) - 1);
 
     LightParams out;

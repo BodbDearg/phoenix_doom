@@ -1,5 +1,6 @@
 #include "Renderer_Internal.h"
 
+#include "Base/FMath.h"
 #include "Base/Tables.h"
 #include "Blit.h"
 #include "Map/MapData.h"
@@ -45,7 +46,12 @@ static void drawSpriteNoClip(const vissprite_t& visSprite) noexcept {
         return;
 
     // Get the light multiplier to use for lighting the sprite
-    const Fixed lightMultiplier = getLightMultiplier(visSprite.colormap & 0xFF, MAX_SPRITE_LIGHT_VALUE);
+    const LightParams lightParams = getLightParams((visSprite.colormap & 0xFFu) + gExtraLight);
+    const float viewStretchWidthF = FMath::doomFixed16ToFloat<float>(gStretchWidth);
+    const float spriteScale = FMath::doomFixed16ToFloat<float>(visSprite.yscale);
+    const float spriteDist = (1.0f / spriteScale) * viewStretchWidthF;
+    const float lightMulF = lightParams.getLightMulForDist(spriteDist);
+    const Fixed lightMulFrac = FMath::floatToDoomFixed16(lightMulF);
     
     // Get the width and height of the sprite and also the size that it will be rendered at.
     // Note that we expect no zero sizes here!
@@ -139,9 +145,9 @@ static void drawSpriteNoClip(const vissprite_t& visSprite) noexcept {
                 const Fixed texGFrac = intToFixed(texG);
                 const Fixed texBFrac = intToFixed(texB);
 
-                const Fixed darkenedR = fixedMul(texRFrac, lightMultiplier);
-                const Fixed darkenedG = fixedMul(texGFrac, lightMultiplier);
-                const Fixed darkenedB = fixedMul(texBFrac, lightMultiplier);
+                const Fixed darkenedR = fixedMul(texRFrac, lightMulFrac);
+                const Fixed darkenedG = fixedMul(texGFrac, lightMulFrac);
+                const Fixed darkenedB = fixedMul(texBFrac, lightMulFrac);
 
                 // Save the final output color
                 const uint32_t finalColor = Video::fixedRgbToScreenCol(darkenedR, darkenedG, darkenedB);
@@ -165,7 +171,8 @@ static void oneSpriteLine(
     const Fixed spriteX,
     const uint32_t topClipY,
     const uint32_t bottomClipY,
-    const vissprite_t& visSprite
+    const vissprite_t& visSprite,
+    const Fixed lightMulFrac
 ) noexcept {
     // Sanity checks
     ASSERT(topClipY >= 0 && topClipY <= gScreenHeight);
@@ -186,9 +193,6 @@ static void oneSpriteLine(
     // If the clip bounds are meeting (or past each other?!) then ignore
     if (topClipY >= bottomClipY)
         return;
-    
-    // Get the light multiplier to use for lighting the sprite
-    const Fixed lightMultiplier = getLightMultiplier(visSprite.colormap & 0xFF, MAX_SPRITE_LIGHT_VALUE);
     
     // Get the height of the sprite and also the height that it will be rendered at.
     // Note that we expect no zero sizes here!
@@ -246,9 +250,9 @@ static void oneSpriteLine(
             const Fixed texGFrac = intToFixed(texG);
             const Fixed texBFrac = intToFixed(texB);
 
-            const Fixed darkenedR = fixedMul(texRFrac, lightMultiplier);
-            const Fixed darkenedG = fixedMul(texGFrac, lightMultiplier);
-            const Fixed darkenedB = fixedMul(texBFrac, lightMultiplier);
+            const Fixed darkenedR = fixedMul(texRFrac, lightMulFrac);
+            const Fixed darkenedG = fixedMul(texGFrac, lightMulFrac);
+            const Fixed darkenedB = fixedMul(texBFrac, lightMulFrac);
             
             // Save the final output color
             const uint32_t finalColor = Video::fixedRgbToScreenCol(darkenedR, darkenedG, darkenedB);
@@ -265,6 +269,14 @@ static void oneSpriteLine(
 // Draws a clipped sprite to the screen
 //----------------------------------------------------------------------------------------------------------------------
 static void drawSpriteClip(const uint32_t x1, const uint32_t x2, const vissprite_t& visSprite) noexcept {
+    // Get the light multiplier to use for lighting the sprite
+    const LightParams lightParams = getLightParams((visSprite.colormap & 0xFFu) + gExtraLight);
+    const float viewStretchWidthF = FMath::doomFixed16ToFloat<float>(gStretchWidth);
+    const float spriteScale = FMath::doomFixed16ToFloat<float>(visSprite.yscale);
+    const float spriteDist = (1.0f / spriteScale) * viewStretchWidthF;
+    const float lightMulF = lightParams.getLightMulForDist(spriteDist);
+    const Fixed lightMulFrac = FMath::floatToDoomFixed16(lightMulF);
+
     const Fixed spriteWidthFrac = intToFixed(visSprite.pSprite->width);
     
     int32_t y = visSprite.y1;
@@ -297,14 +309,14 @@ static void drawSpriteClip(const uint32_t x1, const uint32_t x2, const vissprite
         uint32_t top = gSprOpening[x];  // Get the opening to the screen
         
         if (top == gScreenHeight) {  // Not clipped?
-            oneSpriteLine(x, xFrac, 0, gScreenHeight, visSprite);
+            oneSpriteLine(x, xFrac, 0, gScreenHeight, visSprite, lightMulFrac);
         } else {
             uint32_t bottom = top & 0xff;
             top >>= 8;
             
             if (top < bottom) {     // Valid run?
                 if (y >= (int32_t) top && y2 < (int32_t) bottom) {
-                    oneSpriteLine(x, xFrac, 0, gScreenHeight, visSprite);
+                    oneSpriteLine(x, xFrac, 0, gScreenHeight, visSprite, lightMulFrac);
                 } else {
                     int32_t clip = top - visSprite.y1;      // Number of pixels to clip
                     int32_t run = bottom - top;             // Allowable run
@@ -319,7 +331,7 @@ static void drawSpriteClip(const uint32_t x1, const uint32_t x2, const vissprite
                             run = maxRun;       // Force largest...
                         }
                         
-                        oneSpriteLine(x, xFrac, top, bottom, visSprite);
+                        oneSpriteLine(x, xFrac, top, bottom, visSprite, lightMulFrac);
                     }
                 }
             }

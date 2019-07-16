@@ -35,7 +35,6 @@ namespace Renderer {
     static constexpr uint32_t   FIXEDTOHEIGHT           = FRACBITS - HEIGHTBITS;    // Number of unused bits from fixed to SCALEBITS
     static constexpr uint32_t   SCALEBITS               = 9;                        // Number of bits for texture scale
     static constexpr uint32_t   FIXEDTOSCALE            = FRACBITS - SCALEBITS;     // Number of unused bits from fixed to HEIGHTBITS
-    static constexpr uint32_t   LIGHTSCALESHIFT         = 3;
     static constexpr float      MIN_RENDER_SCALE        = 1 / 256.0f;
     static constexpr float      MAX_RENDER_SCALE        = 64.0f;
 
@@ -187,16 +186,5 @@ namespace Renderer {
     void DrawSpriteCenter(uint32_t SpriteNum);
 
     // Get light parameters for a floor or wall at the given light level
-    LightParams getLightParams(const uint32_t sectorLightLevel, const bool bIsFloor) noexcept;
-
-    //------------------------------------------------------------------------------------------------------------------
-    // Utility: returns a fixed point multipler for the given texture light value (which is in 4.3 format)
-    // This can be used to scale RGB values due to lighting.
-    //------------------------------------------------------------------------------------------------------------------
-    inline Fixed getLightMultiplier(const uint32_t lightValue, const uint32_t maxLightValue) noexcept {
-        const Fixed maxLightValueFrac = intToFixed(maxLightValue);
-        const Fixed textureLightFrac = lightValue << (FRACBITS - LIGHTSCALESHIFT);
-        const Fixed lightMultiplier = fixedDiv(textureLightFrac, maxLightValueFrac);
-        return (lightMultiplier > FRACUNIT) ? FRACUNIT : lightMultiplier;
-    }
+    LightParams getLightParams(const uint32_t sectorLightLevel) noexcept;
 }
