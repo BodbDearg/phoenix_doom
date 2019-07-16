@@ -77,19 +77,9 @@ static void mapPlane(
     const float xstep = distance * baseXScale;
     const float ystep = distance * baseYScale;
 
-    // Figure out the light multiplier and draw the floor column
-    float lightMult;
-
-    {
-        const float distFactor = std::fmax(distance - lightParams.lightSub, 0.0f) * lightParams.lightCoef;
-
-        float lightValue = 255.0f - distFactor;
-        lightValue = std::max(lightValue, lightParams.lightMin);
-        lightValue = std::min(lightValue, lightParams.lightMax);
-        lightMult = lightValue * (1.0f / MAX_LIGHT_VALUE);
-    }
-
-    drawFloorColumn(y, x1, x2 - x1, xfrac, yfrac, xstep, ystep, lightMult, texData);
+    // Figure out the light multiplier to use and then draw the floor column
+    const float lightMul = lightParams.getLightMulForDist(distance);
+    drawFloorColumn(y, x1, x2 - x1, xfrac, yfrac, xstep, ystep, lightMul, texData);
 }
 
 //----------------------------------------------------------------------------------------------------------------------

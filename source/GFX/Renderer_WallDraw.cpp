@@ -278,29 +278,20 @@ static void drawSeg(const viswall_t& seg) noexcept {
             )
         );
 
-        // Save lighting params
-        float lightMult;
-
-        {
-            const float stretchW = FMath::doomFixed16ToFloat<float>(gStretchWidth);
-            const float columnDist = (1.0f / columnScale) * stretchW;
-            const float distFactor = std::fmax(columnDist - lightParams.lightSub, 0.0f) * lightParams.lightCoef;
-
-            float lightValue = 255.0f - distFactor;
-            lightValue = std::max(lightValue, lightParams.lightMin);
-            lightValue = std::min(lightValue, lightParams.lightMax);
-            lightMult = lightValue * (1.0f / MAX_LIGHT_VALUE);
-        }
+        // Figure out the light multiplier to use
+        const float viewStretchWidthF = FMath::doomFixed16ToFloat<float>(gStretchWidth);
+        const float columnDist = (1.0f / columnScale) * viewStretchWidthF;
+        const float lightMul = lightParams.getLightMulForDist(columnDist);
         
         // Daw the top and bottom textures (if present) and update increments for the next column
         if (actionBits & AC_TOPTEXTURE) {
-            drawWallColumn(topTex, viewX, texX, topTexTY, topTexBY, invColumnScale, lightMult);
+            drawWallColumn(topTex, viewX, texX, topTexTY, topTexBY, invColumnScale, lightMul);
             topTexTY += topTexTYStep;
             topTexBY += topTexBYStep;
         }
 
         if (actionBits & AC_BOTTOMTEXTURE) {
-            drawWallColumn(bottomTex, viewX, texX, bottomTexTY, bottomTexBY, invColumnScale, lightMult);
+            drawWallColumn(bottomTex, viewX, texX, bottomTexTY, bottomTexBY, invColumnScale, lightMul);
             bottomTexTY += bottomTexTYStep;
             bottomTexBY += bottomTexBYStep;
         }

@@ -84,6 +84,10 @@ namespace Renderer {
         float   lightMax;       // Maximum light value allowed
         float   lightSub;       // Subtract this as part of the light diminishing calculations
         float   lightCoef;      // Controls the falloff for light diminishing
+
+        // For these light parameters, gives a light multiplier that can be applied to textures etc.
+        // after doing light diminishing effects. Requires the distance of the object from the camera.
+        float getLightMulForDist(const float dist) const noexcept;
     };
 
     // Describes a floor area to be drawn

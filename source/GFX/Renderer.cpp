@@ -180,10 +180,10 @@ void initMathTables() noexcept {
 
     // Create the lighting tables
     for (uint32_t i = 0; i < 256; ++i) {
-        constexpr float LIGHT_MIN_PERCENT = 1.0f / 4.0f;
+        constexpr float LIGHT_MIN_PERCENT = 1.0f / 5.0f;
         constexpr float MAX_BRIGHT_RANGE_SCALE = 2.0f;
-        constexpr float LIGHT_COEF_BASE = 0.75f;
-        constexpr float LIGHT_COEF_ADJUST_FACTOR = 0.50f;
+        constexpr float LIGHT_COEF_BASE = 10.0f;
+        constexpr float LIGHT_COEF_ADJUST_FACTOR = 8.0f;
         
         const float lightLevel = (float) i / 255.0f;
         const float maxBrightRange = lightLevel * MAX_BRIGHT_RANGE_SCALE;
@@ -202,6 +202,19 @@ void drawPlayerView() noexcept {
     drawAllMapObjectSprites();
     drawWeapons();                  // Draw the weapons on top of the screen
     doPostFx();                     // Draw color overlay if needed    
+}
+
+float LightParams::getLightMulForDist(const float dist) const noexcept {
+    const float distFactorLinear = std::fmax(dist - lightSub, 0.0f);
+    const float distFactorQuad = std::powf(distFactorLinear, 0.6f);
+    const float lightDiminish = distFactorQuad * lightCoef;
+    
+    float lightValue = 255.0f - lightDiminish;
+    lightValue = std::max(lightValue, lightMin);
+    lightValue = std::min(lightValue, lightMax);
+
+    const float lightMul = lightValue * (1.0f / MAX_LIGHT_VALUE);
+    return lightMul;
 }
 
 LightParams getLightParams(const uint32_t sectorLightLevel, const bool bIsFloor) noexcept {
