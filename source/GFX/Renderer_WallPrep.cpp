@@ -145,8 +145,10 @@ void wallPrep(
     sector_t& frontSector = *lineSeg.frontsector;                           // Get the front sector
     const uint32_t f_ceilingpic = frontSector.CeilingPic;                   // Front sector ceiling image #
     uint32_t f_lightlevel = frontSector.lightlevel;
-    const Fixed f_floorheight = frontSector.floorheight - gViewZ;           // Front sector floor height - viewz: adjust for camera z
-    const Fixed f_ceilingheight = frontSector.ceilingheight - gViewZ;       // Front sector ceiling height - viewz
+
+    // Front sector floor and ceiling height - viewz: adjust for camera z
+    const float f_floorheight = FMath::doomFixed16ToFloat<float>(frontSector.floorheight - gViewZ);
+    const float f_ceilingheight = FMath::doomFixed16ToFloat<float>(frontSector.ceilingheight - gViewZ);
     
     // Set the floor and ceiling shape handles & look up animated texture numbers.
     // Note that ceiling might NOT exist!
@@ -165,11 +167,14 @@ void wallPrep(
     
     const uint32_t b_ceilingpic = pBackSector->CeilingPic;                  // Get backsector data into locals
     const uint32_t b_lightlevel = pBackSector->lightlevel;                  // Back sector light level
-    const Fixed b_floorheight = pBackSector->floorheight - gViewZ;          // Adjust for camera z
-    const Fixed b_ceilingheight = pBackSector->ceilingheight - gViewZ;
-    uint32_t actionbits = 0;                                                // Reset vars for future storage
-    
+
+    // Adjust for camera z
+    const float b_floorheight = FMath::doomFixed16ToFloat<float>(pBackSector->floorheight - gViewZ);
+    const float b_ceilingheight = FMath::doomFixed16ToFloat<float>(pBackSector->ceilingheight - gViewZ);
+
     // Add floors and ceilings if the wall needs one
+    uint32_t actionbits = 0;
+
     if (f_floorheight < 0 && (                                      // Is the camera above the floor?
             (frontSector.FloorPic != pBackSector->FloorPic) ||      // Floor texture changed?
             (f_floorheight != b_floorheight) ||                     // Differant height?
@@ -177,7 +182,7 @@ void wallPrep(
             (b_ceilingheight == b_floorheight)                      // No thickness line?
         )
     ) {
-        curWall.floorheight = curWall.floornewheight = f_floorheight >> FIXEDTOHEIGHT;
+        curWall.floorheight = curWall.floornewheight = f_floorheight;
         actionbits = (AC_ADDFLOOR|AC_NEWFLOOR);     // Create floor
     }
 
@@ -189,8 +194,8 @@ void wallPrep(
             (b_ceilingheight == b_floorheight)              // Thin dividing line?
         )
     ) {
-        curWall.ceilingheight = curWall.ceilingnewheight = f_ceilingheight >> FIXEDTOHEIGHT;
-        
+        curWall.ceilingheight = curWall.ceilingnewheight = f_ceilingheight;
+         
         if (f_ceilingpic == -1) {
             actionbits |= AC_ADDSKY | AC_NEWCEILING;        // Add sky to the ceiling
         } else {
@@ -198,30 +203,31 @@ void wallPrep(
         }
     }
     
-    curWall.t_topheight = f_ceilingheight>>FIXEDTOHEIGHT;   // Y coord of the top texture
+    curWall.t_topheight = f_ceilingheight;      // Y coord of the top texture
 
     // Single sided line? (no back sector) They only have a center texture.
     if (pBackSector == &gEmptySector) {
         curWall.t_texture = getWallAnimTexture(sideDef.midtexture);
-        int32_t t_texturemid;
+        float t_texturemid;
         
         if (lineFlags & ML_DONTPEGBOTTOM) {     
-            t_texturemid = f_floorheight + (curWall.t_texture->data.height << FRACBITS);    // Bottom of texture at bottom
+            t_texturemid = f_floorheight + (float) curWall.t_texture->data.height;      // Bottom of texture at bottom
         } else {
             t_texturemid = f_ceilingheight;     // Top of texture at top
         }
         
-        t_texturemid += sideDef.rowoffset;                          // Add texture anchor offset
-        curWall.t_texturemid = t_texturemid;                        // Save the top texture anchor var
-        curWall.t_bottomheight = f_floorheight >> FIXEDTOHEIGHT;
-        actionbits |= (AC_TOPTEXTURE | AC_SOLIDSIL);                // Draw the middle texture only
+        t_texturemid += FMath::doomFixed16ToFloat<float>(sideDef.rowoffset);    // Add texture anchor offset
+
+        curWall.t_texturemid = t_texturemid;            // Save the top texture anchor var
+        curWall.t_bottomheight = f_floorheight;
+        actionbits |= (AC_TOPTEXTURE | AC_SOLIDSIL);    // Draw the middle texture only
     } else {
         // Two sided lines are more tricky since I may be able to see through it.
         // Check if the bottom wall texture is visible?
         if (b_floorheight > f_floorheight) {
             // Draw the bottom texture
             curWall.b_texture = getWallAnimTexture(sideDef.bottomtexture);
-            int32_t b_texturemid;
+            float b_texturemid;
             
             if (lineFlags & ML_DONTPEGBOTTOM) {
                 b_texturemid = f_ceilingheight;     // bottom of texture at bottom
@@ -229,10 +235,10 @@ void wallPrep(
                 b_texturemid = b_floorheight;       // Top of texture at top
             }
             
-            b_texturemid += sideDef.rowoffset;      // Add the adjustment
+            b_texturemid += FMath::doomFixed16ToFloat<float>(sideDef.rowoffset);    // Add the adjustment
             curWall.b_texturemid = b_texturemid;
-            curWall.b_topheight = curWall.floornewheight = b_floorheight >> FIXEDTOHEIGHT;
-            curWall.b_bottomheight = f_floorheight >> FIXEDTOHEIGHT;
+            curWall.b_topheight = curWall.floornewheight = b_floorheight;
+            curWall.b_bottomheight = f_floorheight;
 
             actionbits |= AC_NEWFLOOR|AC_BOTTOMTEXTURE;     // Generate a floor and bottom wall texture
         }
@@ -240,17 +246,17 @@ void wallPrep(
         if (b_ceilingheight < f_ceilingheight && (f_ceilingpic != -1 || b_ceilingpic != -1)) {  // Ceiling wall without sky
             // Draw the top texture
             curWall.t_texture = getWallAnimTexture(sideDef.toptexture);
-            int32_t t_texturemid;
+            float t_texturemid;
             
             if (lineFlags & ML_DONTPEGTOP) {
                 t_texturemid = f_ceilingheight;     // Top of texture at top
             } else {
-                t_texturemid = b_ceilingheight + (curWall.t_texture->data.height << FRACBITS);
+                t_texturemid = b_ceilingheight + (float) curWall.t_texture->data.height;
             }
             
-            t_texturemid += sideDef.rowoffset;      // Anchor the top texture
-            curWall.t_texturemid = t_texturemid;    // Save the top texture anchor var
-            curWall.t_bottomheight = curWall.ceilingnewheight = b_ceilingheight>>FIXEDTOHEIGHT;
+            t_texturemid += FMath::doomFixed16ToFloat<float>(sideDef.rowoffset);    // Anchor the top texture
+            curWall.t_texturemid = t_texturemid;                                    // Save the top texture anchor var
+            curWall.t_bottomheight = curWall.ceilingnewheight = b_ceilingheight;
 
             actionbits |= AC_NEWCEILING | AC_TOPTEXTURE;    // Generate the top texture
         }

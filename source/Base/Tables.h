@@ -17,11 +17,11 @@ extern Fixed        gFineSine[10240];
 extern angle_t      gTanToAngle[2049];
 extern angle_t      gXToViewAngle[MAXSCREENWIDTH + 1];
 extern int32_t      gViewAngleToX[FINEANGLES / 4];
-extern uint32_t     gYSlope[MAXSCREENHEIGHT];           // 6.10 frac
-extern uint32_t     gDistScale[MAXSCREENWIDTH];         // 1.15 frac
+extern float        gYSlope[MAXSCREENHEIGHT];
+extern float        gDistScale[MAXSCREENWIDTH];
 extern uint32_t     gIDivTable[8192];                   // 1.0 / 0-5500 for recipocal muls   
-extern uint32_t     gCenterX;                           // Center X coord in fixed point
-extern uint32_t     gCenterY;                           // Center Y coord in fixed point
+extern uint32_t     gCenterX;                           // Center view center X coord (integer)
+extern uint32_t     gCenterY;                           // Center view center Y coord (integer)
 extern uint32_t     gScreenWidth;                       // Width of the view screen
 extern uint32_t     gScreenHeight;                      // Height of the view screen
 extern Fixed        gStretch;                           // Stretch factor
@@ -34,3 +34,6 @@ extern uint32_t     gLightMins[256];                    // Minimum light factors
 extern uint32_t     gLightSubs[256];                    // Light subtraction
 extern Fixed        gLightCoefs[256];                   // Light coeffecient
 extern Fixed        gPlaneLightCoef[256];               // Plane light coeffecient
+
+// Returns the view angle for the given x screen coordinate
+float getViewAngleForX(const int32_t x) noexcept;

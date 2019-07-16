@@ -165,21 +165,16 @@ void initMathTables() noexcept {
     
     // Make the 'y slope' table for floor and ceiling textures
     for (uint32_t i = 0; i < gScreenHeight; ++i) {
-        Fixed j = (((int) i - (int) gScreenHeight / 2) * FRACUNIT) + FRACUNIT / 2;
-        j = fixedDiv(gStretchWidth, abs(j));
-        j >>= 6;
-
-        if (j > 0xFFFF) {
-            j = 0xFFFF;
-        }
-
+        float j = (float) i - (float) gScreenHeight * 0.5f + 0.5f;
+        j = FMath::doomFixed16ToFloat<float>(gStretchWidth) / std::abs(j);
+        j = std::fmin(j, 63.0f);
         gYSlope[i] = j;
     }
 
     // Create the distance scale table for floor and ceiling textures 
     for (uint32_t i = 0; i < gScreenWidth; ++i) {
-        const Fixed j = std::abs(gFineCosine[gXToViewAngle[i] >> ANGLETOFINESHIFT]);
-        gDistScale[i] = fixedDiv(FRACUNIT, j) >> 1;
+        const float c = std::cos(getViewAngleForX(i));
+        gDistScale[i] = (1.0f / std::abs(c));
     }
 
     // Create the lighting tables
@@ -202,22 +197,6 @@ void drawPlayerView() noexcept {
     drawAllMapObjectSprites();
     drawWeapons();                  // Draw the weapons on top of the screen
     doPostFx();                     // Draw color overlay if needed    
-}
-
-float getViewAngleForX(const int32_t x) noexcept {
-    const float screenWHalf = (float)(gScreenWidth - 1) * 0.5f;
-    const float xf = (float) x - screenWHalf;
-    const float xNorm = xf / screenWHalf;
-
-    if (xNorm <= -1.0f) {
-        return -FMath::ANGLE_45<float>;
-    }
-    else if (xNorm >= 1.0f) {
-        return FMath::ANGLE_45<float>;
-    }
-
-    const float angle = std::atan(xNorm);
-    return angle;
 }
 
 END_NAMESPACE(Renderer)

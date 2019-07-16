@@ -25,9 +25,9 @@ static uint32_t gClipBoundBottom[MAXSCREENWIDTH];       // Bounds bottom y for v
 
 struct drawtex_t {
     const ImageData*    pData;          // Image data for the texture
-    int32_t             topheight;      // Top texture height in global pixels
-    int32_t             bottomheight;   // Bottom texture height in global pixels
-    Fixed               texturemid;     // Anchor point for texture
+    float               topheight;      // Top texture height in global pixels
+    float               bottomheight;   // Bottom texture height in global pixels
+    float               texturemid;     // Anchor point for texture
 };
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -43,7 +43,7 @@ static void drawClippedWallColumn(
     const ImageData& texData
 ) noexcept {
     // Get integer Y coordinate
-    const int32_t viewYI = std::floor(viewY);
+    const int32_t viewYI = (int32_t) std::floor(viewY);
 
     // Clip to bottom of the screen
     if (viewYI >= (int32_t) gScreenHeight)
@@ -174,7 +174,7 @@ static void drawWallColumn(
     const uint32_t texHeight = texData.height;
 
     const float viewY = wallTopY;
-    const float texYNotOffset = FMath::doomFixed16ToFloat<float>(tex.texturemid - (tex.topheight << FIXEDTOHEIGHT));
+    const float texYNotOffset = tex.texturemid - tex.topheight;
     const float texY = (texYNotOffset < 0.0f) ? texYNotOffset + texHeight : texYNotOffset;  // DC: This is required for correct vertical alignment in some cases
 
     // Draw the column
@@ -207,8 +207,9 @@ static void drawSeg(const viswall_t& seg) noexcept {
     const float lightSub = (float) gLightSubs[lightLevel];
     const float lightCoef = FMath::doomFixed16ToFloat<float>(gLightCoefs[lightLevel] << 9);
     
-    // Y center of the screen
+    // Y center of the screen and scaled half view width
     const float viewCenterY = (float) gCenterY;
+    const float stretchWidth = FMath::doomFixed16ToFloat<float>(gStretchWidth);
     
     // How much to step scale for each x pixel and seg center angle
     const float segLeftScale = seg.LeftScale;
@@ -241,8 +242,8 @@ static void drawSeg(const viswall_t& seg) noexcept {
         topTex.texturemid = seg.t_texturemid;         
         topTex.pData = &pTex->data;
 
-        const float topWorldTY = FMath::doomFixed6ToFloat<float>(seg.t_topheight);
-        const float topWorldBY = FMath::doomFixed6ToFloat<float>(seg.t_bottomheight);
+        const float topWorldTY = seg.t_topheight;
+        const float topWorldBY = seg.t_bottomheight;
 
         topTexTYStep = -segScaleStep * topWorldTY;
         topTexBYStep = -segScaleStep * topWorldBY;
@@ -258,8 +259,8 @@ static void drawSeg(const viswall_t& seg) noexcept {
         bottomTex.texturemid = seg.b_texturemid;
         bottomTex.pData = &pTex->data;
 
-        const float bottomWorldTY = FMath::doomFixed6ToFloat<float>(seg.b_topheight);
-        const float bottomWorldBY = FMath::doomFixed6ToFloat<float>(seg.b_bottomheight);
+        const float bottomWorldTY = seg.b_topheight;
+        const float bottomWorldBY = seg.b_bottomheight;
         
         bottomTexTYStep = -segScaleStep * bottomWorldTY;
         bottomTexBYStep = -segScaleStep * bottomWorldBY;
@@ -283,14 +284,12 @@ static void drawSeg(const viswall_t& seg) noexcept {
 
         // Save lighting params
         {
-            float texturelight = columnScale * lightCoef - lightSub;
-            if (texturelight < lightMin) {
-                texturelight = lightMin;
-            }                
-            if (texturelight > lightMax) {
-                texturelight = lightMax;
-            }                
-            gTxTextureLight = (uint32_t) texturelight;
+            const float distCoef = columnScale;
+            float lightValue = lightCoef * distCoef - gLightSub;
+            lightValue = std::max(lightValue, lightMin);
+            lightValue = std::min(lightValue, lightMax);
+
+            gTxTextureLight = (uint32_t) lightValue;
         }
         
         // Daw the top and bottom textures (if present) and update increments for the next column
@@ -316,7 +315,7 @@ static void drawSeg(const viswall_t& seg) noexcept {
 //----------------------------------------------------------------------------------------------------------------------
 static visplane_t* findPlane(
     visplane_t& plane,
-    const Fixed height,
+    const float height,
     const uint32_t picHandle,
     const int32_t start,
     const int32_t stop,
@@ -394,7 +393,7 @@ static void segLoop(const viswall_t& seg) noexcept {
 
         // Shall I add the floor?
         if (actionBits & AC_ADDFLOOR) {
-            int32_t top = (int32_t)(gCenterY - scale * FMath::doomFixed6ToFloat<float>(seg.floorheight));   // Y coord of top of floor
+            int32_t top = (int32_t)(gCenterY - scale * seg.floorheight);    // Y coord of top of floor
             if (top <= ceilingClipY) {
                 top = ceilingClipY + 1;       // Clip the top of floor to the bottom of the visible area
             }
@@ -421,7 +420,7 @@ static void segLoop(const viswall_t& seg) noexcept {
         // Handle ceilings
         if (actionBits & AC_ADDCEILING) {
             int32_t top = ceilingClipY + 1;     // Start from the ceiling
-            int32_t bottom = (int32_t)(gCenterY - 1.0f - scale * FMath::doomFixed6ToFloat<float>(seg.ceilingheight));   // Bottom of the height
+            int32_t bottom = (int32_t)(gCenterY - 1.0f - scale * seg.ceilingheight);    // Bottom of the height
             
             if (bottom >= floorClipY) {     // Clip the bottom?
                 bottom = floorClipY - 1;
@@ -447,7 +446,7 @@ static void segLoop(const viswall_t& seg) noexcept {
 
         // Sprite clip sils
         if (actionBits & (AC_BOTTOMSIL|AC_NEWFLOOR)) {
-            int32_t low = (int32_t)(gCenterY - scale * FMath::doomFixed6ToFloat<float>(seg.floornewheight));
+            int32_t low = (int32_t)(gCenterY - scale * seg.floornewheight);
             if (low > floorClipY) {
                 low = floorClipY;
             }
@@ -463,7 +462,7 @@ static void segLoop(const viswall_t& seg) noexcept {
         }
 
         if (actionBits & (AC_TOPSIL|AC_NEWCEILING)) {
-            int32_t high = (int32_t)(gCenterY - 1.0f - scale * FMath::doomFixed6ToFloat<float>(seg.ceilingnewheight));
+            int32_t high = (int32_t)(gCenterY - 1.0f - scale * seg.ceilingnewheight);
             if (high < ceilingClipY) {
                 high = ceilingClipY;
             }
@@ -480,7 +479,7 @@ static void segLoop(const viswall_t& seg) noexcept {
 
         // I can draw the sky right now!!
         if (actionBits & AC_ADDSKY) {
-            int32_t bottom = (int32_t)(gCenterY - scale * FMath::doomFixed6ToFloat<float>(seg.ceilingheight));
+            int32_t bottom = (int32_t)(gCenterY - scale * seg.ceilingheight);
             if (bottom > floorClipY) {
                 bottom = floorClipY;
             }

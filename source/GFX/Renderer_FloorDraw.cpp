@@ -19,10 +19,10 @@ static void drawFloorColumn(
     const uint32_t colY,
     const uint32_t colX,
     const uint32_t numPixels,
-    const uint32_t texXFrac,
-    const uint32_t texYFrac,
-    const Fixed texXStep,
-    const Fixed texYStep,
+    const float texXFrac,
+    const float texYFrac,
+    const float texXStep,
+    const float texYStep,
     const ImageData& texData
 ) noexcept {
     const Fixed lightMultiplier = getLightMultiplier(gTxTextureLight, MAX_FLOOR_LIGHT_VALUE);
@@ -37,16 +37,16 @@ static void drawFloorColumn(
         Blit::BCF_COLOR_MULT_RGB
     >(
         texData,
-        FMath::doomFixed16ToFloat<float>(texXFrac),
-        FMath::doomFixed16ToFloat<float>(texYFrac),
+        texXFrac,
+        texYFrac,
         Video::gFrameBuffer,
         Video::SCREEN_WIDTH,
         Video::SCREEN_HEIGHT,
         colX + gScreenXOffset,
         colY + gScreenYOffset,
         numPixels,
-        FMath::doomFixed16ToFloat<float>(texXStep),
-        FMath::doomFixed16ToFloat<float>(texYStep),
+        texXStep,
+        texYStep,
         lightMultiplier,
         lightMultiplier,
         lightMultiplier
@@ -59,10 +59,10 @@ static void drawFloorColumn(
 static void mapPlane(
     const uint32_t x2,
     const uint32_t y,
-    const Fixed planeY,
-    const Fixed planeHeight,
-    const Fixed baseXScale,
-    const Fixed baseYScale,
+    const float planeY,
+    const float planeHeight,
+    const float baseXScale,
+    const float baseYScale,
     const ImageData& texData
 ) noexcept {
     //------------------------------------------------------------------------------------------------------------------
@@ -72,28 +72,27 @@ static void mapPlane(
     // length is 11.5
     //------------------------------------------------------------------------------------------------------------------
     const uint32_t x1 = gSpanStart[y];
-    const uint32_t distance = (gYSlope[y] * planeHeight) >> 12;     // Get the offset for the plane height
-    const Fixed length = (gDistScale[x1] * distance) >> 14;
-    const angle_t angle = (gXToViewAngle[x1] + gViewAngle) >> ANGLETOFINESHIFT;
+    const float distance = gYSlope[y] * planeHeight;    // Get the offset for the plane height
+    const float length = gDistScale[x1] * distance;
+    const float angle = -getViewAngleForX(x1) + FMath::doomAngleToRadians<float>(gViewAngle);
 
     // xfrac, yfrac, xstep, ystep
-    const Fixed xfrac = (((gFineCosine[angle] >> 1) * length) >> 4) + gViewX;
-    const Fixed yfrac = planeY - (((gFineSine[angle] >> 1) * length) >> 4);
-
-    const float xstep = ((Fixed) distance * baseXScale) >> 4;
-    const float ystep = ((Fixed) distance * baseYScale) >> 4;
+    const float xfrac = std::cos(angle) * length + FMath::doomFixed16ToFloat<float>(gViewX);
+    const float yfrac = planeY - std::sin(angle) * length;
+    const float xstep = distance * baseXScale;
+    const float ystep = distance * baseYScale;
 
     {
-        const uint32_t distanceDiv = (distance > 0) ? distance : 1;         // DC: fix division by zero when using the noclip cheat
-        Fixed lightValue = gLightCoef / (Fixed) distanceDiv - gLightSub;
+        // Light params
+        const float lightCoef = FMath::doomFixed16ToFloat<float>(gLightCoef << 9);
+        const float lightMin = (float) gLightMin;
+        const float lightMax = (float) gLightMax;
+        const float lightSub = (float) gLightSub;
 
-        if (lightValue < gLightMin) {
-            lightValue = gLightMin;
-        }
-    
-        if (lightValue > gLightMax) {
-            lightValue = gLightMax;
-        }
+        const float distCoef = 1.0f / (distance * (1.0f / 16.0f));
+        float lightValue = lightCoef * distCoef - gLightSub;
+        lightValue = std::max(lightValue, lightMin);
+        lightValue = std::min(lightValue, lightMax);
 
         gTxTextureLight = (uint32_t) lightValue;
     }
@@ -108,13 +107,13 @@ static void mapPlane(
 //----------------------------------------------------------------------------------------------------------------------
 void drawVisPlane(
     visplane_t& plane,
-    const Fixed planeY,
-    const Fixed baseXScale,
-    const Fixed baseYScale
+    const float planeY,
+    const float baseXScale,
+    const float baseYScale
 ) noexcept {
     const Texture* const pTex = getFlatAnimTexture((uint32_t) plane.picHandle);
     const ImageData& texData = pTex->data;
-    const Fixed planeHeight = std::abs(plane.height);
+    const float planeHeight = std::abs(plane.height);
     
     {
         const uint32_t lightLevel = plane.planeLight;
@@ -127,11 +126,10 @@ void drawVisPlane(
     uint32_t stop = plane.maxX + 1;         // Maximum x coord
     uint32_t x = plane.minX;                // Starting x
 
-    ColumnYBounds* const pPlaneCols = plane.cols;           // Init the pointer to the open Y's
-    
     ColumnYBounds prevCol = { MAXSCREENHEIGHT - 1, 0 };     // Set posts to stop drawing
+    ColumnYBounds* const pPlaneCols = plane.cols;           // Init the pointer to the open Y's
     pPlaneCols[stop] = prevCol;
-
+    
     do {
         const ColumnYBounds newCol = pPlaneCols[x];     // Fetch the NEW top and bottom
         
@@ -176,8 +174,8 @@ void drawVisPlane(
         }
             
         if (prevBottomY > newBottomY && prevBottomY >= prevTopY) {
-            int count = prevTopY - 1;
-            if (count < (int) newBottomY) {
+            int32_t count = prevTopY - 1;
+            if (count < (int32_t) newBottomY) {
                 count = newBottomY;
             }
 
@@ -192,18 +190,18 @@ void drawVisPlane(
                     baseYScale,
                     texData
                 );
-            } while ((int) --prevBottomY > count);
+            } while ((int32_t) --prevBottomY > count);
         }
 
         if (newBottomY > prevBottomY && newBottomY >= newTopY) {
             int count = newTopY - 1;
-            if (count < (int) prevBottomY) {
+            if (count < (int32_t) prevBottomY) {
                 count = prevBottomY;
             }
 
             do {
-                gSpanStart[newBottomY] = x; // Mark the starting x's
-            } while ((int) --newBottomY > count);
+                gSpanStart[newBottomY] = x;     // Mark the starting x's
+            } while ((int32_t) --newBottomY > count);
         }
 
         prevCol = newCol;
@@ -211,10 +209,12 @@ void drawVisPlane(
 }
 
 void drawAllVisPlanes() noexcept {
-    const uint32_t wallScale = (gViewAngle - ANG90) >> ANGLETOFINESHIFT;                    // Left to right mapping
-    const Fixed baseXScale = (gFineCosine[wallScale] / ((int32_t) gScreenWidth / 2));
-    const Fixed baseYScale = -(gFineSine[wallScale] / ((int32_t) gScreenWidth / 2));
-    const Fixed planeY = -gViewY;                                                           // Get the Y coord for camera
+    const float viewAngle = FMath::doomAngleToRadians<float>(gViewAngle);
+    const float wallScaleAngle = viewAngle - FMath::ANGLE_90<float>;    // Left to right mapping
+
+    const float baseXScale = +std::cos(wallScaleAngle) / ((float) gScreenWidth * 0.5f);
+    const float baseYScale = -std::sin(wallScaleAngle) / ((float) gScreenWidth * 0.5f);
+    const float planeY = FMath::doomFixed16ToFloat<float>(-gViewY);     // Get the Y coord for camera
 
     visplane_t* pPlane = gVisPlanes + 1;
     visplane_t* const pEndPlane = gpEndVisPlane;

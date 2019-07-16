@@ -82,7 +82,7 @@ namespace Renderer {
     // Describes a floor area to be drawn
     struct visplane_t {
         ColumnYBounds   cols[MAXSCREENWIDTH + 1];
-        Fixed           height;                     // Height of the floor
+        float           height;                     // Height of the floor
         uint32_t        picHandle;                  // Texture handle
         uint32_t        planeLight;                 // Light override
         int32_t         minX;                       // Minimum x, max x
@@ -97,20 +97,20 @@ namespace Renderer {
         uint32_t        CeilingPic;         // Picture handle to ceiling shape
         uint32_t        WallActions;        // Actions to perform for draw
 
-        int32_t         t_topheight;        // Describe the top texture
-        int32_t         t_bottomheight;
-        int32_t         t_texturemid;
+        float           t_topheight;        // Describe the top texture
+        float           t_bottomheight;
+        float           t_texturemid;
         const Texture*  t_texture;          // Pointer to the top texture
     
-        int32_t         b_topheight;        // Describe the bottom texture
-        int32_t         b_bottomheight;
-        int32_t         b_texturemid;
+        float           b_topheight;        // Describe the bottom texture
+        float           b_bottomheight;
+        float           b_texturemid;
         const Texture*  b_texture;          // Pointer to the bottom texture
-    
-        int32_t         floorheight;
-        int32_t         floornewheight;
-        int32_t         ceilingheight;
-        int32_t         ceilingnewheight;
+        
+        float           floorheight;
+        float           floornewheight;
+        float           ceilingheight;
+        float           ceilingnewheight;
 
         float           LeftScale;              // LeftX Scale
         float           RightScale;             // RightX scale
@@ -174,9 +174,6 @@ namespace Renderer {
 
     // TODO: FIXME - REMOVE FROM HERE
     void DrawSpriteCenter(uint32_t SpriteNum);
-
-    // Returns the view angle for the given x screen coordinate
-    float getViewAngleForX(const int32_t x) noexcept;
 
     //------------------------------------------------------------------------------------------------------------------
     // Utility: returns a fixed point multipler for the given texture light value (which is in 4.3 format)
