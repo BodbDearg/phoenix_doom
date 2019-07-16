@@ -45,11 +45,6 @@ extern const void*      gBigNumFont;                // Cached pointer to the big
 extern uint32_t         gTotalKillsInLevel;         // Number of monsters killed
 extern uint32_t         gItemsFoundInLevel;         // Number of items found
 extern uint32_t         gSecretsFoundInLevel;       // Number of secrets discovered
-extern uint32_t         gTxTextureLight;            // Light value to pass to hardware
-extern Fixed            gLightSub;
-extern Fixed            gLightCoef;
-extern Fixed            gLightMin;
-extern Fixed            gLightMax;
 extern player_t         gPlayers;                   // Current player stats
 extern gameaction_e     gGameAction;                // Current game state
 extern skill_e          gGameSkill;                 // Current skill level

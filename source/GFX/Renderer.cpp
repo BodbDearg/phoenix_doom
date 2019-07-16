@@ -6,6 +6,7 @@
 #include "Sprites.h"
 #include "Textures.h"
 #include "Things/MapObj.h"
+#include <algorithm>
 
 static constexpr Fixed computeStretch(const uint32_t width, const uint32_t height) noexcept {
     return Fixed(
@@ -197,6 +198,21 @@ void drawPlayerView() noexcept {
     drawAllMapObjectSprites();
     drawWeapons();                  // Draw the weapons on top of the screen
     doPostFx();                     // Draw color overlay if needed    
+}
+
+LightParams getLightParams(const uint32_t sectorLightLevel, const bool bIsFloor) noexcept {
+    const uint32_t lightMax = std::min(sectorLightLevel, C_ARRAY_SIZE(gLightCoefs) - 1);
+    const uint32_t lightMin = gLightMins[lightMax];
+    const uint32_t lightSub = gLightSubs[lightMax];
+    const Fixed lightCoef = (bIsFloor) ? gPlaneLightCoef[lightMax] : gLightCoefs[lightMax];
+
+    LightParams out;
+    out.lightMin = (float) lightMin;
+    out.lightMax = (float) lightMax;
+    out.lightSub = (float) lightSub;
+    out.lightCoef = FMath::doomFixed16ToFloat<float>(lightCoef << 9);
+
+    return out;
 }
 
 END_NAMESPACE(Renderer)

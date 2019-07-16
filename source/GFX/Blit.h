@@ -175,30 +175,30 @@ namespace Blit {
     //------------------------------------------------------------------------------------------------------------------
     template <uint32_t BC_FLAGS>
     inline void blitColumn(
-        const ImageData& srcImg,                        // Input texture and dimensions
-        const float srcX,                               // Where to start blitting from in the input texture: x
-        const float srcY,                               // Where to start blitting from in the input texture: y
-        uint32_t* const pDstPixels,                     // Output image pixels
-        const uint32_t dstW,                            // Output image width
-        [[maybe_unused]] const uint32_t dstH,           // Output image height
-        const uint32_t dstX,                            // Where to start blitting to in output image: x
-        const uint32_t dstY,                            // Where to start blitting to in output image: y
-        const uint32_t dstCount,                        // How many pixels to blit to the output image (in positive x or y direction)
-        [[maybe_unused]] const float srcXStep,          // Texture coordinate x step
-        [[maybe_unused]] const float srcYStep,          // Texture coordinate y step
-        [[maybe_unused]] const Fixed r = FRACUNIT,      // 16.16 color multiply value: red
-        [[maybe_unused]] const Fixed g = FRACUNIT,      // 16.16 color multiply value: green
-        [[maybe_unused]] const Fixed b = FRACUNIT,      // 16.16 color multiply value: blue
-        [[maybe_unused]] const Fixed a = FRACUNIT       // 16.16 color multiply value: alpha
+        const ImageData& srcImg,                    // Input texture and dimensions
+        const float srcX,                           // Where to start blitting from in the input texture: x
+        const float srcY,                           // Where to start blitting from in the input texture: y
+        uint32_t* const pDstPixels,                 // Output image pixels
+        const uint32_t dstW,                        // Output image width
+        [[maybe_unused]] const uint32_t dstH,       // Output image height
+        const uint32_t dstX,                        // Where to start blitting to in output image: x
+        const uint32_t dstY,                        // Where to start blitting to in output image: y
+        const uint32_t dstCount,                    // How many pixels to blit to the output image (in positive x or y direction)
+        [[maybe_unused]] const float srcXStep,      // Texture coordinate x step
+        [[maybe_unused]] const float srcYStep,      // Texture coordinate y step
+        [[maybe_unused]] const float rMul = 1.0f,   // Color multiply value: red
+        [[maybe_unused]] const float gMul = 1.0f,   // Color multiply value: green
+        [[maybe_unused]] const float bMul = 1.0f,   // Color multiply value: blue
+        [[maybe_unused]] const float aMul = 1.0f    // Color multiply value: alpha
     ) noexcept {
         // Basic sanity checks
         BLIT_ASSERT(srcImg.pPixels);
         BLIT_ASSERT(srcImg.width > 0);
         BLIT_ASSERT(srcImg.height > 0);
-        BLIT_ASSERT(r >= 0);
-        BLIT_ASSERT(g >= 0);
-        BLIT_ASSERT(b >= 0);
-        BLIT_ASSERT(a >= 0);
+        BLIT_ASSERT(rMul >= 0.0f);
+        BLIT_ASSERT(gMul >= 0.0f);
+        BLIT_ASSERT(bMul >= 0.0f);
+        BLIT_ASSERT(aMul >= 0.0f);
 
         // Corner case: if multiplying by alpha and alpha test is enabled with no blend then
         // just avoid drawing the entire column if the multiply value is < 1.0!
@@ -305,52 +305,47 @@ namespace Blit {
                         break;
                 }
 
-                // Get the texture colors in 16.16 fixed point format.
+                // Get the texture colors in 0-255 float format.
                 // Note that if we are not doing any color multiply these conversions would be redundant, but I'm guessing
-                // that the compiler would be smart enough to optimize out the useless shifts in those cases (hopefully)!
-                Fixed rFrac = intToFixed((int32_t) texR);
-                Fixed gFrac = intToFixed((int32_t) texG);
-                Fixed bFrac = intToFixed((int32_t) texB);
-                Fixed aFrac = intToFixed((int32_t) texA);
+                // that the compiler would be smart enough to optimize out the useless operations in those cases (hopefully)!
+                float r = (float) texR;
+                float g = (float) texG;
+                float b = (float) texB;
+                float a = (float) texA;
 
                 if constexpr ((BC_FLAGS & BCF_COLOR_MULT_RGB) != 0) {
-                    rFrac = std::min(fixedMul(rFrac, r), 255 * FRACUNIT);
-                    gFrac = std::min(fixedMul(gFrac, g), 255 * FRACUNIT);
-                    bFrac = std::min(fixedMul(bFrac, b), 255 * FRACUNIT);
+                    r = std::min(r * rMul, 255.0f);
+                    g = std::min(g * gMul, 255.0f);
+                    b = std::min(b * bMul, 255.0f);
                 }
 
                 if constexpr ((BC_FLAGS & BCF_COLOR_MULT_A) != 0) {
-                    aFrac = std::min(fixedMul(aFrac, a), FRACUNIT);
+                    a = std::min(a * aMul, 1.0f);
                 }
 
                 // Do alpha blending with the destination pixel if enabled
                 if constexpr ((BC_FLAGS & BCF_ALPHA_BLEND) != 0) {
-                    // Read the destination pixel RGB and convert to 16.16 fixed
+                    // Read the destination pixel RGBA and convert to 0-255 float
                     const uint16_t dstPixelRGBA5551 = *pDstPixel;
-                    
-                    const uint16_t dstR = (dstPixelRGBA5551 >> 11) << 3;
-                    const uint16_t dstG = (dstPixelRGBA5551 >> 6) << 3;
-                    const uint16_t dstB = (dstPixelRGBA5551 >> 1) << 3;
+                    const float dstR = (float)((dstPixelRGBA5551 >> 11) << 3);
+                    const float dstG = (float)((dstPixelRGBA5551 >> 6) << 3);
+                    const float dstB = (float)((dstPixelRGBA5551 >> 1) << 3);
 
-                    const Fixed dstRFrac = intToFixed(dstR);
-                    const Fixed dstGFrac = intToFixed(dstG);
-                    const Fixed dstBFrac = intToFixed(dstB);
-                    
                     // Source and destination blend factors
-                    const Fixed srcFactor = aFrac;
-                    const Fixed dstFactor = FRACUNIT - aFrac;
+                    const float srcFactor = a;
+                    const float dstFactor = 1.0f - a;
 
                     // Do the blend
-                    rFrac = fixedMul(rFrac, srcFactor) + fixedMul(dstRFrac, dstFactor);
-                    gFrac = fixedMul(gFrac, srcFactor) + fixedMul(dstGFrac, dstFactor);
-                    bFrac = fixedMul(bFrac, srcFactor) + fixedMul(dstBFrac, dstFactor);
+                    r = r * srcFactor + dstR * dstFactor;
+                    g = r * srcFactor + dstG * dstFactor;
+                    b = r * srcFactor + dstB * dstFactor;
                 }
 
                 // Write out the pixel value
                 *pDstPixel = (
-                    (uint32_t(uint8_t(fixedToInt(rFrac)) << 24)) |
-                    (uint32_t(uint8_t(fixedToInt(gFrac)) << 16)) |
-                    (uint32_t(uint8_t(fixedToInt(bFrac)) << 8))
+                    (uint32_t(r) << 24) |
+                    (uint32_t(g) << 16) |
+                    (uint32_t(b) << 8)
                 );
             } while (false);    // Dummy loop to allow break out due to alpha test cull!
 

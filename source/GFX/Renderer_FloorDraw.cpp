@@ -23,10 +23,9 @@ static void drawFloorColumn(
     const float texYFrac,
     const float texXStep,
     const float texYStep,
+    const float lightMultiplier,
     const ImageData& texData
 ) noexcept {
-    const Fixed lightMultiplier = getLightMultiplier(gTxTextureLight, MAX_FLOOR_LIGHT_VALUE);
-
     Blit::blitColumn<
         Blit::BCF_HORZ_COLUMN |     // Column is horizontal rather than vertical
         Blit::BCF_ROW_MAJOR_IMG |   // Floor textures are stored in row major format (unlike sprites and walls)
@@ -63,14 +62,10 @@ static void mapPlane(
     const float planeHeight,
     const float baseXScale,
     const float baseYScale,
+    const LightParams& lightParams,
     const ImageData& texData
 ) noexcept {
-    //------------------------------------------------------------------------------------------------------------------
-    // planeheight is 10.6
-    // yslope is 6.10, distscale is 1.15
-    // distance is 12.4
-    // length is 11.5
-    //------------------------------------------------------------------------------------------------------------------
+    // Start x, distance to floor column, length and angle
     const uint32_t x1 = gSpanStart[y];
     const float distance = gYSlope[y] * planeHeight;    // Get the offset for the plane height
     const float length = gDistScale[x1] * distance;
@@ -82,22 +77,18 @@ static void mapPlane(
     const float xstep = distance * baseXScale;
     const float ystep = distance * baseYScale;
 
+    // Figure out the light multiplier and draw the floor column
+    float lightMult;
+
     {
-        // Light params
-        const float lightCoef = FMath::doomFixed16ToFloat<float>(gLightCoef << 9);
-        const float lightMin = (float) gLightMin;
-        const float lightMax = (float) gLightMax;
-        const float lightSub = (float) gLightSub;
-
         const float distCoef = 1.0f / (distance * (1.0f / 16.0f));
-        float lightValue = lightCoef * distCoef - gLightSub;
-        lightValue = std::max(lightValue, lightMin);
-        lightValue = std::min(lightValue, lightMax);
-
-        gTxTextureLight = (uint32_t) lightValue;
+        float lightLevel = lightParams.lightCoef * distCoef - lightParams.lightSub;
+        lightLevel = std::max(lightLevel, lightParams.lightMin);
+        lightLevel = std::min(lightLevel, lightParams.lightMax);        
+        lightMult = lightLevel * (1.0f / MAX_LIGHT_VALUE);
     }
 
-    drawFloorColumn(y, x1, x2 - x1, xfrac, yfrac, xstep, ystep, texData);
+    drawFloorColumn(y, x1, x2 - x1, xfrac, yfrac, xstep, ystep, lightMult, texData);
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -111,27 +102,24 @@ void drawVisPlane(
     const float baseXScale,
     const float baseYScale
 ) noexcept {
+    // Basic plane info
     const Texture* const pTex = getFlatAnimTexture((uint32_t) plane.picHandle);
     const ImageData& texData = pTex->data;
     const float planeHeight = std::abs(plane.height);
+    const LightParams lightParams = getLightParams(plane.planeLight, true);
     
-    {
-        const uint32_t lightLevel = plane.planeLight;
-        gLightMin = gLightMins[lightLevel];
-        gLightMax = lightLevel;
-        gLightSub = gLightSubs[lightLevel];
-        gLightCoef = gPlaneLightCoef[lightLevel];
-    }
-    
-    uint32_t stop = plane.maxX + 1;         // Maximum x coord
-    uint32_t x = plane.minX;                // Starting x
+    // Start the draw loop
+    const int32_t stop = plane.maxX + 1;    // Maximum x coord
+    int32_t x = plane.minX;                 // Starting x
 
     ColumnYBounds prevCol = { MAXSCREENHEIGHT - 1, 0 };     // Set posts to stop drawing
     ColumnYBounds* const pPlaneCols = plane.cols;           // Init the pointer to the open Y's
-    pPlaneCols[stop] = prevCol;
-    
+    ASSERT(stop < C_ARRAY_SIZE(plane.cols));
+
     do {
-        const ColumnYBounds newCol = pPlaneCols[x];     // Fetch the NEW top and bottom
+        // Fetch the NEW top and bottom
+        ASSERT((uint32_t) x < C_ARRAY_SIZE(plane.cols));
+        const ColumnYBounds newCol = pPlaneCols[x];         
         
         if (prevCol == newCol)
             continue;
@@ -157,6 +145,7 @@ void drawVisPlane(
                     planeHeight,
                     baseXScale,
                     baseYScale,
+                    lightParams,
                     texData
                 );
             } while (++prevTopY < count);   // Keep counting
@@ -168,13 +157,15 @@ void drawVisPlane(
                 count = prevTopY;
             }
 
+            // Mark the starting x's
             do {
-                gSpanStart[newTopY] = x;    // Mark the starting x's
+                ASSERT(newTopY < C_ARRAY_SIZE(gSpanStart));
+                gSpanStart[newTopY] = x;
             } while (++newTopY < count);
         }
-            
+        
         if (prevBottomY > newBottomY && prevBottomY >= prevTopY) {
-            int32_t count = prevTopY - 1;
+            int32_t count = (int32_t) prevTopY - 1;
             if (count < (int32_t) newBottomY) {
                 count = newBottomY;
             }
@@ -188,19 +179,22 @@ void drawVisPlane(
                     planeHeight,
                     baseXScale,
                     baseYScale,
+                    lightParams,
                     texData
                 );
             } while ((int32_t) --prevBottomY > count);
         }
 
         if (newBottomY > prevBottomY && newBottomY >= newTopY) {
-            int count = newTopY - 1;
+            int32_t count = (int32_t) newTopY - 1;
             if (count < (int32_t) prevBottomY) {
                 count = prevBottomY;
             }
 
+            // Mark the starting x's
             do {
-                gSpanStart[newBottomY] = x;     // Mark the starting x's
+                ASSERT(newBottomY < C_ARRAY_SIZE(gSpanStart));
+                gSpanStart[newBottomY] = x;
             } while ((int32_t) --newBottomY > count);
         }
 

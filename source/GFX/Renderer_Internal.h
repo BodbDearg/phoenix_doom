@@ -27,9 +27,8 @@ namespace Renderer {
     static constexpr Fixed      MINZ                    = FRACUNIT * 4;             // Closest z allowed (clip sprites closer than this etc.)
     static constexpr uint32_t   FIELDOFVIEW             = 2048;                     // 90 degrees of view
     static constexpr uint32_t   ANGLETOSKYSHIFT         = 22;                       // sky map is 256*128*4 maps
-    static constexpr uint8_t    MAX_WALL_LIGHT_VALUE    = 15;
-    static constexpr uint8_t    MAX_FLOOR_LIGHT_VALUE   = 15;
-    static constexpr uint8_t    MAX_SPRITE_LIGHT_VALUE  = 31;
+    static constexpr float      MAX_SPRITE_LIGHT_VALUE  = 31.0f;
+    static constexpr float      MAX_LIGHT_VALUE         = 255.0f;
 
     // Rendering constants
     static constexpr uint32_t   HEIGHTBITS              = 6;                        // Number of bits for texture height
@@ -77,6 +76,14 @@ namespace Renderer {
         static inline constexpr ColumnYBounds UNDEFINED() noexcept {
             return ColumnYBounds{ UINT16_MAX, 0 };
         }
+    };
+
+    // Describes lighting params for an input light level
+    struct LightParams {
+        float   lightMin;       // Minimum light value allowed
+        float   lightMax;       // Maximum light value allowed
+        float   lightSub;       // Subtract this as part of the light diminishing calculations
+        float   lightCoef;      // Controls the falloff for light diminishing
     };
 
     // Describes a floor area to be drawn
@@ -174,6 +181,9 @@ namespace Renderer {
 
     // TODO: FIXME - REMOVE FROM HERE
     void DrawSpriteCenter(uint32_t SpriteNum);
+
+    // Get light parameters for a floor or wall at the given light level
+    LightParams getLightParams(const uint32_t sectorLightLevel, const bool bIsFloor) noexcept;
 
     //------------------------------------------------------------------------------------------------------------------
     // Utility: returns a fixed point multipler for the given texture light value (which is in 4.3 format)

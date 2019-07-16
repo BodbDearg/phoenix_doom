@@ -40,6 +40,7 @@ static void drawClippedWallColumn(
     const float invColumnScale,
     const uint32_t texX,
     const float texY,
+    const float lightMultiplier,
     const ImageData& texData
 ) noexcept {
     // Get integer Y coordinate
@@ -84,9 +85,6 @@ static void drawClippedWallColumn(
     const int32_t clippedViewY = viewYI + pixelsOffscreenAtTop;
     const uint32_t maxColumnHeight = gScreenHeight - clippedViewY;
     const uint32_t clippedColumnHeight = std::min(columnHeight - pixelsOffscreenAtTop, maxColumnHeight);
-
-    // Compute light multiplier
-    const Fixed lightMultiplier = getLightMultiplier(gTxTextureLight, MAX_WALL_LIGHT_VALUE);
 
     // Do the blit
     Blit::blitColumn<
@@ -158,7 +156,8 @@ static void drawWallColumn(
     const uint32_t texX,
     const float wallTopY,
     const float wallBottomY,
-    const float invColumnScale
+    const float invColumnScale,
+    const float lightMultiplier
 ) noexcept {
     // Compute height of column from source image height and make sure not invalid
     const float columnHeightF = wallBottomY - wallTopY;
@@ -185,6 +184,7 @@ static void drawWallColumn(
         invColumnScale,
         (texX % texWidth),  // Wraparound texture x coord!
         texY,
+        lightMultiplier,
         texData
     );
 }
@@ -200,12 +200,8 @@ static void drawSeg(const viswall_t& seg) noexcept {
     if ((actionBits & (AC_TOPTEXTURE|AC_BOTTOMTEXTURE)) == 0)
         return;
 
-    // Lighting stuff
-    const uint32_t lightLevel = seg.seglightlevel;
-    const float lightMin = (float) gLightMins[lightLevel];
-    const float lightMax = (float) lightLevel;
-    const float lightSub = (float) gLightSubs[lightLevel];
-    const float lightCoef = FMath::doomFixed16ToFloat<float>(gLightCoefs[lightLevel] << 9);
+    // Grab lighting stuff
+    LightParams lightParams = getLightParams(seg.seglightlevel, false);
     
     // Y center of the screen and scaled half view width
     const float viewCenterY = (float) gCenterY;
@@ -283,24 +279,24 @@ static void drawSeg(const viswall_t& seg) noexcept {
         );
 
         // Save lighting params
-        {
-            const float distCoef = columnScale;
-            float lightValue = lightCoef * distCoef - gLightSub;
-            lightValue = std::max(lightValue, lightMin);
-            lightValue = std::min(lightValue, lightMax);
+        float lightMult;
 
-            gTxTextureLight = (uint32_t) lightValue;
+        {
+            float lightValue = columnScale * lightParams.lightCoef - lightParams.lightSub;
+            lightValue = std::max(lightValue, lightParams.lightMin);
+            lightValue = std::min(lightValue, lightParams.lightMax);
+            lightMult = lightValue * (1.0f / MAX_LIGHT_VALUE);
         }
         
         // Daw the top and bottom textures (if present) and update increments for the next column
         if (actionBits & AC_TOPTEXTURE) {
-            drawWallColumn(topTex, viewX, texX, topTexTY, topTexBY, invColumnScale);
+            drawWallColumn(topTex, viewX, texX, topTexTY, topTexBY, invColumnScale, lightMult);
             topTexTY += topTexTYStep;
             topTexBY += topTexBYStep;
         }
 
         if (actionBits & AC_BOTTOMTEXTURE) {
-            drawWallColumn(bottomTex, viewX, texX, bottomTexTY, bottomTexBY, invColumnScale);
+            drawWallColumn(bottomTex, viewX, texX, bottomTexTY, bottomTexBY, invColumnScale, lightMult);
             bottomTexTY += bottomTexTYStep;
             bottomTexBY += bottomTexBYStep;
         }
