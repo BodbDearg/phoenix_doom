@@ -2079,10 +2079,9 @@ uint32_t    gScreenXOffset;
 uint32_t    gScreenYOffset;
 uint32_t    gGunXScale;
 uint32_t    gGunYScale;
-uint32_t    gLightMins[256];
-uint32_t    gLightSubs[256];
-Fixed       gLightCoefs[256];
-Fixed       gPlaneLightCoef[256];
+float       gLightMins[256];
+float       gLightSubs[256];
+float       gLightCoefs[256];
 
 float getViewAngleForX(const int32_t x) noexcept {
     const float screenWHalf = (float)(gScreenWidth - 1) * 0.5f;

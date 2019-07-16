@@ -81,11 +81,12 @@ static void mapPlane(
     float lightMult;
 
     {
-        const float distCoef = 1.0f / (distance * (1.0f / 16.0f));
-        float lightLevel = lightParams.lightCoef * distCoef - lightParams.lightSub;
-        lightLevel = std::max(lightLevel, lightParams.lightMin);
-        lightLevel = std::min(lightLevel, lightParams.lightMax);        
-        lightMult = lightLevel * (1.0f / MAX_LIGHT_VALUE);
+        const float distFactor = std::fmax(distance - lightParams.lightSub, 0.0f) * lightParams.lightCoef;
+
+        float lightValue = 255.0f - distFactor;
+        lightValue = std::max(lightValue, lightParams.lightMin);
+        lightValue = std::min(lightValue, lightParams.lightMax);
+        lightMult = lightValue * (1.0f / MAX_LIGHT_VALUE);
     }
 
     drawFloorColumn(y, x1, x2 - x1, xfrac, yfrac, xstep, ystep, lightMult, texData);

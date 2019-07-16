@@ -282,7 +282,11 @@ static void drawSeg(const viswall_t& seg) noexcept {
         float lightMult;
 
         {
-            float lightValue = columnScale * lightParams.lightCoef - lightParams.lightSub;
+            const float stretchW = FMath::doomFixed16ToFloat<float>(gStretchWidth);
+            const float columnDist = (1.0f / columnScale) * stretchW;
+            const float distFactor = std::fmax(columnDist - lightParams.lightSub, 0.0f) * lightParams.lightCoef;
+
+            float lightValue = 255.0f - distFactor;
             lightValue = std::max(lightValue, lightParams.lightMin);
             lightValue = std::min(lightValue, lightParams.lightMax);
             lightMult = lightValue * (1.0f / MAX_LIGHT_VALUE);

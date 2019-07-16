@@ -180,13 +180,17 @@ void initMathTables() noexcept {
 
     // Create the lighting tables
     for (uint32_t i = 0; i < 256; ++i) {
-        const Fixed j = i / 3;
-        gLightMins[i] = j;      // Save the light minimum factors
+        constexpr float LIGHT_MIN_PERCENT = 1.0f / 4.0f;
+        constexpr float MAX_BRIGHT_RANGE_SCALE = 2.0f;
+        constexpr float LIGHT_COEF_BASE = 0.75f;
+        constexpr float LIGHT_COEF_ADJUST_FACTOR = 0.50f;
+        
+        const float lightLevel = (float) i / 255.0f;
+        const float maxBrightRange = lightLevel * MAX_BRIGHT_RANGE_SCALE;
 
-        const Fixed Range = i - j;
-        gLightSubs[i] = ((Fixed) gScreenWidth * Range) / (800 - (Fixed) gScreenWidth);
-        gLightCoefs[i] = (Range << 16) / (800 - (Fixed) gScreenWidth);
-        gPlaneLightCoef[i] = Range * (0x140000 / (800 - (Fixed) gScreenWidth));
+        gLightMins[i] = (float) i * LIGHT_MIN_PERCENT;
+        gLightSubs[i] = maxBrightRange;
+        gLightCoefs[i] = LIGHT_COEF_BASE - lightLevel * LIGHT_COEF_ADJUST_FACTOR;
     }
 }
 
@@ -202,15 +206,12 @@ void drawPlayerView() noexcept {
 
 LightParams getLightParams(const uint32_t sectorLightLevel, const bool bIsFloor) noexcept {
     const uint32_t lightMax = std::min(sectorLightLevel, C_ARRAY_SIZE(gLightCoefs) - 1);
-    const uint32_t lightMin = gLightMins[lightMax];
-    const uint32_t lightSub = gLightSubs[lightMax];
-    const Fixed lightCoef = (bIsFloor) ? gPlaneLightCoef[lightMax] : gLightCoefs[lightMax];
 
     LightParams out;
-    out.lightMin = (float) lightMin;
+    out.lightMin = gLightMins[lightMax];
     out.lightMax = (float) lightMax;
-    out.lightSub = (float) lightSub;
-    out.lightCoef = FMath::doomFixed16ToFloat<float>(lightCoef << 9);
+    out.lightSub = gLightSubs[lightMax];
+    out.lightCoef = gLightCoefs[lightMax];
 
     return out;
 }
