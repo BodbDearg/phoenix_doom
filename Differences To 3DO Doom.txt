@@ -3,14 +3,14 @@ Below is a list of some of the main changes from the original 3DO version:
 [] Framebuffer is now 32-bit instead of 16-bit.
 This allows for smoother light gradients and less color banding.
 
-[] Removed the maximum screen size restriction.
-No longer have to use a cheat to access this!
-
 [] Sprites no longer appear unnaturally bright.
 3DO Doom seemed to light all sprites much brighter than the environment surrounding them. This may have been due to the lookup values that it used to light the sprites - perhaps they were too high? The darkness of sprites in this version much more closely mimicks the environment lighting and sprites hopefully blend in much better.
 
 [] Fixed a bug with monsters often being very slow to target the player at range.
 There was a bug in the 3DO code for monsters that caused very different AI behavior to the Jag and PC versions - now fixed. At longer distances monsters would sometimes be very reluctant to shoot at the player, sometimes taking up to a minute to do so. Monsters should be much more aggressive and challenging to play against now.
+
+[] Added 'fake contrast' to walls to improve lighting and allow the player to identify wall corners easier.
+Similar in concept to the original PC Doom fake contrast but works with walls of all angles, like options available in some modern Doom source ports.
 
 [] Fixed some bugs with movement speeds & timing issues.
 3DO Doom changed the timebase from 35Hz on the PC original to 60Hz but introduced a few bugs along the way. Some issues I've found and fixed include:
@@ -27,3 +27,6 @@ Not sure why this happened, there was no code to play the sound in the 3DO versi
 In the original 3DO version the player's weapon was exempt from the invulnerability effect and screen tints. I added this change to help improve the immersiveness of the effect; looked odd that the weapon was excluded!
 
 [] Screen tint FX method changed and minor tweaks applied. I switched from the 3DO technique of doing a blend with a solid color to doing a color multiply instead. The intent with this change is to hopefully help preserve color detail and prevent the 3D display from looking washed out when heavy amounts of FX are applied.
+
+[] Removed the maximum screen size restriction.
+No longer have to use a cheat to access this!

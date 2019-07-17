@@ -5,6 +5,7 @@
 #include "Base/Tables.h"
 #include "Blit.h"
 #include "Game/Data.h"
+#include "Map/MapData.h"
 #include "Textures.h"
 #include "Video.h"
 #include <algorithm>
@@ -200,8 +201,9 @@ static void drawSeg(const viswall_t& seg) noexcept {
     if ((actionBits & (AC_TOPTEXTURE|AC_BOTTOMTEXTURE)) == 0)
         return;
 
-    // Grab lighting stuff
+    // Grab some lighting stuff
     LightParams lightParams = getLightParams(seg.seglightlevel);
+    const float segLightMul = seg.SegPtr->lightMul;
     
     // Y center of the screen and scaled half view width
     const float viewCenterY = (float) gCenterY;
@@ -281,8 +283,9 @@ static void drawSeg(const viswall_t& seg) noexcept {
         // Figure out the light multiplier to use
         const float viewStretchWidthF = FMath::doomFixed16ToFloat<float>(gStretchWidth);
         const float columnDist = (1.0f / columnScale) * viewStretchWidthF;
-        const float lightMul = lightParams.getLightMulForDist(columnDist);
-        
+        const float distLightMul = lightParams.getLightMulForDist(columnDist);
+        const float lightMul = std::fmax(distLightMul * segLightMul, MIN_LIGHT_MUL);
+
         // Daw the top and bottom textures (if present) and update increments for the next column
         if (actionBits & AC_TOPTEXTURE) {
             drawWallColumn(topTex, viewX, texX, topTexTY, topTexBY, invColumnScale, lightMul);

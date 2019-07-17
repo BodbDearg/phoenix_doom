@@ -210,11 +210,11 @@ float LightParams::getLightMulForDist(const float dist) const noexcept {
     const float lightDiminish = distFactorQuad * lightCoef;
     
     float lightValue = 255.0f - lightDiminish;
-    lightValue = std::max(lightValue, lightMin);
-    lightValue = std::min(lightValue, lightMax);
+    lightValue = std::fmax(lightValue, lightMin);
+    lightValue = std::fmin(lightValue, lightMax);
 
     const float lightMul = lightValue * (1.0f / MAX_LIGHT_VALUE);
-    return lightMul;
+    return std::fmax(lightMul, MIN_LIGHT_MUL);
 }
 
 LightParams getLightParams(const uint32_t sectorLightLevel) noexcept {

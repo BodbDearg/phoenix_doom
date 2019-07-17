@@ -1,5 +1,4 @@
 - Screen wipes
-- Sprites need light diminishing
 - Finale drawing
 - Cache raw shape/cels that are being drawn
     - Need shape + animated shape manager
@@ -7,10 +6,10 @@
 - Intro logos
 - Intro videos? (maybe)
 - Fix view bob not working.
-- Fake contrast on walls
 - Tweak light diminishing (longer falloff + darker)
 - Don't do light diminishing outdoors
-- Tweak wall column rendering, looks a bit 'fuzzy' right now.
+- Fix wall columns not being rendered occasionally.
+- Investigate floor texture mapping at steep angles (sometimes very inprecise, most noticable on teleports)
 - Fix weird chainsaw sound
 - Fix odd floor 'twitching' issue in level 2, near the entrance to the chainsaw area (by blinking lights).
 - Implement transparent demons

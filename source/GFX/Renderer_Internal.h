@@ -27,8 +27,8 @@ namespace Renderer {
     static constexpr Fixed      MINZ                    = FRACUNIT * 4;             // Closest z allowed (clip sprites closer than this etc.)
     static constexpr uint32_t   FIELDOFVIEW             = 2048;                     // 90 degrees of view
     static constexpr uint32_t   ANGLETOSKYSHIFT         = 22;                       // sky map is 256*128*4 maps
-    static constexpr float      MAX_SPRITE_LIGHT_VALUE  = 31.0f;
     static constexpr float      MAX_LIGHT_VALUE         = 255.0f;
+    static constexpr float      MIN_LIGHT_MUL           = 0.020f;                   // Minimum allowed multiplier due to light
 
     // Rendering constants
     static constexpr uint32_t   HEIGHTBITS              = 6;                        // Number of bits for texture height

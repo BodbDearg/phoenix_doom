@@ -1,6 +1,7 @@
 #include "MapData.h"
 
 #include "Base/Endian.h"
+#include "Base/FMath.h"
 #include "Base/Macros.h"
 #include "Base/Tables.h"
 #include "Game/DoomRez.h"
@@ -499,6 +500,24 @@ static void loadBlockMap(const uint32_t lumpResourceNum) noexcept {
     freeResource(lumpResourceNum);
 }
 
+//----------------------------------------------------------------------------------------------------------------------
+// Computes the 'light multiplier' for each line segment.
+// This multiplier is used to achieve so called 'fake contrast'.
+//----------------------------------------------------------------------------------------------------------------------
+static void calcSegLightMultipliers() noexcept {
+    constexpr float MIN_LIGHT_MUL = 0.75f;
+    constexpr float MAX_LIGHT_MUL = 1.05f;
+
+    for (seg_t& seg : gLineSegs) {
+        const float segDirX = FMath::doomFixed16ToFloat<float>(seg.v2.x - seg.v1.x);
+        const float segDirY = FMath::doomFixed16ToFloat<float>(seg.v2.y - seg.v1.y);
+        const float segAngle = std::atan2(segDirY, segDirX) + FMath::ANGLE_90<float>;
+        const float lerpFactor = std::abs(std::cos(segAngle));
+
+        seg.lightMul = MIN_LIGHT_MUL * lerpFactor + MAX_LIGHT_MUL * (1.0f - lerpFactor);
+    }
+}
+
 // External data pointers and information
 const vertex_t*     gpVertexes;
 uint32_t            gNumVertexes;
@@ -535,6 +554,9 @@ void mapDataInit(const uint32_t mapNum) {
     loadNodes(mapStartLump + ML_NODES);
     loadReject(mapStartLump + ML_REJECT);
     loadBlockMap(mapStartLump + ML_BLOCKMAP);
+
+    // Post processing of map data
+    calcSegLightMultipliers();
 }
 
 void mapDataShutdown() {

@@ -96,6 +96,7 @@ struct seg_t {
     line_t*     linedef;        // Pointer to the connected line
     sector_t*   frontsector;    // Sector on the front side
     sector_t*   backsector;     // NULL for one sided lines
+    float       lightMul;       // Wall light multiplier (used for fake contrast)
 };
 
 // Subsector structure
