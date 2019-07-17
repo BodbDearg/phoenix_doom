@@ -183,7 +183,7 @@ void wallPrep(
         )
     ) {
         curWall.floorheight = curWall.floornewheight = f_floorheight;
-        actionbits = (AC_ADDFLOOR|AC_NEWFLOOR);     // Create floor
+        actionbits = (AC_ADDFLOOR | AC_NEWFLOOR);   // Create floor
     }
 
     if ((f_ceilingpic != -1 || b_ceilingpic != -1) &&       // Normal ceiling?
@@ -197,9 +197,9 @@ void wallPrep(
         curWall.ceilingheight = curWall.ceilingnewheight = f_ceilingheight;
          
         if (f_ceilingpic == -1) {
-            actionbits |= AC_ADDSKY | AC_NEWCEILING;        // Add sky to the ceiling
+            actionbits |= (AC_ADDSKY | AC_NEWCEILING);          // Add sky to the ceiling
         } else {
-            actionbits |= AC_ADDCEILING | AC_NEWCEILING;    // Add ceiling texture
+            actionbits |= (AC_ADDCEILING | AC_NEWCEILING);      // Add ceiling texture
         }
     }
     
@@ -240,7 +240,7 @@ void wallPrep(
             curWall.b_topheight = curWall.floornewheight = b_floorheight;
             curWall.b_bottomheight = f_floorheight;
 
-            actionbits |= AC_NEWFLOOR|AC_BOTTOMTEXTURE;     // Generate a floor and bottom wall texture
+            actionbits |= (AC_NEWFLOOR | AC_BOTTOMTEXTURE);     // Generate a floor and bottom wall texture
         }
 
         if (b_ceilingheight < f_ceilingheight && (f_ceilingpic != -1 || b_ceilingpic != -1)) {  // Ceiling wall without sky
@@ -258,7 +258,7 @@ void wallPrep(
             curWall.t_texturemid = t_texturemid;                                    // Save the top texture anchor var
             curWall.t_bottomheight = curWall.ceilingnewheight = b_ceilingheight;
 
-            actionbits |= AC_NEWCEILING | AC_TOPTEXTURE;    // Generate the top texture
+            actionbits |= (AC_NEWCEILING | AC_TOPTEXTURE);      // Generate the top texture
         }
         
         // Check if this wall is solid (This is for sprite clipping)
