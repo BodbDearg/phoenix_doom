@@ -168,7 +168,7 @@ void initMathTables() noexcept {
     for (uint32_t i = 0; i < gScreenHeight; ++i) {
         float j = (float) i - (float) gScreenHeight * 0.5f + 0.5f;
         j = FMath::doomFixed16ToFloat<float>(gStretchWidth) / std::abs(j);
-        j = std::fmin(j, 63.0f);
+        j = std::fmin(j, 8192.0f);
         gYSlope[i] = j;
     }
 
