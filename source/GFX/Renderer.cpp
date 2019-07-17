@@ -182,8 +182,8 @@ void initMathTables() noexcept {
     for (uint32_t i = 0; i < 256; ++i) {
         constexpr float LIGHT_MIN_PERCENT = 1.0f / 5.0f;
         constexpr float MAX_BRIGHT_RANGE_SCALE = 1.0f;
-        constexpr float LIGHT_COEF_BASE = 9.0f;
-        constexpr float LIGHT_COEF_ADJUST_FACTOR = 7.0f;
+        constexpr float LIGHT_COEF_BASE = 16.0f;
+        constexpr float LIGHT_COEF_ADJUST_FACTOR = 13.0f;
         
         const float lightLevel = (float) i / 255.0f;
         const float maxBrightRange = lightLevel * MAX_BRIGHT_RANGE_SCALE;
@@ -206,7 +206,7 @@ void drawPlayerView() noexcept {
 
 float LightParams::getLightMulForDist(const float dist) const noexcept {
     const float distFactorLinear = std::fmax(dist - lightSub, 0.0f);
-    const float distFactorQuad = std::powf(distFactorLinear, 0.6f);
+    const float distFactorQuad = std::sqrtf(distFactorLinear);
     const float lightDiminish = distFactorQuad * lightCoef;
     
     float lightValue = 255.0f - lightDiminish;

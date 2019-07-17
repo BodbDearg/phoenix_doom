@@ -7,7 +7,6 @@
 - Intro videos? (maybe)
 - Fix view bob not working.
 - Tweak light diminishing (longer falloff + darker)
-- Don't do light diminishing outdoors
 - Fix wall columns not being rendered occasionally.
 - Investigate floor texture mapping at steep angles (sometimes very inprecise, most noticable on teleports)
 - Fix weird chainsaw sound
