@@ -44,7 +44,7 @@ static void drawClippedWallColumn(
     const ImageData& texData
 ) noexcept {
     // Get integer Y coordinate
-    const int32_t viewYI = (int32_t) std::floor(viewY);
+    const int32_t viewYI = (int32_t) viewY;
 
     // Clip to bottom of the screen
     if (viewYI >= (int32_t) gScreenHeight)
@@ -146,6 +146,10 @@ static void drawSkyColumn(const uint32_t viewX) noexcept {
     );
 }
 
+static inline int32_t getWallColumnHeight(const float topY, const float bottomY) noexcept {
+    return (int32_t) std::ceil(bottomY - topY);
+}
+
 //----------------------------------------------------------------------------------------------------------------------
 // Compute the screen location and part of the texture to use for the given draw texture and then draw a single wall
 // column based on that information.
@@ -160,9 +164,9 @@ static void drawWallColumn(
     const float lightMultiplier
 ) noexcept {
     // Compute height of column from source image height and make sure not invalid
-    const int32_t columnHeight = (int32_t) std::ceil(wallBottomY) - (int32_t) std::floor(wallTopY) + 1;
+    const int32_t columnHeight = getWallColumnHeight(wallTopY, wallBottomY);
 
-    if (columnHeight < 0)
+    if (columnHeight <= 0)
         return;
     
     // View Y to draw at and y position in texture to use
@@ -333,7 +337,7 @@ static visplane_t* findPlane(
 
         ++pPlane;
     }
-    
+
     // Make a new plane
     ASSERT_LOG(gpEndVisPlane - gVisPlanes < MAXVISPLANES, "No more visplanes!");
     pPlane = gpEndVisPlane;
@@ -429,8 +433,8 @@ static void segLoop(const viswall_t& seg) noexcept {
 
         // Shall I add the floor?
         if (actionBits & AC_ADDFLOOR) {
-            int32_t top = (int32_t) std::floor(floorY) + 1;     // Y coord of top of floor
-            top = std::max(top, clipBoundTY + 1);               // Clip the top of floor to the bottom of the visible area
+            int32_t top = (int32_t) floorY;             // Y coord of top of floor
+            top = std::max(top, clipBoundTY + 1);       // Clip the top of floor to the bottom of the visible area
             
             // Draw to the bottom of the screen if the span is valid
             int32_t bottom = clipBoundBY - 1;
@@ -446,22 +450,16 @@ static void segLoop(const viswall_t& seg) noexcept {
                         seg.seglightlevel
                     );
                 }
-                /* TODO: REMOVE?
-                if (top > 0) {
-                    --top;
-                }
-                */
                 pFloorPlane->cols[viewX] = ColumnYBounds{ (uint16_t) top, (uint16_t) bottom };      // Set the new vertical span
             }
-
             floorY += floorYStep;
         }
 
         // Handle ceilings
         if (actionBits & AC_ADDCEILING) {
-            int32_t top = clipBoundTY + 1;                      // Start from the ceiling
-            int32_t bottom = (int32_t) std::floor(ceilY) - 1;   // Bottom of the height
-            bottom = std::min(bottom, clipBoundBY - 1);         // Clip the bottom
+            int32_t top = clipBoundTY + 1;                  // Start from the ceiling
+            int32_t bottom = (int32_t) ceilY - 1;           // Bottom of the height
+            bottom = std::min(bottom, clipBoundBY - 1);     // Clip the bottom
             
             if (top <= bottom) {                                    // Valid span?
                 if (pCeilPlane->cols[viewX].isDefined()) {          // Already in use?
@@ -473,21 +471,15 @@ static void segLoop(const viswall_t& seg) noexcept {
                         seg.rightX,
                         seg.seglightlevel
                     );
-                } 
-                /* TODO: REMOVE?
-                if (top > 0) {
-                    --top;
                 }
-                */
                 pCeilPlane->cols[viewX] = { (uint16_t) top, (uint16_t) bottom };    // Set the vertical span
             }
-
             ceilY += ceilYStep;
         }
 
         // Sprite clip sils
         if (actionBits & (AC_BOTTOMSIL|AC_NEWFLOOR)) {
-            int32_t low = (int32_t) std::ceil(newFloorY);
+            int32_t low = (int32_t) newFloorY;
             low = std::min(low, clipBoundBY);
             low = std::max(low, 0);
 
@@ -502,7 +494,7 @@ static void segLoop(const viswall_t& seg) noexcept {
         }
 
         if (actionBits & (AC_TOPSIL|AC_NEWCEILING)) {
-            int32_t high = (int32_t) std::floor(newCeilY) - 1;
+            int32_t high = (int32_t) newCeilY - 1;
             high = std::max(high, clipBoundTY);
             high = std::min(high, (int32_t) gScreenHeight - 1);
 
@@ -528,7 +520,7 @@ static void segLoop(const viswall_t& seg) noexcept {
             }
         }
 
-        // Step to the next scale
+        // Step to the next column
         columnScale += segScaleStep;
     }
 }
