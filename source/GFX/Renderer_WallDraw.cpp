@@ -379,6 +379,41 @@ static void segLoop(const viswall_t& seg) noexcept {
     const float segLeftScale = seg.LeftScale;
     const float segScaleStep = seg.ScaleStep;
 
+    // Various y coordinates and stepping values used during the wall drawing simulation.
+    // Store and step in a way that is consistent with the actual wall drawing loop - so the results agree.
+    float floorYStep;
+    float floorY;
+    float newFloorYStep;
+    float newFloorY;
+    float ceilYStep;
+    float ceilY;
+    float newCeilYStep;
+    float newCeilY;
+
+    if (actionBits & AC_ADDFLOOR) {
+        const float floorWorldY = seg.floorheight;
+        floorYStep = -segScaleStep * floorWorldY;
+        floorY = viewCenterY - floorWorldY * segLeftScale;
+    }
+
+    if (actionBits & AC_ADDCEILING) {
+        const float ceilWorldY = seg.ceilingheight;
+        ceilYStep = -segScaleStep * ceilWorldY;
+        ceilY = viewCenterY - ceilWorldY * segLeftScale;
+    }
+
+    if (actionBits & AC_NEWFLOOR) {
+        const float newFloorWorldY = seg.floornewheight;
+        newFloorYStep = -segScaleStep * newFloorWorldY;
+        newFloorY = viewCenterY - newFloorWorldY * segLeftScale;
+    }
+
+    if (actionBits & AC_NEWCEILING) {
+        const float newCeilWorldY = seg.ceilingnewheight;
+        newCeilYStep = -segScaleStep * newCeilWorldY;
+        newCeilY = viewCenterY - newCeilWorldY * segLeftScale;
+    }
+
     // Reset the visplane pointers.
     // Note: visplanes[0] is zero to force a FindPlane on the first pass
     visplane_t* pFloorPlane = gVisPlanes;
@@ -389,16 +424,16 @@ static void segLoop(const viswall_t& seg) noexcept {
 
     for (int32_t viewX = seg.leftX; viewX <= seg.rightX; ++viewX) {
         float scale = std::fmin(columnScale, MAX_RENDER_SCALE);     // Current scaling factor        
-        const int32_t ceilingClipY = gClipBoundTop[viewX];          // Get the top y clip
-        const int32_t floorClipY = gClipBoundBottom[viewX];         // Get the bottom y clip
+        const int32_t clipBoundTY = gClipBoundTop[viewX];          // Get the top y clip
+        const int32_t clipBoundBY = gClipBoundBottom[viewX];         // Get the bottom y clip
 
         // Shall I add the floor?
         if (actionBits & AC_ADDFLOOR) {
-            int32_t top = (int32_t)(viewCenterY - scale * seg.floorheight);     // Y coord of top of floor
-            top = std::max(top, ceilingClipY + 1);                              // Clip the top of floor to the bottom of the visible area
-
+            int32_t top = (int32_t) std::floor(floorY) + 1;     // Y coord of top of floor
+            top = std::max(top, clipBoundTY + 1);               // Clip the top of floor to the bottom of the visible area
+            
             // Draw to the bottom of the screen if the span is valid
-            int32_t bottom = floorClipY - 1;    
+            int32_t bottom = clipBoundBY - 1;
 
             if (top <= bottom) {                                // Valid span?
                 if (pFloorPlane->cols[viewX].isDefined()) {     // Not already covered?
@@ -411,21 +446,25 @@ static void segLoop(const viswall_t& seg) noexcept {
                         seg.seglightlevel
                     );
                 }
+                /* TODO: REMOVE?
                 if (top > 0) {
                     --top;
                 }
+                */
                 pFloorPlane->cols[viewX] = ColumnYBounds{ (uint16_t) top, (uint16_t) bottom };      // Set the new vertical span
             }
+
+            floorY += floorYStep;
         }
 
         // Handle ceilings
         if (actionBits & AC_ADDCEILING) {
-            int32_t top = ceilingClipY + 1;                                                 // Start from the ceiling
-            int32_t bottom = (int32_t)(viewCenterY - 1.0f - scale * seg.ceilingheight);     // Bottom of the height            
-            bottom = std::min(bottom, floorClipY - 1);                                      // Clip the bottom
-
-            if (top <= bottom) {                                // Valid span?
-                if (pCeilPlane->cols[viewX].isDefined()) {      // Already in use?
+            int32_t top = clipBoundTY + 1;                      // Start from the ceiling
+            int32_t bottom = (int32_t) std::floor(ceilY) - 1;   // Bottom of the height
+            bottom = std::min(bottom, clipBoundBY - 1);         // Clip the bottom
+            
+            if (top <= bottom) {                                    // Valid span?
+                if (pCeilPlane->cols[viewX].isDefined()) {          // Already in use?
                     pCeilPlane = findPlane(
                         *pCeilPlane,
                         seg.ceilingheight,
@@ -434,18 +473,22 @@ static void segLoop(const viswall_t& seg) noexcept {
                         seg.rightX,
                         seg.seglightlevel
                     );
-                }
+                } 
+                /* TODO: REMOVE?
                 if (top > 0) {
                     --top;
                 }
+                */
                 pCeilPlane->cols[viewX] = { (uint16_t) top, (uint16_t) bottom };    // Set the vertical span
             }
+
+            ceilY += ceilYStep;
         }
 
         // Sprite clip sils
         if (actionBits & (AC_BOTTOMSIL|AC_NEWFLOOR)) {
-            int32_t low = (int32_t)(viewCenterY - scale * seg.floornewheight);
-            low = std::min(low, floorClipY);
+            int32_t low = (int32_t) std::ceil(newFloorY);
+            low = std::min(low, clipBoundBY);
             low = std::max(low, 0);
 
             if (actionBits & AC_BOTTOMSIL) {
@@ -454,11 +497,13 @@ static void segLoop(const viswall_t& seg) noexcept {
             if (actionBits & AC_NEWFLOOR) {
                 gClipBoundBottom[viewX] = low;
             }
+
+            newFloorY += newFloorYStep;
         }
 
         if (actionBits & (AC_TOPSIL|AC_NEWCEILING)) {
-            int32_t high = (int32_t)(viewCenterY - 1.0f - scale * seg.ceilingnewheight);
-            high = std::max(high, ceilingClipY);
+            int32_t high = (int32_t) std::floor(newCeilY) - 1;
+            high = std::max(high, clipBoundTY);
             high = std::min(high, (int32_t) gScreenHeight - 1);
 
             if (actionBits & AC_TOPSIL) {
@@ -467,16 +512,18 @@ static void segLoop(const viswall_t& seg) noexcept {
             if (actionBits & AC_NEWCEILING) {
                 gClipBoundTop[viewX] = high;
             }
+
+            newCeilY += newCeilYStep;
         }
 
         // I can draw the sky right now!!
         if (actionBits & AC_ADDSKY) {
             int32_t bottom = (int32_t)(viewCenterY - scale * seg.ceilingheight);
-            if (bottom > floorClipY) {
-                bottom = floorClipY;
+            if (bottom > clipBoundBY) {
+                bottom = clipBoundBY;
             }
 
-            if (ceilingClipY + 1 < bottom) {    // Valid?
+            if (clipBoundTY + 1 < bottom) {     // Valid?
                 drawSkyColumn(viewX);           // Draw the sky
             }
         }
