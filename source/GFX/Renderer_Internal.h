@@ -99,6 +99,87 @@ namespace Renderer {
         int32_t         maxX;
     };
 
+    //------------------------------------------------------------------------------------------------------------------
+    // Describes a 2x2 rotation matrix.
+    // The matrix (M) is designed transform a single row/vector (V) using the following multiply order: VxM
+    //------------------------------------------------------------------------------------------------------------------
+    struct RotationMatrix {
+        float r0c0;
+        float r0c1;
+        float r1c0;
+        float r1c1;
+    };
+
+    //------------------------------------------------------------------------------------------------------------------
+    // Describes a sparse 4x4 matrix designed for 3D projections.
+    //
+    //  (1) The matrix (M) is designed transform a single row/vector (V) using the following multiply order: VxM.
+    //  (2) Except where otherwise stated, omitted elements are '0' and are not considered in calculations.
+    //  (3) The omitted 'r3c3' element is '1' and IS considered in calculations.
+    // 
+    // Note that the calculations below are Loosely based on the GLM function 'perspectiveRH_ZO' but adjusted so that
+    // Z positive goes INTO the screen and the Y coordinate in normalized device coords (NDC) increases as we go
+    // DOWN the screen, similar to how most screen buffers are stored.
+    //
+    // Based on input parameters for view width & height, znear & far, and field of view respectively:
+    //      w, h, zn, zf, fov
+    //
+    // The matrix is computed via the following method (note r3c3 is always omitted from storage):
+    //      f = tan(fov * 0.5)
+    //      a = w / h
+    //
+    //      r0c0 = 1 / (f * a)
+    //      r1c1 = -1 / f
+    //      r2c2 = -zf / (zn - zf)
+    //      r2c3 = -(zn * zf) / (zf - zn)
+    //      r3c3 = 1
+    //------------------------------------------------------------------------------------------------------------------
+    struct ProjectionMatrix {
+        float r0c0;
+        float r1c1;
+        float r2c2;
+        float r2c3;
+    };
+
+    //------------------------------------------------------------------------------------------------------------------
+    // Describes 3D coordiantes for line segment to be drawn.
+    // Note: coords are such that xy is the ground plane and z represents height. (Doom coord system)
+    //------------------------------------------------------------------------------------------------------------------
+    struct DrawSegCoords {
+        float p1x;              // 1st wall point: xyw and 1/w (scale)
+        float p1y;
+        float p1w;
+        float p1w_inv;
+        
+        float p2x;              // 2nd wall point: xyw and 1/w (scale)
+        float p2y;
+        float p2w;
+        float p2w_inv;
+        
+        float p1tz;             // 1st wall point: top and bottom z
+        float p1bz;
+        float p1tz_back;        // 1st wall point: top and bottom z for the back/joining sector
+        float p1bz_back;
+
+        float p2tz;             // 2nd wall point: top and bottom z
+        float p2bz;
+        float p2tz_back;        // 2nd wall point: top and bottom z for the back/joining sector
+        float p2bz_back;
+    };
+
+    //------------------------------------------------------------------------------------------------------------------
+    // Describes a wall segment to be drawn
+    //------------------------------------------------------------------------------------------------------------------
+    struct DrawSeg {
+        DrawSegCoords       coords;
+        float               texOffsetX;         // Offset to apply to the texture when drawing
+        float               texOffsetY;
+        const Texture*      texture_top;        // Top and bottom texture
+        const Texture*      texture_bottom;
+        const Texture*      texture_floor;      // Floor and ceiling texture. Note: draw sky if no ceiling!
+        const Texture*      texture_ceil;
+    };
+
     // Describe a wall segment to be drawn
     struct viswall_t {        
         int32_t         leftX;              // Leftmost x screen coord
