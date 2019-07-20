@@ -65,9 +65,9 @@ static uint8_t getThingSpriteAngleForViewpoint(
     const Fixed viewpointY,
     const mobj_t& thing
 ) noexcept {
-    angle_t ang = PointToAngle(gViewX, gViewY, thing.x, thing.y);       // Get angle to thing
-    ang -= thing.angle;                                                 // Adjust for which way the thing is facing
-    const uint8_t angleIdx = (ang + (ANG45 / 2) * 9U) >> 29;            // Compute and return angle index (0-7)
+    angle_t ang = PointToAngle(gViewXFrac, gViewYFrac, thing.x, thing.y);   // Get angle to thing
+    ang -= thing.angle;                                                     // Adjust for which way the thing is facing
+    const uint8_t angleIdx = (ang + (ANG45 / 2) * 9U) >> 29;                // Compute and return angle index (0-7)
     return angleIdx;
 }
 
@@ -77,41 +77,38 @@ static uint8_t getThingSpriteAngleForViewpoint(
 //----------------------------------------------------------------------------------------------------------------------
 static void addMapObjToFrame(const mobj_t& thing) noexcept {
     // This is a HACK, so I don't draw the player for the 3DO version
-    if (thing.player) {
+    if (thing.player)
         return;
-    }
 
     // Don't draw the sprite if we have hit the maximum limit
     vissprite_t* pVisSprite = gpEndVisSprite;
-    if (pVisSprite >= &gVisSprites[MAXVISSPRITES]) {
-        return;
-    }
 
+    if (pVisSprite >= &gVisSprites[MAXVISSPRITES])
+        return;
+    
     // Transform the origin point
-    Fixed tx = thing.x - gViewX;            // Get the point in 3 Space
-    Fixed ty = thing.y - gViewY;
-    Fixed tz = fixedMul(tx, gViewCos);      // Rotate around the camera
-    tz += fixedMul(ty, gViewSin);           // Add together
+    Fixed tx = thing.x - gViewXFrac;            // Get the point in 3 Space
+    Fixed ty = thing.y - gViewYFrac;
+    Fixed tz = fixedMul(tx, gViewCosFrac);      // Rotate around the camera
+    tz += fixedMul(ty, gViewSinFrac);           // Add together
 
     // Ignore sprite if too close to the camera (too large)
-    if (tz < MINZ) {
+    if (tz < MINZ)
         return;
-    }
     
     // Calc the 3Space x coord
-    tx = fixedMul(tx, gViewSin);
-    tx -= fixedMul(ty, gViewCos);
+    tx = fixedMul(tx, gViewSinFrac);
+    tx -= fixedMul(ty, gViewCosFrac);
     
     // Ignore sprite if greater than 45 degrees off the side
-    if (tx > (tz << 2) || tx < -(tz << 2)) {
+    if (tx > (tz << 2) || tx < -(tz << 2))
         return;
-    }
-
+    
     // Figure out what sprite, frame and frame angle we want
     const state_t* const pStatePtr = thing.state;
     const uint32_t spriteResourceNum = pStatePtr->SpriteFrame >> FF_SPRITESHIFT;
     const uint32_t spriteFrameNum = pStatePtr->SpriteFrame & FF_FRAMEMASK;
-    const uint8_t spriteAngle = getThingSpriteAngleForViewpoint(gViewX, gViewY, thing);
+    const uint8_t spriteAngle = getThingSpriteAngleForViewpoint(gViewXFrac, gViewYFrac, thing);
 
     // Load the current sprite for the thing and the info for the actual sprite to use
     const Sprite* const pSprite = loadSprite(spriteResourceNum);
@@ -127,15 +124,13 @@ static void addMapObjToFrame(const mobj_t& thing) noexcept {
     tx -= (Fixed) pSpriteFrameAngle->leftOffset << FRACBITS;        // Adjust the x to the sprite's x
     int x1 = (fixedMul(tx, xScale) >> FRACBITS) + gCenterX;         // Scale to screen coords
 
-    if (x1 > (int) gScreenWidth) {
+    if (x1 > (int) gScreenWidth)
         return;     // Off the right side, don't draw!
-    }
 
     int x2 = fixedMul(pSpriteFrameAngle->width, xScale) + x1;
 
-    if (x2 <= 0) {
+    if (x2 <= 0)
         return;     // Off the left side, don't draw!
-    }
     
     // Get light level
     const Fixed yScale = fixedMul(xScale, gStretch);    // Adjust for aspect ratio
@@ -162,7 +157,7 @@ static void addMapObjToFrame(const mobj_t& thing) noexcept {
     }
 
     pVisSprite->colormap = x1;                                      // Save the light value
-    tz = thing.z - gViewZ;
+    tz = thing.z - gViewZFrac;
     tz += (((Fixed) pSpriteFrameAngle->topOffset) << FRACBITS);     // Height offset
 
     // Determine screen top and bottom Y for the sprite
@@ -333,9 +328,12 @@ static void clipPassWallSegment(
 // Clips the given segment and adds any visible pieces to the line list.
 // I also add to the solid wall list so that I can rule out BSP sections quickly.
 //----------------------------------------------------------------------------------------------------------------------
-static void addSegToFrame(seg_t& seg, sector_t& frontSector) noexcept {
-    angle_t angle1 = AngleFromPointToPoint(gViewX, gViewY, seg.v1.x, seg.v1.y);     // Calc the angle for the left edge
-    angle_t angle2 = AngleFromPointToPoint(gViewX, gViewY, seg.v2.x, seg.v2.y);     // Now the right edge
+static void addSegToFrameOld(seg_t& seg, sector_t& frontSector) noexcept {
+    // TODO: REMOVE THIS!!
+    // TODO: REMOVE THIS!!
+
+    angle_t angle1 = AngleFromPointToPoint(gViewXFrac, gViewYFrac, seg.v1.x, seg.v1.y);     // Calc the angle for the left edge
+    angle_t angle2 = AngleFromPointToPoint(gViewXFrac, gViewYFrac, seg.v2.x, seg.v2.y);     // Now the right edge
     
     const angle_t span = angle1 - angle2;   // Get the line span
     if (span >= ANG180) {                   // Backwards?
@@ -343,25 +341,25 @@ static void addSegToFrame(seg_t& seg, sector_t& frontSector) noexcept {
     }
 
     const angle_t lineAngle = angle1;       // Store the leftmost angle for StoreWallRange
-    angle1 -= gViewAngle;                   // Adjust the angle for viewangle
-    angle2 -= gViewAngle;
+    angle1 -= gViewAngleBAM;                // Adjust the angle for viewangle
+    angle2 -= gViewAngleBAM;
 
-    angle_t tspan = angle1 + gClipAngle;    // Adjust the center x of 0
-    if (tspan > gDoubleClipAngle) {         // Possibly off the left side?
-        tspan -= gDoubleClipAngle;          // See if it's visible
-        if (tspan >= span) {                // Off the left?
-            return;                         // Remove it
+    angle_t tspan = angle1 + gClipAngleBAM;     // Adjust the center x of 0
+    if (tspan > gDoubleClipAngleBAM) {          // Possibly off the left side?
+        tspan -= gDoubleClipAngleBAM;           // See if it's visible
+        if (tspan >= span) {                    // Off the left?
+            return;                             // Remove it
         }
-        angle1 = gClipAngle;                // Clip the left edge
+        angle1 = gClipAngleBAM;                 // Clip the left edge
     }
 
-    tspan = gClipAngle - angle2;            // Get the right edge adjustment
-    if (tspan > gDoubleClipAngle) {         // Possibly off the right side?
-        tspan -= gDoubleClipAngle;
-        if (tspan >= span) {                // Off the right?
-            return;                         // Off the right side
+    tspan = gClipAngleBAM - angle2;             // Get the right edge adjustment
+    if (tspan > gDoubleClipAngleBAM) {          // Possibly off the right side?
+        tspan -= gDoubleClipAngleBAM;
+        if (tspan >= span) {                    // Off the right?
+            return;                             // Off the right side
         }
-        angle2 = -(int32_t) gClipAngle;     // Clip the right side
+        angle2 = -(int32_t) gClipAngleBAM;      // Clip the right side
     }
 
     // The seg is in the view range, but not necessarily visible.
@@ -427,17 +425,17 @@ static bool checkBBox(const Fixed bspcoord[BOXCOUNT]) noexcept {
     // Find the corners of the box that define the edges from current viewpoint.
     // First use the box pointer:
     {
-        uint32_t* pBox = &gCheckCoord[0][0];        // Init to the base of the table (Above)
-        if (gViewY < bspcoord[BOXTOP]) {            // Off the top?
-            pBox += 12;                             // Index to center
-            if (gViewY <= bspcoord[BOXBOTTOM]) {    // Off the bottom?
-                pBox += 12;                         // Index to below
+        uint32_t* pBox = &gCheckCoord[0][0];            // Init to the base of the table (Above)
+        if (gViewYFrac < bspcoord[BOXTOP]) {            // Off the top?
+            pBox += 12;                                 // Index to center
+            if (gViewYFrac <= bspcoord[BOXBOTTOM]) {    // Off the bottom?
+                pBox += 12;                             // Index to below
             }
         }
 
-        if (gViewX > bspcoord[BOXLEFT]) {           // Check if off the left edge
-            pBox += 4;                              // Center x
-            if (gViewX >= bspcoord[BOXRIGHT]) {     // Is it off the right?
+        if (gViewXFrac > bspcoord[BOXLEFT]) {           // Check if off the left edge
+            pBox += 4;                                  // Center x
+            if (gViewXFrac >= bspcoord[BOXRIGHT]) {     // Is it off the right?
                 pBox += 4;
             }
         }
@@ -448,8 +446,8 @@ static bool checkBBox(const Fixed bspcoord[BOXCOUNT]) noexcept {
         
         // I now have in 3 Space the endpoints of the BSP box, now project it to the screen
         // and see if it is either off the screen or too small to even care about
-        angle1 = PointToAngle(gViewX, gViewY, bspcoord[pBox[0]], bspcoord[pBox[1]]) - gViewAngle;   // What is the projected angle?
-        angle2 = PointToAngle(gViewX, gViewY, bspcoord[pBox[2]], bspcoord[pBox[3]]) - gViewAngle;   // Now the rightmost angle
+        angle1 = PointToAngle(gViewXFrac, gViewYFrac, bspcoord[pBox[0]], bspcoord[pBox[1]]) - gViewAngleBAM;    // What is the projected angle?
+        angle2 = PointToAngle(gViewXFrac, gViewYFrac, bspcoord[pBox[2]], bspcoord[pBox[3]]) - gViewAngleBAM;    // Now the rightmost angle
     }
 
     // Use span and tspan
@@ -462,22 +460,22 @@ static bool checkBBox(const Fixed bspcoord[BOXCOUNT]) noexcept {
         // angle1 must be treated as signed, so to see if it is either >-clipangle and < clipangle
         // I add clipangle to the angle to adjust the 0 center and compare to clipangle * 2
     
-        angle_t tspan = angle1 + gClipAngle;
-        if (tspan > gDoubleClipAngle) {         // Possibly off the left edge
-            tspan -= gDoubleClipAngle;
-            if (tspan >= span) {                // Off the left side?
-                return false;                   // Don't bother, it's off the left side
+        angle_t tspan = angle1 + gClipAngleBAM;
+        if (tspan > gDoubleClipAngleBAM) {         // Possibly off the left edge
+            tspan -= gDoubleClipAngleBAM;
+            if (tspan >= span) {                    // Off the left side?
+                return false;                       // Don't bother, it's off the left side
             }
-            angle1 = gClipAngle;                // Clip the left edge
+            angle1 = gClipAngleBAM;                 // Clip the left edge
         }
     
-        tspan = gClipAngle - angle2;            // Move from a zero base of "clipangle"
-        if (tspan > gDoubleClipAngle) {         // Possible off the right edge
-            tspan -= gDoubleClipAngle;
-            if (tspan >= span) {                // The entire span is off the right edge?
-                return false;                   // Too far right!
+        tspan = gClipAngleBAM - angle2;            // Move from a zero base of "clipangle"
+        if (tspan > gDoubleClipAngleBAM) {         // Possible off the right edge
+            tspan -= gDoubleClipAngleBAM;
+            if (tspan >= span) {                    // The entire span is off the right edge?
+                return false;                       // Too far right!
             }
-            angle2 = -(int32_t) gClipAngle;     // Clip the right edge angle
+            angle2 = -(int32_t) gClipAngleBAM;      // Clip the right edge angle
         }
 
         // See if any part of the contained area could be visible
@@ -526,9 +524,9 @@ static void addBspNodeToFrame(const node_t* const pNode) noexcept {
     }
     
     // Decide which side the view point is on
-    uint32_t side = PointOnVectorSide(gViewX, gViewY, &pNode->Line);    // Is this the front side?
-    addBspNodeToFrame((const node_t*) pNode->Children[side]);           // Process the side closer to me
-    side ^= 1;                                                          // Swap the side
+    uint32_t side = PointOnVectorSide(gViewXFrac, gViewYFrac, &pNode->Line);    // Is this the front side?
+    addBspNodeToFrame((const node_t*) pNode->Children[side]);                   // Process the side closer to me
+    side ^= 1;                                                                  // Swap the side
     
     if (checkBBox(pNode->bbox[side])) {                                 // Is the viewing rect on both sides?
         addBspNodeToFrame((const node_t*) pNode->Children[side]);       // Render the back side

@@ -376,8 +376,8 @@ void drawVisSprite(const vissprite_t& visSprite) noexcept {
     // The first drawseg that has a greater scale is the clip seg!
     viswall_t* pDrawSeg = gpEndVisWall;
 
-    do {
-        --pDrawSeg;     // Point to the next wall command
+    while (pDrawSeg != gVisWalls) {
+        --pDrawSeg;
         
         // Determine if the drawseg obscures the sprite
         if ((pDrawSeg->leftX > x2 || pDrawSeg->rightX < x1) ||
@@ -450,7 +450,7 @@ void drawVisSprite(const vissprite_t& visSprite) noexcept {
                 gSprOpening[x] = (top << 8) + bottom;
             } while (++x <= xr);
         }
-    } while (pDrawSeg != gVisWalls);
+    }
     
     // Now that I have created the clip regions, let's see if I need to do this.
     // If no clipping is required then just draw normally.

@@ -114,7 +114,7 @@ static void drawClippedWallColumn(
 //----------------------------------------------------------------------------------------------------------------------
 static void drawSkyColumn(const uint32_t viewX) noexcept {
     // Note: sky textures are 256 pixels wide so the mask wraps it around
-    const uint32_t texX = (((gXToViewAngle[viewX] + gViewAngle) >> ANGLETOSKYSHIFT) & 0xFF);
+    const uint32_t texX = (((gXToViewAngle[viewX] + gViewAngleBAM) >> ANGLETOSKYSHIFT) & 0xFF);
 
     // Figure out the sky column height and texel step (y)
     const Texture* const pTexture = (const Texture*) getWallTexture(getCurrentSkyTexNum());     // FIXME: don't keep doing this for each column

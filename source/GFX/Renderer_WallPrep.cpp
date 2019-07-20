@@ -24,8 +24,8 @@ static sector_t gEmptySector = {
 // Get the distance from the view xy to the given point
 //----------------------------------------------------------------------------------------------------------------------
 static float viewToPointDist(const Fixed px, const Fixed py) noexcept {    
-    const float dx = FMath::doomFixed16ToFloat<float>(px - gViewX);
-    const float dy = FMath::doomFixed16ToFloat<float>(py - gViewY);
+    const float dx = FMath::doomFixed16ToFloat<float>(px - gViewXFrac);
+    const float dy = FMath::doomFixed16ToFloat<float>(py - gViewYFrac);
     return std::sqrt(dx * dx + dy * dy);
 }
 
@@ -76,7 +76,7 @@ static void latePrep(viswall_t& wall, const seg_t& lineSeg, const angle_t leftAn
     const float scale = wall.LeftScale = scaleFromGlobalAngle(
         rwDistance,
         offsetAngle,
-        (offsetAngle + gViewAngle) - normalAngle
+        (offsetAngle + gViewAngleBAM) - normalAngle
     );
     float scale2 = scale;
 
@@ -85,7 +85,7 @@ static void latePrep(viswall_t& wall, const seg_t& lineSeg, const angle_t leftAn
         scale2 = scaleFromGlobalAngle(
             rwDistance,
             offsetAngle,
-            (offsetAngle + gViewAngle) - normalAngle
+            (offsetAngle + gViewAngleBAM) - normalAngle
         );
         wall.ScaleStep = (scale2 - scale) / (float)(wall.rightX - wall.leftX);
     }
@@ -118,7 +118,7 @@ static void latePrep(viswall_t& wall, const seg_t& lineSeg, const angle_t leftAn
         }
         
         wall.offset += scale2;
-        wall.CenterAngle = gViewAngle - normalAngle;
+        wall.CenterAngle = gViewAngleBAM - normalAngle;
     }
 }
 
@@ -147,8 +147,8 @@ void wallPrep(
     uint32_t f_lightlevel = frontSector.lightlevel;
 
     // Front sector floor and ceiling height - viewz: adjust for camera z
-    const float f_floorheight = FMath::doomFixed16ToFloat<float>(frontSector.floorheight - gViewZ);
-    const float f_ceilingheight = FMath::doomFixed16ToFloat<float>(frontSector.ceilingheight - gViewZ);
+    const float f_floorheight = FMath::doomFixed16ToFloat<float>(frontSector.floorheight - gViewZFrac);
+    const float f_ceilingheight = FMath::doomFixed16ToFloat<float>(frontSector.ceilingheight - gViewZFrac);
     
     // Set the floor and ceiling shape handles & look up animated texture numbers.
     // Note that ceiling might NOT exist!
@@ -169,8 +169,8 @@ void wallPrep(
     const uint32_t b_lightlevel = pBackSector->lightlevel;                  // Back sector light level
 
     // Adjust for camera z
-    const float b_floorheight = FMath::doomFixed16ToFloat<float>(pBackSector->floorheight - gViewZ);
-    const float b_ceilingheight = FMath::doomFixed16ToFloat<float>(pBackSector->ceilingheight - gViewZ);
+    const float b_floorheight = FMath::doomFixed16ToFloat<float>(pBackSector->floorheight - gViewZFrac);
+    const float b_ceilingheight = FMath::doomFixed16ToFloat<float>(pBackSector->ceilingheight - gViewZFrac);
 
     // Add floors and ceilings if the wall needs one
     uint32_t actionbits = 0;

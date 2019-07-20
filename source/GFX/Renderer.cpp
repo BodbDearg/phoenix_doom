@@ -43,15 +43,15 @@ vissprite_t     gVisSprites[MAXVISSPRITES];
 vissprite_t*    gpEndVisSprite;
 uint8_t         gOpenings[MAXOPENINGS];
 uint8_t*        gpEndOpening;
-Fixed           gViewX;
-Fixed           gViewY;
-Fixed           gViewZ;
-angle_t         gViewAngle;
-Fixed           gViewCos;
-Fixed           gViewSin;
+Fixed           gViewXFrac;
+Fixed           gViewYFrac;
+Fixed           gViewZFrac;
+angle_t         gViewAngleBAM;
+Fixed           gViewCosFrac;
+Fixed           gViewSinFrac;
 uint32_t        gExtraLight;
-angle_t         gClipAngle;
-angle_t         gDoubleClipAngle;
+angle_t         gClipAngleBAM;
+angle_t         gDoubleClipAngleBAM;
 uint32_t        gSprOpening[MAXSCREENWIDTH];
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -87,15 +87,15 @@ static void initData() noexcept {
 static void preDrawSetup() noexcept {
     const player_t& player = gPlayers;      // Which player is the camera attached?
     const mobj_t& mapObj = *player.mo;
-    gViewX = mapObj.x;                      // Get the position of the player
-    gViewY = mapObj.y;
-    gViewZ = player.viewz;                  // Get the height of the player
-    gViewAngle = mapObj.angle;              // Get the angle of the player
+    gViewXFrac = mapObj.x;                  // Get the position of the player
+    gViewYFrac = mapObj.y;
+    gViewZFrac = player.viewz;              // Get the height of the player
+    gViewAngleBAM = mapObj.angle;           // Get the angle of the player
 
     {
-        const uint32_t angleIdx = gViewAngle >> ANGLETOFINESHIFT;   // Precalc angle index
-        gViewSin = gFineSine[angleIdx];                             // Get the base sine value
-        gViewCos = gFineCosine[angleIdx];                           // Get the base cosine value
+        const uint32_t angleIdx = gViewAngleBAM >> ANGLETOFINESHIFT;    // Precalc angle index
+        gViewSinFrac = gFineSine[angleIdx];                             // Get the base sine value
+        gViewCosFrac = gFineCosine[angleIdx];                           // Get the base cosine value
     }
 
     gExtraLight = player.extralight << 6;   // Init the extra lighting value
@@ -106,9 +106,9 @@ static void preDrawSetup() noexcept {
 }
 
 void init() noexcept {
-    initData();                             // Init resource managers and all of the lookup tables
-    gClipAngle = gXToViewAngle[0];          // Get the left clip angle from viewport
-    gDoubleClipAngle = gClipAngle * 2;      // Precalc angle * 2
+    initData();                                 // Init resource managers and all of the lookup tables
+    gClipAngleBAM = gXToViewAngle[0];           // Get the left clip angle from viewport
+    gDoubleClipAngleBAM = gClipAngleBAM * 2;    // Precalc angle * 2
 }
 
 void initMathTables() noexcept {

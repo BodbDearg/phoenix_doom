@@ -240,15 +240,15 @@ namespace Renderer {
     extern vissprite_t*     gpEndVisSprite;                 // End of the used vissprites range (also tells the number of sprites)
     extern uint8_t          gOpenings[MAXOPENINGS];
     extern uint8_t*         gpEndOpening;
-    extern Fixed            gViewX;                         // Camera x,y,z
-    extern Fixed            gViewY;
-    extern Fixed            gViewZ;
-    extern angle_t          gViewAngle;                     // Camera angle
-    extern Fixed            gViewCos;                       // Camera sine, cosine from angle
-    extern Fixed            gViewSin;
+    extern Fixed            gViewXFrac;                     // Camera x,y,z
+    extern Fixed            gViewYFrac;
+    extern Fixed            gViewZFrac;
+    extern angle_t          gViewAngleBAM;                  // Camera angle
+    extern Fixed            gViewCosFrac;                   // Camera sine, cosine from angle
+    extern Fixed            gViewSinFrac;
     extern uint32_t         gExtraLight;                    // Bumped light from gun blasts
-    extern angle_t          gClipAngle;                     // Leftmost clipping angle
-    extern angle_t          gDoubleClipAngle;               // Doubled leftmost clipping angle
+    extern angle_t          gClipAngleBAM;                  // Leftmost clipping angle
+    extern angle_t          gDoubleClipAngleBAM;            // Doubled leftmost clipping angle
     extern uint32_t         gSprOpening[MAXSCREENWIDTH];    // clipped range
 
     //==================================================================================================================

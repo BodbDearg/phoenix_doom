@@ -69,10 +69,10 @@ static void mapPlane(
     const uint32_t x1 = gSpanStart[y];
     const float distance = gYSlope[y] * planeHeight;    // Get the offset for the plane height
     const float length = gDistScale[x1] * distance;
-    const float angle = -getViewAngleForX(x1) + FMath::doomAngleToRadians<float>(gViewAngle);
+    const float angle = -getViewAngleForX(x1) + FMath::doomAngleToRadians<float>(gViewAngleBAM);
 
     // xfrac, yfrac, xstep, ystep
-    const float xfrac = std::cos(angle) * length + FMath::doomFixed16ToFloat<float>(gViewX);
+    const float xfrac = std::cos(angle) * length + FMath::doomFixed16ToFloat<float>(gViewXFrac);
     const float yfrac = planeY - std::sin(angle) * length;
     const float xstep = distance * baseXScale;
     const float ystep = distance * baseYScale;
@@ -194,12 +194,12 @@ void drawVisPlane(
 }
 
 void drawAllVisPlanes() noexcept {
-    const float viewAngle = FMath::doomAngleToRadians<float>(gViewAngle);
-    const float wallScaleAngle = viewAngle - FMath::ANGLE_90<float>;    // Left to right mapping
+    const float viewAngle = FMath::doomAngleToRadians<float>(gViewAngleBAM);
+    const float wallScaleAngle = viewAngle - FMath::ANGLE_90<float>;        // Left to right mapping
 
     const float baseXScale = +std::cos(wallScaleAngle) / ((float) gScreenWidth * 0.5f);
     const float baseYScale = -std::sin(wallScaleAngle) / ((float) gScreenWidth * 0.5f);
-    const float planeY = FMath::doomFixed16ToFloat<float>(-gViewY);     // Get the Y coord for camera
+    const float planeY = FMath::doomFixed16ToFloat<float>(-gViewYFrac);     // Get the Y coord for camera
 
     visplane_t* pPlane = gVisPlanes + 1;
     visplane_t* const pEndPlane = gpEndVisPlane;
