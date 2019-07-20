@@ -391,23 +391,29 @@ static bool clipSegAgainstFrontPlane(DrawSeg& seg) noexcept {
     const float p1ToP2Dist = p2Dist - p1Dist;
     const float t = p1Dist / p1ToP2Dist;
 
-    // Compute the new x and y for the intersection point via linear interpolation
+    // Compute the new x and y and texture u for the intersection point via linear interpolation
     const float p1x = seg.coords.p1x;
     const float p2x = seg.coords.p2x;
+    const float p1u = seg.p1TexU;
+    const float p2u = seg.p2TexU;
+
     const float newX = p1x + (p2x - p1x) * t;
     const float newY = p1y + (p2y - p1y) * t;
+    const float newU = p1u + (p2u - p1u) * t;
 
     // Save the result of the point we want to move.
     // Note that we set 'w' to '-y' to ensure that 'y' ends up as '-1' in NDC:
     if (p1InFront) {
         seg.coords.p2x = newX;
-        seg.coords.p2y = newY;
+        seg.coords.p2y = newY;        
         seg.coords.p2w = -seg.coords.p2y;
+        seg.p2TexU = newU;
     }
     else {
         seg.coords.p1x = newX;
         seg.coords.p1y = newY;
         seg.coords.p1w = -seg.coords.p1y;
+        seg.p1TexU = newU;
     }
 
     return true;
@@ -439,11 +445,15 @@ static bool clipSegAgainstLeftPlane(DrawSeg& seg) noexcept {
     const float p1ToP2Dist = p2Dist - p1Dist;
     const float t = p1Dist / p1ToP2Dist;
 
-    // Compute the new x and y for the intersection point via linear interpolation
+    // Compute the new x and y and texture u for the intersection point via linear interpolation
     const float p1y = seg.coords.p1y;
     const float p2y = seg.coords.p2y;
+    const float p1u = seg.p1TexU;
+    const float p2u = seg.p2TexU;
+
     const float newX = p1x + (p2x - p1x) * t;
     const float newY = p1y + (p2y - p1y) * t;
+    const float newU = p1u + (p2u - p1u) * t;
 
     // Save the result of the point we want to move.
     // Note that we set 'w' to '-x' to ensure that 'x' ends up as '-1' in NDC:
@@ -451,11 +461,13 @@ static bool clipSegAgainstLeftPlane(DrawSeg& seg) noexcept {
         seg.coords.p2x = newX;
         seg.coords.p2y = newY;
         seg.coords.p2w = -seg.coords.p2x;
+        seg.p2TexU = newU;
     }
     else {
         seg.coords.p1x = newX;
         seg.coords.p1y = newY;
         seg.coords.p1w = -seg.coords.p1x;
+        seg.p1TexU = newU;
     }
 
     return true;
@@ -487,11 +499,15 @@ static bool clipSegAgainstRightPlane(DrawSeg& seg) noexcept {
     const float p1ToP2Dist = p2Dist - p1Dist;
     const float t = p1Dist / p1ToP2Dist;
 
-    // Compute the new x and y for the intersection point via linear interpolation
+    // Compute the new x and y and texture u for the intersection point via linear interpolation
     const float p1y = seg.coords.p1y;
     const float p2y = seg.coords.p2y;
+    const float p1u = seg.p1TexU;
+    const float p2u = seg.p2TexU;
+
     const float newX = p1x + (p2x - p1x) * t;
     const float newY = p1y + (p2y - p1y) * t;
+    const float newU = p1u + (p2u - p1u) * t;
 
     // Save the result of the point we want to move.
     // Note that we set 'w' to 'x' to ensure that 'x' ends up as '+1' in NDC:
@@ -499,23 +515,38 @@ static bool clipSegAgainstRightPlane(DrawSeg& seg) noexcept {
         seg.coords.p2x = newX;
         seg.coords.p2y = newY;
         seg.coords.p2w = seg.coords.p2x;
+        seg.p2TexU = newU;
     }
     else {
         seg.coords.p1x = newX;
         seg.coords.p1y = newY;
         seg.coords.p1w = seg.coords.p1x;
+        seg.p1TexU = newU;
     }
 
     return true;
 }
 
 void addSegToFrame(const seg_t& seg) noexcept {
-    // First transform the seg into viewspace and then into clip space
+    // First transform the seg into viewspace
     DrawSeg drawSeg;
     transformSegXYToViewSpace(seg, drawSeg);
+
+    // Set the U coordinates for the seg.
+    // Those will need to be adjusted accordingly if we clip:
+    {
+        const float segLength = std::sqrtf(
+            (drawSeg.coords.p1x * drawSeg.coords.p1x) +
+            (drawSeg.coords.p1y * drawSeg.coords.p1y)
+        );
+        const float uOffset = FMath::doomFixed16ToFloat<float>(seg.offset);
+        drawSeg.p1TexU = uOffset;
+        drawSeg.p2TexU = uOffset + segLength - 0.001f;      // Note: if a wall is 64 units and the texture is 64 units, never go to 64.0 (always stay to 63.99999 or something like that)
+    }
+
+    // Next transform to clip space and clip against the front and left + right planes
     transformSegXYWToClipSpace(drawSeg);
 
-    // Clip against the front and then the left/right planes
     if (!clipSegAgainstFrontPlane(drawSeg))
         return;
     

@@ -175,8 +175,9 @@ namespace Renderer {
     //------------------------------------------------------------------------------------------------------------------
     struct DrawSeg {
         DrawSegCoords       coords;
-        float               texOffsetX;         // Offset to apply to the texture when drawing
-        float               texOffsetY;
+        float               p1TexU;             // X texture coordinate for p1 and p2
+        float               p2TexU;
+        float               texOffsetV;         // Vertical offset to apply to the texture when drawing
         const Texture*      texture_top;        // Top and bottom texture
         const Texture*      texture_bottom;
         const Texture*      texture_floor;      // Floor and ceiling texture. Note: draw sky if no ceiling!
