@@ -35,24 +35,32 @@ BEGIN_NAMESPACE(Renderer)
 //----------------------------------------------------------------------------------------------------------------------
 // Internal renderer cross module globals
 //----------------------------------------------------------------------------------------------------------------------
-viswall_t       gVisWalls[MAXWALLCMDS];
-viswall_t*      gpEndVisWall;
-visplane_t      gVisPlanes[MAXVISPLANES];
-visplane_t*     gpEndVisPlane;
-vissprite_t     gVisSprites[MAXVISSPRITES];
-vissprite_t*    gpEndVisSprite;
-uint8_t         gOpenings[MAXOPENINGS];
-uint8_t*        gpEndOpening;
-Fixed           gViewXFrac;
-Fixed           gViewYFrac;
-Fixed           gViewZFrac;
-angle_t         gViewAngleBAM;
-Fixed           gViewCosFrac;
-Fixed           gViewSinFrac;
-uint32_t        gExtraLight;
-angle_t         gClipAngleBAM;
-angle_t         gDoubleClipAngleBAM;
-uint32_t        gSprOpening[MAXSCREENWIDTH];
+viswall_t               gVisWalls[MAXWALLCMDS];
+viswall_t*              gpEndVisWall;
+visplane_t              gVisPlanes[MAXVISPLANES];
+visplane_t*             gpEndVisPlane;
+vissprite_t             gVisSprites[MAXVISSPRITES];
+vissprite_t*            gpEndVisSprite;
+uint8_t                 gOpenings[MAXOPENINGS];
+uint8_t*                gpEndOpening;
+std::vector<DrawSeg>    gDrawSegs;
+Fixed                   gViewXFrac;
+Fixed                   gViewYFrac;
+Fixed                   gViewZFrac;
+float                   gViewX;
+float                   gViewY;
+float                   gViewZ;
+angle_t                 gViewAngleBAM;
+float                   gViewAngle;
+Fixed                   gViewCosFrac;
+Fixed                   gViewSinFrac;
+float                   gViewCos;
+float                   gViewSin;
+ProjectionMatrix        gProjMatrix;
+uint32_t                gExtraLight;
+angle_t                 gClipAngleBAM;
+angle_t                 gDoubleClipAngleBAM;
+uint32_t                gSprOpening[MAXSCREENWIDTH];
 
 //----------------------------------------------------------------------------------------------------------------------
 // Load in the "TextureInfo" array so that the game knows all about the wall and sky textures (Width,Height).
@@ -85,24 +93,34 @@ static void initData() noexcept {
 // Sets up various things prior to rendering for the new frame
 //----------------------------------------------------------------------------------------------------------------------
 static void preDrawSetup() noexcept {
-    const player_t& player = gPlayers;      // Which player is the camera attached?
+    // Set the position and angle of the view from the player
+    const player_t& player = gPlayers;
     const mobj_t& mapObj = *player.mo;
-    gViewXFrac = mapObj.x;                  // Get the position of the player
-    gViewYFrac = mapObj.y;
-    gViewZFrac = player.viewz;              // Get the height of the player
-    gViewAngleBAM = mapObj.angle;           // Get the angle of the player
 
+    gViewXFrac = mapObj.x;
+    gViewYFrac = mapObj.y;
+    gViewX = FMath::doomFixed16ToFloat<float>(mapObj.x);
+    gViewY = FMath::doomFixed16ToFloat<float>(mapObj.y);
+    gViewZFrac = player.viewz;
+    gViewZ = FMath::doomFixed16ToFloat<float>(player.viewz);
+    gViewAngleBAM = mapObj.angle;
+    gViewAngle = FMath::doomAngleToRadians<float>(mapObj.angle);
+
+    // Precompute sine and cosine of view angle
     {
         const uint32_t angleIdx = gViewAngleBAM >> ANGLETOFINESHIFT;    // Precalc angle index
         gViewSinFrac = gFineSine[angleIdx];                             // Get the base sine value
         gViewCosFrac = gFineCosine[angleIdx];                           // Get the base cosine value
+        gViewSin = std::sin(gViewAngle);
+        gViewCos = std::cos(gViewAngle);
     }
 
-    gExtraLight = player.extralight << 6;   // Init the extra lighting value
-    gpEndVisPlane = gVisPlanes + 1;         // visplanes[0] is left empty
-    gpEndVisWall = gVisWalls;               // No walls added yet
-    gpEndVisSprite = gVisSprites;           // No sprites added yet
-    gpEndOpening = gOpenings;               // No openings found
+    // Other misc setup
+    gExtraLight = player.extralight << 6;       // Init the extra lighting value
+    gpEndVisPlane = gVisPlanes + 1;             // visplanes[0] is left empty
+    gpEndVisWall = gVisWalls;                   // No walls added yet
+    gpEndVisSprite = gVisSprites;               // No sprites added yet
+    gpEndOpening = gOpenings;                   // No openings found
 }
 
 void init() noexcept {
@@ -191,6 +209,26 @@ void initMathTables() noexcept {
         gLightMins[i] = (float) i * LIGHT_MIN_PERCENT;
         gLightSubs[i] = maxBrightRange;
         gLightCoefs[i] = LIGHT_COEF_BASE - lightLevel * LIGHT_COEF_ADJUST_FACTOR;
+    }
+
+    // Compute the partial projection matrix
+    {
+        // View constants
+        constexpr float FOV     = FMath::ANGLE_90<float>;
+        constexpr float Z_NEAR  = 1.0f;
+        constexpr float Z_FAR   = Z_NEAR + 8191.0f;
+
+        // This is largely based on GLM's 'perspectiveRH_ZO' - see definition of 'ProjectionMatrix'
+        // for more details about these calculations:
+        const float w = (float) gScreenWidth;
+        const float h = (float) gScreenHeight;
+        const float f = std::tan(FOV * 0.5f);
+        const float a = w / h;
+
+        gProjMatrix.r0c0 = 1.0f / (f * a);
+        gProjMatrix.r1c1 = -1.0f / f;
+        gProjMatrix.r2c2 = -Z_FAR / (Z_NEAR - Z_FAR);
+        gProjMatrix.r2c3 = -(Z_NEAR * Z_FAR) / (Z_FAR - Z_NEAR);
     }
 }
 

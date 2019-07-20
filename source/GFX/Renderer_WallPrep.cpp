@@ -1,4 +1,4 @@
-#include "Renderer_Internal.h"
+﻿#include "Renderer_Internal.h"
 
 #include "Base/FMath.h"
 #include "Base/Tables.h"
@@ -299,6 +299,231 @@ void wallPrep(
     curWall.seglightlevel = f_lightlevel;                                                       // Save the light level
     curWall.offset = FMath::doomFixed16ToFloat<float>(sideDef.textureoffset + lineSeg.offset);  // Texture anchor X
     latePrep(curWall, lineSeg, lineAngle);
+}
+
+static void transformSegXYToViewSpace(const seg_t& inSeg, DrawSeg& outSeg) noexcept {
+    // First convert from fixed point to floats
+    outSeg.coords.p1x = FMath::doomFixed16ToFloat<float>(inSeg.v1.x);
+    outSeg.coords.p1y = FMath::doomFixed16ToFloat<float>(inSeg.v1.y);
+    outSeg.coords.p2x = FMath::doomFixed16ToFloat<float>(inSeg.v2.x);
+    outSeg.coords.p2y = FMath::doomFixed16ToFloat<float>(inSeg.v2.y);
+
+    // Transform the seg xy coords by the view position
+    const float viewX = gViewX;
+    const float viewY = gViewY;
+    const float viewSin = gViewSin;
+    const float viewCos = gViewCos;
+
+    outSeg.coords.p1x -= viewX;
+    outSeg.coords.p1y -= viewY;
+    outSeg.coords.p2x -= viewX;
+    outSeg.coords.p2y -= viewY;
+
+    // Do rotation by view angle.
+    // Rotation matrix formula from: https://en.wikipedia.org/wiki/Rotation_matrix
+    const float p1xRot = viewCos * outSeg.coords.p1x - viewSin * outSeg.coords.p1y;
+    const float p1yRot = viewSin * outSeg.coords.p1x + viewCos * outSeg.coords.p1y;
+    const float p2xRot = viewCos * outSeg.coords.p2x - viewSin * outSeg.coords.p2y;
+    const float p2yRot = viewSin * outSeg.coords.p2x + viewCos * outSeg.coords.p2y;
+
+    outSeg.coords.p1x = p1xRot;
+    outSeg.coords.p1y = p1yRot;
+    outSeg.coords.p2x = p2xRot;
+    outSeg.coords.p2y = p2yRot;
+}
+
+static void transformSegXYWToClipSpace(DrawSeg& seg) noexcept {
+    // Notes:
+    //  (1) We treat 'y' as if it were 'z' for the purposes of these calculations, since the
+    //      projection matrix has 'z' as the depth value and not y (Doom coord sys). 
+    //  (2) We assume that the seg always starts off with an implicit 'w' value of '1'.
+    //
+    const float y1Orig = seg.coords.p1y;
+    const float y2Orig = seg.coords.p2y;
+
+    seg.coords.p1x *= gProjMatrix.r0c0;
+    seg.coords.p2x *= gProjMatrix.r0c0;
+    seg.coords.p1y *= gProjMatrix.r2c2;
+    seg.coords.p2y *= gProjMatrix.r2c2;
+    seg.coords.p1w = y1Orig * gProjMatrix.r2c3 + 1.0f;
+    seg.coords.p2w = y2Orig * gProjMatrix.r2c3 + 1.0f;
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+// Clipping functions:
+//
+// These largely follow the method described at: 
+//  https://chaosinmotion.blog/2016/05/22/3d-clipping-in-homogeneous-coordinates/
+//
+// Notes:
+//  (1) I treat Doom's 'y' coordinate as 'z' for all calculations.
+//      In most academic and code works 'z' is actually depth so interpreting 'y' as this keeps things
+//      more familiar and allows me to just plug the values into existing equations.
+//  (2) For 'xc', 'yc', and 'zc' clipspace coordinates, the point will be inside the clip cube if the 
+//      following comparisons against clipspace w ('wc') hold:
+//          -wc <= xc && xc >= wc
+//          -wc <= yc && yc >= wc
+//          -wc <= zc && zc >= wc
+//----------------------------------------------------------------------------------------------------------------------
+static bool clipSegAgainstFrontPlane(DrawSeg& seg) noexcept {
+    // The front plane in normalized device coords (NDC) is at z = -1 (back is z = 1)
+    // Hence in clipspace it is at -w (back is at +w):
+    const float p1y = seg.coords.p1y;
+    const float p2y = seg.coords.p2y;
+    const float p1w = seg.coords.p1w;
+    const float p2w = seg.coords.p2w;
+
+    const bool p1InFront = (p1y >= -p1w);
+    const bool p2InFront = (p2y >= -p2w);
+
+    // Easy case: cee if they are on the same side of the clip plane.
+    // Reject if both are on the outside, or accept and leave unmodified if both are on the inside:
+    if (p1InFront == p2InFront) {
+        return p1InFront;
+    }
+
+    // We need to clip: start by computing the distance (using the dot product) of p1 and p2
+    // to the 4D plane: (0, 0, 1, 1). Again, treat Doom's 'y' coordinate as 'z' here:
+    const float p1Dist = p1y + p1w;
+    const float p2Dist = p2y + p2w;
+
+    // Compute the time where the intersection would occur
+    const float p1ToP2Dist = p2Dist - p1Dist;
+    const float t = p1Dist / p1ToP2Dist;
+
+    // Compute the new x and y for the intersection point via linear interpolation
+    const float p1x = seg.coords.p1x;
+    const float p2x = seg.coords.p2x;
+    const float newX = p1x + (p2x - p1x) * t;
+    const float newY = p1y + (p2y - p1y) * t;
+
+    // Save the result of the point we want to move.
+    // Note that we set 'w' to '-y' to ensure that 'y' ends up as '-1' in NDC:
+    if (p1InFront) {
+        seg.coords.p2x = newX;
+        seg.coords.p2y = newY;
+        seg.coords.p2w = -seg.coords.p2y;
+    }
+    else {
+        seg.coords.p1x = newX;
+        seg.coords.p1y = newY;
+        seg.coords.p1w = -seg.coords.p1y;
+    }
+
+    return true;
+}
+
+static bool clipSegAgainstLeftPlane(DrawSeg& seg) noexcept {
+    // The left plane in normalized device coords (NDC) is at x = -1 (right is x = 1)
+    // Hence in clipspace it is at -w (right is at +w):
+    const float p1x = seg.coords.p1x;
+    const float p2x = seg.coords.p2x;
+    const float p1w = seg.coords.p1w;
+    const float p2w = seg.coords.p2w;
+
+    const bool p1InFront = (p1x >= -p1w);
+    const bool p2InFront = (p2x >= -p2w);
+
+    // Easy case: cee if they are on the same side of the clip plane.
+    // Reject if both are on the outside, or accept and leave unmodified if both are on the inside:
+    if (p1InFront == p2InFront) {
+        return p1InFront;
+    }
+
+    // We need to clip: start by computing the distance (using the dot product) of
+    // p1 and p2 to the 4D plane: (1, 0, 0, 1):
+    const float p1Dist = p1x + p1w;
+    const float p2Dist = p2x + p2w;
+
+    // Compute the time where the intersection would occur
+    const float p1ToP2Dist = p2Dist - p1Dist;
+    const float t = p1Dist / p1ToP2Dist;
+
+    // Compute the new x and y for the intersection point via linear interpolation
+    const float p1y = seg.coords.p1y;
+    const float p2y = seg.coords.p2y;
+    const float newX = p1x + (p2x - p1x) * t;
+    const float newY = p1y + (p2y - p1y) * t;
+
+    // Save the result of the point we want to move.
+    // Note that we set 'w' to '-x' to ensure that 'x' ends up as '-1' in NDC:
+    if (p1InFront) {
+        seg.coords.p2x = newX;
+        seg.coords.p2y = newY;
+        seg.coords.p2w = -seg.coords.p2x;
+    }
+    else {
+        seg.coords.p1x = newX;
+        seg.coords.p1y = newY;
+        seg.coords.p1w = -seg.coords.p1x;
+    }
+
+    return true;
+}
+
+static bool clipSegAgainstRightPlane(DrawSeg& seg) noexcept {
+    // The right plane in normalized device coords (NDC) is at x = 1 (left is x = -1)
+    // Hence in clipspace it is at +w (left is at -w):
+    const float p1x = seg.coords.p1x;
+    const float p2x = seg.coords.p2x;
+    const float p1w = seg.coords.p1w;
+    const float p2w = seg.coords.p2w;
+
+    const bool p1InFront = (p1x <= p1w);
+    const bool p2InFront = (p2x <= p2w);
+
+    // Easy case: cee if they are on the same side of the clip plane.
+    // Reject if both are on the outside, or accept and leave unmodified if both are on the inside:
+    if (p1InFront == p2InFront) {
+        return p1InFront;
+    }
+
+    // We need to clip: start by computing the distance (using the dot product) of
+    // p1 and p2 to the 4D plane: (-1, 0, 0, 1):
+    const float p1Dist = -p1x + p1w;
+    const float p2Dist = -p2x + p2w;
+
+    // Compute the time where the intersection would occur
+    const float p1ToP2Dist = p2Dist - p1Dist;
+    const float t = p1Dist / p1ToP2Dist;
+
+    // Compute the new x and y for the intersection point via linear interpolation
+    const float p1y = seg.coords.p1y;
+    const float p2y = seg.coords.p2y;
+    const float newX = p1x + (p2x - p1x) * t;
+    const float newY = p1y + (p2y - p1y) * t;
+
+    // Save the result of the point we want to move.
+    // Note that we set 'w' to 'x' to ensure that 'x' ends up as '+1' in NDC:
+    if (p1InFront) {
+        seg.coords.p2x = newX;
+        seg.coords.p2y = newY;
+        seg.coords.p2w = seg.coords.p2x;
+    }
+    else {
+        seg.coords.p1x = newX;
+        seg.coords.p1y = newY;
+        seg.coords.p1w = seg.coords.p1x;
+    }
+
+    return true;
+}
+
+void addSegToFrame(const seg_t& seg) noexcept {
+    // First transform the seg into viewspace and then into clip space
+    DrawSeg drawSeg;
+    transformSegXYToViewSpace(seg, drawSeg);
+    transformSegXYWToClipSpace(drawSeg);
+
+    // Clip against the front and then the left/right planes
+    if (!clipSegAgainstFrontPlane(drawSeg))
+        return;
+    
+    if (!clipSegAgainstLeftPlane(drawSeg))
+        return;
+    
+    if (!clipSegAgainstRightPlane(drawSeg))
+        return;
 }
 
 END_NAMESPACE(Renderer)

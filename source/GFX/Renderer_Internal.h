@@ -8,6 +8,7 @@
 #include "Game/DoomDefines.h"
 #include "Renderer.h"
 #include <cstddef>
+#include <vector>
 
 struct mobj_t;
 struct seg_t;
@@ -100,22 +101,12 @@ namespace Renderer {
     };
 
     //------------------------------------------------------------------------------------------------------------------
-    // Describes a 2x2 rotation matrix.
-    // The matrix (M) is designed transform a single row/vector (V) using the following multiply order: VxM
-    //------------------------------------------------------------------------------------------------------------------
-    struct RotationMatrix {
-        float r0c0;
-        float r0c1;
-        float r1c0;
-        float r1c1;
-    };
-
-    //------------------------------------------------------------------------------------------------------------------
     // Describes a sparse 4x4 matrix designed for 3D projections.
     //
-    //  (1) The matrix (M) is designed transform a single row/vector (V) using the following multiply order: VxM.
-    //  (2) Except where otherwise stated, omitted elements are '0' and are not considered in calculations.
-    //  (3) The omitted 'r3c3' element is '1' and IS considered in calculations.
+    //  (1) 'Z' in this matrix is DEPTH (unlike the Doom coord sys). 'Y' is also height here.
+    //  (2) The matrix (M) is designed transform a single row/vector (V) using the following multiply order: VxM.
+    //  (3) Except where otherwise stated, omitted elements are '0' and are not considered in calculations.
+    //  (4) The omitted 'r3c3' element is '1' and IS considered in calculations.
     // 
     // Note that the calculations below are Loosely based on the GLM function 'perspectiveRH_ZO' but adjusted so that
     // Z positive goes INTO the screen and the Y coordinate in normalized device coords (NDC) increases as we go
@@ -133,6 +124,12 @@ namespace Renderer {
     //      r2c2 = -zf / (zn - zf)
     //      r2c3 = -(zn * zf) / (zf - zn)
     //      r3c3 = 1
+    //
+    // Effectively it looks like this when visualized (with implicit entries added):
+    //      r0c0,   0,      0,      0,
+    //      0,      r1c1,   0,      0,
+    //      0,      0,      r2c2,   r2c3,
+    //      0,      0,      0,      1
     //------------------------------------------------------------------------------------------------------------------
     struct ProjectionMatrix {
         float r0c0;
@@ -143,7 +140,13 @@ namespace Renderer {
 
     //------------------------------------------------------------------------------------------------------------------
     // Describes 3D coordiantes for line segment to be drawn.
-    // Note: coords are such that xy is the ground plane and z represents height. (Doom coord system)
+    //
+    // Note:
+    //  (1) Coords are such that xy is the ground plane and z represents height. (Doom coord system)
+    //  (2) Before perspective projection x and y give the 2d position on the map for the line segment.
+    //  (3) After persective projection y is a 'depth' value into the screen.
+    //  (4) 1/w represents the value scale at a point.
+    //      It can also be used to help perform perspective correct interpolation.
     //------------------------------------------------------------------------------------------------------------------
     struct DrawSegCoords {
         float p1x;              // 1st wall point: xyw and 1/w (scale)
@@ -232,30 +235,39 @@ namespace Renderer {
     //==================================================================================================================
     // Globals shared throughout the renderer - defined in Renderer.cpp
     //==================================================================================================================
-    extern viswall_t        gVisWalls[MAXWALLCMDS];         // Visible wall array
-    extern viswall_t*       gpEndVisWall;                   // End of the used viswalls range (also tells number of viswalls)
-    extern visplane_t       gVisPlanes[MAXVISPLANES];       // Visible floor array
-    extern visplane_t*      gpEndVisPlane;                  // End of the used visplanes range (also tells number of visplanes)
-    extern vissprite_t      gVisSprites[MAXVISSPRITES];     // Visible sprite array
-    extern vissprite_t*     gpEndVisSprite;                 // End of the used vissprites range (also tells the number of sprites)
-    extern uint8_t          gOpenings[MAXOPENINGS];
-    extern uint8_t*         gpEndOpening;
-    extern Fixed            gViewXFrac;                     // Camera x,y,z
-    extern Fixed            gViewYFrac;
-    extern Fixed            gViewZFrac;
-    extern angle_t          gViewAngleBAM;                  // Camera angle
-    extern Fixed            gViewCosFrac;                   // Camera sine, cosine from angle
-    extern Fixed            gViewSinFrac;
-    extern uint32_t         gExtraLight;                    // Bumped light from gun blasts
-    extern angle_t          gClipAngleBAM;                  // Leftmost clipping angle
-    extern angle_t          gDoubleClipAngleBAM;            // Doubled leftmost clipping angle
-    extern uint32_t         gSprOpening[MAXSCREENWIDTH];    // clipped range
+    extern viswall_t                gVisWalls[MAXWALLCMDS];         // Visible wall array
+    extern viswall_t*               gpEndVisWall;                   // End of the used viswalls range (also tells number of viswalls)
+    extern visplane_t               gVisPlanes[MAXVISPLANES];       // Visible floor array
+    extern visplane_t*              gpEndVisPlane;                  // End of the used visplanes range (also tells number of visplanes)
+    extern vissprite_t              gVisSprites[MAXVISSPRITES];     // Visible sprite array
+    extern vissprite_t*             gpEndVisSprite;                 // End of the used vissprites range (also tells the number of sprites)
+    extern uint8_t                  gOpenings[MAXOPENINGS];
+    extern uint8_t*                 gpEndOpening;
+    extern std::vector<DrawSeg>     gDrawSegs;
+    extern Fixed                    gViewXFrac;                     // Camera x,y,z
+    extern Fixed                    gViewYFrac;
+    extern Fixed                    gViewZFrac;
+    extern float                    gViewX;                         // Camera x,y,z
+    extern float                    gViewY;
+    extern float                    gViewZ;
+    extern angle_t                  gViewAngleBAM;                  // Camera angle
+    extern float                    gViewAngle;                     // Camera angle
+    extern Fixed                    gViewCosFrac;                   // Camera sine, cosine from angle
+    extern Fixed                    gViewSinFrac;
+    extern float                    gViewCos;                       // Camera sine, cosine from angle
+    extern float                    gViewSin;
+    extern ProjectionMatrix         gProjMatrix;                    // 3D projection matrix
+    extern uint32_t                 gExtraLight;                    // Bumped light from gun blasts
+    extern angle_t                  gClipAngleBAM;                  // Leftmost clipping angle
+    extern angle_t                  gDoubleClipAngleBAM;            // Doubled leftmost clipping angle
+    extern uint32_t                 gSprOpening[MAXSCREENWIDTH];    // clipped range
 
     //==================================================================================================================
     // Functions
     //==================================================================================================================
 
     void doBspTraversal() noexcept;
+    void addSegToFrame(const seg_t& seg) noexcept;
     void wallPrep(const int32_t leftX, const int32_t rightX, const seg_t& lineSeg, const angle_t lineAngle) noexcept;
     void drawAllLineSegs() noexcept;
     void drawAllVisPlanes() noexcept;
