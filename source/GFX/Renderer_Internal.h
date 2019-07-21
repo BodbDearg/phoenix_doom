@@ -4,7 +4,7 @@
 // Data structures and globals internal to the renderer.
 // Nothing here is used by outside code.
 //----------------------------------------------------------------------------------------------------------------------
-#include "Base/Angle.h"
+#include "Base/FMath.h"
 #include "Game/DoomDefines.h"
 #include "Renderer.h"
 #include <cstddef>
@@ -32,12 +32,16 @@ namespace Renderer {
     static constexpr float      MIN_LIGHT_MUL           = 0.020f;                   // Minimum allowed multiplier due to light
 
     // Rendering constants
-    static constexpr uint32_t   HEIGHTBITS              = 6;                        // Number of bits for texture height
-    static constexpr uint32_t   FIXEDTOHEIGHT           = FRACBITS - HEIGHTBITS;    // Number of unused bits from fixed to SCALEBITS
-    static constexpr uint32_t   SCALEBITS               = 9;                        // Number of bits for texture scale
-    static constexpr uint32_t   FIXEDTOSCALE            = FRACBITS - SCALEBITS;     // Number of unused bits from fixed to HEIGHTBITS
-    static constexpr float      MIN_RENDER_SCALE        = 1 / 256.0f;
-    static constexpr float      MAX_RENDER_SCALE        = 64.0f;
+    static constexpr float      FOV                 = FMath::ANGLE_90<float>;       // Field of view for 3D perspective
+    static constexpr float      Z_NEAR              = 1.0f;                         // Near plane Z value
+    static constexpr float      Z_RANGE_SIZE        = 16384.0f;                     // Size of the range of Z values allowed
+    static constexpr float      Z_FAR               = Z_NEAR + Z_RANGE_SIZE;        // Far plane Z value
+    static constexpr uint32_t   HEIGHTBITS          = 6;                            // Number of bits for texture height
+    static constexpr uint32_t   FIXEDTOHEIGHT       = FRACBITS - HEIGHTBITS;        // Number of unused bits from fixed to SCALEBITS
+    static constexpr uint32_t   SCALEBITS           = 9;                            // Number of bits for texture scale
+    static constexpr uint32_t   FIXEDTOSCALE        = FRACBITS - SCALEBITS;         // Number of unused bits from fixed to HEIGHTBITS
+    static constexpr float      MIN_RENDER_SCALE    = 1 / 256.0f;
+    static constexpr float      MAX_RENDER_SCALE    = 64.0f;
 
     //==================================================================================================================
     // Data structures

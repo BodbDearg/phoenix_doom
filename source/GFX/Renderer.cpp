@@ -213,11 +213,6 @@ void initMathTables() noexcept {
 
     // Compute the partial projection matrix
     {
-        // View constants
-        constexpr float FOV     = FMath::ANGLE_90<float>;
-        constexpr float Z_NEAR  = 1.0f;
-        constexpr float Z_FAR   = Z_NEAR + 8191.0f;
-
         // This is largely based on GLM's 'perspectiveRH_ZO' - see definition of 'ProjectionMatrix'
         // for more details about these calculations:
         const float w = (float) gScreenWidth;
