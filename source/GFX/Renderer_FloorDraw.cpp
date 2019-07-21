@@ -103,22 +103,22 @@ void drawVisPlane(
     const int32_t stop = plane.maxX + 1;    // Maximum x coord
     int32_t x = plane.minX;                 // Starting x
 
-    ColumnYBounds prevCol = { MAXSCREENHEIGHT - 1, 0 };     // Set posts to stop drawing
-    ColumnYBounds* const pPlaneCols = plane.cols;           // Init the pointer to the open Y's
+    ScreenYPair prevCol = { MAXSCREENHEIGHT - 1, 0 };       // Set posts to stop drawing
+    ScreenYPair* const pPlaneCols = plane.cols;             // Init the pointer to the open Y's
     ASSERT(stop < C_ARRAY_SIZE(plane.cols));
 
     do {
         // Fetch the NEW top and bottom
         ASSERT((uint32_t) x < C_ARRAY_SIZE(plane.cols));
-        const ColumnYBounds newCol = pPlaneCols[x];         
+        const ScreenYPair newCol = pPlaneCols[x];         
         
         if (prevCol == newCol)
             continue;
         
-        uint32_t prevTopY = prevCol.topY;        // Previous and dest Y coords for top and bottom line
-        uint32_t prevBottomY = prevCol.bottomY;
-        uint32_t newTopY = newCol.topY;
-        uint32_t newBottomY = newCol.bottomY;
+        uint32_t prevTopY = prevCol.ty;         // Previous and dest Y coords for top and bottom line
+        uint32_t prevBottomY = prevCol.by;
+        uint32_t newTopY = newCol.ty;
+        uint32_t newBottomY = newCol.by;
         
         // For lines on the top, check if the entry is going down            
         if (prevTopY < newTopY && prevTopY <= prevBottomY) {        // Valid?

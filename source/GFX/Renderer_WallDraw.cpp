@@ -352,17 +352,17 @@ static visplane_t* findPlane(
     // Quickly fill in the visplane table:
     // A brute force method to fill in the visplane record FAST!
     {
-        ColumnYBounds* pSet = pPlane->cols;  
+        ScreenYPair* pSet = pPlane->cols;  
 
         for (uint32_t j = gScreenWidth / 8; j > 0; --j) {
-            pSet[0] = ColumnYBounds::UNDEFINED();
-            pSet[1] = ColumnYBounds::UNDEFINED();
-            pSet[2] = ColumnYBounds::UNDEFINED();
-            pSet[3] = ColumnYBounds::UNDEFINED();
-            pSet[4] = ColumnYBounds::UNDEFINED();
-            pSet[5] = ColumnYBounds::UNDEFINED();
-            pSet[6] = ColumnYBounds::UNDEFINED();
-            pSet[7] = ColumnYBounds::UNDEFINED();
+            pSet[0] = ScreenYPair{ UINT16_MAX, 0 };
+            pSet[1] = ScreenYPair{ UINT16_MAX, 0 };
+            pSet[2] = ScreenYPair{ UINT16_MAX, 0 };
+            pSet[3] = ScreenYPair{ UINT16_MAX, 0 };
+            pSet[4] = ScreenYPair{ UINT16_MAX, 0 };
+            pSet[5] = ScreenYPair{ UINT16_MAX, 0 };
+            pSet[6] = ScreenYPair{ UINT16_MAX, 0 };
+            pSet[7] = ScreenYPair{ UINT16_MAX, 0 };
             pSet += 8;
         }
     }
@@ -450,7 +450,7 @@ static void segLoop(const viswall_t& seg) noexcept {
                         seg.seglightlevel
                     );
                 }
-                pFloorPlane->cols[viewX] = ColumnYBounds{ (uint16_t) top, (uint16_t) bottom };      // Set the new vertical span
+                pFloorPlane->cols[viewX] = ScreenYPair{ (uint16_t) top, (uint16_t) bottom };    // Set the new vertical span
             }
             floorY += floorYStep;
         }

@@ -47,7 +47,9 @@ namespace Renderer {
     // Data structures
     //==================================================================================================================
 
+    //------------------------------------------------------------------------------------------------------------------
     // Describes a 2D shape rendered to the screen
+    //------------------------------------------------------------------------------------------------------------------
     struct vissprite_t {
         int32_t                     x1;             // Clipped to screen edges column range
         int32_t                     x2;
@@ -60,13 +62,16 @@ namespace Renderer {
         const mobj_t*               thing;          // Used for clipping...
     };
 
-    // Describes the vertical bounds of a column on the screen
-    struct ColumnYBounds {
-        uint16_t topY;
-        uint16_t bottomY;
+    //------------------------------------------------------------------------------------------------------------------
+    // Contains two screen space Y coordinates (top and bottom).
+    // The exact meaning of these coordinates depends on the context in which they are used/
+    //------------------------------------------------------------------------------------------------------------------
+    struct ScreenYPair {
+        uint16_t ty;        // Top y coordinate
+        uint16_t by;        // Bottom y coordinate
 
-        inline constexpr bool operator == (const ColumnYBounds& other) const noexcept {
-            return (topY == other.topY && bottomY == other.bottomY);
+        inline constexpr bool operator == (const ScreenYPair& other) const noexcept {
+            return (ty == other.ty && by == other.by);
         }
 
         inline constexpr bool isUndefined() const noexcept {
@@ -77,12 +82,14 @@ namespace Renderer {
             return (!isUndefined());
         }
 
-        static inline constexpr ColumnYBounds UNDEFINED() noexcept {
-            return ColumnYBounds{ UINT16_MAX, 0 };
+        static inline constexpr ScreenYPair UNDEFINED() noexcept {
+            return ScreenYPair{ UINT16_MAX, 0 };
         }
     };
 
+    //------------------------------------------------------------------------------------------------------------------
     // Describes lighting params for an input light level
+    //------------------------------------------------------------------------------------------------------------------
     struct LightParams {
         float   lightMin;       // Minimum light value allowed
         float   lightMax;       // Maximum light value allowed
@@ -94,9 +101,11 @@ namespace Renderer {
         float getLightMulForDist(const float dist) const noexcept;
     };
 
+    //------------------------------------------------------------------------------------------------------------------
     // Describes a floor area to be drawn
+    //------------------------------------------------------------------------------------------------------------------
     struct visplane_t {
-        ColumnYBounds   cols[MAXSCREENWIDTH + 1];
+        ScreenYPair     cols[MAXSCREENWIDTH + 1];
         float           height;                     // Height of the floor
         uint32_t        picHandle;                  // Texture handle
         uint32_t        planeLight;                 // Light override
@@ -188,8 +197,30 @@ namespace Renderer {
         const Texture*      texture_ceil;
     };
 
+    //------------------------------------------------------------------------------------------------------------------
+    // Data structure that for every column on the screen describes all of the occluding columns.
+    // Used for sprite rendering.
+    //------------------------------------------------------------------------------------------------------------------
+    struct OccludingColumns {
+        static constexpr uint32_t MAX_ENTRIES = 15;
+
+        // The number of occluding column entries.
+        uint32_t count; 
+
+        // The depths of each occluding column.
+        // Note: is automatically in ascending order due to the nature of the BSP tree rendering - hence can be binary searched!
+        float depths[MAX_ENTRIES];    
+
+        // How much screen real estate each occluding column occupies at the top and bottom of the screen.
+        // Anything at or above the top coordinate is occluded.
+        // Anything at or below the bottom coordinate is occluded.
+        ScreenYPair bounds[MAX_ENTRIES];
+    };
+
+    //------------------------------------------------------------------------------------------------------------------
     // Describe a wall segment to be drawn
-    struct viswall_t {        
+    //------------------------------------------------------------------------------------------------------------------
+    struct viswall_t {
         int32_t         leftX;              // Leftmost x screen coord
         int32_t         rightX;             // Rightmost inclusive x coordinates
         uint32_t        FloorPic;           // Picture handle to floor shape
