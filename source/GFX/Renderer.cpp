@@ -35,32 +35,33 @@ BEGIN_NAMESPACE(Renderer)
 //----------------------------------------------------------------------------------------------------------------------
 // Internal renderer cross module globals
 //----------------------------------------------------------------------------------------------------------------------
-viswall_t               gVisWalls[MAXWALLCMDS];
-viswall_t*              gpEndVisWall;
-visplane_t              gVisPlanes[MAXVISPLANES];
-visplane_t*             gpEndVisPlane;
-vissprite_t             gVisSprites[MAXVISSPRITES];
-vissprite_t*            gpEndVisSprite;
-uint8_t                 gOpenings[MAXOPENINGS];
-uint8_t*                gpEndOpening;
-std::vector<DrawSeg>    gDrawSegs;
-Fixed                   gViewXFrac;
-Fixed                   gViewYFrac;
-Fixed                   gViewZFrac;
-float                   gViewX;
-float                   gViewY;
-float                   gViewZ;
-angle_t                 gViewAngleBAM;
-float                   gViewAngle;
-Fixed                   gViewCosFrac;
-Fixed                   gViewSinFrac;
-float                   gViewCos;
-float                   gViewSin;
-ProjectionMatrix        gProjMatrix;
-uint32_t                gExtraLight;
-angle_t                 gClipAngleBAM;
-angle_t                 gDoubleClipAngleBAM;
-uint32_t                gSprOpening[MAXSCREENWIDTH];
+viswall_t                   gVisWalls[MAXWALLCMDS];
+viswall_t*                  gpEndVisWall;
+visplane_t                  gVisPlanes[MAXVISPLANES];
+visplane_t*                 gpEndVisPlane;
+vissprite_t                 gVisSprites[MAXVISSPRITES];
+vissprite_t*                gpEndVisSprite;
+uint8_t                     gOpenings[MAXOPENINGS];
+uint8_t*                    gpEndOpening;
+std::vector<DrawSeg>        gDrawSegs;
+Fixed                       gViewXFrac;
+Fixed                       gViewYFrac;
+Fixed                       gViewZFrac;
+float                       gViewX;
+float                       gViewY;
+float                       gViewZ;
+angle_t                     gViewAngleBAM;
+float                       gViewAngle;
+Fixed                       gViewCosFrac;
+Fixed                       gViewSinFrac;
+float                       gViewCos;
+float                       gViewSin;
+ProjectionMatrix            gProjMatrix;
+uint32_t                    gExtraLight;
+angle_t                     gClipAngleBAM;
+angle_t                     gDoubleClipAngleBAM;
+uint32_t                    gSprOpening[MAXSCREENWIDTH];
+std::vector<ScreenYPair>    gSegYClip;
 
 //----------------------------------------------------------------------------------------------------------------------
 // Load in the "TextureInfo" array so that the game knows all about the wall and sky textures (Width,Height).
@@ -89,9 +90,46 @@ static void initData() noexcept {
     initMathTables();
 }
 
-//----------------------------------------------------------------------------------------------------------------------
-// Sets up various things prior to rendering for the new frame
-//----------------------------------------------------------------------------------------------------------------------
+static void setupSegYClipArrayForDraw() noexcept {
+    // Ensure the array is the correct size for the screen
+    if (gSegYClip.size() != gScreenWidth) {
+        gSegYClip.resize(gScreenWidth);
+    }
+
+    // Clear 16 entries in the y clip array at a time so the ops can be pipelined
+    constexpr ScreenYPair CLIP_BOUNDS_CLEAR_VALUE = ScreenYPair{ UINT16_MAX, 0 };
+
+    ScreenYPair* pClipBounds = gSegYClip.data();
+    ScreenYPair* const pEndClipBounds16 = pClipBounds + ((uint32_t(gSegYClip.size()) / 16) * 16);
+    ScreenYPair* const pEndClipBounds = pClipBounds + gSegYClip.size();
+
+    while (pClipBounds < pEndClipBounds16) {
+        pClipBounds[0] = CLIP_BOUNDS_CLEAR_VALUE;
+        pClipBounds[1] = CLIP_BOUNDS_CLEAR_VALUE;
+        pClipBounds[2] = CLIP_BOUNDS_CLEAR_VALUE;
+        pClipBounds[3] = CLIP_BOUNDS_CLEAR_VALUE;
+        pClipBounds[4] = CLIP_BOUNDS_CLEAR_VALUE;
+        pClipBounds[5] = CLIP_BOUNDS_CLEAR_VALUE;
+        pClipBounds[6] = CLIP_BOUNDS_CLEAR_VALUE;
+        pClipBounds[7] = CLIP_BOUNDS_CLEAR_VALUE;
+        pClipBounds[8] = CLIP_BOUNDS_CLEAR_VALUE;
+        pClipBounds[9] = CLIP_BOUNDS_CLEAR_VALUE;
+        pClipBounds[10] = CLIP_BOUNDS_CLEAR_VALUE;
+        pClipBounds[11] = CLIP_BOUNDS_CLEAR_VALUE;
+        pClipBounds[12] = CLIP_BOUNDS_CLEAR_VALUE;
+        pClipBounds[13] = CLIP_BOUNDS_CLEAR_VALUE;
+        pClipBounds[14] = CLIP_BOUNDS_CLEAR_VALUE;
+        pClipBounds[15] = CLIP_BOUNDS_CLEAR_VALUE;
+        pClipBounds += 16;
+    }
+
+    // Clear any remaining entries
+    while (pClipBounds < pEndClipBounds) {
+        pClipBounds[0] = CLIP_BOUNDS_CLEAR_VALUE;
+        ++pClipBounds;
+    }
+}
+
 static void preDrawSetup() noexcept {
     // Set the position and angle of the view from the player
     const player_t& player = gPlayers;
@@ -116,6 +154,8 @@ static void preDrawSetup() noexcept {
     }
 
     // Other misc setup
+    setupSegYClipArrayForDraw();
+
     gExtraLight = player.extralight << 6;       // Init the extra lighting value
     gpEndVisPlane = gVisPlanes + 1;             // visplanes[0] is left empty
     gpEndVisWall = gVisWalls;                   // No walls added yet

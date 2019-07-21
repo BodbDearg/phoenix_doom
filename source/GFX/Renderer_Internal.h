@@ -271,32 +271,33 @@ namespace Renderer {
     //==================================================================================================================
     // Globals shared throughout the renderer - defined in Renderer.cpp
     //==================================================================================================================
-    extern viswall_t                gVisWalls[MAXWALLCMDS];         // Visible wall array
-    extern viswall_t*               gpEndVisWall;                   // End of the used viswalls range (also tells number of viswalls)
-    extern visplane_t               gVisPlanes[MAXVISPLANES];       // Visible floor array
-    extern visplane_t*              gpEndVisPlane;                  // End of the used visplanes range (also tells number of visplanes)
-    extern vissprite_t              gVisSprites[MAXVISSPRITES];     // Visible sprite array
-    extern vissprite_t*             gpEndVisSprite;                 // End of the used vissprites range (also tells the number of sprites)
-    extern uint8_t                  gOpenings[MAXOPENINGS];
-    extern uint8_t*                 gpEndOpening;
-    extern std::vector<DrawSeg>     gDrawSegs;
-    extern Fixed                    gViewXFrac;                     // Camera x,y,z
-    extern Fixed                    gViewYFrac;
-    extern Fixed                    gViewZFrac;
-    extern float                    gViewX;                         // Camera x,y,z
-    extern float                    gViewY;
-    extern float                    gViewZ;
-    extern angle_t                  gViewAngleBAM;                  // Camera angle
-    extern float                    gViewAngle;                     // Camera angle
-    extern Fixed                    gViewCosFrac;                   // Camera sine, cosine from angle
-    extern Fixed                    gViewSinFrac;
-    extern float                    gViewCos;                       // Camera sine, cosine from angle
-    extern float                    gViewSin;
-    extern ProjectionMatrix         gProjMatrix;                    // 3D projection matrix
-    extern uint32_t                 gExtraLight;                    // Bumped light from gun blasts
-    extern angle_t                  gClipAngleBAM;                  // Leftmost clipping angle
-    extern angle_t                  gDoubleClipAngleBAM;            // Doubled leftmost clipping angle
-    extern uint32_t                 gSprOpening[MAXSCREENWIDTH];    // clipped range
+    extern viswall_t                    gVisWalls[MAXWALLCMDS];             // Visible wall array
+    extern viswall_t*                   gpEndVisWall;                       // End of the used viswalls range (also tells number of viswalls)
+    extern visplane_t                   gVisPlanes[MAXVISPLANES];           // Visible floor array
+    extern visplane_t*                  gpEndVisPlane;                      // End of the used visplanes range (also tells number of visplanes)
+    extern vissprite_t                  gVisSprites[MAXVISSPRITES];         // Visible sprite array
+    extern vissprite_t*                 gpEndVisSprite;                     // End of the used vissprites range (also tells the number of sprites)
+    extern uint8_t                      gOpenings[MAXOPENINGS];
+    extern uint8_t*                     gpEndOpening;
+    extern std::vector<DrawSeg>         gDrawSegs;
+    extern Fixed                        gViewXFrac;                         // Camera x,y,z
+    extern Fixed                        gViewYFrac;
+    extern Fixed                        gViewZFrac;
+    extern float                        gViewX;                             // Camera x,y,z
+    extern float                        gViewY;
+    extern float                        gViewZ;
+    extern angle_t                      gViewAngleBAM;                      // Camera angle
+    extern float                        gViewAngle;                         // Camera angle
+    extern Fixed                        gViewCosFrac;                       // Camera sine, cosine from angle
+    extern Fixed                        gViewSinFrac;
+    extern float                        gViewCos;                           // Camera sine, cosine from angle
+    extern float                        gViewSin;
+    extern ProjectionMatrix             gProjMatrix;                        // 3D projection matrix
+    extern uint32_t                     gExtraLight;                        // Bumped light from gun blasts
+    extern angle_t                      gClipAngleBAM;                      // Leftmost clipping angle
+    extern angle_t                      gDoubleClipAngleBAM;                // Doubled leftmost clipping angle
+    extern uint32_t                     gSprOpening[MAXSCREENWIDTH];        // clipped range
+    extern std::vector<ScreenYPair>     gSegYClip;                          // Used to clip segg columns vertically as segs are being submitted
 
     //==================================================================================================================
     // Functions
