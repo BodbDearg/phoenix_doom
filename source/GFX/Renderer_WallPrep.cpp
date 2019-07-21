@@ -328,13 +328,6 @@ static void transformSegXYToViewSpace(const seg_t& inSeg, DrawSeg& outSeg) noexc
     const float p1yRot = viewSin * outSeg.coords.p1x + viewCos * outSeg.coords.p1y;
     const float p2xRot = viewCos * outSeg.coords.p2x - viewSin * outSeg.coords.p2y;
     const float p2yRot = viewSin * outSeg.coords.p2x + viewCos * outSeg.coords.p2y;
-    
-    /*
-    const float p1xRot = viewCos * outSeg.coords.p1x + viewSin * outSeg.coords.p1y;
-    const float p1yRot = -viewSin * outSeg.coords.p1x + viewCos * outSeg.coords.p1y;
-    const float p2xRot = viewCos * outSeg.coords.p2x + viewSin * outSeg.coords.p2y;
-    const float p2yRot = -viewSin * outSeg.coords.p2x + viewCos * outSeg.coords.p2y;
-    */
 
     outSeg.coords.p1x = p1xRot;
     outSeg.coords.p1y = p1yRot;
@@ -342,22 +335,8 @@ static void transformSegXYToViewSpace(const seg_t& inSeg, DrawSeg& outSeg) noexc
     outSeg.coords.p2y = p2yRot;
 }
 
-static bool isViewSpaceSegBackFacing(const DrawSeg& seg) noexcept {
-    // Get a 2D normal for the seg (un-normalized)
-    const float segP1x = seg.coords.p1x;
-    const float segP1y = seg.coords.p1y;
-    const float segDirX = seg.coords.p2x - segP1x;
-    const float segDirY = seg.coords.p2y - segP1y;
-    const float segNormX = segDirY;
-    const float segNormY = -segDirX;
-
-    // Get the direction from the seg to the camera
-    const float segToViewX = gViewX - segP1x;
-    const float segToViewY = gViewY - segP1y;
-
-    // Do a dot product against the seg normal to see what side we are on
-    const float dot = segToViewX * segNormX + segToViewY * segNormY;
-    return (dot < 0);
+static bool isScreenSpaceSegBackFacing(const DrawSeg& seg) noexcept {
+    return (seg.coords.p1x >= seg.coords.p2x);
 }
 
 static void transformSegXYWToClipSpace(DrawSeg& seg) noexcept {
@@ -366,13 +345,15 @@ static void transformSegXYWToClipSpace(DrawSeg& seg) noexcept {
     //      projection matrix has 'z' as the depth value and not y (Doom coord sys). 
     //  (2) We assume that the seg always starts off with an implicit 'w' value of '1'.
     //
-    const float y1Orig = seg.coords.p1y;
-    const float y2Orig = seg.coords.p2y;
+
+    // FIXME: can we avoid negating this?
+    const float y1Orig = -seg.coords.p1y;
+    const float y2Orig = -seg.coords.p2y;
 
     seg.coords.p1x *= gProjMatrix.r0c0;
     seg.coords.p2x *= gProjMatrix.r0c0;
-    seg.coords.p1y *= gProjMatrix.r2c2;
-    seg.coords.p2y *= gProjMatrix.r2c2;
+    seg.coords.p1y = y1Orig * gProjMatrix.r2c2;
+    seg.coords.p2y = y2Orig * gProjMatrix.r2c2;
     seg.coords.p1w = y1Orig * gProjMatrix.r2c3 + 1.0f;
     seg.coords.p2w = y2Orig * gProjMatrix.r2c3 + 1.0f;
 }
@@ -693,10 +674,6 @@ void addSegToFrame(const seg_t& seg) noexcept {
     // First transform the seg into viewspace
     DrawSeg drawSeg;
     transformSegXYToViewSpace(seg, drawSeg);
-
-    // Discard any segs that are back facing
-    if (isViewSpaceSegBackFacing(drawSeg))
-        return;
     
     // Set the U coordinates for the seg.
     // Those will need to be adjusted accordingly if we clip:
@@ -754,8 +731,16 @@ void addSegToFrame(const seg_t& seg) noexcept {
     doPerspectiveDivisionForSeg(drawSeg);
     transformSegXZToScreenSpace(drawSeg);
 
+    // Discard any segs that are back facing
+    if (isScreenSpaceSegBackFacing(drawSeg))
+        return;
+
     // Emit all wall fragments for the seg
-    emitWallFragments(drawSeg);
+    
+    // TODO: TEMP
+    if (!seg.backsector) {
+        emitWallFragments(drawSeg);
+    }
 }
 
 END_NAMESPACE(Renderer)
