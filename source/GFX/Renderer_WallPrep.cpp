@@ -6,6 +6,9 @@
 #include "Map/MapUtil.h"
 #include "Textures.h"
 
+// TODO: TEST
+#include "Video.h"
+
 BEGIN_NAMESPACE(Renderer)
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -545,6 +548,115 @@ static bool clipSegAgainstRightPlane(DrawSeg& seg) noexcept {
     return true;
 }
 
+static void doPerspectiveDivisionForSeg(DrawSeg& seg) noexcept {
+    // Compute the inverse of w for p1 and p2
+    const float w1Inv = 1.0f / seg.coords.p1w;
+    const float w2Inv = 1.0f / seg.coords.p2w;
+    seg.coords.p1w_inv = w1Inv;
+    seg.coords.p2w_inv = w2Inv;
+
+    // Note: don't bother modifying 'w' - it's unused after perspective division
+    seg.coords.p1x *= w1Inv;
+    seg.coords.p1y *= w1Inv;
+    seg.coords.p2x *= w2Inv;
+    seg.coords.p2y *= w2Inv;
+
+    seg.coords.p1tz *= w1Inv;
+    seg.coords.p1bz *= w1Inv;
+    seg.coords.p1tz_back *= w1Inv;
+    seg.coords.p1bz_back *= w1Inv;
+
+    seg.coords.p2tz *= w2Inv;
+    seg.coords.p2bz *= w2Inv;
+    seg.coords.p2tz_back *= w2Inv;
+    seg.coords.p2bz_back *= w2Inv;
+}
+
+static void transformSegXZToScreenSpace(DrawSeg& seg) noexcept {
+    const float screenW = (float) gScreenWidth;
+    const float screenH = (float) gScreenHeight;
+
+    // All coords are in the range -1 to +1 now.
+    // Bring in the range 0-1 and then expand to screen width and height:
+    seg.coords.p1x = (seg.coords.p1x * 0.5f + 0.5f) * screenW;
+    seg.coords.p2x = (seg.coords.p2x * 0.5f + 0.5f) * screenW;
+
+    seg.coords.p1tz = (seg.coords.p1tz * 0.5f + 0.5f) * screenH;
+    seg.coords.p1bz = (seg.coords.p1bz * 0.5f + 0.5f) * screenH;
+    seg.coords.p2tz = (seg.coords.p2tz * 0.5f + 0.5f) * screenH;
+    seg.coords.p2bz = (seg.coords.p2bz * 0.5f + 0.5f) * screenH;
+    
+    seg.coords.p1tz_back = (seg.coords.p1tz_back * 0.5f + 0.5f) * screenH;
+    seg.coords.p1bz_back = (seg.coords.p1bz_back * 0.5f + 0.5f) * screenH;
+    seg.coords.p2tz_back = (seg.coords.p2tz_back * 0.5f + 0.5f) * screenH;
+    seg.coords.p2bz_back = (seg.coords.p2bz_back * 0.5f + 0.5f) * screenH;
+}
+
+static void emitWallFragments(const DrawSeg& seg) noexcept {
+    // TODO: TEST
+    int32_t x1 = (int32_t) seg.coords.p1x;
+    int32_t x2 = (int32_t) seg.coords.p2x;
+
+    ASSERT(x1 >= 0);
+    ASSERT(x1 < gScreenWidth);
+    ASSERT(x2 >= 0);
+    ASSERT(x2 < gScreenWidth);
+
+    float y1t = seg.coords.p1tz;
+    float y1b = seg.coords.p1bz;
+    float y2t = seg.coords.p2tz;
+    float y2b = seg.coords.p2bz;
+    float w1 = seg.coords.p1w;
+    float w1Inv = seg.coords.p1w_inv;
+    float w2 = seg.coords.p2w;
+    float w2Inv = seg.coords.p2w_inv;
+
+    if (x2 < x1) {
+        std::swap(x1, x2);
+        std::swap(y1t, y2t);
+        std::swap(y1b, y2b);
+        std::swap(w1, w2);
+        std::swap(w1Inv, w2Inv);
+    }
+
+    const uint32_t colCount = (x2 - x1) + 1;
+
+    y1t *= w1Inv;
+    y1b *= w1Inv;
+    y2t *= w1Inv;
+    y2b *= w1Inv;
+
+    const float ytStep = (y2t - y1t) / (float) (colCount - 1);
+    const float ybStep = (y2b - y1b) / (float) (colCount - 1);
+
+    for (int32_t x = x1; x <= x2; ++x) {
+        const float pixelNumF = (float) (x - x1);
+        const float yt = y1t + ytStep * pixelNumF;
+        const float yb = y1b + ybStep * pixelNumF;
+
+        int32_t yti = (int32_t) yt;
+        int32_t ybi = (int32_t) yb;
+
+        if (yti < 0) {
+            yti = 0;
+
+            if (yti > ybi)
+                continue;
+        }
+
+        if (ybi >= gScreenHeight) {
+            ybi = gScreenHeight - 1;
+
+            if (yti > ybi)
+                continue;
+        }
+
+        for (int32_t y = yti; y <= ybi; ++y) {
+            Video::gFrameBuffer[(gScreenYOffset + y) * Video::SCREEN_WIDTH + gScreenXOffset + x] = 0xFFFFFFFFu;
+        }
+    }
+}
+
 void addSegToFrame(const seg_t& seg) noexcept {
     // First transform the seg into viewspace
     DrawSeg drawSeg;
@@ -577,6 +689,40 @@ void addSegToFrame(const seg_t& seg) noexcept {
     
     if (!clipSegAgainstRightPlane(drawSeg))
         return;
+    
+    // Now that the seg is not rejected, fill in the height values
+    {
+        const float frontFloorY = FMath::doomFixed16ToFloat<float>(seg.frontsector->floorheight);
+        const float frontCeilY = FMath::doomFixed16ToFloat<float>(seg.frontsector->ceilingheight);
+
+        drawSeg.coords.p1tz = frontCeilY;
+        drawSeg.coords.p1bz = frontFloorY;
+        drawSeg.coords.p2tz = frontCeilY;
+        drawSeg.coords.p2bz = frontFloorY;
+
+        if (seg.backsector) {
+            const float backFloorY = FMath::doomFixed16ToFloat<float>(seg.backsector->floorheight);
+            const float backCeilY = FMath::doomFixed16ToFloat<float>(seg.backsector->ceilingheight);
+
+            drawSeg.coords.p1tz_back = backCeilY;
+            drawSeg.coords.p1bz_back = backFloorY;
+            drawSeg.coords.p2tz_back = backCeilY;
+            drawSeg.coords.p2bz_back = backFloorY;
+        }
+        else {
+            drawSeg.coords.p1tz_back = 0.0f;
+            drawSeg.coords.p1bz_back = 0.0f;
+            drawSeg.coords.p2tz_back = 0.0f;
+            drawSeg.coords.p2bz_back = 0.0f;
+        }
+    }
+
+    // Do perspective division and transform the seg to screen space
+    doPerspectiveDivisionForSeg(drawSeg);
+    transformSegXZToScreenSpace(drawSeg);
+
+    // Emit all wall fragments for the seg
+    emitWallFragments(drawSeg);
 }
 
 END_NAMESPACE(Renderer)

@@ -62,6 +62,7 @@ angle_t                     gClipAngleBAM;
 angle_t                     gDoubleClipAngleBAM;
 uint32_t                    gSprOpening[MAXSCREENWIDTH];
 std::vector<ScreenYPair>    gSegYClip;
+std::vector<WallFragment>   gWallFragments;
 
 //----------------------------------------------------------------------------------------------------------------------
 // Load in the "TextureInfo" array so that the game knows all about the wall and sky textures (Width,Height).
@@ -155,6 +156,7 @@ static void preDrawSetup() noexcept {
 
     // Other misc setup
     setupSegYClipArrayForDraw();
+    gWallFragments.clear();
 
     gExtraLight = player.extralight << 6;       // Init the extra lighting value
     gpEndVisPlane = gVisPlanes + 1;             // visplanes[0] is left empty

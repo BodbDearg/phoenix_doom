@@ -10,6 +10,7 @@
 #include <cstddef>
 #include <vector>
 
+struct ImageData;
 struct mobj_t;
 struct seg_t;
 struct SpriteFrameAngle;
@@ -218,6 +219,21 @@ namespace Renderer {
     };
 
     //------------------------------------------------------------------------------------------------------------------
+    // Describes a column of a wall to be drawn
+    //------------------------------------------------------------------------------------------------------------------
+    struct WallFragment {
+        uint16_t    x;
+        uint16_t    y;
+        uint16_t    height;
+        uint16_t    _unused;
+        float       texcoordX;
+        float       texcoordY;
+        float       texcoordYStep;
+        float       normalizedDepth;
+        ImageData*  pImageData;
+    };
+
+    //------------------------------------------------------------------------------------------------------------------
     // Describe a wall segment to be drawn
     //------------------------------------------------------------------------------------------------------------------
     struct viswall_t {
@@ -298,6 +314,7 @@ namespace Renderer {
     extern angle_t                      gDoubleClipAngleBAM;                // Doubled leftmost clipping angle
     extern uint32_t                     gSprOpening[MAXSCREENWIDTH];        // clipped range
     extern std::vector<ScreenYPair>     gSegYClip;                          // Used to clip segg columns vertically as segs are being submitted
+    extern std::vector<WallFragment>    gWallFragments;                     // Wall fragments to be drawn
 
     //==================================================================================================================
     // Functions
