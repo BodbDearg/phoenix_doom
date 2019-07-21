@@ -328,6 +328,13 @@ static void transformSegXYToViewSpace(const seg_t& inSeg, DrawSeg& outSeg) noexc
     const float p1yRot = viewSin * outSeg.coords.p1x + viewCos * outSeg.coords.p1y;
     const float p2xRot = viewCos * outSeg.coords.p2x - viewSin * outSeg.coords.p2y;
     const float p2yRot = viewSin * outSeg.coords.p2x + viewCos * outSeg.coords.p2y;
+    
+    /*
+    const float p1xRot = viewCos * outSeg.coords.p1x + viewSin * outSeg.coords.p1y;
+    const float p1yRot = -viewSin * outSeg.coords.p1x + viewCos * outSeg.coords.p1y;
+    const float p2xRot = viewCos * outSeg.coords.p2x + viewSin * outSeg.coords.p2y;
+    const float p2yRot = -viewSin * outSeg.coords.p2x + viewCos * outSeg.coords.p2y;
+    */
 
     outSeg.coords.p1x = p1xRot;
     outSeg.coords.p1y = p1yRot;
@@ -481,13 +488,13 @@ static bool clipSegAgainstLeftPlane(DrawSeg& seg) noexcept {
     if (p1InFront) {
         seg.coords.p2x = newX;
         seg.coords.p2y = newY;
-        seg.coords.p2w = -seg.coords.p2x;
+        seg.coords.p2w = -newX;
         seg.p2TexU = newU;
     }
     else {
         seg.coords.p1x = newX;
         seg.coords.p1y = newY;
-        seg.coords.p1w = -seg.coords.p1x;
+        seg.coords.p1w = -newX;
         seg.p1TexU = newU;
     }
 
@@ -535,13 +542,13 @@ static bool clipSegAgainstRightPlane(DrawSeg& seg) noexcept {
     if (p1InFront) {
         seg.coords.p2x = newX;
         seg.coords.p2y = newY;
-        seg.coords.p2w = seg.coords.p2x;
+        seg.coords.p2w = newX;
         seg.p2TexU = newU;
     }
     else {
         seg.coords.p1x = newX;
         seg.coords.p1y = newY;
-        seg.coords.p1w = seg.coords.p1x;
+        seg.coords.p1w = newX;
         seg.p1TexU = newU;
     }
 
@@ -558,6 +565,7 @@ static void doPerspectiveDivisionForSeg(DrawSeg& seg) noexcept {
     // Note: don't bother modifying 'w' - it's unused after perspective division
     seg.coords.p1x *= w1Inv;
     seg.coords.p1y *= w1Inv;
+
     seg.coords.p2x *= w2Inv;
     seg.coords.p2y *= w2Inv;
 
@@ -597,6 +605,14 @@ static void emitWallFragments(const DrawSeg& seg) noexcept {
     int32_t x1 = (int32_t) seg.coords.p1x;
     int32_t x2 = (int32_t) seg.coords.p2x;
 
+    // TODO: REMOVE
+    if (x1 >= gScreenWidth) {
+        x1 = gScreenWidth - 1;
+    }
+    if (x2 >= gScreenWidth) {
+        x2 = gScreenWidth - 1;
+    }
+
     ASSERT(x1 >= 0);
     ASSERT(x1 < gScreenWidth);
     ASSERT(x2 >= 0);
@@ -621,18 +637,33 @@ static void emitWallFragments(const DrawSeg& seg) noexcept {
 
     const uint32_t colCount = (x2 - x1) + 1;
 
+    /*
     y1t *= w1Inv;
     y1b *= w1Inv;
     y2t *= w1Inv;
     y2b *= w1Inv;
+    */
 
-    const float ytStep = (y2t - y1t) / (float) (colCount - 1);
-    const float ybStep = (y2b - y1b) / (float) (colCount - 1);
+    const float steppingDivider = 1.0f / (float) (colCount - 1);
+    const float wInvStep = (w2Inv - w1Inv) * steppingDivider;
+    const float wStep = (w2 - w1) * steppingDivider;
+    const float ytStep = (y2t - y1t) * steppingDivider;
+    const float ybStep = (y2b - y1b) * steppingDivider;
+    const float viewH = (float) gScreenHeight;
 
     for (int32_t x = x1; x <= x2; ++x) {
         const float pixelNumF = (float) (x - x1);
-        const float yt = y1t + ytStep * pixelNumF;
-        const float yb = y1b + ybStep * pixelNumF;
+
+        const float wInv = (w1Inv + wInvStep * pixelNumF);
+        const float w = (w1 + wStep * pixelNumF);
+
+        // TODO: use perspective correct interpolation here? Linear actually works OK for height.
+        /*
+        const float yt = viewH - (y1t + ytStep * pixelNumF) / wInv;
+        const float yb = viewH - (y1b + ybStep * pixelNumF) / wInv;
+        */
+        const float yt = viewH - (y1t + ytStep * pixelNumF);
+        const float yb = viewH - (y1b + ybStep * pixelNumF);
 
         int32_t yti = (int32_t) yt;
         int32_t ybi = (int32_t) yb;
@@ -652,7 +683,8 @@ static void emitWallFragments(const DrawSeg& seg) noexcept {
         }
 
         for (int32_t y = yti; y <= ybi; ++y) {
-            Video::gFrameBuffer[(gScreenYOffset + y) * Video::SCREEN_WIDTH + gScreenXOffset + x] = 0xFFFFFFFFu;
+            const uint32_t pixelOffset = (gScreenYOffset + y) * Video::SCREEN_WIDTH + gScreenXOffset + x;
+            Video::gFrameBuffer[pixelOffset] = 0xFFFFFFFFu;
         }
     }
 }
@@ -692,22 +724,23 @@ void addSegToFrame(const seg_t& seg) noexcept {
     
     // Now that the seg is not rejected, fill in the height values
     {
-        const float frontFloorY = FMath::doomFixed16ToFloat<float>(seg.frontsector->floorheight);
-        const float frontCeilY = FMath::doomFixed16ToFloat<float>(seg.frontsector->ceilingheight);
+        const float viewZ = gViewZ;
+        const float frontFloorZ = FMath::doomFixed16ToFloat<float>(seg.frontsector->floorheight);
+        const float frontCeilZ = FMath::doomFixed16ToFloat<float>(seg.frontsector->ceilingheight);
 
-        drawSeg.coords.p1tz = frontCeilY;
-        drawSeg.coords.p1bz = frontFloorY;
-        drawSeg.coords.p2tz = frontCeilY;
-        drawSeg.coords.p2bz = frontFloorY;
+        drawSeg.coords.p1tz = frontCeilZ - viewZ;
+        drawSeg.coords.p1bz = frontFloorZ - viewZ;
+        drawSeg.coords.p2tz = frontCeilZ - viewZ;
+        drawSeg.coords.p2bz = frontFloorZ - viewZ;
 
         if (seg.backsector) {
-            const float backFloorY = FMath::doomFixed16ToFloat<float>(seg.backsector->floorheight);
-            const float backCeilY = FMath::doomFixed16ToFloat<float>(seg.backsector->ceilingheight);
+            const float backFloorZ = FMath::doomFixed16ToFloat<float>(seg.backsector->floorheight);
+            const float backCeilZ = FMath::doomFixed16ToFloat<float>(seg.backsector->ceilingheight);
 
-            drawSeg.coords.p1tz_back = backCeilY;
-            drawSeg.coords.p1bz_back = backFloorY;
-            drawSeg.coords.p2tz_back = backCeilY;
-            drawSeg.coords.p2bz_back = backFloorY;
+            drawSeg.coords.p1tz_back = backCeilZ - viewZ;
+            drawSeg.coords.p1bz_back = backFloorZ - viewZ;
+            drawSeg.coords.p2tz_back = backCeilZ - viewZ;
+            drawSeg.coords.p2bz_back = backFloorZ - viewZ;
         }
         else {
             drawSeg.coords.p1tz_back = 0.0f;

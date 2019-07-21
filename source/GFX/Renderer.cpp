@@ -150,8 +150,8 @@ static void preDrawSetup() noexcept {
         const uint32_t angleIdx = gViewAngleBAM >> ANGLETOFINESHIFT;    // Precalc angle index
         gViewSinFrac = gFineSine[angleIdx];                             // Get the base sine value
         gViewCosFrac = gFineCosine[angleIdx];                           // Get the base cosine value
-        gViewSin = std::sin(gViewAngle);
-        gViewCos = std::cos(gViewAngle);
+        gViewSin = std::sin(-gViewAngle - FMath::ANGLE_90<float>);
+        gViewCos = std::cos(-gViewAngle - FMath::ANGLE_90<float>);
     }
 
     // Other misc setup
