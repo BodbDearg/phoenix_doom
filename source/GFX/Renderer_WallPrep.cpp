@@ -332,6 +332,24 @@ static void transformSegXYToViewSpace(const seg_t& inSeg, DrawSeg& outSeg) noexc
     outSeg.coords.p2y = p2yRot;
 }
 
+static bool isViewSpaceSegBackFacing(const DrawSeg& seg) noexcept {
+    // Get a 2D normal for the seg (un-normalized)
+    const float segP1x = seg.coords.p1x;
+    const float segP1y = seg.coords.p1y;
+    const float segDirX = seg.coords.p2x - segP1x;
+    const float segDirY = seg.coords.p2y - segP1y;
+    const float segNormX = segDirY;
+    const float segNormY = -segDirX;
+
+    // Get the direction from the seg to the camera
+    const float segToViewX = gViewX - segP1x;
+    const float segToViewY = gViewY - segP1y;
+
+    // Do a dot product against the seg normal to see what side we are on
+    const float dot = segToViewX * segNormX + segToViewY * segNormY;
+    return (dot < 0);
+}
+
 static void transformSegXYWToClipSpace(DrawSeg& seg) noexcept {
     // Notes:
     //  (1) We treat 'y' as if it were 'z' for the purposes of these calculations, since the
@@ -532,6 +550,10 @@ void addSegToFrame(const seg_t& seg) noexcept {
     DrawSeg drawSeg;
     transformSegXYToViewSpace(seg, drawSeg);
 
+    // Discard any segs that are back facing
+    if (isViewSpaceSegBackFacing(drawSeg))
+        return;
+    
     // Set the U coordinates for the seg.
     // Those will need to be adjusted accordingly if we clip:
     {

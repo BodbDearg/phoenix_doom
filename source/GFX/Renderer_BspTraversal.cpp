@@ -407,7 +407,7 @@ static void addSubsectorToFrame(subsector_t& sub) noexcept {
     seg_t* const pEndLineSeg = pLineSeg + sub.numsublines;
     
     while (pLineSeg < pEndLineSeg) {
-        addSegToFrame(*pLineSeg, sector);
+        addSegToFrameOld(*pLineSeg, sector);
         ++pLineSeg;
     }
 }
