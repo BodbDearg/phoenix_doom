@@ -706,19 +706,19 @@ void addSegToFrame(const seg_t& seg) noexcept {
         const float frontFloorZ = FMath::doomFixed16ToFloat<float>(seg.frontsector->floorheight);
         const float frontCeilZ = FMath::doomFixed16ToFloat<float>(seg.frontsector->ceilingheight);
 
-        drawSeg.coords.p1tz = frontCeilZ - viewZ;
-        drawSeg.coords.p1bz = frontFloorZ - viewZ;
-        drawSeg.coords.p2tz = frontCeilZ - viewZ;
-        drawSeg.coords.p2bz = frontFloorZ - viewZ;
+        drawSeg.coords.p1tz = (frontCeilZ - viewZ) * gProjMatrix.r1c1;
+        drawSeg.coords.p1bz = (frontFloorZ - viewZ) * gProjMatrix.r1c1;
+        drawSeg.coords.p2tz = (frontCeilZ - viewZ) * gProjMatrix.r1c1;
+        drawSeg.coords.p2bz = (frontFloorZ - viewZ) * gProjMatrix.r1c1;
 
         if (seg.backsector) {
             const float backFloorZ = FMath::doomFixed16ToFloat<float>(seg.backsector->floorheight);
             const float backCeilZ = FMath::doomFixed16ToFloat<float>(seg.backsector->ceilingheight);
 
-            drawSeg.coords.p1tz_back = backCeilZ - viewZ;
-            drawSeg.coords.p1bz_back = backFloorZ - viewZ;
-            drawSeg.coords.p2tz_back = backCeilZ - viewZ;
-            drawSeg.coords.p2bz_back = backFloorZ - viewZ;
+            drawSeg.coords.p1tz_back = (backCeilZ - viewZ) * gProjMatrix.r1c1;
+            drawSeg.coords.p1bz_back = (backFloorZ - viewZ) * gProjMatrix.r1c1;
+            drawSeg.coords.p2tz_back = (backCeilZ - viewZ) * gProjMatrix.r1c1;
+            drawSeg.coords.p2bz_back = (backFloorZ - viewZ) * gProjMatrix.r1c1;
         }
         else {
             drawSeg.coords.p1tz_back = 0.0f;
