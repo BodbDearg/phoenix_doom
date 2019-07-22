@@ -118,7 +118,7 @@ namespace Renderer {
     // Describes a sparse 4x4 matrix designed for 3D projections.
     //
     //  (1) 'Z' in this matrix is DEPTH (unlike the Doom coord sys). 'Y' is also height here.
-    //  (2) The matrix (M) is designed transform a single row/vector (V) using the following multiply order: VxM.
+    //  (2) The matrix (M) is designed transform a single row/vector (V) using the following multiply order: MxV.
     //  (3) Except where otherwise stated, omitted elements are '0' and are not considered in calculations.
     //  (4) The omitted 'r3c3' element is '1' and IS considered in calculations.
     // 
@@ -132,21 +132,21 @@ namespace Renderer {
     //
     //      r0c0 = 1 / (f * a)
     //      r1c1 = -1 / f
-    //      r2c2 = zf / (zn - zf)
-    //      r2c3 = (zn * zf) / (zf - zn)
-    //      r3c3 = 1
+    //      r2c2 = -zf / (zn - zf)
+    //      r2c3 = 1.0
+    //      r3c2 = -(zn * zf) / (zf - zn)    
     //
     // Effectively it looks like this when visualized (with implicit entries added):
     //      r0c0,   0,      0,      0,
     //      0,      r1c1,   0,      0,
-    //      0,      0,      r2c2,   r2c3,
-    //      0,      0,      0,      1
+    //      0,      0,      r2c2,   1.0,
+    //      0,      0,      r3c2,   0
     //------------------------------------------------------------------------------------------------------------------
     struct ProjectionMatrix {
         float r0c0;
         float r1c1;
         float r2c2;
-        float r2c3;
+        float r3c2;
     };
 
     //------------------------------------------------------------------------------------------------------------------

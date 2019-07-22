@@ -350,10 +350,10 @@ static void transformSegXYWToClipSpace(DrawSeg& seg) noexcept {
 
     seg.coords.p1x *= gProjMatrix.r0c0;
     seg.coords.p2x *= gProjMatrix.r0c0;
-    seg.coords.p1y = y1Orig * gProjMatrix.r2c2;
-    seg.coords.p2y = y2Orig * gProjMatrix.r2c2;
-    seg.coords.p1w = y1Orig * gProjMatrix.r2c3 + 1.0f;
-    seg.coords.p2w = y2Orig * gProjMatrix.r2c3 + 1.0f;
+    seg.coords.p1y = gProjMatrix.r2c2 * y1Orig + 1.0f;      // Note: +1 due to implicit 'w' (1.0) by implicit 'r2c3' (1.0)
+    seg.coords.p2y = gProjMatrix.r2c2 * y2Orig + 1.0f;      // Note: +1 due to implicit 'w' (1.0) by implicit 'r2c3' (1.0)
+    seg.coords.p1w = gProjMatrix.r3c2 * y1Orig;
+    seg.coords.p2w = gProjMatrix.r3c2 * y2Orig;
 }
 
 //----------------------------------------------------------------------------------------------------------------------
