@@ -122,7 +122,9 @@ namespace Renderer {
     //  (3) Except where otherwise stated, omitted elements are '0' and are not considered in calculations.
     //  (4) The omitted 'r3c3' element is '1' and IS considered in calculations.
     // 
-    // Note that the calculations below are Loosely based on the GLM function 'perspectiveRH_ZO'.
+    // Note that the calculations below are Loosely based on the GLM function 'perspectiveRH_ZO', 
+    // with various adjustments to make it match how the original 3DO Doom (and probably PC Doom) computed projections.
+    // 
     // Based on input parameters for view width & height, znear & far, and field of view respectively:
     //      w, h, zn, zf, fov
     //
@@ -130,8 +132,8 @@ namespace Renderer {
     //      f = tan(fov * 0.5)
     //      a = w / h
     //
-    //      r0c0 = 1 / (f * a)
-    //      r1c1 = 1 / f
+    //      r0c0 = 1 / f
+    //      r1c1 = a / f
     //      r2c2 = -zf / (zn - zf)
     //      r3c2 = -(zn * zf) / (zf - zn)
     //      r2c3 = 1.0

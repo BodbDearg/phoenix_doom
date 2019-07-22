@@ -262,8 +262,8 @@ void initMathTables() noexcept {
         const float f = std::tan(FOV * 0.5f);
         const float a = w / h;
 
-        gProjMatrix.r0c0 = 1.0f / (f * a);
-        gProjMatrix.r1c1 = 1.0f / f;
+        gProjMatrix.r0c0 = 1.0f / f;
+        gProjMatrix.r1c1 = a / f;
         gProjMatrix.r2c2 = Z_FAR / (Z_NEAR - Z_FAR);
         gProjMatrix.r2c3 = (Z_NEAR * Z_FAR) / (Z_FAR - Z_NEAR);
     }
