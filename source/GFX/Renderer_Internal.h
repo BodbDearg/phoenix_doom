@@ -122,10 +122,7 @@ namespace Renderer {
     //  (3) Except where otherwise stated, omitted elements are '0' and are not considered in calculations.
     //  (4) The omitted 'r3c3' element is '1' and IS considered in calculations.
     // 
-    // Note that the calculations below are Loosely based on the GLM function 'perspectiveRH_ZO' but adjusted so that
-    // Z positive goes INTO the screen and the Y coordinate in normalized device coords (NDC) increases as we go
-    // DOWN the screen, similar to how most screen buffers are stored.
-    //
+    // Note that the calculations below are Loosely based on the GLM function 'perspectiveRH_ZO'.
     // Based on input parameters for view width & height, znear & far, and field of view respectively:
     //      w, h, zn, zf, fov
     //
@@ -135,8 +132,8 @@ namespace Renderer {
     //
     //      r0c0 = 1 / (f * a)
     //      r1c1 = -1 / f
-    //      r2c2 = -zf / (zn - zf)
-    //      r2c3 = -(zn * zf) / (zf - zn)
+    //      r2c2 = zf / (zn - zf)
+    //      r2c3 = (zn * zf) / (zf - zn)
     //      r3c3 = 1
     //
     // Effectively it looks like this when visualized (with implicit entries added):

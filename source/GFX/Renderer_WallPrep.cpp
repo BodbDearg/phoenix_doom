@@ -345,10 +345,8 @@ static void transformSegXYWToClipSpace(DrawSeg& seg) noexcept {
     //      projection matrix has 'z' as the depth value and not y (Doom coord sys). 
     //  (2) We assume that the seg always starts off with an implicit 'w' value of '1'.
     //
-
-    // FIXME: can we avoid negating this?
-    const float y1Orig = -seg.coords.p1y;
-    const float y2Orig = -seg.coords.p2y;
+    const float y1Orig = seg.coords.p1y;
+    const float y2Orig = seg.coords.p2y;
 
     seg.coords.p1x *= gProjMatrix.r0c0;
     seg.coords.p2x *= gProjMatrix.r0c0;
@@ -375,30 +373,31 @@ static void transformSegXYWToClipSpace(DrawSeg& seg) noexcept {
 //          -wc <= zc && zc >= wc
 //----------------------------------------------------------------------------------------------------------------------
 static bool clipSegAgainstFrontPlane(DrawSeg& seg) noexcept {
-    // The front plane in normalized device coords (NDC) is at z = -1 (back is z = 1)
-    // Hence in clipspace it is at -w (back is at +w):
+    // The left plane in normalized device coords (NDC) is at z = -1, hence in clipspace it is at -w.
+    // The distance to the clip plane can be computed by the dot product against the following vector:
+    //  (0, 0, 1, 1)
+    //
+    // Using this, compute the signed distance of the seg points to the plane and see if we should reject
+    // due to both points being outside the clip plane or leave unmodified due to both being on the inside:
+    //
     const float p1y = seg.coords.p1y;
     const float p2y = seg.coords.p2y;
     const float p1w = seg.coords.p1w;
     const float p2w = seg.coords.p2w;
 
-    const bool p1InFront = (p1y >= -p1w);
-    const bool p2InFront = (p2y >= -p2w);
+    const float p1ClipPlaneSDist = p1y + p1w;
+    const float p2ClipPlaneSDist = p2y + p2w;
+    const bool p1InFront = (p1ClipPlaneSDist > 0);
+    const bool p2InFront = (p2ClipPlaneSDist > 0);
 
-    // Easy case: cee if they are on the same side of the clip plane.
-    // Reject if both are on the outside, or accept and leave unmodified if both are on the inside:
     if (p1InFront == p2InFront) {
         return p1InFront;
     }
 
-    // We need to clip: start by computing the distance (using the dot product) of p1 and p2
-    // to the 4D plane: (0, 0, 1, 1). Again, treat Doom's 'y' coordinate as 'z' here:
-    const float p1Dist = std::abs(p1y + p1w);
-    const float p2Dist = std::abs(p2y + p2w);
-
-    // Compute the time where the intersection would occur
-    const float totalDist = p1Dist + p2Dist;
-    const float t = p1Dist / totalDist;
+    // We need to clip: compute the time where the intersection with the clip plane would occur
+    const float p1ClipPlaneUDist = std::abs(p1ClipPlaneSDist);
+    const float p2ClipPlaneUDist = std::abs(p2ClipPlaneSDist);
+    const float t = p1ClipPlaneUDist / (p1ClipPlaneUDist + p2ClipPlaneUDist);
 
     // Compute the new x and y and texture u for the intersection point via linear interpolation
     const float p1x = seg.coords.p1x;
@@ -429,30 +428,31 @@ static bool clipSegAgainstFrontPlane(DrawSeg& seg) noexcept {
 }
 
 static bool clipSegAgainstLeftPlane(DrawSeg& seg) noexcept {
-    // The left plane in normalized device coords (NDC) is at x = -1 (right is x = 1)
-    // Hence in clipspace it is at -w (right is at +w):
+    // The left plane in normalized device coords (NDC) is at x = -1, hence in clipspace it is at -w.
+    // The distance to the clip plane can be computed by the dot product against the following vector:
+    //  (1, 0, 0, 1)
+    //
+    // Using this, compute the signed distance of the seg points to the plane and see if we should reject
+    // due to both points being outside the clip plane or leave unmodified due to both being on the inside:
+    //
     const float p1x = seg.coords.p1x;
     const float p2x = seg.coords.p2x;
     const float p1w = seg.coords.p1w;
     const float p2w = seg.coords.p2w;
 
-    const bool p1InFront = (p1x >= -p1w);
-    const bool p2InFront = (p2x >= -p2w);
+    const float p1ClipPlaneSDist = p1x + p1w;
+    const float p2ClipPlaneSDist = p2x + p2w;
+    const bool p1InFront = (p1ClipPlaneSDist > 0);
+    const bool p2InFront = (p2ClipPlaneSDist > 0);
 
-    // Easy case: cee if they are on the same side of the clip plane.
-    // Reject if both are on the outside, or accept and leave unmodified if both are on the inside:
     if (p1InFront == p2InFront) {
         return p1InFront;
     }
 
-    // We need to clip: start by computing the distance (using the dot product) of
-    // p1 and p2 to the 4D plane: (1, 0, 0, 1):
-    const float p1Dist = std::abs(p1x + p1w);
-    const float p2Dist = std::abs(p2x + p2w);
-
-    // Compute the time where the intersection would occur
-    const float totalDist = p1Dist + p2Dist;
-    const float t = p1Dist / totalDist;
+    // We need to clip: compute the time where the intersection with the clip plane would occur
+    const float p1ClipPlaneUDist = std::abs(p1ClipPlaneSDist);
+    const float p2ClipPlaneUDist = std::abs(p2ClipPlaneSDist);
+    const float t = p1ClipPlaneUDist / (p1ClipPlaneUDist + p2ClipPlaneUDist);
 
     // Compute the new x and y and texture u for the intersection point via linear interpolation
     const float p1y = seg.coords.p1y;
@@ -483,30 +483,31 @@ static bool clipSegAgainstLeftPlane(DrawSeg& seg) noexcept {
 }
 
 static bool clipSegAgainstRightPlane(DrawSeg& seg) noexcept {
-    // The right plane in normalized device coords (NDC) is at x = 1 (left is x = -1)
-    // Hence in clipspace it is at +w (left is at -w):
+    // The left plane in normalized device coords (NDC) is at x = 1, hence in clipspace it is at w.
+    // The distance to the clip plane can be computed by the dot product against the following vector:
+    //  (-1, 0, 0, 1)
+    //
+    // Using this, compute the signed distance of the seg points to the plane and see if we should reject
+    // due to both points being outside the clip plane or leave unmodified due to both being on the inside:
+    //
     const float p1x = seg.coords.p1x;
     const float p2x = seg.coords.p2x;
     const float p1w = seg.coords.p1w;
     const float p2w = seg.coords.p2w;
 
-    const bool p1InFront = (p1x <= p1w);
-    const bool p2InFront = (p2x <= p2w);
+    const float p1ClipPlaneSDist = -p1x + p1w;
+    const float p2ClipPlaneSDist = -p2x + p2w;
+    const bool p1InFront = (p1ClipPlaneSDist > 0);
+    const bool p2InFront = (p2ClipPlaneSDist > 0);
 
-    // Easy case: cee if they are on the same side of the clip plane.
-    // Reject if both are on the outside, or accept and leave unmodified if both are on the inside:
     if (p1InFront == p2InFront) {
         return p1InFront;
     }
-    
-    // We need to clip: start by computing the distance (using the dot product) of
-    // p1 and p2 to the 4D plane: (-1, 0, 0, 1):
-    const float p1Dist = std::abs(-p1x + p1w);
-    const float p2Dist = std::abs(-p2x + p2w);
 
-    // Compute the time where the intersection would occur
-    const float totalDist = p1Dist + p2Dist;
-    const float t = p1Dist / totalDist;
+    // We need to clip: compute the time where the intersection with the clip plane would occur
+    const float p1ClipPlaneUDist = std::abs(p1ClipPlaneSDist);
+    const float p2ClipPlaneUDist = std::abs(p2ClipPlaneSDist);
+    const float t = p1ClipPlaneUDist / (p1ClipPlaneUDist + p2ClipPlaneUDist);
 
     // Compute the new x and y and texture u for the intersection point via linear interpolation
     const float p1y = seg.coords.p1y;
