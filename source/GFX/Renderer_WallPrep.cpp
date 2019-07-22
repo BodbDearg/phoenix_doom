@@ -393,12 +393,12 @@ static bool clipSegAgainstFrontPlane(DrawSeg& seg) noexcept {
 
     // We need to clip: start by computing the distance (using the dot product) of p1 and p2
     // to the 4D plane: (0, 0, 1, 1). Again, treat Doom's 'y' coordinate as 'z' here:
-    const float p1Dist = p1y + p1w;
-    const float p2Dist = p2y + p2w;
+    const float p1Dist = std::abs(p1y + p1w);
+    const float p2Dist = std::abs(p2y + p2w);
 
     // Compute the time where the intersection would occur
-    const float p1ToP2Dist = p2Dist - p1Dist;
-    const float t = p1Dist / p1ToP2Dist;
+    const float totalDist = p1Dist + p2Dist;
+    const float t = p1Dist / totalDist;
 
     // Compute the new x and y and texture u for the intersection point via linear interpolation
     const float p1x = seg.coords.p1x;
@@ -414,14 +414,14 @@ static bool clipSegAgainstFrontPlane(DrawSeg& seg) noexcept {
     // Note that we set 'w' to '-y' to ensure that 'y' ends up as '-1' in NDC:
     if (p1InFront) {
         seg.coords.p2x = newX;
-        seg.coords.p2y = newY;        
-        seg.coords.p2w = -seg.coords.p2y;
+        seg.coords.p2y = newY;
+        seg.coords.p2w = -newY;
         seg.p2TexU = newU;
     }
     else {
         seg.coords.p1x = newX;
         seg.coords.p1y = newY;
-        seg.coords.p1w = -seg.coords.p1y;
+        seg.coords.p1w = -newY;
         seg.p1TexU = newU;
     }
 
@@ -447,12 +447,12 @@ static bool clipSegAgainstLeftPlane(DrawSeg& seg) noexcept {
 
     // We need to clip: start by computing the distance (using the dot product) of
     // p1 and p2 to the 4D plane: (1, 0, 0, 1):
-    const float p1Dist = p1x + p1w;
-    const float p2Dist = p2x + p2w;
+    const float p1Dist = std::abs(p1x + p1w);
+    const float p2Dist = std::abs(p2x + p2w);
 
     // Compute the time where the intersection would occur
-    const float p1ToP2Dist = p2Dist - p1Dist;
-    const float t = p1Dist / p1ToP2Dist;
+    const float totalDist = p1Dist + p2Dist;
+    const float t = p1Dist / totalDist;
 
     // Compute the new x and y and texture u for the intersection point via linear interpolation
     const float p1y = seg.coords.p1y;
@@ -498,15 +498,15 @@ static bool clipSegAgainstRightPlane(DrawSeg& seg) noexcept {
     if (p1InFront == p2InFront) {
         return p1InFront;
     }
-
+    
     // We need to clip: start by computing the distance (using the dot product) of
     // p1 and p2 to the 4D plane: (-1, 0, 0, 1):
-    const float p1Dist = -p1x + p1w;
-    const float p2Dist = -p2x + p2w;
+    const float p1Dist = std::abs(-p1x + p1w);
+    const float p2Dist = std::abs(-p2x + p2w);
 
     // Compute the time where the intersection would occur
-    const float p1ToP2Dist = p2Dist - p1Dist;
-    const float t = p1Dist / p1ToP2Dist;
+    const float totalDist = p1Dist + p2Dist;
+    const float t = p1Dist / totalDist;
 
     // Compute the new x and y and texture u for the intersection point via linear interpolation
     const float p1y = seg.coords.p1y;
@@ -689,10 +689,10 @@ void addSegToFrame(const seg_t& seg) noexcept {
 
     // Next transform to clip space and clip against the front and left + right planes
     transformSegXYWToClipSpace(drawSeg);
-
+    
     if (!clipSegAgainstFrontPlane(drawSeg))
         return;
-    
+
     if (!clipSegAgainstLeftPlane(drawSeg))
         return;
     
