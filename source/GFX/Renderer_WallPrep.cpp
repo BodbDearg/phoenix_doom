@@ -537,6 +537,33 @@ static bool clipSegAgainstRightPlane(DrawSeg& seg) noexcept {
     return true;
 }
 
+static void addClipSpaceZValuesForSeg(DrawSeg& drawSeg, const seg_t& seg) noexcept {
+    const float viewZ = gViewZ;
+    const float frontFloorZ = FMath::doomFixed16ToFloat<float>(seg.frontsector->floorheight);
+    const float frontCeilZ = FMath::doomFixed16ToFloat<float>(seg.frontsector->ceilingheight);
+
+    drawSeg.coords.p1tz = (frontCeilZ - viewZ) * gProjMatrix.r1c1;
+    drawSeg.coords.p1bz = (frontFloorZ - viewZ) * gProjMatrix.r1c1;
+    drawSeg.coords.p2tz = (frontCeilZ - viewZ) * gProjMatrix.r1c1;
+    drawSeg.coords.p2bz = (frontFloorZ - viewZ) * gProjMatrix.r1c1;
+
+    if (seg.backsector) {
+        const float backFloorZ = FMath::doomFixed16ToFloat<float>(seg.backsector->floorheight);
+        const float backCeilZ = FMath::doomFixed16ToFloat<float>(seg.backsector->ceilingheight);
+
+        drawSeg.coords.p1tz_back = (backCeilZ - viewZ) * gProjMatrix.r1c1;
+        drawSeg.coords.p1bz_back = (backFloorZ - viewZ) * gProjMatrix.r1c1;
+        drawSeg.coords.p2tz_back = (backCeilZ - viewZ) * gProjMatrix.r1c1;
+        drawSeg.coords.p2bz_back = (backFloorZ - viewZ) * gProjMatrix.r1c1;
+    }
+    else {
+        drawSeg.coords.p1tz_back = 0.0f;
+        drawSeg.coords.p1bz_back = 0.0f;
+        drawSeg.coords.p2tz_back = 0.0f;
+        drawSeg.coords.p2bz_back = 0.0f;
+    }    
+}
+
 static void doPerspectiveDivisionForSeg(DrawSeg& seg) noexcept {
     // Compute the inverse of w for p1 and p2
     const float w1Inv = 1.0f / seg.coords.p1w;
@@ -688,32 +715,7 @@ void addSegToFrame(const seg_t& seg) noexcept {
         return;
     
     // Now that the seg is not rejected, fill in the height values
-    {
-        const float viewZ = gViewZ;
-        const float frontFloorZ = FMath::doomFixed16ToFloat<float>(seg.frontsector->floorheight);
-        const float frontCeilZ = FMath::doomFixed16ToFloat<float>(seg.frontsector->ceilingheight);
-
-        drawSeg.coords.p1tz = (frontCeilZ - viewZ) * gProjMatrix.r1c1;
-        drawSeg.coords.p1bz = (frontFloorZ - viewZ) * gProjMatrix.r1c1;
-        drawSeg.coords.p2tz = (frontCeilZ - viewZ) * gProjMatrix.r1c1;
-        drawSeg.coords.p2bz = (frontFloorZ - viewZ) * gProjMatrix.r1c1;
-
-        if (seg.backsector) {
-            const float backFloorZ = FMath::doomFixed16ToFloat<float>(seg.backsector->floorheight);
-            const float backCeilZ = FMath::doomFixed16ToFloat<float>(seg.backsector->ceilingheight);
-
-            drawSeg.coords.p1tz_back = (backCeilZ - viewZ) * gProjMatrix.r1c1;
-            drawSeg.coords.p1bz_back = (backFloorZ - viewZ) * gProjMatrix.r1c1;
-            drawSeg.coords.p2tz_back = (backCeilZ - viewZ) * gProjMatrix.r1c1;
-            drawSeg.coords.p2bz_back = (backFloorZ - viewZ) * gProjMatrix.r1c1;
-        }
-        else {
-            drawSeg.coords.p1tz_back = 0.0f;
-            drawSeg.coords.p1bz_back = 0.0f;
-            drawSeg.coords.p2tz_back = 0.0f;
-            drawSeg.coords.p2bz_back = 0.0f;
-        }
-    }
+    addClipSpaceZValuesForSeg(drawSeg, seg);
 
     // Do perspective division and transform the seg to screen space
     doPerspectiveDivisionForSeg(drawSeg);
