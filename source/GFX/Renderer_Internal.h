@@ -133,20 +133,20 @@ namespace Renderer {
     //      r0c0 = 1 / (f * a)
     //      r1c1 = 1 / f
     //      r2c2 = -zf / (zn - zf)
+    //      r3c2 = -(zn * zf) / (zf - zn)
     //      r2c3 = 1.0
-    //      r3c2 = -(zn * zf) / (zf - zn)    
     //
     // Effectively it looks like this when visualized (with implicit entries added):
     //      r0c0,   0,      0,      0,
     //      0,      r1c1,   0,      0,
-    //      0,      0,      r2c2,   1.0,
-    //      0,      0,      r3c2,   0
+    //      0,      0,      r2c2,   r2c3,
+    //      0,      0,      1.0,    0
     //------------------------------------------------------------------------------------------------------------------
     struct ProjectionMatrix {
         float r0c0;
         float r1c1;
         float r2c2;
-        float r3c2;
+        float r2c3;
     };
 
     //------------------------------------------------------------------------------------------------------------------
