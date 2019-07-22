@@ -563,8 +563,9 @@ static void doPerspectiveDivisionForSeg(DrawSeg& seg) noexcept {
 }
 
 static void transformSegXZToScreenSpace(DrawSeg& seg) noexcept {
-    const float screenW = (float) gScreenWidth;
-    const float screenH = (float) gScreenHeight;
+    // Note: have to -1 here because at 100% of the range we don't want to be >= screen width or height!
+    const float screenW = (float) gScreenWidth - 1.0f;
+    const float screenH = (float) gScreenHeight - 1.0f;
 
     // All coords are in the range -1 to +1 now.
     // Bring in the range 0-1 and then expand to screen width and height:
@@ -582,24 +583,18 @@ static void transformSegXZToScreenSpace(DrawSeg& seg) noexcept {
     seg.coords.p2bz_back = (seg.coords.p2bz_back * 0.5f + 0.5f) * screenH;
 }
 
-static void emitWallFragments(const DrawSeg& seg) noexcept {
-    // TODO: TEST
-    int32_t x1 = (int32_t) seg.coords.p1x;
-    int32_t x2 = (int32_t) seg.coords.p2x;
+static void emitWallFragments(const DrawSeg& seg) noexcept {    
+    // Get integer range of the wall
+    const int32_t x1 = (int32_t) seg.coords.p1x;
+    const int32_t x2 = (int32_t) seg.coords.p2x;
 
-    // TODO: REMOVE
-    if (x1 >= gScreenWidth) {
-        x1 = gScreenWidth - 1;
-    }
-    if (x2 >= gScreenWidth) {
-        x2 = gScreenWidth - 1;
-    }
-
+    // Sanity checks: x values should be clipped to be within screen range!
     ASSERT(x1 >= 0);
     ASSERT(x1 < gScreenWidth);
     ASSERT(x2 >= 0);
     ASSERT(x2 < gScreenWidth);
 
+    // TODO: TEST
     float y1t = seg.coords.p1tz;
     float y1b = seg.coords.p1bz;
     float y2t = seg.coords.p2tz;
@@ -608,14 +603,6 @@ static void emitWallFragments(const DrawSeg& seg) noexcept {
     float w1Inv = seg.coords.p1w_inv;
     float w2 = seg.coords.p2w;
     float w2Inv = seg.coords.p2w_inv;
-
-    if (x2 < x1) {
-        std::swap(x1, x2);
-        std::swap(y1t, y2t);
-        std::swap(y1b, y2b);
-        std::swap(w1, w2);
-        std::swap(w1Inv, w2Inv);
-    }
 
     const uint32_t colCount = (x2 - x1) + 1;
 
