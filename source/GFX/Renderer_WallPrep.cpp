@@ -737,21 +737,24 @@ static void emitWallAndFloorFragments(const DrawSeg& drawSeg, const seg_t seg) n
         float texBV = texTV + worldH - 0.001f;  // Note: moving down a little so we don't skip over the end pixel bounds
 
         // Figure out the depth and inverse depth for both wall end points
-        const float p1Depth = ((drawSeg.coords.p1y + 1.0f) * 0.5f * Z_RANGE_SIZE) + Z_NEAR;
-        const float p2Depth = ((drawSeg.coords.p2y + 1.0f) * 0.5f * Z_RANGE_SIZE) + Z_NEAR;
-        const float p1InvDepth = 1.0f / p1Depth;
-        const float p2InvDepth = 1.0f / p2Depth;
+        const float p1Depth = ((drawSeg.coords.p1y + 1.0f) * 0.5f * Z_RANGE_SIZE) + Z_NEAR;   // TODO: REMOVE
+        const float p2Depth = ((drawSeg.coords.p2y + 1.0f) * 0.5f * Z_RANGE_SIZE) + Z_NEAR;   // TODO: REMOVE
+        const float p1InvDepth = 1.0f / p1Depth;   // TODO: REMOVE
+        const float p2InvDepth = 1.0f / p2Depth;   // TODO: REMOVE
+        const float p1w = 1.0f / drawSeg.coords.p1w;
+        const float p2w = 1.0f / drawSeg.coords.p2w;
 
-        // Figure out the u coordinates for both wall ends and divide by depth so we can interpolate in screen space
-        const float p1TexU = drawSeg.p1TexU * p1InvDepth;
-        const float p2TexU = drawSeg.p2TexU * p2InvDepth;
+        // Figure out the u coordinates for both wall ends
+        const float p1TexU = drawSeg.p1TexU * p1w;
+        const float p2TexU = drawSeg.p2TexU * p2w;
 
         // Figure out how much to step in the y direction for each x pixel
         const uint32_t colCount = (x2 - x1) + 1;
         float ztStep;
         float zbStep;
-        float depthStep;
-        float invDepthStep;     // TODO: REMOVE ONE OF THESE!
+        float depthStep;   // TODO: REMOVE
+        float invDepthStep;     // TODO: REMOVE
+        float wStep;
         float texUStep;
 
         if (colCount > 1) {
@@ -760,12 +763,14 @@ static void emitWallAndFloorFragments(const DrawSeg& drawSeg, const seg_t seg) n
             zbStep = (p2bz - p1bz) * horzStepDivider;
             depthStep = (p2Depth - p1Depth) * horzStepDivider;
             invDepthStep = (p2InvDepth - p1InvDepth) * horzStepDivider;
+            wStep = (p2w - p1w) * horzStepDivider;
             texUStep = (p2TexU - p1TexU) * horzStepDivider;
         } else {
             ztStep = 0.0f;
             zbStep = 0.0f;
             depthStep = 0.0f;
             invDepthStep = 0.0f;
+            wStep = 0.0f;
             texUStep = 0.0;
         }
 
@@ -778,9 +783,10 @@ static void emitWallAndFloorFragments(const DrawSeg& drawSeg, const seg_t seg) n
             const float pixelNumF = (float) (x - x1);
             float zt = viewH - (p1tz + ztStep * pixelNumF);
             float zb = viewH - (p1bz + zbStep * pixelNumF);
-            const float depth = p1Depth + depthStep * pixelNumF;
-            const float invDepth = p1InvDepth + invDepthStep * pixelNumF;
-            const float texU = (p1TexU + texUStep * pixelNumF) / invDepth;
+            const float depth = p1Depth + depthStep * pixelNumF;   // TODO: REMOVE
+            const float invDepth = p1InvDepth + invDepthStep * pixelNumF;   // TODO: REMOVE
+            const float w = p1w + wStep * pixelNumF;
+            const float texU = (p1TexU + texUStep * pixelNumF) / w;
 
             // This is how much to step in the V direction
             const float texVStep = (texTV - texBV) / (zb - zt);
