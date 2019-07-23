@@ -736,29 +736,36 @@ static void emitWallAndFloorFragments(const DrawSeg& drawSeg, const seg_t seg) n
         float worldH = worldTZ - worldBZ;
         float texBV = texTV + worldH - 0.001f;  // Note: moving down a little so we don't skip over the end pixel bounds
 
-        // Figure out the u and w coordinates for both wall ends and the u step
-        const float p1w = drawSeg.coords.p1w;
-        const float p2w = drawSeg.coords.p2w;
-        const float p1TexU = drawSeg.p1TexU / p1w;
-        const float p2TexU = drawSeg.p2TexU / p2w;
+        // Figure out the depth and inverse depth for both wall end points
+        const float p1Depth = ((drawSeg.coords.p1y + 1.0f) * 0.5f * Z_RANGE_SIZE) + Z_NEAR;
+        const float p2Depth = ((drawSeg.coords.p2y + 1.0f) * 0.5f * Z_RANGE_SIZE) + Z_NEAR;
+        const float p1InvDepth = 1.0f / p1Depth;
+        const float p2InvDepth = 1.0f / p2Depth;
+
+        // Figure out the u coordinates for both wall ends and divide by depth so we can interpolate in screen space
+        const float p1TexU = drawSeg.p1TexU * p1InvDepth;
+        const float p2TexU = drawSeg.p2TexU * p2InvDepth;
 
         // Figure out how much to step in the y direction for each x pixel
         const uint32_t colCount = (x2 - x1) + 1;
         float ztStep;
         float zbStep;
-        float wStep;
+        float depthStep;
+        float invDepthStep;     // TODO: REMOVE ONE OF THESE!
         float texUStep;
 
         if (colCount > 1) {
             const float horzStepDivider = 1.0f / (float) (colCount - 1);
             ztStep = (p2tz - p1tz) * horzStepDivider;
             zbStep = (p2bz - p1bz) * horzStepDivider;
-            wStep = (p2w - p1w) * horzStepDivider;
+            depthStep = (p2Depth - p1Depth) * horzStepDivider;
+            invDepthStep = (p2InvDepth - p1InvDepth) * horzStepDivider;
             texUStep = (p2TexU - p1TexU) * horzStepDivider;
         } else {
             ztStep = 0.0f;
             zbStep = 0.0f;
-            wStep = 0.0f;
+            depthStep = 0.0f;
+            invDepthStep = 0.0f;
             texUStep = 0.0;
         }
 
@@ -771,8 +778,9 @@ static void emitWallAndFloorFragments(const DrawSeg& drawSeg, const seg_t seg) n
             const float pixelNumF = (float) (x - x1);
             float zt = viewH - (p1tz + ztStep * pixelNumF);
             float zb = viewH - (p1bz + zbStep * pixelNumF);
-            const float w = p1w + wStep * pixelNumF;
-            const float texU = (p2TexU + texUStep * pixelNumF) * w;
+            const float depth = p1Depth + depthStep * pixelNumF;
+            const float invDepth = p1InvDepth + invDepthStep * pixelNumF;
+            const float texU = (p1TexU + texUStep * pixelNumF) / invDepth;
 
             // This is how much to step in the V direction
             const float texVStep = (texTV - texBV) / (zb - zt);
@@ -844,11 +852,11 @@ void addSegToFrame(const seg_t& seg) noexcept {
     // Set the U coordinates for the seg.
     // Those will need to be adjusted accordingly if we clip:
     {
-        const float segLength = std::sqrtf(
-            (drawSeg.coords.p1x * drawSeg.coords.p1x) +
-            (drawSeg.coords.p1y * drawSeg.coords.p1y)
-        );
+        const float segdx = FMath::doomFixed16ToFloat<float>(seg.v2.x - seg.v1.x);
+        const float segdy = FMath::doomFixed16ToFloat<float>(seg.v2.y - seg.v1.y);
+        const float segLength = std::sqrtf(segdx * segdx + segdy * segdy);
         const float uOffset = FMath::doomFixed16ToFloat<float>(seg.offset + seg.sidedef->textureoffset);
+
         drawSeg.p1TexU = uOffset;
         drawSeg.p2TexU = uOffset + segLength - 0.001f;      // Note: if a wall is 64 units and the texture is 64 units, never go to 64.0 (always stay to 63.99999 or something like that)
     }
