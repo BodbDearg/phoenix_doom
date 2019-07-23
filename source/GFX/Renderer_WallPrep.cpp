@@ -626,9 +626,9 @@ static void emitWallAndFloorFragments(const DrawSeg& drawSeg, const seg_t seg) n
     // Sanity checks: x values should be clipped to be within screen range!
     // x1 should also be >= x2!
     ASSERT(x1 >= 0);
-    ASSERT(x1 < gScreenWidth);
+    ASSERT(x1 < (int32_t) gScreenWidth);
     ASSERT(x2 >= 0);
-    ASSERT(x2 < gScreenWidth);
+    ASSERT(x2 < (int32_t) gScreenWidth);
     ASSERT(x1 <= x2);
     
     // Figure out top and bottom z for p1 and p2
@@ -736,70 +736,81 @@ static void emitWallAndFloorFragments(const DrawSeg& drawSeg, const seg_t seg) n
 
         // Figure out how much to step in the y direction for each x pixel
         const uint32_t colCount = (x2 - x1) + 1;
-        const float horzStepDivider = 1.0f / (float) (colCount - 1);
-        const float ztStep = (p2tz - p1tz) * horzStepDivider;
-        const float zbStep = (p2bz - p1bz) * horzStepDivider;
+        float ztStep;
+        float zbStep;
+
+        if (colCount > 1) {
+            const float horzStepDivider = 1.0f / (float) (colCount - 1);
+            ztStep = (p2tz - p1tz) * horzStepDivider;
+            zbStep = (p2bz - p1bz) * horzStepDivider;
+        } else {
+            ztStep = 0.0f;
+            zbStep = 0.0f;
+        }
 
         // Emit each column
         const float viewH = (float) gScreenHeight;
+        const float bottomClipZ = viewH - 0.5f;
 
         for (int32_t x = x1; x <= x2; ++x) {
             // Figure out the top and bottom y through linear interpolation
             const float pixelNumF = (float) (x - x1);
-            const float zt = viewH - (p1tz + ztStep * pixelNumF);
-            const float zb = viewH - (p1bz + zbStep * pixelNumF);
+            float zt = viewH - (p1tz + ztStep * pixelNumF);
+            float zb = viewH - (p1bz + zbStep * pixelNumF);
 
-            // Figure out the clipped texture coorindate range and step
-            int32_t zti = (int32_t) zt;
-            int32_t zbi = (int32_t) zb;
-            int32_t columnHeight = zbi - zti + 1;
-            ASSERT(columnHeight >= 1);
+            // This is how much to step in the V direction
+            const float texVStep = (texTV - texBV) / (zb - zt);
 
+            // Clip the column against the top and bottom of the screen
             float curTexTV = texTV;
             float curTexBV = texBV;
 
-            {
-                const float texVStep = (curTexTV - curTexBV) / ((float) columnHeight - 1.0f);
+            if (zt < 0.0f) {
+                // Offscreen at the top - clip:
+                const float pixelsOffscreen = -zt;
+                curTexTV += texVStep * pixelsOffscreen;
+                zt = 0.0f;
 
-                // Do clipping against the top and bottom screen edges
-                if (zti < 0) {
-                    const uint32_t pixelsOffscreen = (uint32_t)(-zti);
-                    columnHeight -= pixelsOffscreen;
-                    curTexTV += texVStep * (float) pixelsOffscreen;
-                    zti = 0;
+                if (zt > zb)
+                    continue;
+            }
+            else {
+                // Small adjustment to account for eventual integer rounding of the z coordinate. For more 'solid' and less
+                // 'fuzzy' and temporally unstable texture mapping, we need to make adjustments based on the sub pixel y-position
+                // of the column. If for example the true pixel Y position is 0.25 units above it's integer position then count
+                // 0.25 pixels as already having been 'stepped' and adjust the texture coordinate accordingly:
+                curTexTV -= (zt - std::trunc(zt)) * texVStep;
+            }
 
-                    if (zti > zbi)
-                        continue;
-                }
+            if (zb > bottomClipZ) {
+                // Offscreen at the bottom - clip:
+                const float pixelsOffscreen = zb - bottomClipZ;
+                curTexBV -= texVStep * pixelsOffscreen;
+                zb = bottomClipZ;
 
-                if (zbi >= gScreenHeight) {
-                    const uint32_t pixelsOffscreen = (uint32_t)(zbi - gScreenHeight + 1);
-                    columnHeight -= pixelsOffscreen;
-                    curTexBV -= texVStep * (float) pixelsOffscreen;
-                    zbi = gScreenHeight - 1;
-
-                    if (zti > zbi)
-                        continue;
-                }
+                if (zt > zb)
+                    continue;
             }
 
             // Emit the column
+            const int32_t columnHeight = (int32_t) zb - (int32_t) zt + 1;
+
             Blit::blitColumn<
                 Blit::BCF_STEP_Y |
                 Blit::BCF_V_WRAP_WRAP |
                 Blit::BCF_COLOR_MULT_RGB
             >(
                 pTexture->data,
-                (float) 0,  // TODO: U coordinate
+                0.0f,  // TODO: texture U coordinate
                 curTexTV,
                 Video::gFrameBuffer,
                 Video::SCREEN_WIDTH,
                 Video::SCREEN_HEIGHT,
                 x + gScreenXOffset,
-                zti + gScreenYOffset,
+                (int32_t) zt + gScreenYOffset,
                 columnHeight,
                 0,
-                (curTexBV - curTexTV) / ((float) columnHeight - 1.0f),
+                texVStep,
                 1.0f,   // TODO: light
                 1.0f,   // TODO: light
                 1.0f    // TODO: light
