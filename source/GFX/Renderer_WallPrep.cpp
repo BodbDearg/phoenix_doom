@@ -7,6 +7,7 @@
 #include "Textures.h"
 
 // TODO: TEST
+#include "Blit.h"
 #include "Video.h"
 
 BEGIN_NAMESPACE(Renderer)
@@ -610,77 +611,199 @@ static void transformSegXZToScreenSpace(DrawSeg& seg) noexcept {
     seg.coords.p2bz_back = (seg.coords.p2bz_back * 0.5f + 0.5f) * screenH;
 }
 
-static void emitWallFragments(const DrawSeg& seg) noexcept {    
+enum class EmitFragmentMode {
+    SOLID_WALL,
+    UPPER_WALL,
+    LOWER_WALL
+};
+
+template <EmitFragmentMode MODE>
+static void emitWallAndFloorFragments(const DrawSeg& drawSeg, const seg_t seg) noexcept {
     // Get integer range of the wall
-    const int32_t x1 = (int32_t) seg.coords.p1x;
-    const int32_t x2 = (int32_t) seg.coords.p2x;
+    const int32_t x1 = (int32_t) drawSeg.coords.p1x;
+    const int32_t x2 = (int32_t) drawSeg.coords.p2x;
 
     // Sanity checks: x values should be clipped to be within screen range!
+    // x1 should also be >= x2!
     ASSERT(x1 >= 0);
     ASSERT(x1 < gScreenWidth);
     ASSERT(x2 >= 0);
     ASSERT(x2 < gScreenWidth);
+    ASSERT(x1 <= x2);
+    
+    // Figure out top and bottom z for p1 and p2
+    float p1tz;
+    float p1bz;
+    float p2tz;
+    float p2bz;
 
-    // TODO: TEST
-    float y1t = seg.coords.p1tz;
-    float y1b = seg.coords.p1bz;
-    float y2t = seg.coords.p2tz;
-    float y2b = seg.coords.p2bz;
-    float w1 = seg.coords.p1w;
-    float w1Inv = seg.coords.p1w_inv;
-    float w2 = seg.coords.p2w;
-    float w2Inv = seg.coords.p2w_inv;
+    if constexpr (MODE == EmitFragmentMode::SOLID_WALL) {
+        p1tz = drawSeg.coords.p1tz;
+        p2tz = drawSeg.coords.p2tz;        
+        p1bz = drawSeg.coords.p1bz;        
+        p2bz = drawSeg.coords.p2bz;
+    }
+    else if constexpr (MODE == EmitFragmentMode::UPPER_WALL) {
+        p1tz = drawSeg.coords.p1tz;
+        p2tz = drawSeg.coords.p2tz;
+        p1bz = drawSeg.coords.p1tz_back;
+        p2bz = drawSeg.coords.p2tz_back;
+    }
+    else {
+        p1tz = drawSeg.coords.p1bz_back;
+        p2tz = drawSeg.coords.p2bz_back;
+        p1bz = drawSeg.coords.p1bz;
+        p2bz = drawSeg.coords.p2bz;
+    }
 
-    const uint32_t colCount = (x2 - x1) + 1;
+    // Only bother emitting walls if the column height would be > 0
+    if (p1tz > p1bz) {
+        // Grab the flags for the line and mark it as seen (since we are drawing it)
+        line_t& lineDef = *seg.linedef;
+        const uint32_t lineFlags = lineDef.flags;
+        lineDef.flags = lineFlags | ML_MAPPED;
 
-    /*
-    y1t *= w1Inv;
-    y1b *= w1Inv;
-    y2t *= w1Inv;
-    y2b *= w1Inv;
-    */
+        // This is the texture to use
+        const Texture* pTexture;
 
-    const float steppingDivider = 1.0f / (float) (colCount - 1);
-    const float wInvStep = (w2Inv - w1Inv) * steppingDivider;
-    const float wStep = (w2 - w1) * steppingDivider;
-    const float ytStep = (y2t - y1t) * steppingDivider;
-    const float ybStep = (y2b - y1b) * steppingDivider;
-    const float viewH = (float) gScreenHeight;
-
-    for (int32_t x = x1; x <= x2; ++x) {
-        const float pixelNumF = (float) (x - x1);
-
-        const float wInv = (w1Inv + wInvStep * pixelNumF);
-        const float w = (w1 + wStep * pixelNumF);
-
-        // TODO: use perspective correct interpolation here? Linear actually works OK for height.
-        /*
-        const float yt = viewH - (y1t + ytStep * pixelNumF) / wInv;
-        const float yb = viewH - (y1b + ybStep * pixelNumF) / wInv;
-        */
-        const float yt = viewH - (y1t + ytStep * pixelNumF);
-        const float yb = viewH - (y1b + ybStep * pixelNumF);
-
-        int32_t yti = (int32_t) yt;
-        int32_t ybi = (int32_t) yb;
-
-        if (yti < 0) {
-            yti = 0;
-
-            if (yti > ybi)
-                continue;
+        if constexpr (MODE == EmitFragmentMode::LOWER_WALL) {
+            pTexture = getWallTexture(seg.sidedef->bottomtexture);
+        } else {
+            pTexture = getWallTexture(seg.sidedef->toptexture);
         }
 
-        if (ybi >= gScreenHeight) {
-            ybi = gScreenHeight - 1;
+        // Figure out the start 'V' texture coordiante for the column
+        const side_t& sideDef = *seg.sidedef;
+        float texTV;
 
-            if (yti > ybi)
-                continue;
+        {
+            // Figure out the texture anchor
+            float textureAnchor;
+
+            if constexpr (MODE == EmitFragmentMode::SOLID_WALL) {
+                if (lineFlags & ML_DONTPEGBOTTOM) {
+                    textureAnchor = FMath::doomFixed16ToFloat<float>(seg.frontsector->floorheight) + (float) pTexture->data.height;
+                } else {
+                    textureAnchor = FMath::doomFixed16ToFloat<float>(seg.frontsector->ceilingheight);
+                }
+            } else if constexpr (MODE == EmitFragmentMode::UPPER_WALL) {
+                if (lineFlags & ML_DONTPEGBOTTOM) {
+                    textureAnchor = FMath::doomFixed16ToFloat<float>(seg.frontsector->ceilingheight);
+                } else {
+                    textureAnchor = FMath::doomFixed16ToFloat<float>(seg.backsector->ceilingheight) + (float) pTexture->data.height;
+                }          
+            } else {
+                if (lineFlags & ML_DONTPEGBOTTOM) {
+                    textureAnchor = FMath::doomFixed16ToFloat<float>(seg.frontsector->ceilingheight);
+                } else {
+                    textureAnchor = FMath::doomFixed16ToFloat<float>(seg.backsector->floorheight);
+                }
+            }
+
+            textureAnchor += FMath::doomFixed16ToFloat<float>(sideDef.rowoffset);
+
+            // Figure out the top texture value using this
+            texTV = textureAnchor;
+
+            if constexpr (MODE == EmitFragmentMode::LOWER_WALL) {
+                texTV -= FMath::doomFixed16ToFloat<float>(seg.backsector->floorheight);
+            } else {
+                texTV -= FMath::doomFixed16ToFloat<float>(seg.frontsector->ceilingheight);
+            }
+
+            if (texTV < 0) {
+                texTV += (float) pTexture->data.height;     // DC: This is required for correct vertical alignment in some cases
+            }
         }
 
-        for (int32_t y = yti; y <= ybi; ++y) {
-            const uint32_t pixelOffset = (gScreenYOffset + y) * Video::SCREEN_WIDTH + gScreenXOffset + x;
-            Video::gFrameBuffer[pixelOffset] = 0xFFFFFFFFu;
+        // Figure out the world top and bottom height for the wall piece and thus the world height of the wall and bottom V texture coordiante
+        float worldTZ;
+        float worldBZ;
+
+        if constexpr (MODE == EmitFragmentMode::SOLID_WALL) {
+            worldTZ = FMath::doomFixed16ToFloat<float>(seg.frontsector->ceilingheight);
+            worldBZ = FMath::doomFixed16ToFloat<float>(seg.frontsector->floorheight);
+        } else if constexpr (MODE == EmitFragmentMode::UPPER_WALL) {
+            worldTZ = FMath::doomFixed16ToFloat<float>(seg.frontsector->ceilingheight);
+            worldBZ = FMath::doomFixed16ToFloat<float>(seg.backsector->ceilingheight);
+        } else {
+            worldTZ = FMath::doomFixed16ToFloat<float>(seg.backsector->floorheight);
+            worldBZ = FMath::doomFixed16ToFloat<float>(seg.frontsector->floorheight);
+        }
+
+        float worldH = worldTZ - worldBZ;
+        float texBV = texTV + worldH - 0.001f;  // Note: moving down a little so we don't skip over the end pixel bounds
+
+        // Figure out how much to step in the y direction for each x pixel
+        const uint32_t colCount = (x2 - x1) + 1;
+        const float horzStepDivider = 1.0f / (float) (colCount - 1);
+        const float ztStep = (p2tz - p1tz) * horzStepDivider;
+        const float zbStep = (p2bz - p1bz) * horzStepDivider;
+
+        // Emit each column
+        const float viewH = (float) gScreenHeight;
+
+        for (int32_t x = x1; x <= x2; ++x) {
+            // Figure out the top and bottom y through linear interpolation
+            const float pixelNumF = (float) (x - x1);
+            const float zt = viewH - (p1tz + ztStep * pixelNumF);
+            const float zb = viewH - (p1bz + zbStep * pixelNumF);
+
+            // Figure out the clipped texture coorindate range and step
+            int32_t zti = (int32_t) zt;
+            int32_t zbi = (int32_t) zb;
+            int32_t columnHeight = zbi - zti + 1;
+            ASSERT(columnHeight >= 1);
+
+            float curTexTV = texTV;
+            float curTexBV = texBV;
+
+            {
+                const float texVStep = (curTexTV - curTexBV) / ((float) columnHeight - 1.0f);
+
+                // Do clipping against the top and bottom screen edges
+                if (zti < 0) {
+                    const uint32_t pixelsOffscreen = (uint32_t)(-zti);
+                    columnHeight -= pixelsOffscreen;
+                    curTexTV += texVStep * (float) pixelsOffscreen;
+                    zti = 0;
+
+                    if (zti > zbi)
+                        continue;
+                }
+
+                if (zbi >= gScreenHeight) {
+                    const uint32_t pixelsOffscreen = (uint32_t)(zbi - gScreenHeight + 1);
+                    columnHeight -= pixelsOffscreen;
+                    curTexBV -= texVStep * (float) pixelsOffscreen;
+                    zbi = gScreenHeight - 1;
+
+                    if (zti > zbi)
+                        continue;
+                }
+            }
+
+            // Emit the column
+            Blit::blitColumn<
+                Blit::BCF_STEP_Y |
+                Blit::BCF_V_WRAP_WRAP |
+                Blit::BCF_COLOR_MULT_RGB
+            >(
+                pTexture->data,
+                (float) 0,  // TODO: U coordinate
+                curTexTV,
+                Video::gFrameBuffer,
+                Video::SCREEN_WIDTH,
+                Video::SCREEN_HEIGHT,
+                x + gScreenXOffset,
+                zti + gScreenYOffset,
+                columnHeight,
+                0,
+                (curTexBV - curTexTV) / ((float) columnHeight - 1.0f),
+                1.0f,   // TODO: light
+                1.0f,   // TODO: light
+                1.0f    // TODO: light
+            );
         }
     }
 }
@@ -697,7 +820,7 @@ void addSegToFrame(const seg_t& seg) noexcept {
             (drawSeg.coords.p1x * drawSeg.coords.p1x) +
             (drawSeg.coords.p1y * drawSeg.coords.p1y)
         );
-        const float uOffset = FMath::doomFixed16ToFloat<float>(seg.offset);
+        const float uOffset = FMath::doomFixed16ToFloat<float>(seg.offset + seg.sidedef->textureoffset);
         drawSeg.p1TexU = uOffset;
         drawSeg.p2TexU = uOffset + segLength - 0.001f;      // Note: if a wall is 64 units and the texture is 64 units, never go to 64.0 (always stay to 63.99999 or something like that)
     }
@@ -726,10 +849,12 @@ void addSegToFrame(const seg_t& seg) noexcept {
         return;
 
     // Emit all wall fragments for the seg
-    
-    // TODO: TEMP
     if (!seg.backsector) {
-        emitWallFragments(drawSeg);
+        emitWallAndFloorFragments<EmitFragmentMode::SOLID_WALL>(drawSeg, seg);
+    }
+    else {
+        emitWallAndFloorFragments<EmitFragmentMode::UPPER_WALL>(drawSeg, seg);
+        emitWallAndFloorFragments<EmitFragmentMode::LOWER_WALL>(drawSeg, seg);
     }
 }
 
