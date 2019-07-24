@@ -887,7 +887,7 @@ static void emitWallAndFloorFragments(const DrawSeg& drawSeg, const seg_t seg) n
             else {
                 // Lower wall
                 if (ztInt - 1 > clipBounds.top) {
-                    gSegClip[x] = SegClip{ clipBounds.top, (int16_t) ztInt};
+                    gSegClip[x] = SegClip{ clipBounds.top, (int16_t) ztInt };
                 } else {
                     gSegClip[x] = SegClip{ 0, 0 };
                     gNumFullSegCols++;

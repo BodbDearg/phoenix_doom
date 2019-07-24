@@ -527,6 +527,10 @@ static void addBspNodeToFrame(const node_t* const pNode) noexcept {
         addSubsectorToFrame(*pSubSector);
         return;
     }
+
+    // If we have filled the screen then exit now - don't traverse the BSP any further
+    if (gNumFullSegCols >= gScreenWidth)
+        return;
     
     // Decide which side the view point is on
     uint32_t side = PointOnVectorSide(gViewXFrac, gViewYFrac, &pNode->Line);    // Is this the front side?
