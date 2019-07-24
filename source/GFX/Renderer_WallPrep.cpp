@@ -789,6 +789,7 @@ static void emitWallAndFloorFragments(const DrawSeg& drawSeg, const seg_t seg) n
             // Clip the column against the top and bottom of the screen
             float curTexTV = texTV;
             float curTexBV = texBV;
+            float texVSubPixelAdjustment;
 
             if (zt < 0.0f) {
                 // Offscreen at the top - clip:
@@ -796,15 +797,20 @@ static void emitWallAndFloorFragments(const DrawSeg& drawSeg, const seg_t seg) n
                 curTexTV += texVStep * pixelsOffscreen;
                 zt = 0.0f;
 
-                if (zt > zb)
+                // If the clipped size is now invalid then skip
+                if (zt > zb) {
                     continue;
+                }
+
+                // Note: no sub adjustement when we clip, it's already done implicitly as part of clipping
+                texVSubPixelAdjustment = 0.0f;
             }
             else {
                 // Small adjustment to account for eventual integer rounding of the z coordinate. For more 'solid' and less
                 // 'fuzzy' and temporally unstable texture mapping, we need to make adjustments based on the sub pixel y-position
                 // of the column. If for example the true pixel Y position is 0.25 units above it's integer position then count
                 // 0.25 pixels as already having been 'stepped' and adjust the texture coordinate accordingly:
-                curTexTV -= (zt - std::trunc(zt)) * texVStep;
+                texVSubPixelAdjustment = -(zt - std::trunc(zt)) * texVStep;
             }
 
             if (zb > bottomClipZ) {
@@ -829,6 +835,7 @@ static void emitWallAndFloorFragments(const DrawSeg& drawSeg, const seg_t seg) n
                 pTexture->data,
                 texU,
                 curTexTV,
+                texVSubPixelAdjustment,
                 Video::gFrameBuffer,
                 Video::SCREEN_WIDTH,
                 Video::SCREEN_HEIGHT,

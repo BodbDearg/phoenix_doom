@@ -178,6 +178,7 @@ namespace Blit {
         const ImageData& srcImg,                    // Input texture and dimensions
         const float srcX,                           // Where to start blitting from in the input texture: x
         const float srcY,                           // Where to start blitting from in the input texture: y
+        const float srcYSubPixelAdjustment,         // An adjustment applied to the first stepping of the src Y value - used for sub-pixel stability adjustments to prevent 'shaking' and 'wiggle'
         uint32_t* const pDstPixels,                 // Output image pixels
         const uint32_t dstW,                        // Output image width
         [[maybe_unused]] const uint32_t dstH,       // Output image height
@@ -266,6 +267,7 @@ namespace Blit {
         // Main pixel blitting loop
         [[maybe_unused]] float curSrcX = srcX;
         [[maybe_unused]] float curSrcY = srcY;
+        [[maybe_unused]] float nextSrcY = srcY + srcYSubPixelAdjustment;    // Note: the adjusment is applied AFTER the first pixel
 
         while (pDstPixel < pEndDstPixel) {
             // Get the source pixel (RGBA5551 format)
@@ -355,7 +357,8 @@ namespace Blit {
             }
 
             if constexpr ((BC_FLAGS & BCF_STEP_Y) != 0) {
-                curSrcY += srcYStep;
+                nextSrcY += srcYStep;
+                curSrcY = nextSrcY;
             }
 
             pDstPixel += dstStep;

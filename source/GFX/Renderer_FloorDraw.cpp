@@ -38,6 +38,7 @@ static void drawFloorColumn(
         texData,
         texXFrac,
         texYFrac,
+        0.0f,
         Video::gFrameBuffer,
         Video::SCREEN_WIDTH,
         Video::SCREEN_HEIGHT,
