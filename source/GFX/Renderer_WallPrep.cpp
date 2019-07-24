@@ -752,8 +752,6 @@ static void emitWallAndFloorFragments(const DrawSeg& drawSeg, const seg_t seg) n
         const uint32_t colCount = (x2 - x1) + 1;
         float ztStep;
         float zbStep;
-        float depthStep;   // TODO: REMOVE
-        float invDepthStep;     // TODO: REMOVE
         float wStep;
         float texUStep;
 
@@ -761,15 +759,11 @@ static void emitWallAndFloorFragments(const DrawSeg& drawSeg, const seg_t seg) n
             const float horzStepDivider = 1.0f / (float) (colCount - 1);
             ztStep = (p2tz - p1tz) * horzStepDivider;
             zbStep = (p2bz - p1bz) * horzStepDivider;
-            depthStep = (p2Depth - p1Depth) * horzStepDivider;
-            invDepthStep = (p2InvDepth - p1InvDepth) * horzStepDivider;
             wStep = (p2w - p1w) * horzStepDivider;
             texUStep = (p2TexU - p1TexU) * horzStepDivider;
         } else {
             ztStep = 0.0f;
             zbStep = 0.0f;
-            depthStep = 0.0f;
-            invDepthStep = 0.0f;
             wStep = 0.0f;
             texUStep = 0.0;
         }
@@ -783,13 +777,11 @@ static void emitWallAndFloorFragments(const DrawSeg& drawSeg, const seg_t seg) n
             const float pixelNumF = (float) (x - x1);
             float zt = viewH - (p1tz + ztStep * pixelNumF);
             float zb = viewH - (p1bz + zbStep * pixelNumF);
-            const float depth = p1Depth + depthStep * pixelNumF;   // TODO: REMOVE
-            const float invDepth = p1InvDepth + invDepthStep * pixelNumF;   // TODO: REMOVE
             const float w = p1w + wStep * pixelNumF;
             const float texU = (p1TexU + texUStep * pixelNumF) / w;
 
             // This is how much to step in the V direction
-            const float texVStep = (texTV - texBV) / (zb - zt);
+            const float texVStep = (texBV - texTV) / (zb - zt);
 
             // Clip the column against the top and bottom of the screen
             float curTexTV = texTV;
