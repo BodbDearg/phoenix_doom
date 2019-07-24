@@ -776,6 +776,18 @@ static void emitWallAndFloorFragments(const DrawSeg& drawSeg, const seg_t seg) n
         const float bottomClipZ = viewH - 0.5f;
 
         for (int32_t x = x1; x <= x2; ++x) {
+            // Grab the clip bounds for this column.
+            // If it is fully filled then just skip over it:
+            const SegClip clipBounds = gSegClip[x];
+
+            if (clipBounds.top >= clipBounds.bottom) {
+                // No more columns (apart from sprites) can draw in this screen column!
+                // Just move onto the next step:
+                nextXStepCount += 1.0f;
+                curXStepCount = nextXStepCount;
+                continue;
+            }
+
             // Do stepping for this column and figure out these quantities following through simple linear interpolation.
             // Don't need perspective correction for the y value (since we will always have a line) or for 1/w (scale-ish value).
             float zt = viewH - (p1tz + ztStep * curXStepCount);
@@ -794,16 +806,21 @@ static void emitWallAndFloorFragments(const DrawSeg& drawSeg, const seg_t seg) n
             // This is how much to step the texture in the V direction for this column
             const float texVStep = (texBV - texTV) / (zb - zt);
 
-            // Clip the column against the top and bottom of the screen
+            // Clip the column against the top and bottom of the current seg clip bounds
+            int32_t zbInt = (int32_t) zb;
+            int32_t ztInt = (int32_t) zt;            
+
             float curTexTV = texTV;
             float curTexBV = texBV;
             float texVSubPixelAdjustment;
 
-            if (zt < 0.0f) {
+            if (ztInt <= clipBounds.top) {
                 // Offscreen at the top - clip:
-                const float pixelsOffscreen = -zt;
+                const float newZ = (float) clipBounds.top + 1.0f;
+                const float pixelsOffscreen = newZ - zt;
                 curTexTV += texVStep * pixelsOffscreen;
-                zt = 0.0f;
+                zt = newZ;
+                ztInt = (int32_t) newZ;
 
                 // If the clipped size is now invalid then skip
                 if (zt > zb) {
@@ -821,18 +838,22 @@ static void emitWallAndFloorFragments(const DrawSeg& drawSeg, const seg_t seg) n
                 texVSubPixelAdjustment = -(zt - std::trunc(zt)) * texVStep;
             }
 
-            if (zb > bottomClipZ) {
+            if (zbInt >= clipBounds.bottom) {
                 // Offscreen at the bottom - clip:
-                const float pixelsOffscreen = zb - bottomClipZ;
+                const float newZ = (float) clipBounds.bottom - 1.0f;
+                const float pixelsOffscreen = zb - newZ;
                 curTexBV -= texVStep * pixelsOffscreen;
-                zb = bottomClipZ;
+                zb = newZ;
+                zbInt = (int32_t) newZ;
 
-                if (zt > zb)
+                // If the clipped size is now invalid then skip
+                if (zt > zb) {
                     continue;
+                }
             }
 
             // Emit the column fragment
-            const int32_t columnHeight = (int32_t) zb - (int32_t) zt + 1;
+            const int32_t columnHeight = zbInt - ztInt + 1;
 
             {
                 WallFragment frag;
@@ -847,6 +868,30 @@ static void emitWallAndFloorFragments(const DrawSeg& drawSeg, const seg_t seg) n
                 frag.pImageData = &pTexture->data;
 
                 gWallFragments.push_back(frag);
+            }
+
+            // Save new clip bounds and if the column is fully filled then mark it so by setting to all zeros (top >= bottom)
+            if constexpr (MODE == EmitFragmentMode::SOLID_WALL) {
+                // Solid walls always gobble up the entire column, nothing renders behind them!
+                gSegClip[x] = SegClip{ 0, 0 };
+                gNumFullSegCols++;
+            }  else if constexpr (MODE == EmitFragmentMode::UPPER_WALL) {                
+                // Upper wall
+                if (zbInt + 1 < clipBounds.bottom) {
+                    gSegClip[x] = SegClip{ (int16_t) zbInt, clipBounds.bottom };
+                } else {
+                    gSegClip[x] = SegClip{ 0, 0 };
+                    gNumFullSegCols++;                    
+                }
+            } 
+            else {
+                // Lower wall
+                if (ztInt - 1 > clipBounds.top) {
+                    gSegClip[x] = SegClip{ clipBounds.top, (int16_t) ztInt};
+                } else {
+                    gSegClip[x] = SegClip{ 0, 0 };
+                    gNumFullSegCols++;
+                }                
             }
         }
     }
@@ -895,8 +940,7 @@ void addSegToFrame(const seg_t& seg) noexcept {
     // Emit all wall fragments for the seg
     if (!seg.backsector) {
         emitWallAndFloorFragments<EmitFragmentMode::SOLID_WALL>(drawSeg, seg);
-    }
-    else {
+    } else {
         emitWallAndFloorFragments<EmitFragmentMode::UPPER_WALL>(drawSeg, seg);
         emitWallAndFloorFragments<EmitFragmentMode::LOWER_WALL>(drawSeg, seg);
     }

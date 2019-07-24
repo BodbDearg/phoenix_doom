@@ -61,7 +61,8 @@ uint32_t                    gExtraLight;
 angle_t                     gClipAngleBAM;
 angle_t                     gDoubleClipAngleBAM;
 uint32_t                    gSprOpening[MAXSCREENWIDTH];
-std::vector<ScreenYPair>    gSegYClip;
+std::vector<SegClip>        gSegClip;
+uint32_t                    gNumFullSegCols;
 std::vector<WallFragment>   gWallFragments;
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -93,42 +94,37 @@ static void initData() noexcept {
 
 static void setupSegYClipArrayForDraw() noexcept {
     // Ensure the array is the correct size for the screen
-    if (gSegYClip.size() != gScreenWidth) {
-        gSegYClip.resize(gScreenWidth);
+    if (gSegClip.size() != gScreenWidth) {
+        gSegClip.resize(gScreenWidth);
     }
 
-    // Clear 16 entries in the y clip array at a time so the ops can be pipelined
-    constexpr ScreenYPair CLIP_BOUNDS_CLEAR_VALUE = ScreenYPair{ UINT16_MAX, 0 };
+    // Clear 8 entries in the y clip array at a time so the ops can be pipelined
+    const SegClip segClipClearVal = SegClip{ (int16_t) -1, (int16_t) gScreenHeight };
 
-    ScreenYPair* pClipBounds = gSegYClip.data();
-    ScreenYPair* const pEndClipBounds16 = pClipBounds + ((uint32_t(gSegYClip.size()) / 16) * 16);
-    ScreenYPair* const pEndClipBounds = pClipBounds + gSegYClip.size();
+    SegClip* pSegClip = gSegClip.data();
+    SegClip* const pEndClipBounds8 = pSegClip + ((uint32_t(gSegClip.size()) / 8) * 8);
+    SegClip* const pEndClipBounds = pSegClip + gSegClip.size();
 
-    while (pClipBounds < pEndClipBounds16) {
-        pClipBounds[0] = CLIP_BOUNDS_CLEAR_VALUE;
-        pClipBounds[1] = CLIP_BOUNDS_CLEAR_VALUE;
-        pClipBounds[2] = CLIP_BOUNDS_CLEAR_VALUE;
-        pClipBounds[3] = CLIP_BOUNDS_CLEAR_VALUE;
-        pClipBounds[4] = CLIP_BOUNDS_CLEAR_VALUE;
-        pClipBounds[5] = CLIP_BOUNDS_CLEAR_VALUE;
-        pClipBounds[6] = CLIP_BOUNDS_CLEAR_VALUE;
-        pClipBounds[7] = CLIP_BOUNDS_CLEAR_VALUE;
-        pClipBounds[8] = CLIP_BOUNDS_CLEAR_VALUE;
-        pClipBounds[9] = CLIP_BOUNDS_CLEAR_VALUE;
-        pClipBounds[10] = CLIP_BOUNDS_CLEAR_VALUE;
-        pClipBounds[11] = CLIP_BOUNDS_CLEAR_VALUE;
-        pClipBounds[12] = CLIP_BOUNDS_CLEAR_VALUE;
-        pClipBounds[13] = CLIP_BOUNDS_CLEAR_VALUE;
-        pClipBounds[14] = CLIP_BOUNDS_CLEAR_VALUE;
-        pClipBounds[15] = CLIP_BOUNDS_CLEAR_VALUE;
-        pClipBounds += 16;
+    while (pSegClip < pEndClipBounds8) {
+        pSegClip[0] = segClipClearVal;
+        pSegClip[1] = segClipClearVal;
+        pSegClip[2] = segClipClearVal;
+        pSegClip[3] = segClipClearVal;
+        pSegClip[4] = segClipClearVal;
+        pSegClip[5] = segClipClearVal;
+        pSegClip[6] = segClipClearVal;
+        pSegClip[7] = segClipClearVal;
+        pSegClip += 8;
     }
 
     // Clear any remaining entries
-    while (pClipBounds < pEndClipBounds) {
-        pClipBounds[0] = CLIP_BOUNDS_CLEAR_VALUE;
-        ++pClipBounds;
+    while (pSegClip < pEndClipBounds) {
+        pSegClip[0] = segClipClearVal;
+        ++pSegClip;
     }
+
+    // Reset: this gets incremented every time segs fully occupy a screen column
+    gNumFullSegCols = 0;
 }
 
 static void preDrawSetup() noexcept {

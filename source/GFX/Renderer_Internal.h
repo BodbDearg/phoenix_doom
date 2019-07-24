@@ -89,6 +89,14 @@ namespace Renderer {
     };
 
     //------------------------------------------------------------------------------------------------------------------
+    // Clip bounds (top & bottom) for when emitting seg columns (floor + wall)
+    //------------------------------------------------------------------------------------------------------------------
+    struct SegClip {
+        int16_t top;
+        int16_t bottom;
+    };
+
+    //------------------------------------------------------------------------------------------------------------------
     // Describes lighting params for an input light level
     //------------------------------------------------------------------------------------------------------------------
     struct LightParams {
@@ -312,7 +320,8 @@ namespace Renderer {
     extern angle_t                      gClipAngleBAM;                      // Leftmost clipping angle
     extern angle_t                      gDoubleClipAngleBAM;                // Doubled leftmost clipping angle
     extern uint32_t                     gSprOpening[MAXSCREENWIDTH];        // clipped range
-    extern std::vector<ScreenYPair>     gSegYClip;                          // Used to clip segg columns vertically as segs are being submitted
+    extern std::vector<SegClip>         gSegClip;                           // Used to clip seg columns (walls + floors) vertically as segs are being submitted. One entry per screen column.
+    extern uint32_t                     gNumFullSegCols;                    // The number of columns that will accept no more seg pixels. Used to stop emitting segs when we have filled the screen.
     extern std::vector<WallFragment>    gWallFragments;                     // Wall fragments to be drawn
 
     //==================================================================================================================
