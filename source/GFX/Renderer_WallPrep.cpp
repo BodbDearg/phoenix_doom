@@ -741,14 +741,16 @@ static void emitWallAndFloorFragments(const DrawSeg& drawSeg, const seg_t seg) n
         float worldH = worldTZ - worldBZ;
         float texBV = texTV + worldH - 0.001f;  // Note: moving down a little so we don't skip over the end pixel bounds
 
-        // Figure out the w coordinate (which is based on depth) both wall end points
-        const float p1w = 1.0f / drawSeg.coords.p1w;
-        const float p2w = 1.0f / drawSeg.coords.p2w;
+        // Figure out the inverse 'w' coordinate (which is based on depth) both wall end points
+        const float p1InvW = 1.0f / drawSeg.coords.p1w;
+        const float p2InvW = 1.0f / drawSeg.coords.p2w;
 
-        // Figure out the texture 'U' coordinates for both wall ends.
-        // Note that we must multiply by 'W' and then later divide by it again for perspective correct interpolation!
-        const float p1TexU = drawSeg.p1TexU * p1w;
-        const float p2TexU = drawSeg.p2TexU * p2w;
+        // Figure out 'y' (normalized depth value) and the texture 'u' coordinates for both wall ends.
+        // Note that we must divide by 'w' and then later divide by it again by the interpolated '1/w' for perspective correct interpolation!
+        const float p1y = drawSeg.coords.p1y * p1InvW;
+        const float p2y = drawSeg.coords.p2y * p2InvW;
+        const float p1TexU = drawSeg.p1TexU * p1InvW;
+        const float p2TexU = drawSeg.p2TexU * p2InvW;
 
         // Figure out how much to step for each x pixel for various quantities
         const float xRange = (drawSeg.coords.p2x - drawSeg.coords.p1x);
@@ -756,7 +758,8 @@ static void emitWallAndFloorFragments(const DrawSeg& drawSeg, const seg_t seg) n
         
         const float ztStep = (p2tz - p1tz) * xRangeDivider;             // Z top step
         const float zbStep = (p2bz - p1bz) * xRangeDivider;             // Z bottom step
-        const float wStep = (p2w - p1w) * xRangeDivider;                // W coordinate step
+        const float yStep = (p2y - p1y) * xRangeDivider;                // Y step
+        const float invWStep = (p2InvW - p1InvW) * xRangeDivider;       // Inverse W coordinate step
         const float texUStep = (p2TexU - p1TexU) * xRangeDivider;       // Texcoord U step
 
         // The number of steps in the x direction we have made.
@@ -773,11 +776,16 @@ static void emitWallAndFloorFragments(const DrawSeg& drawSeg, const seg_t seg) n
         const float bottomClipZ = viewH - 0.5f;
 
         for (int32_t x = x1; x <= x2; ++x) {
-            // Do stepping for this column and figure out these quantities following through linear interpolation
+            // Do stepping for this column and figure out these quantities following through simple linear interpolation.
+            // Don't need perspective correction for the y value (since we will always have a line) or for 1/w (scale-ish value).
             float zt = viewH - (p1tz + ztStep * curXStepCount);
-            float zb = viewH - (p1bz + zbStep * curXStepCount);
-            const float w = p1w + wStep * curXStepCount;
-            const float texU = (p1TexU + texUStep * curXStepCount) / w;
+            float zb = viewH - (p1bz + zbStep * curXStepCount);            
+            const float wInv = p1InvW + invWStep * curXStepCount;
+            const float w = 1.0f / wInv;
+
+            // These attributes must have perspective correction applied 
+            const float y = (p1y + yStep * curXStepCount) * w;
+            const float texU = (p1TexU + texUStep * curXStepCount) * w;
 
             // Move onto the next pixel for future steps
             nextXStepCount += 1.0f;
@@ -823,31 +831,23 @@ static void emitWallAndFloorFragments(const DrawSeg& drawSeg, const seg_t seg) n
                     continue;
             }
 
-            // Emit the column
+            // Emit the column fragment
             const int32_t columnHeight = (int32_t) zb - (int32_t) zt + 1;
 
-            Blit::blitColumn<
-                Blit::BCF_STEP_Y |
-                Blit::BCF_H_WRAP_WRAP |
-                Blit::BCF_V_WRAP_WRAP |
-                Blit::BCF_COLOR_MULT_RGB
-            >(
-                pTexture->data,
-                texU,
-                curTexTV,
-                texVSubPixelAdjustment,
-                Video::gFrameBuffer,
-                Video::SCREEN_WIDTH,
-                Video::SCREEN_HEIGHT,
-                x + gScreenXOffset,
-                (int32_t) zt + gScreenYOffset,
-                columnHeight,
-                0,
-                texVStep,
-                1.0f,   // TODO: light
-                1.0f,   // TODO: light
-                1.0f    // TODO: light
-            );
+            {
+                WallFragment frag;
+                frag.x = x;
+                frag.y = (uint16_t) zt;
+                frag.height = (uint16_t) columnHeight;
+                frag.texcoordX = (uint16_t) texU;
+                frag.texcoordY = curTexTV;
+                frag.texcoordYSubPixelAdjust = texVSubPixelAdjustment;
+                frag.texcoordYStep = texVStep;
+                frag.lightMul = 1.0f;                   // TODO
+                frag.pImageData = &pTexture->data;
+
+                gWallFragments.push_back(frag);
+            }
         }
     }
 }

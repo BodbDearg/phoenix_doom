@@ -221,15 +221,15 @@ namespace Renderer {
     // Describes a column of a wall to be drawn
     //------------------------------------------------------------------------------------------------------------------
     struct WallFragment {
-        uint16_t    x;
-        uint16_t    y;
-        uint16_t    height;
-        uint16_t    _unused;
-        float       texcoordX;
-        float       texcoordY;
-        float       texcoordYStep;
-        float       normalizedDepth;
-        ImageData*  pImageData;
+        uint16_t            x;
+        uint16_t            y;
+        uint16_t            height;
+        uint16_t            texcoordX;
+        float               texcoordY;
+        float               texcoordYSubPixelAdjust;    // Sub pixel stability adjustment applied after the first stepping
+        float               texcoordYStep;
+        float               lightMul;                   // Multiply value for lighting
+        const ImageData*    pImageData;
     };
 
     //------------------------------------------------------------------------------------------------------------------
@@ -323,6 +323,7 @@ namespace Renderer {
     void addSegToFrame(const seg_t& seg) noexcept;
     void wallPrep(const int32_t leftX, const int32_t rightX, const seg_t& lineSeg, const angle_t lineAngle) noexcept;
     void drawAllLineSegs() noexcept;
+    void drawAllWallFragments() noexcept;
     void drawAllVisPlanes() noexcept;
     void drawAllMapObjectSprites() noexcept;    
     void drawWeapons() noexcept;

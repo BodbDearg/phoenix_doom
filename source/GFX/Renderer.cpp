@@ -169,6 +169,7 @@ void init() noexcept {
     initData();                                 // Init resource managers and all of the lookup tables
     gClipAngleBAM = gXToViewAngle[0];           // Get the left clip angle from viewport
     gDoubleClipAngleBAM = gClipAngleBAM * 2;    // Precalc angle * 2
+    gWallFragments.reserve(1024 * 8);           // Reserve 8K fragments
 }
 
 void initMathTables() noexcept {
@@ -272,7 +273,13 @@ void initMathTables() noexcept {
 void drawPlayerView() noexcept {
     preDrawSetup();                 // Init variables based on camera angle
     doBspTraversal();               // Traverse the BSP tree and build lists of walls, floors (visplanes) and sprites to render
+
+    // TODO: REMOVE
+    #if false
     drawAllLineSegs();              // Draw all everything Z Sorted
+    #endif
+    
+    drawAllWallFragments();
     drawAllVisPlanes();
     drawAllMapObjectSprites();
     drawWeapons();                  // Draw the weapons on top of the screen

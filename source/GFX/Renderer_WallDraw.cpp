@@ -545,11 +545,38 @@ void drawAllLineSegs() noexcept {
     for (viswall_t* pWall = pStartWall; pWall < pEndWall; ++pWall) {
         segLoop(*pWall);
     }
-    
+
     // Now I actually draw the walls back to front to allow for clipping because of slop.
     // Each wall is only drawn if needed...
     for (viswall_t* pWall = gpEndVisWall - 1; pWall >= pStartWall; --pWall) {
         drawSeg(*pWall);
+    }
+}
+
+void drawAllWallFragments() noexcept {
+    for (const WallFragment& wallFrag : gWallFragments) {
+        Blit::blitColumn<
+            Blit::BCF_STEP_Y |
+            Blit::BCF_H_WRAP_WRAP |
+            Blit::BCF_V_WRAP_WRAP |
+            Blit::BCF_COLOR_MULT_RGB
+        >(
+            *wallFrag.pImageData,
+            (float) wallFrag.texcoordX,
+            wallFrag.texcoordY,
+            wallFrag.texcoordYSubPixelAdjust,
+            Video::gFrameBuffer,
+            Video::SCREEN_WIDTH,
+            Video::SCREEN_HEIGHT,
+            wallFrag.x + gScreenXOffset,
+            wallFrag.y + gScreenYOffset,
+            wallFrag.height,
+            0,
+            wallFrag.texcoordYStep,
+            wallFrag.lightMul,
+            wallFrag.lightMul,
+            wallFrag.lightMul
+        );
     }
 }
 
