@@ -619,6 +619,11 @@ enum class EmitFragmentMode {
 
 template <EmitFragmentMode MODE>
 static void emitWallAndFloorFragments(const DrawSeg& drawSeg, const seg_t seg) noexcept {
+    // Don't bother if the wall is zero (or negative) sized in the x direction for some reason.
+    // That is an invalid case!
+    if (drawSeg.coords.p1x >= drawSeg.coords.p2x)
+        return;
+
     // Get integer range of the wall
     const int32_t x1 = (int32_t) drawSeg.coords.p1x;
     const int32_t x2 = (int32_t) drawSeg.coords.p2x;
@@ -693,7 +698,7 @@ static void emitWallAndFloorFragments(const DrawSeg& drawSeg, const seg_t seg) n
                     textureAnchor = FMath::doomFixed16ToFloat<float>(seg.frontsector->ceilingheight);
                 } else {
                     textureAnchor = FMath::doomFixed16ToFloat<float>(seg.backsector->ceilingheight) + (float) pTexture->data.height;
-                }          
+                }
             } else {
                 if (lineFlags & ML_DONTPEGBOTTOM) {
                     textureAnchor = FMath::doomFixed16ToFloat<float>(seg.frontsector->ceilingheight);
@@ -736,51 +741,49 @@ static void emitWallAndFloorFragments(const DrawSeg& drawSeg, const seg_t seg) n
         float worldH = worldTZ - worldBZ;
         float texBV = texTV + worldH - 0.001f;  // Note: moving down a little so we don't skip over the end pixel bounds
 
-        // Figure out the depth and inverse depth for both wall end points
-        const float p1Depth = ((drawSeg.coords.p1y + 1.0f) * 0.5f * Z_RANGE_SIZE) + Z_NEAR;   // TODO: REMOVE
-        const float p2Depth = ((drawSeg.coords.p2y + 1.0f) * 0.5f * Z_RANGE_SIZE) + Z_NEAR;   // TODO: REMOVE
-        const float p1InvDepth = 1.0f / p1Depth;   // TODO: REMOVE
-        const float p2InvDepth = 1.0f / p2Depth;   // TODO: REMOVE
+        // Figure out the w coordinate (which is based on depth) both wall end points
         const float p1w = 1.0f / drawSeg.coords.p1w;
         const float p2w = 1.0f / drawSeg.coords.p2w;
 
-        // Figure out the u coordinates for both wall ends
+        // Figure out the texture 'U' coordinates for both wall ends.
+        // Note that we must multiply by 'W' and then later divide by it again for perspective correct interpolation!
         const float p1TexU = drawSeg.p1TexU * p1w;
         const float p2TexU = drawSeg.p2TexU * p2w;
 
-        // Figure out how much to step in the y direction for each x pixel
-        const uint32_t colCount = (x2 - x1) + 1;
-        float ztStep;
-        float zbStep;
-        float wStep;
-        float texUStep;
+        // Figure out how much to step for each x pixel for various quantities
+        const float xRange = (drawSeg.coords.p2x - drawSeg.coords.p1x);
+        const float xRangeDivider =  1.0f / xRange;
+        
+        const float ztStep = (p2tz - p1tz) * xRangeDivider;             // Z top step
+        const float zbStep = (p2bz - p1bz) * xRangeDivider;             // Z bottom step
+        const float wStep = (p2w - p1w) * xRangeDivider;                // W coordinate step
+        const float texUStep = (p2TexU - p1TexU) * xRangeDivider;       // Texcoord U step
 
-        if (colCount > 1) {
-            const float horzStepDivider = 1.0f / (float) (colCount - 1);
-            ztStep = (p2tz - p1tz) * horzStepDivider;
-            zbStep = (p2bz - p1bz) * horzStepDivider;
-            wStep = (p2w - p1w) * horzStepDivider;
-            texUStep = (p2TexU - p1TexU) * horzStepDivider;
-        } else {
-            ztStep = 0.0f;
-            zbStep = 0.0f;
-            wStep = 0.0f;
-            texUStep = 0.0;
-        }
+        // The number of steps in the x direction we have made.
+        // Increment on each column.
+        //
+        // Note: we also do a sub pixel adjustement based on the fractional x position of the pixel.
+        // This helps ensure stability and prevents 'wiggle' as the camera moves about.
+        // This is similar to the stability adjustment we do for the V texture coordinate on walls.
+        float curXStepCount = 0.0f;
+        float nextXStepCount = -(drawSeg.coords.p1x - (float) x1);      // Adjustement for sub-pixel pos to prevent wiggle
 
         // Emit each column
         const float viewH = (float) gScreenHeight;
         const float bottomClipZ = viewH - 0.5f;
 
         for (int32_t x = x1; x <= x2; ++x) {
-            // Figure out the top and bottom y, w and u through linear interpolation
-            const float pixelNumF = (float) (x - x1);
-            float zt = viewH - (p1tz + ztStep * pixelNumF);
-            float zb = viewH - (p1bz + zbStep * pixelNumF);
-            const float w = p1w + wStep * pixelNumF;
-            const float texU = (p1TexU + texUStep * pixelNumF) / w;
+            // Do stepping for this column and figure out these quantities following through linear interpolation
+            float zt = viewH - (p1tz + ztStep * curXStepCount);
+            float zb = viewH - (p1bz + zbStep * curXStepCount);
+            const float w = p1w + wStep * curXStepCount;
+            const float texU = (p1TexU + texUStep * curXStepCount) / w;
 
-            // This is how much to step in the V direction
+            // Move onto the next pixel for future steps
+            nextXStepCount += 1.0f;
+            curXStepCount = nextXStepCount;
+
+            // This is how much to step the texture in the V direction for this column
             const float texVStep = (texBV - texTV) / (zb - zt);
 
             // Clip the column against the top and bottom of the screen
