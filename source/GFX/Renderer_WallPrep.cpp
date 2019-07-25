@@ -737,8 +737,6 @@ static void emitWallFragments(const DrawSeg& drawSeg, const seg_t seg) noexcept 
         worldTZ = FMath::doomFixed16ToFloat<float>(seg.frontsector->ceilingheight);
         worldBZ = FMath::doomFixed16ToFloat<float>(seg.backsector->ceilingheight);
     } else {
-        
-
         worldTZ = FMath::doomFixed16ToFloat<float>(seg.backsector->floorheight);
         worldBZ = FMath::doomFixed16ToFloat<float>(seg.frontsector->floorheight);
     }
@@ -778,7 +776,6 @@ static void emitWallFragments(const DrawSeg& drawSeg, const seg_t seg) noexcept 
 
     // Emit each column
     const float viewH = (float) gScreenHeight;
-    const float bottomClipZ = viewH - 0.5f;
 
     for (int32_t x = x1; x <= x2; ++x) {
         // Grab the clip bounds for this column.
