@@ -726,7 +726,91 @@ static void clipAndEmitWallColumn(
         }
     }
     else {
-        static_assert(FLAGS == FragEmitFlags::LOWER_WALL, "Can only handle 1 of 3 wall column modes at a time!");
+        static_assert(FLAGS == FragEmitFlags::LOWER_WALL);
+
+        if (ztInt - 1 > clipBounds.top) {
+            clipBounds = SegClip{ clipBounds.top, (int16_t) ztInt };
+        } else {
+            clipBounds = SegClip{ 0, 0 };
+            gNumFullSegCols++;
+        }
+    }
+
+    gSegClip[x] = clipBounds;
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+// Clips and emits a floor or ceiling column
+//----------------------------------------------------------------------------------------------------------------------
+template <FragEmitFlagsT FLAGS>
+static void clipAndEmitFlatColumn(
+    const uint32_t x,
+    const float zt,
+    const float zb,
+    SegClip& clipBounds
+) noexcept {
+    ASSERT(x < gScreenWidth);
+
+    // Only bother emitting wall fragments if the column height would be > 0
+    if (zt >= zb)
+        return;
+    
+    // Clip the column against the top and bottom of the current seg clip bounds
+    int32_t zbInt = (int32_t) zb;
+    int32_t ztInt = (int32_t) zt;
+
+    float curZt = zt;
+    float curZb = zb;
+
+    if (ztInt <= clipBounds.top) {
+        // Offscreen at the top - clip:
+        curZt = (float) clipBounds.top + 1.0f;
+        ztInt = (int32_t) curZt;
+        
+        // If the clipped size is now invalid then skip
+        if (curZt >= curZb) {
+            return;
+        }
+    }
+
+    if (zbInt >= clipBounds.bottom) {
+        // Offscreen at the bottom - clip:
+        curZb = (float) clipBounds.bottom - 1.0f;
+        zbInt = (int32_t) curZb;
+        
+        // If the clipped size is now invalid then skip
+        if (curZt >= curZb) {
+            return;
+        }
+    }
+
+    // Emit the floor or ceiling fragment
+    const int32_t columnHeight = zbInt - ztInt + 1;
+
+    {
+        // TODO: TEMP
+        for (int32_t y = ztInt; y <= zbInt; ++y) {
+            uint32_t& pixel = Video::gFrameBuffer[(gScreenYOffset + y) * Video::SCREEN_WIDTH + x + gScreenXOffset];
+
+            if constexpr (FLAGS == FragEmitFlags::CEILING) {    
+                pixel = 0x3F1F1FFF;
+            } else {
+                pixel = 0x1F1F3FFF;
+            }
+        }
+    }
+
+    // Save new clip bounds and if the column is fully filled then mark it so by setting to all zeros (top >= bottom)
+    if constexpr (FLAGS == FragEmitFlags::CEILING) {
+        if (zbInt + 1 < clipBounds.bottom) {
+            clipBounds = SegClip{ (int16_t) zbInt, clipBounds.bottom };
+        } else {
+            clipBounds = SegClip{ 0, 0 };
+            gNumFullSegCols++;                    
+        }
+    }
+    else {
+        static_assert(FLAGS == FragEmitFlags::FLOOR);
 
         if (ztInt - 1 > clipBounds.top) {
             clipBounds = SegClip{ clipBounds.top, (int16_t) ztInt };
@@ -743,7 +827,7 @@ static void clipAndEmitWallColumn(
 // Emits wall and floor/ceiling fragments for later rendering
 //----------------------------------------------------------------------------------------------------------------------
 template <FragEmitFlagsT FLAGS>
-static void emitWallFragments(const DrawSeg& drawSeg, const seg_t seg) noexcept {
+static void emitWallAndFloorFragments(const DrawSeg& drawSeg, const seg_t seg) noexcept {
     //-----------------------------------------------------------------------------------------------------------------
     // Some setup logic
     //-----------------------------------------------------------------------------------------------------------------
@@ -1087,6 +1171,24 @@ static void emitWallFragments(const DrawSeg& drawSeg, const seg_t seg) noexcept 
         //--------------------------------------------------------------------------------------------------------------
         // Emit all fragments
         //--------------------------------------------------------------------------------------------------------------
+        if constexpr (EMIT_CEILING) {
+            clipAndEmitFlatColumn<FragEmitFlags::CEILING>(
+                x,
+                0.0f,
+                upperTz,
+                clipBounds
+            );
+        }
+
+        if constexpr (EMIT_FLOOR) {
+            clipAndEmitFlatColumn<FragEmitFlags::FLOOR>(
+                x,
+                lowerBz,
+                viewH - 1.0f,
+                clipBounds
+            );
+        }
+
         if constexpr (EMIT_MID_WALL) {
             clipAndEmitWallColumn<FragEmitFlags::MID_WALL>(
                 x,
@@ -1177,7 +1279,7 @@ void addSegToFrame(const seg_t& seg) noexcept {
     if (!seg.backsector) {
         // We only emit fragments for solid walls if NOT back facing
         if (!bIsBackFacing) {
-            emitWallFragments<
+            emitWallAndFloorFragments<
                 FragEmitFlags::MID_WALL |
                 FragEmitFlags::CEILING |
                 FragEmitFlags::FLOOR
@@ -1185,14 +1287,14 @@ void addSegToFrame(const seg_t& seg) noexcept {
         }
     } else {
         if (!bIsBackFacing) {
-            emitWallFragments<
+            emitWallAndFloorFragments<
                 FragEmitFlags::UPPER_WALL |
                 FragEmitFlags::LOWER_WALL |
                 FragEmitFlags::CEILING |
                 FragEmitFlags::FLOOR
             >(drawSeg, seg);
         } else {
-            emitWallFragments<
+            emitWallAndFloorFragments<
                 FragEmitFlags::CEILING |
                 FragEmitFlags::FLOOR
             >(drawSeg, seg);
