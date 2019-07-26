@@ -403,12 +403,12 @@ static bool clipSegAgainstFrontPlane(DrawSeg& seg) noexcept {
     // Compute the new x and y and texture u for the intersection point via linear interpolation
     const float p1x = seg.coords.p1x;
     const float p2x = seg.coords.p2x;
-    const float p1u = seg.p1TexU;
-    const float p2u = seg.p2TexU;
+    const float p1TexX = seg.p1TexX;
+    const float p2TexX = seg.p2TexX;
 
     const float newX = p1x + (p2x - p1x) * t;
     const float newY = p1y + (p2y - p1y) * t;
-    const float newU = p1u + (p2u - p1u) * t;
+    const float newTexX = p1TexX + (p2TexX - p1TexX) * t;
 
     // Save the result of the point we want to move.
     // Note that we set 'w' to '-y' to ensure that 'y' ends up as '-1' in NDC:
@@ -416,13 +416,13 @@ static bool clipSegAgainstFrontPlane(DrawSeg& seg) noexcept {
         seg.coords.p2x = newX;
         seg.coords.p2y = newY;
         seg.coords.p2w = -newY;
-        seg.p2TexU = newU;
+        seg.p2TexX = newTexX;
     }
     else {
         seg.coords.p1x = newX;
         seg.coords.p1y = newY;
         seg.coords.p1w = -newY;
-        seg.p1TexU = newU;
+        seg.p1TexX = newTexX;
     }
 
     return true;
@@ -458,12 +458,12 @@ static bool clipSegAgainstLeftPlane(DrawSeg& seg) noexcept {
     // Compute the new x and y and texture u for the intersection point via linear interpolation
     const float p1y = seg.coords.p1y;
     const float p2y = seg.coords.p2y;
-    const float p1u = seg.p1TexU;
-    const float p2u = seg.p2TexU;
+    const float p1TexX = seg.p1TexX;
+    const float p2TexX = seg.p2TexX;
 
     const float newX = p1x + (p2x - p1x) * t;
     const float newY = p1y + (p2y - p1y) * t;
-    const float newU = p1u + (p2u - p1u) * t;
+    const float newTexX = p1TexX + (p2TexX - p1TexX) * t;
 
     // Save the result of the point we want to move.
     // Note that we set 'w' to '-x' to ensure that 'x' ends up as '-1' in NDC:
@@ -471,13 +471,13 @@ static bool clipSegAgainstLeftPlane(DrawSeg& seg) noexcept {
         seg.coords.p2x = newX;
         seg.coords.p2y = newY;
         seg.coords.p2w = -newX;
-        seg.p2TexU = newU;
+        seg.p2TexX = newTexX;
     }
     else {
         seg.coords.p1x = newX;
         seg.coords.p1y = newY;
         seg.coords.p1w = -newX;
-        seg.p1TexU = newU;
+        seg.p1TexX = newTexX;
     }
 
     return true;
@@ -513,12 +513,12 @@ static bool clipSegAgainstRightPlane(DrawSeg& seg) noexcept {
     // Compute the new x and y and texture u for the intersection point via linear interpolation
     const float p1y = seg.coords.p1y;
     const float p2y = seg.coords.p2y;
-    const float p1u = seg.p1TexU;
-    const float p2u = seg.p2TexU;
+    const float p1TexX = seg.p1TexX;
+    const float p2TexX = seg.p2TexX;
 
     const float newX = p1x + (p2x - p1x) * t;
     const float newY = p1y + (p2y - p1y) * t;
-    const float newU = p1u + (p2u - p1u) * t;
+    const float newTexX = p1TexX + (p2TexX - p1TexX) * t;
 
     // Save the result of the point we want to move.
     // Note that we set 'w' to 'x' to ensure that 'x' ends up as '+1' in NDC:
@@ -526,13 +526,13 @@ static bool clipSegAgainstRightPlane(DrawSeg& seg) noexcept {
         seg.coords.p2x = newX;
         seg.coords.p2y = newY;
         seg.coords.p2w = newX;
-        seg.p2TexU = newU;
+        seg.p2TexX = newTexX;
     }
     else {
         seg.coords.p1x = newX;
         seg.coords.p1y = newY;
         seg.coords.p1w = newX;
-        seg.p1TexU = newU;
+        seg.p1TexX = newTexX;
     }
 
     return true;
@@ -611,15 +611,152 @@ static void transformSegXZToScreenSpace(DrawSeg& seg) noexcept {
     seg.coords.p2bz_back = (seg.coords.p2bz_back * 0.5f + 0.5f) * screenH;
 }
 
-// Mode to use when emitting wall fragments
-enum class EmitWallFragMode {
-    MID,        // One sided seg: emit a single solid wall
-    UPPER,      // Front of two sided seg: emit an upper wall
-    LOWER       // Front of two sided seg: emit a lower wall
-};
+//----------------------------------------------------------------------------------------------------------------------
+// Flags for what types of wall and floor/ceiling fragments to emit
+//----------------------------------------------------------------------------------------------------------------------
+typedef uint16_t FragEmitFlagsT;
 
-template <EmitWallFragMode MODE>
+namespace FragEmitFlags {
+    static constexpr FragEmitFlagsT MID_WALL    = 0x0001;       // Emit a single sided wall
+    static constexpr FragEmitFlagsT UPPER_WALL  = 0x0002;       // Emit an upper wall
+    static constexpr FragEmitFlagsT LOWER_WALL  = 0x0004;       // Emit a lower wall
+    static constexpr FragEmitFlagsT FLOOR       = 0x0008;       // Emit a floor
+    static constexpr FragEmitFlagsT CEILING     = 0x0010;       // Emit a ceiling
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+// Clips and emits a wall column
+//----------------------------------------------------------------------------------------------------------------------
+template <FragEmitFlagsT FLAGS>
+static void clipAndEmitWallColumn(
+    const uint32_t x,
+    const float zt,
+    const float zb,
+    const float texX,
+    const float texTy,
+    const float texBy,
+    SegClip& clipBounds,
+    const ImageData& texImage
+) noexcept {
+    ASSERT(x < gScreenWidth);
+
+    // Only bother emitting wall fragments if the column height would be > 0
+    if (zt >= zb)
+        return;
+    
+    // This is how much to step the texture in the Y direction for this column
+    const float texYStep = (texBy - texTy) / (zb - zt);
+
+    // Clip the column against the top and bottom of the current seg clip bounds
+    int32_t zbInt = (int32_t) zb;
+    int32_t ztInt = (int32_t) zt;
+
+    float curZt = zt;
+    float curZb = zb;
+    float curTexTy = texTy;
+    float curTexBy = texBy;
+    float texYSubPixelAdjustment;
+
+    if (ztInt <= clipBounds.top) {
+        // Offscreen at the top - clip:
+        curZt = (float) clipBounds.top + 1.0f;
+        ztInt = (int32_t) curZt;
+        const float pixelsOffscreen = curZt - zt;
+        curTexTy += texYStep * pixelsOffscreen;
+        
+        // If the clipped size is now invalid then skip
+        if (curZt >= curZb) {
+            return;
+        }
+
+        // Note: no sub adjustement when we clip, it's already done implicitly as part of clipping
+        texYSubPixelAdjustment = 0.0f;
+    }
+    else {
+        // Small adjustment to account for eventual integer rounding of the z coordinate. For more 'solid' and less
+        // 'fuzzy' and temporally unstable texture mapping, we need to make adjustments based on the sub pixel y-position
+        // of the column. If for example the true pixel Y position is 0.25 units above it's integer position then count
+        // 0.25 pixels as already having been 'stepped' and adjust the texture coordinate accordingly:
+        texYSubPixelAdjustment = -(curZt - std::trunc(curZt)) * texYStep;
+    }
+
+    if (zbInt >= clipBounds.bottom) {
+        // Offscreen at the bottom - clip:
+        curZb = (float) clipBounds.bottom - 1.0f;
+        zbInt = (int32_t) curZb;
+        const float pixelsOffscreen = zb - curZb;
+        curTexBy -= texYStep * pixelsOffscreen;
+        
+        // If the clipped size is now invalid then skip
+        if (curZt >= curZb) {
+            return;
+        }
+    }
+
+    // Emit the column fragment
+    const int32_t columnHeight = zbInt - ztInt + 1;
+
+    {
+        WallFragment frag;
+        frag.x = x;
+        frag.y = (uint16_t) ztInt;
+        frag.height = (uint16_t) columnHeight;
+        frag.texcoordX = (uint16_t) texX;
+        frag.texcoordY = curTexTy;
+        frag.texcoordYSubPixelAdjust = texYSubPixelAdjustment;
+        frag.texcoordYStep = texYStep;
+        frag.lightMul = 1.0f;                   // TODO
+        frag.pImageData = &texImage;
+
+        gWallFragments.push_back(frag);
+    }
+
+    // Save new clip bounds and if the column is fully filled then mark it so by setting to all zeros (top >= bottom)
+    if constexpr (FLAGS == FragEmitFlags::MID_WALL) {
+        // Solid walls always gobble up the entire column, nothing renders behind them!
+        clipBounds = SegClip{ 0, 0 };
+        gNumFullSegCols++;
+    } 
+    else if constexpr (FLAGS == FragEmitFlags::UPPER_WALL) {                
+        if (zbInt + 1 < clipBounds.bottom) {
+            clipBounds = SegClip{ (int16_t) zbInt, clipBounds.bottom };
+        } else {
+            clipBounds = SegClip{ 0, 0 };
+            gNumFullSegCols++;                    
+        }
+    }
+    else {
+        static_assert(FLAGS == FragEmitFlags::LOWER_WALL, "Can only handle 1 of 3 wall column modes at a time!");
+
+        if (ztInt - 1 > clipBounds.top) {
+            clipBounds = SegClip{ clipBounds.top, (int16_t) ztInt };
+        } else {
+            clipBounds = SegClip{ 0, 0 };
+            gNumFullSegCols++;
+        }
+    }
+
+    gSegClip[x] = clipBounds;
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+// Emits wall and floor/ceiling fragments for later rendering
+//----------------------------------------------------------------------------------------------------------------------
+template <FragEmitFlagsT FLAGS>
 static void emitWallFragments(const DrawSeg& drawSeg, const seg_t seg) noexcept {
+    //-----------------------------------------------------------------------------------------------------------------
+    // Some setup logic
+    //-----------------------------------------------------------------------------------------------------------------
+
+    // For readability's sake:
+    constexpr bool EMIT_MID_WALL            = ((FLAGS & FragEmitFlags::MID_WALL) != 0);
+    constexpr bool EMIT_UPPER_WALL          = ((FLAGS & FragEmitFlags::UPPER_WALL) != 0);
+    constexpr bool EMIT_LOWER_WALL          = ((FLAGS & FragEmitFlags::LOWER_WALL) != 0);
+    constexpr bool EMIT_ANY_WALL            = (EMIT_MID_WALL || EMIT_UPPER_WALL || EMIT_LOWER_WALL);
+    constexpr bool EMIT_FLOOR               = ((FLAGS & FragEmitFlags::FLOOR) != 0);
+    constexpr bool EMIT_CEILING             = ((FLAGS & FragEmitFlags::CEILING) != 0);
+    constexpr bool EMIT_FLOOR_OR_CEILING    = EMIT_FLOOR || EMIT_CEILING;
+
     // Sanity checks, expect p1x to be < p2x - should be ensured externally!
     ASSERT(drawSeg.coords.p1x < drawSeg.coords.p2x);
     
@@ -635,266 +772,358 @@ static void emitWallFragments(const DrawSeg& drawSeg, const seg_t seg) noexcept 
     ASSERT(x2 < (int32_t) gScreenWidth);
     ASSERT(x1 <= x2);
     
-    // Figure out top and bottom z for p1 and p2.
-    // Depending on what wall type we are dealing with, some of these coordinates may be unused.
-    float p1tz;
-    float p1bz;
-    float p2tz;
-    float p2bz;
+    //------------------------------------------------------------------------------------------------------------------
+    // Figure out top and bottom z for p1 and p2 for all wall and/or floor & ceiling pieces.
+    // Depending on what flags are passed, some of these coordinates may be unused:
+    //------------------------------------------------------------------------------------------------------------------
+    [[maybe_unused]] float p1UpperTz;
+    [[maybe_unused]] float p2UpperTz;
+    [[maybe_unused]] float p1UpperBz;
+    [[maybe_unused]] float p2UpperBz;
+    [[maybe_unused]] float p1LowerTz;
+    [[maybe_unused]] float p2LowerTz;
+    [[maybe_unused]] float p1LowerBz;
+    [[maybe_unused]] float p2LowerBz;
 
-    if constexpr (MODE == EmitWallFragMode::MID) {
-        p1tz = drawSeg.coords.p1tz;
-        p2tz = drawSeg.coords.p2tz;
-        p1bz = drawSeg.coords.p1bz;
-        p2bz = drawSeg.coords.p2bz;
-    } else if constexpr (MODE == EmitWallFragMode::UPPER) {
-        p1tz = drawSeg.coords.p1tz;
-        p2tz = drawSeg.coords.p2tz;
-        p1bz = drawSeg.coords.p1tz_back;
-        p2bz = drawSeg.coords.p2tz_back;
-    } else {
-        static_assert(MODE == EmitWallFragMode::LOWER);
-        p1tz = drawSeg.coords.p1bz_back;
-        p2tz = drawSeg.coords.p2bz_back;
-        p1bz = drawSeg.coords.p1bz;
-        p2bz = drawSeg.coords.p2bz;
+    if constexpr (EMIT_MID_WALL || EMIT_UPPER_WALL || EMIT_CEILING) {
+        p1UpperTz = drawSeg.coords.p1tz;
+        p2UpperTz = drawSeg.coords.p2tz;
     }
 
-    // Only bother emitting wall fragments if the column height would be > 0
-    if (p1tz <= p1bz)
-        return;
-
-    // Grab the flags for the seg's line
-    line_t& lineDef = *seg.linedef;
-    const uint32_t lineFlags = lineDef.flags;
-
-    // This is the texture to use
-    const Texture* pTexture;
-
-    if constexpr (MODE == EmitWallFragMode::MID) {
-        pTexture = getWallTexture(seg.sidedef->midtexture);
-    } else if constexpr (MODE == EmitWallFragMode::UPPER) {
-        pTexture = getWallTexture(seg.sidedef->toptexture);
-    } else {
-        static_assert(MODE == EmitWallFragMode::LOWER);
-        pTexture = getWallTexture(seg.sidedef->bottomtexture);
+    if constexpr (EMIT_UPPER_WALL) {
+        p1UpperBz = drawSeg.coords.p1tz_back;
+        p2UpperBz = drawSeg.coords.p2tz_back;
     }
 
-    // Figure out the start 'V' texture coordiante for the column
-    const side_t& sideDef = *seg.sidedef;
-    float texTV;
+    if constexpr (EMIT_LOWER_WALL) {
+        p1LowerTz = drawSeg.coords.p1bz_back;
+        p2LowerTz = drawSeg.coords.p2bz_back;
+    }
 
-    {
+    if constexpr (EMIT_MID_WALL || EMIT_LOWER_WALL || EMIT_FLOOR) {
+        p1LowerBz = drawSeg.coords.p1bz;
+        p2LowerBz = drawSeg.coords.p2bz;
+    }
+
+    //------------------------------------------------------------------------------------------------------------------
+    // Grab any required textures
+    //------------------------------------------------------------------------------------------------------------------
+    [[maybe_unused]] const Texture* pMidTexture;
+    [[maybe_unused]] const Texture* pUpperTexture;
+    [[maybe_unused]] const Texture* pLowerTexture;
+
+    if constexpr (EMIT_MID_WALL) {
+        pMidTexture = getWallTexture(seg.sidedef->midtexture);    
+    }
+
+    if constexpr (EMIT_UPPER_WALL) {
+        pUpperTexture = getWallTexture(seg.sidedef->toptexture);
+    }
+
+    if constexpr (EMIT_LOWER_WALL) {
+        pLowerTexture = getWallTexture(seg.sidedef->bottomtexture);
+    }
+    
+    //------------------------------------------------------------------------------------------------------------------
+    // Figure out the top 'Y' texture coordinate for all wall columns
+    //------------------------------------------------------------------------------------------------------------------
+    [[maybe_unused]] float midTexTy;
+    [[maybe_unused]] float upperTexTy;
+    [[maybe_unused]] float lowerTexTy;
+
+    if constexpr (EMIT_ANY_WALL) {
+        // Need the line flags, line def and side def for this
+        line_t& lineDef = *seg.linedef;
+        const side_t& sideDef = *seg.sidedef;
+        const uint32_t lineFlags = lineDef.flags;
+
+        // Populate these values lazily
+        [[maybe_unused]] float frontFloorZ;
+        [[maybe_unused]] float frontCeilingZ;
+        [[maybe_unused]] float backFloorZ;
+        [[maybe_unused]] float backCeilingZ;
+        [[maybe_unused]] float sideDefRowOffset;
+        [[maybe_unused]] bool bBottomTexUnpegged;
+        [[maybe_unused]] bool bTopTexUnpegged;
+
+        if constexpr (EMIT_ANY_WALL) {
+            sideDefRowOffset = FMath::doomFixed16ToFloat<float>(sideDef.rowoffset);
+        } 
+        
+        if constexpr (EMIT_MID_WALL) {
+            frontFloorZ = FMath::doomFixed16ToFloat<float>(seg.frontsector->floorheight);
+        }
+        
+        if constexpr (EMIT_ANY_WALL) {
+            frontCeilingZ = FMath::doomFixed16ToFloat<float>(seg.frontsector->ceilingheight);
+        }
+        
+        if constexpr (EMIT_LOWER_WALL) {
+            backFloorZ = FMath::doomFixed16ToFloat<float>(seg.backsector->floorheight);
+        }
+        
+        if constexpr (EMIT_UPPER_WALL) {
+            backCeilingZ = FMath::doomFixed16ToFloat<float>(seg.backsector->ceilingheight);
+        }
+        
+        if constexpr (EMIT_MID_WALL || EMIT_LOWER_WALL) {
+            bBottomTexUnpegged = ((lineFlags & ML_DONTPEGBOTTOM) != 0);
+        }
+
+        if constexpr (EMIT_UPPER_WALL) {
+            bTopTexUnpegged = ((lineFlags & ML_DONTPEGTOP) != 0);
+        }
+
         // Figure out the texture anchor
-        float textureAnchor;
+        if constexpr (EMIT_MID_WALL) {
+            const float texH = (float) pMidTexture->data.height;
+            const float texAnchor = bBottomTexUnpegged ? frontFloorZ + texH : frontCeilingZ;
+            midTexTy = texAnchor + sideDefRowOffset - frontCeilingZ;
 
-        if constexpr (MODE == EmitWallFragMode::MID) {
-            if (lineFlags & ML_DONTPEGBOTTOM) {
-                textureAnchor = FMath::doomFixed16ToFloat<float>(seg.frontsector->floorheight) + (float) pTexture->data.height;
-            } else {
-                textureAnchor = FMath::doomFixed16ToFloat<float>(seg.frontsector->ceilingheight);
-            }
-        } else if constexpr (MODE == EmitWallFragMode::UPPER) {
-            if (lineFlags & ML_DONTPEGBOTTOM) {
-                textureAnchor = FMath::doomFixed16ToFloat<float>(seg.frontsector->ceilingheight);
-            } else {
-                textureAnchor = FMath::doomFixed16ToFloat<float>(seg.backsector->ceilingheight) + (float) pTexture->data.height;
-            }
-        } else {
-            static_assert(MODE == EmitWallFragMode::LOWER);
-
-            if (lineFlags & ML_DONTPEGBOTTOM) {
-                textureAnchor = FMath::doomFixed16ToFloat<float>(seg.frontsector->ceilingheight);
-            } else {
-                textureAnchor = FMath::doomFixed16ToFloat<float>(seg.backsector->floorheight);
+            if (midTexTy < 0) {
+                midTexTy += texH;       // DC: This is required for correct vertical alignment in some cases
             }
         }
 
-        textureAnchor += FMath::doomFixed16ToFloat<float>(sideDef.rowoffset);
+        if constexpr (EMIT_UPPER_WALL) {
+            const float texH = (float) pUpperTexture->data.height;
+            const float texAnchor = bTopTexUnpegged ? frontCeilingZ : backCeilingZ + texH;
+            upperTexTy = texAnchor + sideDefRowOffset - frontCeilingZ;
 
-        // Figure out the top texture value using this
-        texTV = textureAnchor;
+            if (upperTexTy < 0) {
+                upperTexTy += texH;     // DC: This is required for correct vertical alignment in some cases
+            }
+        } 
 
-        if constexpr (MODE == EmitWallFragMode::LOWER) {
-            texTV -= FMath::doomFixed16ToFloat<float>(seg.backsector->floorheight);
-        } else {
-            texTV -= FMath::doomFixed16ToFloat<float>(seg.frontsector->ceilingheight);
-        }
+        if constexpr (EMIT_LOWER_WALL) {
+            const float texH = (float) pLowerTexture->data.height;
+            const float texAnchor = bBottomTexUnpegged ? frontCeilingZ : backFloorZ;
+            lowerTexTy = texAnchor + sideDefRowOffset - backFloorZ;
 
-        if (texTV < 0) {
-            texTV += (float) pTexture->data.height;     // DC: This is required for correct vertical alignment in some cases
+            if (lowerTexTy < 0) {
+                lowerTexTy += texH;     // DC: This is required for correct vertical alignment in some cases
+            }
         }
     }
 
-    // Figure out the world top and bottom height for the wall piece and thus the world height of the wall and bottom V texture coordiante
-    float worldTZ;
-    float worldBZ;
+    //------------------------------------------------------------------------------------------------------------------
+    // Figure out the world top and bottom Y values for all the wall pieces.
+    // From this we can figure out the bottom Y texture coordinate for the wall pieces.
+    //------------------------------------------------------------------------------------------------------------------
+    [[maybe_unused]] float upperWorldTz;
+    [[maybe_unused]] float upperWorldBz;
+    [[maybe_unused]] float lowerWorldTz;
+    [[maybe_unused]] float lowerWorldBz;
 
-    if constexpr (MODE == EmitWallFragMode::MID) {
-        worldTZ = FMath::doomFixed16ToFloat<float>(seg.frontsector->ceilingheight);
-        worldBZ = FMath::doomFixed16ToFloat<float>(seg.frontsector->floorheight);
-    } else if constexpr (MODE == EmitWallFragMode::UPPER) {
-        worldTZ = FMath::doomFixed16ToFloat<float>(seg.frontsector->ceilingheight);
-        worldBZ = FMath::doomFixed16ToFloat<float>(seg.backsector->ceilingheight);
-    } else {
-        worldTZ = FMath::doomFixed16ToFloat<float>(seg.backsector->floorheight);
-        worldBZ = FMath::doomFixed16ToFloat<float>(seg.frontsector->floorheight);
+    if constexpr (EMIT_MID_WALL || EMIT_UPPER_WALL || EMIT_CEILING) {
+        upperWorldTz = FMath::doomFixed16ToFloat<float>(seg.frontsector->ceilingheight);
     }
 
-    float worldH = worldTZ - worldBZ;
-    float texBV = texTV + worldH - 0.001f;  // Note: moving down a little so we don't skip over the end pixel bounds
+    if constexpr (EMIT_UPPER_WALL) {
+        upperWorldBz = FMath::doomFixed16ToFloat<float>(seg.backsector->ceilingheight);
+    }
 
-    // Figure out the inverse 'w' coordinate (which is based on depth) both wall end points
-    const float p1InvW = 1.0f / drawSeg.coords.p1w;
-    const float p2InvW = 1.0f / drawSeg.coords.p2w;
+    if constexpr (EMIT_LOWER_WALL) {
+        lowerWorldTz = FMath::doomFixed16ToFloat<float>(seg.backsector->floorheight);
+    }
 
-    // Figure out 'y' (normalized depth value) and the texture 'u' coordinates for both wall ends.
-    // Note that we must divide by 'w' and then later divide by it again by the interpolated '1/w' for perspective correct interpolation!
-    const float p1y = drawSeg.coords.p1y * p1InvW;
-    const float p2y = drawSeg.coords.p2y * p2InvW;
-    const float p1TexU = drawSeg.p1TexU * p1InvW;
-    const float p2TexU = drawSeg.p2TexU * p2InvW;
+    if constexpr (EMIT_MID_WALL || EMIT_LOWER_WALL || EMIT_FLOOR) {
+        lowerWorldBz = FMath::doomFixed16ToFloat<float>(seg.frontsector->floorheight);
+    }
 
-    // Figure out how much to step for each x pixel for various quantities
+    //------------------------------------------------------------------------------------------------------------------
+    // Figure out the bottom texture 'Y' values for each wall piece
+    //------------------------------------------------------------------------------------------------------------------
+    [[maybe_unused]] float midTexBy;
+    [[maybe_unused]] float upperTexBy;
+    [[maybe_unused]] float lowerTexBy;
+
+    constexpr float BOTTOM_TEX_Y_ADJUST = -0.0001f;     // Note: move the coords up a little so we don't skip past the last pixel
+
+    if constexpr (EMIT_MID_WALL) {
+        const float worldH = upperWorldTz - lowerWorldBz;
+        midTexBy = midTexTy + worldH + BOTTOM_TEX_Y_ADJUST;
+    }
+
+    if constexpr (EMIT_UPPER_WALL) {
+        const float worldH = upperWorldTz - upperWorldBz;
+        upperTexBy = upperTexTy + worldH + BOTTOM_TEX_Y_ADJUST;
+    }
+
+    if constexpr (EMIT_LOWER_WALL) {
+        const float worldH = lowerWorldTz - lowerWorldBz;
+        lowerTexBy = lowerTexTy + worldH + BOTTOM_TEX_Y_ADJUST;
+    }
+    
+    //------------------------------------------------------------------------------------------------------------------
+    // Figure out how what to start at and much to step for each x pixel for various quantities.
+    // Note that all quantities except for 'z' values, and '1/w' must be first divided by 'w' prior to interpolation,
+    // and then divided by interpolated '1/w' again to extract the perspective correct value at each pixel. 'z' does
+    // not need to be interpolated because we will always have a straight line for the top and bottom edges and '1/w'
+    // is also ok to interpolate because it is based on depth.
+    //------------------------------------------------------------------------------------------------------------------
     const float xRange = (drawSeg.coords.p2x - drawSeg.coords.p1x);
     const float xRangeDivider =  1.0f / xRange;
-        
-    const float ztStep = (p2tz - p1tz) * xRangeDivider;             // Z top step
-    const float zbStep = (p2bz - p1bz) * xRangeDivider;             // Z bottom step
-    const float yStep = (p2y - p1y) * xRangeDivider;                // Y step
-    const float invWStep = (p2InvW - p1InvW) * xRangeDivider;       // Inverse W coordinate step
-    const float texUStep = (p2TexU - p1TexU) * xRangeDivider;       // Texcoord U step
 
+    // 1/w (sort of inverse depth)
+    const float p1InvW = 1.0f / drawSeg.coords.p1w;
+    const float p2InvW = 1.0f / drawSeg.coords.p2w;
+    const float invWStep = (p2InvW - p1InvW) * xRangeDivider;
+
+    // Normalized depth
+    const float p1y = drawSeg.coords.p1y * p1InvW;
+    const float p2y = drawSeg.coords.p2y * p2InvW;
+    const float yStep = (p2y - p1y) * xRangeDivider;
+
+    // X texture coordinate (for walls)
+    [[maybe_unused]] float p1TexX;
+    [[maybe_unused]] float p2TexX;
+    [[maybe_unused]] float texXStep;
+
+    if constexpr (EMIT_ANY_WALL) {
+        p1TexX = drawSeg.p1TexX * p1InvW;
+        p2TexX = drawSeg.p2TexX * p2InvW;
+        texXStep = (p2TexX - p1TexX) * xRangeDivider;
+    }
+
+    // Bottom and top Z stepping values for walls and floors
+    [[maybe_unused]] float upperTzStep;
+    [[maybe_unused]] float upperBzStep;
+    [[maybe_unused]] float lowerTzStep;
+    [[maybe_unused]] float lowerBzStep;
+
+    if constexpr (EMIT_MID_WALL || EMIT_UPPER_WALL || EMIT_CEILING) {
+        upperTzStep = (p2UpperTz - p1UpperTz) * xRangeDivider;
+    }
+
+    if constexpr (EMIT_UPPER_WALL) {
+        upperBzStep = (p2UpperBz - p1UpperBz) * xRangeDivider;
+    }
+
+    if constexpr (EMIT_LOWER_WALL) {
+        lowerTzStep = (p2LowerTz - p1LowerTz) * xRangeDivider;
+    }
+
+    if constexpr (EMIT_MID_WALL || EMIT_LOWER_WALL || EMIT_FLOOR) {
+        lowerBzStep = (p2LowerBz - p1LowerBz) * xRangeDivider;
+    }
+
+    //------------------------------------------------------------------------------------------------------------------
     // The number of steps in the x direction we have made.
     // Increment on each column.
     //
     // Note: we also do a sub pixel adjustement based on the fractional x position of the pixel.
     // This helps ensure stability and prevents 'wiggle' as the camera moves about.
     // This is similar to the stability adjustment we do for the V texture coordinate on walls.
+    //------------------------------------------------------------------------------------------------------------------
     float curXStepCount = 0.0f;
     float nextXStepCount = -(drawSeg.coords.p1x - (float) x1);      // Adjustement for sub-pixel pos to prevent wiggle
 
+    //------------------------------------------------------------------------------------------------------------------
     // Emit each column
+    //------------------------------------------------------------------------------------------------------------------
     const float viewH = (float) gScreenHeight;
 
     for (int32_t x = x1; x <= x2; ++x) {
+        //--------------------------------------------------------------------------------------------------------------
         // Grab the clip bounds for this column.
-        // If it is fully filled then just skip over it:
-        const SegClip clipBounds = gSegClip[x];
+        // If it is fully filled (top >= bottom) then just skip over it and go to the next step
+        //--------------------------------------------------------------------------------------------------------------
+        SegClip clipBounds = gSegClip[x];
 
         if (clipBounds.top >= clipBounds.bottom) {
-            // No more columns (apart from sprites) can draw in this screen column!
-            // Just move onto the next column and do stepping:
             nextXStepCount += 1.0f;
             curXStepCount = nextXStepCount;
             continue;
         }
 
+        //--------------------------------------------------------------------------------------------------------------
         // Do stepping for this column and figure out these quantities following through simple linear interpolation.
-        // Don't need perspective correction for the y value (since we will always have a line) or for 1/w (scale-ish value).
-        float zt = viewH - (p1tz + ztStep * curXStepCount);
-        float zb = viewH - (p1bz + zbStep * curXStepCount);            
+        // Do perspective correct adjustments where required.
+        //--------------------------------------------------------------------------------------------------------------
+
+        // 1/w and w
         const float wInv = p1InvW + invWStep * curXStepCount;
         const float w = 1.0f / wInv;
 
-        // These attributes must have perspective correction applied 
+        // Normalized depth
         const float y = (p1y + yStep * curXStepCount) * w;
-        const float texU = (p1TexU + texUStep * curXStepCount) * w;
 
+        // X texture coordinate (for walls)
+        [[maybe_unused]] float texX;
+        
+        if constexpr (EMIT_ANY_WALL) {
+            texX = (p1TexX + texXStep * curXStepCount) * w;
+        }
+
+        // Bottom and top Z values for walls and floors
+        [[maybe_unused]] float upperTz;
+        [[maybe_unused]] float upperBz;
+        [[maybe_unused]] float lowerTz;
+        [[maybe_unused]] float lowerBz;
+
+        if constexpr (EMIT_MID_WALL || EMIT_UPPER_WALL || EMIT_CEILING) {
+            upperTz = viewH - (p1UpperTz + upperTzStep * curXStepCount);
+        }
+
+        if constexpr (EMIT_UPPER_WALL) {
+            upperBz = viewH - (p1UpperBz + upperBzStep * curXStepCount);
+        }
+
+        if constexpr (EMIT_LOWER_WALL) {
+            lowerTz = viewH - (p1LowerTz + lowerTzStep * curXStepCount);
+        }
+
+        if constexpr (EMIT_MID_WALL || EMIT_LOWER_WALL || EMIT_FLOOR) {
+            lowerBz = viewH - (p1LowerBz + lowerBzStep * curXStepCount);
+        }
+
+        //--------------------------------------------------------------------------------------------------------------
         // Move onto the next pixel for future steps
+        //--------------------------------------------------------------------------------------------------------------
         nextXStepCount += 1.0f;
         curXStepCount = nextXStepCount;
 
-        // This is how much to step the texture in the V direction for this column
-        const float texVStep = (texBV - texTV) / (zb - zt);
-
-        // Clip the column against the top and bottom of the current seg clip bounds
-        int32_t zbInt = (int32_t) zb;
-        int32_t ztInt = (int32_t) zt;
-
-        float curTexTV = texTV;
-        float curTexBV = texBV;
-        float texVSubPixelAdjustment;
-
-        if (ztInt <= clipBounds.top) {
-            // Offscreen at the top - clip:
-            const float newZ = (float) clipBounds.top + 1.0f;
-            const float pixelsOffscreen = newZ - zt;
-            curTexTV += texVStep * pixelsOffscreen;
-            zt = newZ;
-            ztInt = (int32_t) newZ;
-
-            // If the clipped size is now invalid then skip
-            if (zt > zb) {
-                continue;
-            }
-
-            // Note: no sub adjustement when we clip, it's already done implicitly as part of clipping
-            texVSubPixelAdjustment = 0.0f;
-        }
-        else {
-            // Small adjustment to account for eventual integer rounding of the z coordinate. For more 'solid' and less
-            // 'fuzzy' and temporally unstable texture mapping, we need to make adjustments based on the sub pixel y-position
-            // of the column. If for example the true pixel Y position is 0.25 units above it's integer position then count
-            // 0.25 pixels as already having been 'stepped' and adjust the texture coordinate accordingly:
-            texVSubPixelAdjustment = -(zt - std::trunc(zt)) * texVStep;
+        //--------------------------------------------------------------------------------------------------------------
+        // Emit all fragments
+        //--------------------------------------------------------------------------------------------------------------
+        if constexpr (EMIT_MID_WALL) {
+            clipAndEmitWallColumn<FragEmitFlags::MID_WALL>(
+                x,
+                upperTz,
+                lowerBz,
+                texX,
+                midTexTy,
+                midTexBy,
+                clipBounds,
+                pMidTexture->data
+            );
         }
 
-        if (zbInt >= clipBounds.bottom) {
-            // Offscreen at the bottom - clip:
-            const float newZ = (float) clipBounds.bottom - 1.0f;
-            const float pixelsOffscreen = zb - newZ;
-            curTexBV -= texVStep * pixelsOffscreen;
-            zb = newZ;
-            zbInt = (int32_t) newZ;
-
-            // If the clipped size is now invalid then skip
-            if (zt > zb) {
-                continue;
-            }
+        if constexpr (EMIT_UPPER_WALL) {
+            clipAndEmitWallColumn<FragEmitFlags::UPPER_WALL>(
+                x,
+                upperTz,
+                upperBz,
+                texX,
+                upperTexTy,
+                upperTexBy,
+                clipBounds,
+                pUpperTexture->data
+            );
         }
 
-        // Emit the column fragment
-        const int32_t columnHeight = zbInt - ztInt + 1;
-
-        {
-            WallFragment frag;
-            frag.x = x;
-            frag.y = (uint16_t) zt;
-            frag.height = (uint16_t) columnHeight;
-            frag.texcoordX = (uint16_t) texU;
-            frag.texcoordY = curTexTV;
-            frag.texcoordYSubPixelAdjust = texVSubPixelAdjustment;
-            frag.texcoordYStep = texVStep;
-            frag.lightMul = 1.0f;                   // TODO
-            frag.pImageData = &pTexture->data;
-
-            gWallFragments.push_back(frag);
-        }
-
-        // Save new clip bounds and if the column is fully filled then mark it so by setting to all zeros (top >= bottom)
-        if constexpr (MODE == EmitWallFragMode::MID) {
-            // Solid walls always gobble up the entire column, nothing renders behind them!
-            gSegClip[x] = SegClip{ 0, 0 };
-            gNumFullSegCols++;
-        } 
-        else if constexpr (MODE == EmitWallFragMode::UPPER) {                
-            if (zbInt + 1 < clipBounds.bottom) {
-                gSegClip[x] = SegClip{ (int16_t) zbInt, clipBounds.bottom };
-            } else {
-                gSegClip[x] = SegClip{ 0, 0 };
-                gNumFullSegCols++;                    
-            }
-        }
-        else {
-            static_assert(MODE == EmitWallFragMode::LOWER);
-
-            if (ztInt - 1 > clipBounds.top) {
-                gSegClip[x] = SegClip{ clipBounds.top, (int16_t) ztInt };
-            } else {
-                gSegClip[x] = SegClip{ 0, 0 };
-                gNumFullSegCols++;
-            }                
+        if constexpr (EMIT_LOWER_WALL) {
+            clipAndEmitWallColumn<FragEmitFlags::LOWER_WALL>(
+                x,
+                lowerTz,
+                lowerBz,
+                texX,
+                lowerTexTy,
+                lowerTexBy,
+                clipBounds,
+                pLowerTexture->data
+            );
         }
     }
 }
@@ -910,10 +1139,10 @@ void addSegToFrame(const seg_t& seg) noexcept {
         const float segdx = FMath::doomFixed16ToFloat<float>(seg.v2.x - seg.v1.x);
         const float segdy = FMath::doomFixed16ToFloat<float>(seg.v2.y - seg.v1.y);
         const float segLength = std::sqrtf(segdx * segdx + segdy * segdy);
-        const float uOffset = FMath::doomFixed16ToFloat<float>(seg.offset + seg.sidedef->textureoffset);
+        const float texXOffset = FMath::doomFixed16ToFloat<float>(seg.offset + seg.sidedef->textureoffset);
 
-        drawSeg.p1TexU = uOffset;
-        drawSeg.p2TexU = uOffset + segLength - 0.001f;      // Note: if a wall is 64 units and the texture is 64 units, never go to 64.0 (always stay to 63.99999 or something like that)
+        drawSeg.p1TexX = texXOffset;
+        drawSeg.p2TexX = texXOffset + segLength - 0.001f;   // Note: if a wall is 64 units and the texture is 64 units, never go to 64.0 (always stay to 63.99999 or something like that)
     }
 
     // Next transform to clip space and clip against the front and left + right planes
@@ -948,12 +1177,25 @@ void addSegToFrame(const seg_t& seg) noexcept {
     if (!seg.backsector) {
         // We only emit fragments for solid walls if NOT back facing
         if (!bIsBackFacing) {
-            emitWallFragments<EmitWallFragMode::MID>(drawSeg, seg);
+            emitWallFragments<
+                FragEmitFlags::MID_WALL |
+                FragEmitFlags::CEILING |
+                FragEmitFlags::FLOOR
+            >(drawSeg, seg);
         }
     } else {
         if (!bIsBackFacing) {
-            emitWallFragments<EmitWallFragMode::UPPER>(drawSeg, seg);
-            emitWallFragments<EmitWallFragMode::LOWER>(drawSeg, seg);
+            emitWallFragments<
+                FragEmitFlags::UPPER_WALL |
+                FragEmitFlags::LOWER_WALL |
+                FragEmitFlags::CEILING |
+                FragEmitFlags::FLOOR
+            >(drawSeg, seg);
+        } else {
+            emitWallFragments<
+                FragEmitFlags::CEILING |
+                FragEmitFlags::FLOOR
+            >(drawSeg, seg);
         }
     }
 
