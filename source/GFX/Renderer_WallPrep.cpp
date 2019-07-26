@@ -827,7 +827,7 @@ static void clipAndEmitFlatColumn(
 // Emits wall and floor/ceiling fragments for later rendering
 //----------------------------------------------------------------------------------------------------------------------
 template <FragEmitFlagsT FLAGS>
-static void emitWallAndFloorFragments(const DrawSeg& drawSeg, const seg_t seg) noexcept {
+static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) noexcept {
     //-----------------------------------------------------------------------------------------------------------------
     // Some setup logic
     //-----------------------------------------------------------------------------------------------------------------
@@ -1279,7 +1279,7 @@ void addSegToFrame(const seg_t& seg) noexcept {
     if (!seg.backsector) {
         // We only emit fragments for solid walls if NOT back facing
         if (!bIsBackFacing) {
-            emitWallAndFloorFragments<
+            emitWallAndFlatFragments<
                 FragEmitFlags::MID_WALL |
                 FragEmitFlags::CEILING |
                 FragEmitFlags::FLOOR
@@ -1287,14 +1287,14 @@ void addSegToFrame(const seg_t& seg) noexcept {
         }
     } else {
         if (!bIsBackFacing) {
-            emitWallAndFloorFragments<
+            emitWallAndFlatFragments<
                 FragEmitFlags::UPPER_WALL |
                 FragEmitFlags::LOWER_WALL |
                 FragEmitFlags::CEILING |
                 FragEmitFlags::FLOOR
             >(drawSeg, seg);
         } else {
-            emitWallAndFloorFragments<
+            emitWallAndFlatFragments<
                 FragEmitFlags::CEILING |
                 FragEmitFlags::FLOOR
             >(drawSeg, seg);
