@@ -190,8 +190,17 @@ namespace Renderer {
         float p2tz_back;        // 2nd wall point: top and bottom z for the back/joining sector
         float p2bz_back;
 
+        //--------------------------------------------------------------------------------------------------------------
+        // Vertex attributes that are not affected by any transforms except for clipping.
+        // These are interpolated across columns in the seg also.
+        //--------------------------------------------------------------------------------------------------------------
         float p1TexX;           // X texture coordinate for p1 and p2
         float p2TexX;
+
+        float p1WorldX;         // World x and y values for p1 and p2
+        float p1WorldY;
+        float p2WorldX;
+        float p2WorldY;
     };
 
     //------------------------------------------------------------------------------------------------------------------
@@ -226,6 +235,21 @@ namespace Renderer {
         float               texcoordYSubPixelAdjust;    // Sub pixel stability adjustment applied after the first stepping
         float               texcoordYStep;
         float               lightMul;                   // Multiply value for lighting
+        const ImageData*    pImageData;
+    };
+    
+    //------------------------------------------------------------------------------------------------------------------
+    // Describes a column of a floor or ceiling to be drawn
+    //------------------------------------------------------------------------------------------------------------------
+    struct FlatFragment {
+        uint16_t            x;
+        uint16_t            y;
+        uint16_t            height;
+        uint16_t            _unused1;
+        float               endWorldX;
+        float               endWorldY;
+        float               endWorldZ;
+        uint32_t            _unused2;
         const ImageData*    pImageData;
     };
 
@@ -312,6 +336,8 @@ namespace Renderer {
     extern std::vector<SegClip>         gSegClip;                           // Used to clip seg columns (walls + floors) vertically as segs are being submitted. One entry per screen column.
     extern uint32_t                     gNumFullSegCols;                    // The number of columns that will accept no more seg pixels. Used to stop emitting segs when we have filled the screen.
     extern std::vector<WallFragment>    gWallFragments;                     // Wall fragments to be drawn
+    extern std::vector<FlatFragment>    gFloorFragments;                    // Floor fragments to be drawn
+    extern std::vector<FlatFragment>    gCeilFragments;                     // Ceiling fragments to be drawn
 
     //==================================================================================================================
     // Functions
@@ -322,6 +348,8 @@ namespace Renderer {
     void wallPrep(const int32_t leftX, const int32_t rightX, const seg_t& lineSeg, const angle_t lineAngle) noexcept;
     void drawAllLineSegs() noexcept;
     void drawAllWallFragments() noexcept;
+    void drawAllFloorFragments() noexcept;
+    void drawAllCeilingFragments() noexcept;
     void drawAllVisPlanes() noexcept;
     void drawAllMapObjectSprites() noexcept;    
     void drawWeapons() noexcept;

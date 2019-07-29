@@ -64,6 +64,8 @@ uint32_t                    gSprOpening[MAXSCREENWIDTH];
 std::vector<SegClip>        gSegClip;
 uint32_t                    gNumFullSegCols;
 std::vector<WallFragment>   gWallFragments;
+std::vector<FlatFragment>   gFloorFragments;
+std::vector<FlatFragment>   gCeilFragments;
 
 //----------------------------------------------------------------------------------------------------------------------
 // Load in the "TextureInfo" array so that the game knows all about the wall and sky textures (Width,Height).
@@ -153,6 +155,8 @@ static void preDrawSetup() noexcept {
     // Other misc setup
     setupSegYClipArrayForDraw();
     gWallFragments.clear();
+    gFloorFragments.clear();
+    gCeilFragments.clear();
 
     gExtraLight = player.extralight << 6;       // Init the extra lighting value
     gpEndVisPlane = gVisPlanes + 1;             // visplanes[0] is left empty
@@ -274,6 +278,8 @@ void drawPlayerView() noexcept {
     #endif
     
     drawAllWallFragments();
+    drawAllFloorFragments();
+    drawAllCeilingFragments();
     drawAllVisPlanes();
     drawAllMapObjectSprites();
     drawWeapons();                  // Draw the weapons on top of the screen

@@ -24,6 +24,9 @@ static constexpr Fixed      MISSILERANGE    = 32 * 64 * FRACUNIT;   // Range of 
 static constexpr Fixed      FLOATSPEED      = 8 * FRACUNIT;         // Speed an object can float vertically
 static constexpr Fixed      SKULLSPEED      = 40 * FRACUNIT;        // Speed of the skull to attack
 
+// Misc
+static constexpr uint32_t   SKY_CEILING_PIC = UINT32_MAX;           // Texture number that indicates a sky texture
+
 //----------------------------------------------------------------------------------------------------------------------
 // Globa enums
 //----------------------------------------------------------------------------------------------------------------------

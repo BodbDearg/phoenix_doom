@@ -305,6 +305,29 @@ void wallPrep(
     latePrep(curWall, lineSeg, lineAngle);
 }
 
+//----------------------------------------------------------------------------------------------------------------------
+// Populate vertex attributes for the given seg that are interpolated across the seg during rendering.
+// These attributes are not affected by any transforms, but *ARE* clipped.
+//----------------------------------------------------------------------------------------------------------------------
+static void populateSegVertexAttribs(const seg_t& seg, DrawSeg& drawSeg) noexcept {
+    // Set the texture 'X' coordinates for the seg
+    {
+        const float segdx = FMath::doomFixed16ToFloat<float>(seg.v2.x - seg.v1.x);
+        const float segdy = FMath::doomFixed16ToFloat<float>(seg.v2.y - seg.v1.y);
+        const float segLength = std::sqrtf(segdx * segdx + segdy * segdy);
+        const float texXOffset = FMath::doomFixed16ToFloat<float>(seg.offset + seg.sidedef->textureoffset);
+
+        drawSeg.p1TexX = texXOffset;
+        drawSeg.p2TexX = texXOffset + segLength - 0.001f;   // Note: if a wall is 64 units and the texture is 64 units, never go to 64.0 (always stay to 63.99999 or something like that)
+    }
+
+    // Set the world x and y positions for the seg's two points
+    drawSeg.p1WorldX = FMath::doomFixed16ToFloat<float>(seg.v1.x);
+    drawSeg.p1WorldY = FMath::doomFixed16ToFloat<float>(seg.v1.y);
+    drawSeg.p2WorldX = FMath::doomFixed16ToFloat<float>(seg.v2.x);
+    drawSeg.p2WorldY = FMath::doomFixed16ToFloat<float>(seg.v2.y);
+}
+
 static void transformSegXYToViewSpace(const seg_t& inSeg, DrawSeg& outSeg) noexcept {
     // First convert from fixed point to floats
     outSeg.p1x = FMath::doomFixed16ToFloat<float>(inSeg.v1.x);
@@ -400,15 +423,12 @@ static bool clipSegAgainstFrontPlane(DrawSeg& seg) noexcept {
     const float p2ClipPlaneUDist = std::abs(p2ClipPlaneSDist);
     const float t = p1ClipPlaneUDist / (p1ClipPlaneUDist + p2ClipPlaneUDist);
 
-    // Compute the new x and y and texture u for the intersection point via linear interpolation
-    const float p1x = seg.p1x;
-    const float p2x = seg.p2x;
-    const float p1TexX = seg.p1TexX;
-    const float p2TexX = seg.p2TexX;
-
-    const float newX = p1x + (p2x - p1x) * t;
-    const float newY = p1y + (p2y - p1y) * t;
-    const float newTexX = p1TexX + (p2TexX - p1TexX) * t;
+    // Compute the new x and y and vertex attribs for the intersection point via linear interpolation
+    const float newX = FMath::lerp(seg.p1x, seg.p2x, t);
+    const float newY = FMath::lerp(p1y, p2y, t);
+    const float newTexX = FMath::lerp(seg.p1TexX, seg.p2TexX, t);
+    const float newWorldX = FMath::lerp(seg.p1WorldX, seg.p2WorldX, t);
+    const float newWorldY = FMath::lerp(seg.p1WorldY, seg.p2WorldY, t);
 
     // Save the result of the point we want to move.
     // Note that we set 'w' to '-y' to ensure that 'y' ends up as '-1' in NDC:
@@ -417,12 +437,16 @@ static bool clipSegAgainstFrontPlane(DrawSeg& seg) noexcept {
         seg.p2y = newY;
         seg.p2w = -newY;
         seg.p2TexX = newTexX;
+        seg.p2WorldX = newWorldX;
+        seg.p2WorldY = newWorldY;
     }
     else {
         seg.p1x = newX;
         seg.p1y = newY;
         seg.p1w = -newY;
         seg.p1TexX = newTexX;
+        seg.p1WorldX = newWorldX;
+        seg.p1WorldY = newWorldY;
     }
 
     return true;
@@ -455,15 +479,12 @@ static bool clipSegAgainstLeftPlane(DrawSeg& seg) noexcept {
     const float p2ClipPlaneUDist = std::abs(p2ClipPlaneSDist);
     const float t = p1ClipPlaneUDist / (p1ClipPlaneUDist + p2ClipPlaneUDist);
 
-    // Compute the new x and y and texture u for the intersection point via linear interpolation
-    const float p1y = seg.p1y;
-    const float p2y = seg.p2y;
-    const float p1TexX = seg.p1TexX;
-    const float p2TexX = seg.p2TexX;
-
-    const float newX = p1x + (p2x - p1x) * t;
-    const float newY = p1y + (p2y - p1y) * t;
-    const float newTexX = p1TexX + (p2TexX - p1TexX) * t;
+    // Compute the new x and y and vertex attribs for the intersection point via linear interpolation
+    const float newX = FMath::lerp(p1x, p2x, t);
+    const float newY = FMath::lerp(seg.p1y, seg.p2y, t);
+    const float newTexX = FMath::lerp(seg.p1TexX, seg.p2TexX, t);
+    const float newWorldX = FMath::lerp(seg.p1WorldX, seg.p2WorldX, t);
+    const float newWorldY = FMath::lerp(seg.p1WorldY, seg.p2WorldY, t);
 
     // Save the result of the point we want to move.
     // Note that we set 'w' to '-x' to ensure that 'x' ends up as '-1' in NDC:
@@ -472,12 +493,16 @@ static bool clipSegAgainstLeftPlane(DrawSeg& seg) noexcept {
         seg.p2y = newY;
         seg.p2w = -newX;
         seg.p2TexX = newTexX;
+        seg.p2WorldX = newWorldX;
+        seg.p2WorldY = newWorldY;
     }
     else {
         seg.p1x = newX;
         seg.p1y = newY;
         seg.p1w = -newX;
         seg.p1TexX = newTexX;
+        seg.p1WorldX = newWorldX;
+        seg.p1WorldY = newWorldY;
     }
 
     return true;
@@ -510,15 +535,12 @@ static bool clipSegAgainstRightPlane(DrawSeg& seg) noexcept {
     const float p2ClipPlaneUDist = std::abs(p2ClipPlaneSDist);
     const float t = p1ClipPlaneUDist / (p1ClipPlaneUDist + p2ClipPlaneUDist);
 
-    // Compute the new x and y and texture u for the intersection point via linear interpolation
-    const float p1y = seg.p1y;
-    const float p2y = seg.p2y;
-    const float p1TexX = seg.p1TexX;
-    const float p2TexX = seg.p2TexX;
-
-    const float newX = p1x + (p2x - p1x) * t;
-    const float newY = p1y + (p2y - p1y) * t;
-    const float newTexX = p1TexX + (p2TexX - p1TexX) * t;
+    // Compute the new x and y and vertex attribs for the intersection point via linear interpolation
+    const float newX = FMath::lerp(p1x, p2x, t);
+    const float newY = FMath::lerp(seg.p1y, seg.p2y, t);
+    const float newTexX = FMath::lerp(seg.p1TexX, seg.p2TexX, t);
+    const float newWorldX = FMath::lerp(seg.p1WorldX, seg.p2WorldX, t);
+    const float newWorldY = FMath::lerp(seg.p1WorldY, seg.p2WorldY, t);
 
     // Save the result of the point we want to move.
     // Note that we set 'w' to 'x' to ensure that 'x' ends up as '+1' in NDC:
@@ -527,12 +549,16 @@ static bool clipSegAgainstRightPlane(DrawSeg& seg) noexcept {
         seg.p2y = newY;
         seg.p2w = newX;
         seg.p2TexX = newTexX;
+        seg.p2WorldX = newWorldX;
+        seg.p2WorldY = newWorldY;
     }
     else {
         seg.p1x = newX;
         seg.p1y = newY;
         seg.p1w = newX;
         seg.p1TexX = newTexX;
+        seg.p1WorldX = newWorldX;
+        seg.p1WorldY = newWorldY;
     }
 
     return true;
@@ -745,7 +771,11 @@ static void clipAndEmitFlatColumn(
     const uint32_t x,
     const float zt,
     const float zb,
-    SegClip& clipBounds
+    SegClip& clipBounds,
+    const float worldX,
+    const float worldY,
+    const float worldZ,
+    const ImageData& texture
 ) noexcept {
     ASSERT(x < gScreenWidth);
 
@@ -786,15 +816,20 @@ static void clipAndEmitFlatColumn(
     const int32_t columnHeight = zbInt - ztInt + 1;
 
     {
-        // TODO: TEMP
-        for (int32_t y = ztInt; y <= zbInt; ++y) {
-            uint32_t& pixel = Video::gFrameBuffer[(gScreenYOffset + y) * Video::SCREEN_WIDTH + x + gScreenXOffset];
+        FlatFragment frag;
+        frag.x = x;
+        frag.y = ztInt;
+        frag.height = columnHeight;
+        frag.endWorldX = worldX;
+        frag.endWorldY = worldY;
+        frag.endWorldZ = worldZ;
+        frag.pImageData = &texture;
 
-            if constexpr (FLAGS == FragEmitFlags::CEILING) {    
-                pixel = 0x3F1F1FFF;
-            } else {
-                pixel = 0x1F1F3FFF;
-            }
+        if constexpr (FLAGS == FragEmitFlags::FLOOR) {    
+            gFloorFragments.push_back(frag);
+        } else {
+            static_assert(FLAGS == FragEmitFlags::CEILING);
+            gCeilFragments.push_back(frag);
         }
     }
 
@@ -831,13 +866,13 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
     //-----------------------------------------------------------------------------------------------------------------
 
     // For readability's sake:
-    constexpr bool EMIT_MID_WALL            = ((FLAGS & FragEmitFlags::MID_WALL) != 0);
-    constexpr bool EMIT_UPPER_WALL          = ((FLAGS & FragEmitFlags::UPPER_WALL) != 0);
-    constexpr bool EMIT_LOWER_WALL          = ((FLAGS & FragEmitFlags::LOWER_WALL) != 0);
-    constexpr bool EMIT_ANY_WALL            = (EMIT_MID_WALL || EMIT_UPPER_WALL || EMIT_LOWER_WALL);
-    constexpr bool EMIT_FLOOR               = ((FLAGS & FragEmitFlags::FLOOR) != 0);
-    constexpr bool EMIT_CEILING             = ((FLAGS & FragEmitFlags::CEILING) != 0);
-    constexpr bool EMIT_FLOOR_OR_CEILING    = EMIT_FLOOR || EMIT_CEILING;
+    constexpr bool EMIT_MID_WALL    = ((FLAGS & FragEmitFlags::MID_WALL) != 0);
+    constexpr bool EMIT_UPPER_WALL  = ((FLAGS & FragEmitFlags::UPPER_WALL) != 0);
+    constexpr bool EMIT_LOWER_WALL  = ((FLAGS & FragEmitFlags::LOWER_WALL) != 0);
+    constexpr bool EMIT_ANY_WALL    = (EMIT_MID_WALL || EMIT_UPPER_WALL || EMIT_LOWER_WALL);
+    constexpr bool EMIT_FLOOR       = ((FLAGS & FragEmitFlags::FLOOR) != 0);
+    constexpr bool EMIT_CEILING     = ((FLAGS & FragEmitFlags::CEILING) != 0);
+    constexpr bool EMIT_ANY_FLAT    = (EMIT_FLOOR || EMIT_CEILING);
 
     // Sanity checks, expect p1x to be < p2x - should be ensured externally!
     ASSERT(drawSeg.p1x < drawSeg.p2x);
@@ -890,20 +925,34 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
     //------------------------------------------------------------------------------------------------------------------
     // Grab any required textures
     //------------------------------------------------------------------------------------------------------------------
-    [[maybe_unused]] const Texture* pMidTexture;
-    [[maybe_unused]] const Texture* pUpperTexture;
-    [[maybe_unused]] const Texture* pLowerTexture;
+    [[maybe_unused]] const Texture* pMidTex;
+    [[maybe_unused]] const Texture* pUpperTex;
+    [[maybe_unused]] const Texture* pLowerTex;
+    [[maybe_unused]] const Texture* pFloorTex;
+    [[maybe_unused]] const Texture* pCeilingTex;
 
     if constexpr (EMIT_MID_WALL) {
-        pMidTexture = getWallTexture(seg.sidedef->midtexture);    
+        pMidTex = getWallTexture(seg.sidedef->midtexture);    
     }
 
     if constexpr (EMIT_UPPER_WALL) {
-        pUpperTexture = getWallTexture(seg.sidedef->toptexture);
+        pUpperTex = getWallTexture(seg.sidedef->toptexture);
     }
 
     if constexpr (EMIT_LOWER_WALL) {
-        pLowerTexture = getWallTexture(seg.sidedef->bottomtexture);
+        pLowerTex = getWallTexture(seg.sidedef->bottomtexture);
+    }
+
+    if constexpr (EMIT_FLOOR) {
+        pFloorTex = getFlatAnimTexture(seg.frontsector->FloorPic);
+    }
+
+    if constexpr (EMIT_CEILING) {
+        if (seg.frontsector->CeilingPic != SKY_CEILING_PIC) {
+            pCeilingTex = getFlatAnimTexture(seg.frontsector->CeilingPic);
+        } else {
+            pCeilingTex = nullptr;
+        }
     }
     
     //------------------------------------------------------------------------------------------------------------------
@@ -958,7 +1007,7 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
 
         // Figure out the texture anchor
         if constexpr (EMIT_MID_WALL) {
-            const float texH = (float) pMidTexture->data.height;
+            const float texH = (float) pMidTex->data.height;
             const float texAnchor = bBottomTexUnpegged ? frontFloorZ + texH : frontCeilingZ;
             midTexTy = texAnchor + sideDefRowOffset - frontCeilingZ;
 
@@ -968,7 +1017,7 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
         }
 
         if constexpr (EMIT_UPPER_WALL) {
-            const float texH = (float) pUpperTexture->data.height;
+            const float texH = (float) pUpperTex->data.height;
             const float texAnchor = bTopTexUnpegged ? frontCeilingZ : backCeilingZ + texH;
             upperTexTy = texAnchor + sideDefRowOffset - frontCeilingZ;
 
@@ -978,7 +1027,7 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
         } 
 
         if constexpr (EMIT_LOWER_WALL) {
-            const float texH = (float) pLowerTexture->data.height;
+            const float texH = (float) pLowerTex->data.height;
             const float texAnchor = bBottomTexUnpegged ? frontCeilingZ : backFloorZ;
             lowerTexTy = texAnchor + sideDefRowOffset - backFloorZ;
 
@@ -1057,7 +1106,7 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
     const float p2y = drawSeg.p2y * p2InvW;
     const float yStep = (p2y - p1y) * xRangeDivider;
 
-    // X texture coordinate (for walls)
+    // Vertex attributes that are interpolated across the span (walls only)
     [[maybe_unused]] float p1TexX;
     [[maybe_unused]] float p2TexX;
     [[maybe_unused]] float texXStep;
@@ -1066,6 +1115,23 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
         p1TexX = drawSeg.p1TexX * p1InvW;
         p2TexX = drawSeg.p2TexX * p2InvW;
         texXStep = (p2TexX - p1TexX) * xRangeDivider;
+    }
+
+    // Vertex attributes that are interpolated across the span (floors)
+    [[maybe_unused]] float p1WorldX;
+    [[maybe_unused]] float p1WorldY;
+    [[maybe_unused]] float p2WorldX;
+    [[maybe_unused]] float p2WorldY;
+    [[maybe_unused]] float worldXStep;
+    [[maybe_unused]] float worldYStep;
+
+    if constexpr (EMIT_ANY_FLAT) {
+        p1WorldX = drawSeg.p1WorldX * p1InvW;
+        p1WorldY = drawSeg.p1WorldY * p1InvW;
+        p2WorldX = drawSeg.p2WorldX * p2InvW;
+        p2WorldY = drawSeg.p2WorldY * p2InvW;
+        worldXStep = (p2WorldX - p1WorldX) * xRangeDivider;
+        worldYStep = (p2WorldY - p1WorldY) * xRangeDivider;
     }
 
     // Bottom and top Z stepping values for walls and floors
@@ -1138,6 +1204,15 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
             texX = (p1TexX + texXStep * curXStepCount) * w;
         }
 
+        // World X and Y (for floors)
+        [[maybe_unused]] float worldX;
+        [[maybe_unused]] float worldY;
+        
+        if constexpr (EMIT_ANY_FLAT) {
+            worldX = (p1WorldX + worldXStep * curXStepCount) * w;
+            worldY = (p1WorldY + worldYStep * curXStepCount) * w;
+        }
+
         // Bottom and top Z values for walls and floors
         [[maybe_unused]] float upperTz;
         [[maybe_unused]] float upperBz;
@@ -1170,12 +1245,18 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
         // Emit all fragments
         //--------------------------------------------------------------------------------------------------------------
         if constexpr (EMIT_CEILING) {
-            clipAndEmitFlatColumn<FragEmitFlags::CEILING>(
-                x,
-                0.0f,
-                upperTz,
-                clipBounds
-            );
+            if (pCeilingTex) {
+                clipAndEmitFlatColumn<FragEmitFlags::CEILING>(
+                    x,
+                    0.0f,
+                    upperTz,
+                    clipBounds,
+                    worldX,
+                    worldY,
+                    upperWorldTz,
+                    pCeilingTex->data
+                );
+            }
         }
 
         if constexpr (EMIT_FLOOR) {
@@ -1183,7 +1264,11 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
                 x,
                 lowerBz,
                 viewH - 1.0f,
-                clipBounds
+                clipBounds,
+                worldX,
+                worldY,
+                lowerWorldBz,
+                pFloorTex->data
             );
         }
 
@@ -1196,7 +1281,7 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
                 midTexTy,
                 midTexBy,
                 clipBounds,
-                pMidTexture->data
+                pMidTex->data
             );
         }
 
@@ -1209,7 +1294,7 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
                 upperTexTy,
                 upperTexBy,
                 clipBounds,
-                pUpperTexture->data
+                pUpperTex->data
             );
         }
 
@@ -1222,29 +1307,18 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
                 lowerTexTy,
                 lowerTexBy,
                 clipBounds,
-                pLowerTexture->data
+                pLowerTex->data
             );
         }
     }
 }
 
 void addSegToFrame(const seg_t& seg) noexcept {
-    // First transform the seg into viewspace
+    // First transform the seg into viewspace and populate vertex attributes
     DrawSeg drawSeg;
+    populateSegVertexAttribs(seg, drawSeg);
     transformSegXYToViewSpace(seg, drawSeg);
     
-    // Set the U coordinates for the seg.
-    // Those will need to be adjusted accordingly if we clip:
-    {
-        const float segdx = FMath::doomFixed16ToFloat<float>(seg.v2.x - seg.v1.x);
-        const float segdy = FMath::doomFixed16ToFloat<float>(seg.v2.y - seg.v1.y);
-        const float segLength = std::sqrtf(segdx * segdx + segdy * segdy);
-        const float texXOffset = FMath::doomFixed16ToFloat<float>(seg.offset + seg.sidedef->textureoffset);
-
-        drawSeg.p1TexX = texXOffset;
-        drawSeg.p2TexX = texXOffset + segLength - 0.001f;   // Note: if a wall is 64 units and the texture is 64 units, never go to 64.0 (always stay to 63.99999 or something like that)
-    }
-
     // Next transform to clip space and clip against the front and left + right planes
     transformSegXYWToClipSpace(drawSeg);
     

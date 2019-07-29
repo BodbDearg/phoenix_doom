@@ -74,4 +74,12 @@ namespace FMath {
         const T dy = p2y - p1y;
         return std::atan2(dy, dx);
     }
+
+    //------------------------------------------------------------------------------------------------------------------
+    // Linearly interpolate between two floats
+    //------------------------------------------------------------------------------------------------------------------
+    template <class T>
+    static inline T lerp(const T a, const T b, const T t) noexcept {
+        return a + (b - a) * t;
+    }
 }

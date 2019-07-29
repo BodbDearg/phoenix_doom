@@ -211,4 +211,60 @@ void drawAllVisPlanes() noexcept {
     }
 }
 
+void drawAllFloorFragments() noexcept {
+    for (const FlatFragment& flatFrag : gFloorFragments) {
+        Blit::blitColumn<
+            Blit::BCF_STEP_X |
+            Blit::BCF_STEP_Y |
+            Blit::BCF_H_WRAP_64 |
+            Blit::BCF_V_WRAP_64 |
+            Blit::BCF_COLOR_MULT_RGB
+        >(
+            *flatFrag.pImageData,
+            flatFrag.endWorldX,
+            flatFrag.endWorldY,
+            0.0f,
+            Video::gFrameBuffer,
+            Video::SCREEN_WIDTH,
+            Video::SCREEN_HEIGHT,
+            flatFrag.x + gScreenXOffset,
+            flatFrag.y + gScreenYOffset,
+            flatFrag.height,
+            0.0f,   // TODO: X STEP
+            0.0f,   // TODO: Y STEP
+            1.0f,   // TODO
+            1.0f,   // TODO
+            1.0f    // TODO
+        );
+    }
+}
+
+void drawAllCeilingFragments() noexcept {
+    for (const FlatFragment& flatFrag : gCeilFragments) {
+        Blit::blitColumn<
+            Blit::BCF_STEP_X |
+            Blit::BCF_STEP_Y |
+            Blit::BCF_H_WRAP_64 |
+            Blit::BCF_V_WRAP_64 |
+            Blit::BCF_COLOR_MULT_RGB
+        >(
+            *flatFrag.pImageData,
+            flatFrag.endWorldX,
+            flatFrag.endWorldY,
+            0.0f,
+            Video::gFrameBuffer,
+            Video::SCREEN_WIDTH,
+            Video::SCREEN_HEIGHT,
+            flatFrag.x + gScreenXOffset,
+            flatFrag.y + gScreenYOffset,
+            flatFrag.height,
+            0.0f,   // TODO: X STEP
+            0.0f,   // TODO: Y STEP
+            1.0f,   // TODO
+            1.0f,   // TODO
+            1.0f    // TODO
+        );
+    }
+}
+
 END_NAMESPACE(Renderer)
