@@ -1274,8 +1274,6 @@ void addSegToFrame(const seg_t& seg) noexcept {
     const bool bIsBackFacing = isScreenSpaceSegBackFacing(drawSeg);
 
     // Emit all wall and floor fragments for the seg
-    bool bIsLineSeen = false;
-
     if (!seg.backsector) {
         // We only emit fragments for solid walls if NOT back facing
         if (!bIsBackFacing) {
@@ -1302,6 +1300,8 @@ void addSegToFrame(const seg_t& seg) noexcept {
     }
 
     // Grab the flags for the seg's linedef and mark it as seen (if visible)
+    const bool bIsLineSeen = (!bIsBackFacing);
+
     if (bIsLineSeen) {
         line_t& lineDef = *seg.linedef;
         lineDef.flags |= ML_MAPPED;
