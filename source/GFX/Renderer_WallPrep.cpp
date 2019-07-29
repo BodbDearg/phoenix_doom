@@ -307,10 +307,10 @@ void wallPrep(
 
 static void transformSegXYToViewSpace(const seg_t& inSeg, DrawSeg& outSeg) noexcept {
     // First convert from fixed point to floats
-    outSeg.coords.p1x = FMath::doomFixed16ToFloat<float>(inSeg.v1.x);
-    outSeg.coords.p1y = FMath::doomFixed16ToFloat<float>(inSeg.v1.y);
-    outSeg.coords.p2x = FMath::doomFixed16ToFloat<float>(inSeg.v2.x);
-    outSeg.coords.p2y = FMath::doomFixed16ToFloat<float>(inSeg.v2.y);
+    outSeg.p1x = FMath::doomFixed16ToFloat<float>(inSeg.v1.x);
+    outSeg.p1y = FMath::doomFixed16ToFloat<float>(inSeg.v1.y);
+    outSeg.p2x = FMath::doomFixed16ToFloat<float>(inSeg.v2.x);
+    outSeg.p2y = FMath::doomFixed16ToFloat<float>(inSeg.v2.y);
 
     // Transform the seg xy coords by the view position
     const float viewX = gViewX;
@@ -318,26 +318,26 @@ static void transformSegXYToViewSpace(const seg_t& inSeg, DrawSeg& outSeg) noexc
     const float viewSin = gViewSin;
     const float viewCos = gViewCos;
 
-    outSeg.coords.p1x -= viewX;
-    outSeg.coords.p1y -= viewY;
-    outSeg.coords.p2x -= viewX;
-    outSeg.coords.p2y -= viewY;
+    outSeg.p1x -= viewX;
+    outSeg.p1y -= viewY;
+    outSeg.p2x -= viewX;
+    outSeg.p2y -= viewY;
 
     // Do rotation by view angle.
     // Rotation matrix formula from: https://en.wikipedia.org/wiki/Rotation_matrix
-    const float p1xRot = viewCos * outSeg.coords.p1x - viewSin * outSeg.coords.p1y;
-    const float p1yRot = viewSin * outSeg.coords.p1x + viewCos * outSeg.coords.p1y;
-    const float p2xRot = viewCos * outSeg.coords.p2x - viewSin * outSeg.coords.p2y;
-    const float p2yRot = viewSin * outSeg.coords.p2x + viewCos * outSeg.coords.p2y;
+    const float p1xRot = viewCos * outSeg.p1x - viewSin * outSeg.p1y;
+    const float p1yRot = viewSin * outSeg.p1x + viewCos * outSeg.p1y;
+    const float p2xRot = viewCos * outSeg.p2x - viewSin * outSeg.p2y;
+    const float p2yRot = viewSin * outSeg.p2x + viewCos * outSeg.p2y;
 
-    outSeg.coords.p1x = p1xRot;
-    outSeg.coords.p1y = p1yRot;
-    outSeg.coords.p2x = p2xRot;
-    outSeg.coords.p2y = p2yRot;
+    outSeg.p1x = p1xRot;
+    outSeg.p1y = p1yRot;
+    outSeg.p2x = p2xRot;
+    outSeg.p2y = p2yRot;
 }
 
 static bool isScreenSpaceSegBackFacing(const DrawSeg& seg) noexcept {
-    return (seg.coords.p1x >= seg.coords.p2x);
+    return (seg.p1x >= seg.p2x);
 }
 
 static void transformSegXYWToClipSpace(DrawSeg& seg) noexcept {
@@ -346,15 +346,15 @@ static void transformSegXYWToClipSpace(DrawSeg& seg) noexcept {
     //      projection matrix has 'z' as the depth value and not y (Doom coord sys). 
     //  (2) We assume that the seg always starts off with an implicit 'w' value of '1'.
     //
-    const float y1Orig = seg.coords.p1y;
-    const float y2Orig = seg.coords.p2y;
+    const float y1Orig = seg.p1y;
+    const float y2Orig = seg.p2y;
 
-    seg.coords.p1x *= gProjMatrix.r0c0;
-    seg.coords.p2x *= gProjMatrix.r0c0;
-    seg.coords.p1y = gProjMatrix.r2c2 * y1Orig + gProjMatrix.r2c3;
-    seg.coords.p2y = gProjMatrix.r2c2 * y2Orig + gProjMatrix.r2c3;
-    seg.coords.p1w = y1Orig;    // Note: r3c2 is an implicit 1.0 - hence we just do this!
-    seg.coords.p2w = y2Orig;    // Note: r3c2 is an implicit 1.0 - hence we just do this!
+    seg.p1x *= gProjMatrix.r0c0;
+    seg.p2x *= gProjMatrix.r0c0;
+    seg.p1y = gProjMatrix.r2c2 * y1Orig + gProjMatrix.r2c3;
+    seg.p2y = gProjMatrix.r2c2 * y2Orig + gProjMatrix.r2c3;
+    seg.p1w = y1Orig;   // Note: r3c2 is an implicit 1.0 - hence we just do this!
+    seg.p2w = y2Orig;   // Note: r3c2 is an implicit 1.0 - hence we just do this!
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -381,10 +381,10 @@ static bool clipSegAgainstFrontPlane(DrawSeg& seg) noexcept {
     // Using this, compute the signed distance of the seg points to the plane and see if we should reject
     // due to both points being outside the clip plane or leave unmodified due to both being on the inside:
     //
-    const float p1y = seg.coords.p1y;
-    const float p2y = seg.coords.p2y;
-    const float p1w = seg.coords.p1w;
-    const float p2w = seg.coords.p2w;
+    const float p1y = seg.p1y;
+    const float p2y = seg.p2y;
+    const float p1w = seg.p1w;
+    const float p2w = seg.p2w;
 
     const float p1ClipPlaneSDist = p1y + p1w;
     const float p2ClipPlaneSDist = p2y + p2w;
@@ -401,8 +401,8 @@ static bool clipSegAgainstFrontPlane(DrawSeg& seg) noexcept {
     const float t = p1ClipPlaneUDist / (p1ClipPlaneUDist + p2ClipPlaneUDist);
 
     // Compute the new x and y and texture u for the intersection point via linear interpolation
-    const float p1x = seg.coords.p1x;
-    const float p2x = seg.coords.p2x;
+    const float p1x = seg.p1x;
+    const float p2x = seg.p2x;
     const float p1TexX = seg.p1TexX;
     const float p2TexX = seg.p2TexX;
 
@@ -413,15 +413,15 @@ static bool clipSegAgainstFrontPlane(DrawSeg& seg) noexcept {
     // Save the result of the point we want to move.
     // Note that we set 'w' to '-y' to ensure that 'y' ends up as '-1' in NDC:
     if (p1InFront) {
-        seg.coords.p2x = newX;
-        seg.coords.p2y = newY;
-        seg.coords.p2w = -newY;
+        seg.p2x = newX;
+        seg.p2y = newY;
+        seg.p2w = -newY;
         seg.p2TexX = newTexX;
     }
     else {
-        seg.coords.p1x = newX;
-        seg.coords.p1y = newY;
-        seg.coords.p1w = -newY;
+        seg.p1x = newX;
+        seg.p1y = newY;
+        seg.p1w = -newY;
         seg.p1TexX = newTexX;
     }
 
@@ -436,10 +436,10 @@ static bool clipSegAgainstLeftPlane(DrawSeg& seg) noexcept {
     // Using this, compute the signed distance of the seg points to the plane and see if we should reject
     // due to both points being outside the clip plane or leave unmodified due to both being on the inside:
     //
-    const float p1x = seg.coords.p1x;
-    const float p2x = seg.coords.p2x;
-    const float p1w = seg.coords.p1w;
-    const float p2w = seg.coords.p2w;
+    const float p1x = seg.p1x;
+    const float p2x = seg.p2x;
+    const float p1w = seg.p1w;
+    const float p2w = seg.p2w;
 
     const float p1ClipPlaneSDist = p1x + p1w;
     const float p2ClipPlaneSDist = p2x + p2w;
@@ -456,8 +456,8 @@ static bool clipSegAgainstLeftPlane(DrawSeg& seg) noexcept {
     const float t = p1ClipPlaneUDist / (p1ClipPlaneUDist + p2ClipPlaneUDist);
 
     // Compute the new x and y and texture u for the intersection point via linear interpolation
-    const float p1y = seg.coords.p1y;
-    const float p2y = seg.coords.p2y;
+    const float p1y = seg.p1y;
+    const float p2y = seg.p2y;
     const float p1TexX = seg.p1TexX;
     const float p2TexX = seg.p2TexX;
 
@@ -468,15 +468,15 @@ static bool clipSegAgainstLeftPlane(DrawSeg& seg) noexcept {
     // Save the result of the point we want to move.
     // Note that we set 'w' to '-x' to ensure that 'x' ends up as '-1' in NDC:
     if (p1InFront) {
-        seg.coords.p2x = newX;
-        seg.coords.p2y = newY;
-        seg.coords.p2w = -newX;
+        seg.p2x = newX;
+        seg.p2y = newY;
+        seg.p2w = -newX;
         seg.p2TexX = newTexX;
     }
     else {
-        seg.coords.p1x = newX;
-        seg.coords.p1y = newY;
-        seg.coords.p1w = -newX;
+        seg.p1x = newX;
+        seg.p1y = newY;
+        seg.p1w = -newX;
         seg.p1TexX = newTexX;
     }
 
@@ -491,10 +491,10 @@ static bool clipSegAgainstRightPlane(DrawSeg& seg) noexcept {
     // Using this, compute the signed distance of the seg points to the plane and see if we should reject
     // due to both points being outside the clip plane or leave unmodified due to both being on the inside:
     //
-    const float p1x = seg.coords.p1x;
-    const float p2x = seg.coords.p2x;
-    const float p1w = seg.coords.p1w;
-    const float p2w = seg.coords.p2w;
+    const float p1x = seg.p1x;
+    const float p2x = seg.p2x;
+    const float p1w = seg.p1w;
+    const float p2w = seg.p2w;
 
     const float p1ClipPlaneSDist = -p1x + p1w;
     const float p2ClipPlaneSDist = -p2x + p2w;
@@ -511,8 +511,8 @@ static bool clipSegAgainstRightPlane(DrawSeg& seg) noexcept {
     const float t = p1ClipPlaneUDist / (p1ClipPlaneUDist + p2ClipPlaneUDist);
 
     // Compute the new x and y and texture u for the intersection point via linear interpolation
-    const float p1y = seg.coords.p1y;
-    const float p2y = seg.coords.p2y;
+    const float p1y = seg.p1y;
+    const float p2y = seg.p2y;
     const float p1TexX = seg.p1TexX;
     const float p2TexX = seg.p2TexX;
 
@@ -523,15 +523,15 @@ static bool clipSegAgainstRightPlane(DrawSeg& seg) noexcept {
     // Save the result of the point we want to move.
     // Note that we set 'w' to 'x' to ensure that 'x' ends up as '+1' in NDC:
     if (p1InFront) {
-        seg.coords.p2x = newX;
-        seg.coords.p2y = newY;
-        seg.coords.p2w = newX;
+        seg.p2x = newX;
+        seg.p2y = newY;
+        seg.p2w = newX;
         seg.p2TexX = newTexX;
     }
     else {
-        seg.coords.p1x = newX;
-        seg.coords.p1y = newY;
-        seg.coords.p1w = newX;
+        seg.p1x = newX;
+        seg.p1y = newY;
+        seg.p1w = newX;
         seg.p1TexX = newTexX;
     }
 
@@ -543,51 +543,51 @@ static void addClipSpaceZValuesForSeg(DrawSeg& drawSeg, const seg_t& seg) noexce
     const float frontFloorZ = FMath::doomFixed16ToFloat<float>(seg.frontsector->floorheight);
     const float frontCeilZ = FMath::doomFixed16ToFloat<float>(seg.frontsector->ceilingheight);
 
-    drawSeg.coords.p1tz = (frontCeilZ - viewZ) * gProjMatrix.r1c1;
-    drawSeg.coords.p1bz = (frontFloorZ - viewZ) * gProjMatrix.r1c1;
-    drawSeg.coords.p2tz = (frontCeilZ - viewZ) * gProjMatrix.r1c1;
-    drawSeg.coords.p2bz = (frontFloorZ - viewZ) * gProjMatrix.r1c1;
+    drawSeg.p1tz = (frontCeilZ - viewZ) * gProjMatrix.r1c1;
+    drawSeg.p1bz = (frontFloorZ - viewZ) * gProjMatrix.r1c1;
+    drawSeg.p2tz = (frontCeilZ - viewZ) * gProjMatrix.r1c1;
+    drawSeg.p2bz = (frontFloorZ - viewZ) * gProjMatrix.r1c1;
 
     if (seg.backsector) {
         const float backFloorZ = FMath::doomFixed16ToFloat<float>(seg.backsector->floorheight);
         const float backCeilZ = FMath::doomFixed16ToFloat<float>(seg.backsector->ceilingheight);
 
-        drawSeg.coords.p1tz_back = (backCeilZ - viewZ) * gProjMatrix.r1c1;
-        drawSeg.coords.p1bz_back = (backFloorZ - viewZ) * gProjMatrix.r1c1;
-        drawSeg.coords.p2tz_back = (backCeilZ - viewZ) * gProjMatrix.r1c1;
-        drawSeg.coords.p2bz_back = (backFloorZ - viewZ) * gProjMatrix.r1c1;
+        drawSeg.p1tz_back = (backCeilZ - viewZ) * gProjMatrix.r1c1;
+        drawSeg.p1bz_back = (backFloorZ - viewZ) * gProjMatrix.r1c1;
+        drawSeg.p2tz_back = (backCeilZ - viewZ) * gProjMatrix.r1c1;
+        drawSeg.p2bz_back = (backFloorZ - viewZ) * gProjMatrix.r1c1;
     }
     else {
-        drawSeg.coords.p1tz_back = 0.0f;
-        drawSeg.coords.p1bz_back = 0.0f;
-        drawSeg.coords.p2tz_back = 0.0f;
-        drawSeg.coords.p2bz_back = 0.0f;
-    }    
+        drawSeg.p1tz_back = 0.0f;
+        drawSeg.p1bz_back = 0.0f;
+        drawSeg.p2tz_back = 0.0f;
+        drawSeg.p2bz_back = 0.0f;
+    }
 }
 
 static void doPerspectiveDivisionForSeg(DrawSeg& seg) noexcept {
     // Compute the inverse of w for p1 and p2
-    const float w1Inv = 1.0f / seg.coords.p1w;
-    const float w2Inv = 1.0f / seg.coords.p2w;
-    seg.coords.p1w_inv = w1Inv;
-    seg.coords.p2w_inv = w2Inv;
+    const float w1Inv = 1.0f / seg.p1w;
+    const float w2Inv = 1.0f / seg.p2w;
+    seg.p1w_inv = w1Inv;
+    seg.p2w_inv = w2Inv;
 
     // Note: don't bother modifying 'w' - it's unused after perspective division
-    seg.coords.p1x *= w1Inv;
-    seg.coords.p1y *= w1Inv;
+    seg.p1x *= w1Inv;
+    seg.p1y *= w1Inv;
 
-    seg.coords.p2x *= w2Inv;
-    seg.coords.p2y *= w2Inv;
+    seg.p2x *= w2Inv;
+    seg.p2y *= w2Inv;
 
-    seg.coords.p1tz *= w1Inv;
-    seg.coords.p1bz *= w1Inv;
-    seg.coords.p1tz_back *= w1Inv;
-    seg.coords.p1bz_back *= w1Inv;
+    seg.p1tz *= w1Inv;
+    seg.p1bz *= w1Inv;
+    seg.p1tz_back *= w1Inv;
+    seg.p1bz_back *= w1Inv;
 
-    seg.coords.p2tz *= w2Inv;
-    seg.coords.p2bz *= w2Inv;
-    seg.coords.p2tz_back *= w2Inv;
-    seg.coords.p2bz_back *= w2Inv;
+    seg.p2tz *= w2Inv;
+    seg.p2bz *= w2Inv;
+    seg.p2tz_back *= w2Inv;
+    seg.p2bz_back *= w2Inv;
 }
 
 static void transformSegXZToScreenSpace(DrawSeg& seg) noexcept {
@@ -597,18 +597,18 @@ static void transformSegXZToScreenSpace(DrawSeg& seg) noexcept {
 
     // All coords are in the range -1 to +1 now.
     // Bring in the range 0-1 and then expand to screen width and height:
-    seg.coords.p1x = (seg.coords.p1x * 0.5f + 0.5f) * screenW;
-    seg.coords.p2x = (seg.coords.p2x * 0.5f + 0.5f) * screenW;
+    seg.p1x = (seg.p1x * 0.5f + 0.5f) * screenW;
+    seg.p2x = (seg.p2x * 0.5f + 0.5f) * screenW;
 
-    seg.coords.p1tz = (seg.coords.p1tz * 0.5f + 0.5f) * screenH;
-    seg.coords.p1bz = (seg.coords.p1bz * 0.5f + 0.5f) * screenH;
-    seg.coords.p2tz = (seg.coords.p2tz * 0.5f + 0.5f) * screenH;
-    seg.coords.p2bz = (seg.coords.p2bz * 0.5f + 0.5f) * screenH;
+    seg.p1tz = (seg.p1tz * 0.5f + 0.5f) * screenH;
+    seg.p1bz = (seg.p1bz * 0.5f + 0.5f) * screenH;
+    seg.p2tz = (seg.p2tz * 0.5f + 0.5f) * screenH;
+    seg.p2bz = (seg.p2bz * 0.5f + 0.5f) * screenH;
     
-    seg.coords.p1tz_back = (seg.coords.p1tz_back * 0.5f + 0.5f) * screenH;
-    seg.coords.p1bz_back = (seg.coords.p1bz_back * 0.5f + 0.5f) * screenH;
-    seg.coords.p2tz_back = (seg.coords.p2tz_back * 0.5f + 0.5f) * screenH;
-    seg.coords.p2bz_back = (seg.coords.p2bz_back * 0.5f + 0.5f) * screenH;
+    seg.p1tz_back = (seg.p1tz_back * 0.5f + 0.5f) * screenH;
+    seg.p1bz_back = (seg.p1bz_back * 0.5f + 0.5f) * screenH;
+    seg.p2tz_back = (seg.p2tz_back * 0.5f + 0.5f) * screenH;
+    seg.p2bz_back = (seg.p2bz_back * 0.5f + 0.5f) * screenH;
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -840,11 +840,11 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
     constexpr bool EMIT_FLOOR_OR_CEILING    = EMIT_FLOOR || EMIT_CEILING;
 
     // Sanity checks, expect p1x to be < p2x - should be ensured externally!
-    ASSERT(drawSeg.coords.p1x < drawSeg.coords.p2x);
+    ASSERT(drawSeg.p1x < drawSeg.p2x);
     
     // Get integer range of the wall
-    const int32_t x1 = (int32_t) drawSeg.coords.p1x;
-    const int32_t x2 = (int32_t) drawSeg.coords.p2x;
+    const int32_t x1 = (int32_t) drawSeg.p1x;
+    const int32_t x2 = (int32_t) drawSeg.p2x;
 
     // Sanity checks: x values should be clipped to be within screen range!
     // x1 should also be >= x2!
@@ -868,23 +868,23 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
     [[maybe_unused]] float p2LowerBz;
 
     if constexpr (EMIT_MID_WALL || EMIT_UPPER_WALL || EMIT_CEILING) {
-        p1UpperTz = drawSeg.coords.p1tz;
-        p2UpperTz = drawSeg.coords.p2tz;
+        p1UpperTz = drawSeg.p1tz;
+        p2UpperTz = drawSeg.p2tz;
     }
 
     if constexpr (EMIT_UPPER_WALL) {
-        p1UpperBz = drawSeg.coords.p1tz_back;
-        p2UpperBz = drawSeg.coords.p2tz_back;
+        p1UpperBz = drawSeg.p1tz_back;
+        p2UpperBz = drawSeg.p2tz_back;
     }
 
     if constexpr (EMIT_LOWER_WALL) {
-        p1LowerTz = drawSeg.coords.p1bz_back;
-        p2LowerTz = drawSeg.coords.p2bz_back;
+        p1LowerTz = drawSeg.p1bz_back;
+        p2LowerTz = drawSeg.p2bz_back;
     }
 
     if constexpr (EMIT_MID_WALL || EMIT_LOWER_WALL || EMIT_FLOOR) {
-        p1LowerBz = drawSeg.coords.p1bz;
-        p2LowerBz = drawSeg.coords.p2bz;
+        p1LowerBz = drawSeg.p1bz;
+        p2LowerBz = drawSeg.p2bz;
     }
 
     //------------------------------------------------------------------------------------------------------------------
@@ -1044,17 +1044,17 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
     // not need to be interpolated because we will always have a straight line for the top and bottom edges and '1/w'
     // is also ok to interpolate because it is based on depth.
     //------------------------------------------------------------------------------------------------------------------
-    const float xRange = (drawSeg.coords.p2x - drawSeg.coords.p1x);
+    const float xRange = (drawSeg.p2x - drawSeg.p1x);
     const float xRangeDivider =  1.0f / xRange;
 
     // 1/w (sort of inverse depth)
-    const float p1InvW = 1.0f / drawSeg.coords.p1w;
-    const float p2InvW = 1.0f / drawSeg.coords.p2w;
+    const float p1InvW = 1.0f / drawSeg.p1w;
+    const float p2InvW = 1.0f / drawSeg.p2w;
     const float invWStep = (p2InvW - p1InvW) * xRangeDivider;
 
     // Normalized depth
-    const float p1y = drawSeg.coords.p1y * p1InvW;
-    const float p2y = drawSeg.coords.p2y * p2InvW;
+    const float p1y = drawSeg.p1y * p1InvW;
+    const float p2y = drawSeg.p2y * p2InvW;
     const float yStep = (p2y - p1y) * xRangeDivider;
 
     // X texture coordinate (for walls)
@@ -1099,7 +1099,7 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
     // This is similar to the stability adjustment we do for the V texture coordinate on walls.
     //------------------------------------------------------------------------------------------------------------------
     float curXStepCount = 0.0f;
-    float nextXStepCount = -(drawSeg.coords.p1x - (float) x1);      // Adjustement for sub-pixel pos to prevent wiggle
+    float nextXStepCount = -(drawSeg.p1x - (float) x1);     // Adjustement for sub-pixel pos to prevent wiggle
 
     //------------------------------------------------------------------------------------------------------------------
     // Emit each column
@@ -1265,9 +1265,9 @@ void addSegToFrame(const seg_t& seg) noexcept {
     transformSegXZToScreenSpace(drawSeg);
 
     // If the seg is a zero sized or invalid range then abort
-    if (drawSeg.coords.p1x >= drawSeg.coords.p2x)
+    if (drawSeg.p1x >= drawSeg.p2x)
         return;
-
+    
     // Discard any segs that are back facing
     const bool bIsBackFacing = isScreenSpaceSegBackFacing(drawSeg);
 

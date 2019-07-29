@@ -160,7 +160,7 @@ namespace Renderer {
     };
 
     //------------------------------------------------------------------------------------------------------------------
-    // Describes 3D coordiantes for line segment to be drawn.
+    // Describes 3D coordinates for line segment to be drawn.
     //
     // Note:
     //  (1) Coords are such that xy is the ground plane and z represents height. (Doom coord system)
@@ -169,7 +169,7 @@ namespace Renderer {
     //  (4) 1/w represents the value scale at a point.
     //      It can also be used to help perform perspective correct interpolation.
     //------------------------------------------------------------------------------------------------------------------
-    struct DrawSegCoords {
+    struct DrawSeg {
         float p1x;              // 1st wall point: xyw and 1/w (scale)
         float p1y;
         float p1w;
@@ -189,20 +189,9 @@ namespace Renderer {
         float p2bz;
         float p2tz_back;        // 2nd wall point: top and bottom z for the back/joining sector
         float p2bz_back;
-    };
 
-    //------------------------------------------------------------------------------------------------------------------
-    // Describes a wall segment to be drawn
-    //------------------------------------------------------------------------------------------------------------------
-    struct DrawSeg {
-        DrawSegCoords       coords;
-        float               p1TexX;             // X texture coordinate for p1 and p2
-        float               p2TexX;
-        float               texOffsetY;         // Vertical offset to apply to the texture when drawing
-        const Texture*      texture_top;        // Top and bottom texture
-        const Texture*      texture_bottom;
-        const Texture*      texture_floor;      // Floor and ceiling texture. Note: draw sky if no ceiling!
-        const Texture*      texture_ceil;
+        float p1TexX;           // X texture coordinate for p1 and p2
+        float p2TexX;
     };
 
     //------------------------------------------------------------------------------------------------------------------
