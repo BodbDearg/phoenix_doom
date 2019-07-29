@@ -212,7 +212,26 @@ void drawAllVisPlanes() noexcept {
 }
 
 void drawAllFloorFragments() noexcept {
+    const float viewX = gViewX;
+    const float viewY = gViewY;
+
     for (const FlatFragment& flatFrag : gFloorFragments) {
+        // Get the Z distance away at which the flat fragment will meet the view plane.
+        // Note that this assumes a vertical FOV of 90 degrees!
+        const float clipDistFromView = std::fabsf(flatFrag.endWorldZ - gViewZ);
+
+        // Get the distance of the flat fragment to the view
+        const float fragEndX = flatFrag.endWorldX;
+        const float fragEndY = flatFrag.endWorldY;
+        const float endToViewX = viewX - fragEndX;
+        const float endToViewY = viewY - fragEndY;
+        const float endToViewDist = std::sqrtf(endToViewX * endToViewX + endToViewY * endToViewY);
+
+        // Figure out the world X and Y coordinate for the flat where it intersects the view
+        const float clipT = 1.0f - clipDistFromView / endToViewDist;
+        const float clipWorldX = fragEndX + endToViewX * clipT;
+        const float clipWorldY = fragEndY + endToViewY * clipT;
+
         Blit::blitColumn<
             Blit::BCF_STEP_X |
             Blit::BCF_STEP_Y |
@@ -230,8 +249,8 @@ void drawAllFloorFragments() noexcept {
             flatFrag.x + gScreenXOffset,
             flatFrag.y + gScreenYOffset,
             flatFrag.height,
-            0.0f,   // TODO: X STEP
-            0.0f,   // TODO: Y STEP
+            endToViewX / flatFrag.height,   // TODO: X STEP
+            endToViewY / flatFrag.height,   // TODO: Y STEP
             1.0f,   // TODO
             1.0f,   // TODO
             1.0f    // TODO
@@ -240,7 +259,26 @@ void drawAllFloorFragments() noexcept {
 }
 
 void drawAllCeilingFragments() noexcept {
+    const float viewX = gViewX;
+    const float viewY = gViewY;
+
     for (const FlatFragment& flatFrag : gCeilFragments) {
+        // Get the Z distance away at which the flat fragment will meet the view plane.
+        // Note that this assumes a vertical FOV of 90 degrees!
+        const float clipDistFromView = std::fabsf(flatFrag.endWorldZ - gViewZ);
+
+        // Get the distance of the flat fragment to the view
+        const float fragEndX = flatFrag.endWorldX;
+        const float fragEndY = flatFrag.endWorldY;
+        const float viewToEndX = fragEndX - viewX;
+        const float viewToEndY = fragEndY - viewY;
+        const float endToViewDist = std::sqrtf(viewToEndX * viewToEndX + viewToEndY * viewToEndY);
+
+        // Figure out the world X and Y coordinate for the flat where it intersects the view
+        const float clipT = clipDistFromView / endToViewDist;
+        const float clipWorldX = viewX + viewToEndX * clipT;
+        const float clipWorldY = viewY + viewToEndY * clipT;
+
         Blit::blitColumn<
             Blit::BCF_STEP_X |
             Blit::BCF_STEP_Y |
@@ -258,8 +296,8 @@ void drawAllCeilingFragments() noexcept {
             flatFrag.x + gScreenXOffset,
             flatFrag.y + gScreenYOffset,
             flatFrag.height,
-            0.0f,   // TODO: X STEP
-            0.0f,   // TODO: Y STEP
+            viewToEndX / flatFrag.height,   // TODO: X STEP
+            viewToEndY / flatFrag.height,   // TODO: Y STEP
             1.0f,   // TODO
             1.0f,   // TODO
             1.0f    // TODO
