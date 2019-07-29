@@ -665,10 +665,9 @@ static void clipAndEmitWallColumn(
         curTexTy += texYStep * pixelsOffscreen;
         
         // If the clipped size is now invalid then skip
-        if (curZt >= curZb) {
+        if (curZt >= curZb)
             return;
-        }
-
+        
         // Note: no sub adjustement when we clip, it's already done implicitly as part of clipping
         texYSubPixelAdjustment = 0.0f;
     }
@@ -682,15 +681,14 @@ static void clipAndEmitWallColumn(
 
     if (zbInt >= clipBounds.bottom) {
         // Offscreen at the bottom - clip:
-        curZb = (float) clipBounds.bottom - 1.0f;
+        curZb = (float) clipBounds.bottom - FLT_EPSILON;
         zbInt = (int32_t) curZb;
         const float pixelsOffscreen = zb - curZb;
         curTexBy -= texYStep * pixelsOffscreen;
         
         // If the clipped size is now invalid then skip
-        if (curZt >= curZb) {
+        if (curZt >= curZb)
             return;
-        }
     }
 
     // Emit the column fragment
