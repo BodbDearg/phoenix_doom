@@ -261,8 +261,8 @@ void initMathTables() noexcept {
 
         gProjMatrix.r0c0 = 1.0f / f;
         gProjMatrix.r1c1 = a / f;
-        gProjMatrix.r2c2 = Z_FAR / (Z_NEAR - Z_FAR);
-        gProjMatrix.r2c3 = (Z_NEAR * Z_FAR) / (Z_FAR - Z_NEAR);
+        gProjMatrix.r2c2 = -Z_FAR / (Z_NEAR - Z_FAR);
+        gProjMatrix.r2c3 = -(Z_NEAR * Z_FAR) / (Z_FAR - Z_NEAR);
     }
 }
 
