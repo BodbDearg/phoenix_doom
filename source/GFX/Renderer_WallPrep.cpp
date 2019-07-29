@@ -388,8 +388,8 @@ static bool clipSegAgainstFrontPlane(DrawSeg& seg) noexcept {
 
     const float p1ClipPlaneSDist = p1y + p1w;
     const float p2ClipPlaneSDist = p2y + p2w;
-    const bool p1InFront = (p1ClipPlaneSDist > 0);
-    const bool p2InFront = (p2ClipPlaneSDist > 0);
+    const bool p1InFront = (p1ClipPlaneSDist >= 0);
+    const bool p2InFront = (p2ClipPlaneSDist >= 0);
 
     if (p1InFront == p2InFront) {
         return p1InFront;
@@ -443,8 +443,8 @@ static bool clipSegAgainstLeftPlane(DrawSeg& seg) noexcept {
 
     const float p1ClipPlaneSDist = p1x + p1w;
     const float p2ClipPlaneSDist = p2x + p2w;
-    const bool p1InFront = (p1ClipPlaneSDist > 0);
-    const bool p2InFront = (p2ClipPlaneSDist > 0);
+    const bool p1InFront = (p1ClipPlaneSDist >= 0);
+    const bool p2InFront = (p2ClipPlaneSDist >= 0);
 
     if (p1InFront == p2InFront) {
         return p1InFront;
@@ -498,8 +498,8 @@ static bool clipSegAgainstRightPlane(DrawSeg& seg) noexcept {
 
     const float p1ClipPlaneSDist = -p1x + p1w;
     const float p2ClipPlaneSDist = -p2x + p2w;
-    const bool p1InFront = (p1ClipPlaneSDist > 0);
-    const bool p2InFront = (p2ClipPlaneSDist > 0);
+    const bool p1InFront = (p1ClipPlaneSDist >= 0);
+    const bool p2InFront = (p2ClipPlaneSDist >= 0);
 
     if (p1InFront == p2InFront) {
         return p1InFront;
@@ -591,9 +591,9 @@ static void doPerspectiveDivisionForSeg(DrawSeg& seg) noexcept {
 }
 
 static void transformSegXZToScreenSpace(DrawSeg& seg) noexcept {
-    // Note: have to -1 here because at 100% of the range we don't want to be >= screen width or height!
-    const float screenW = (float) gScreenWidth - 1.0f;
-    const float screenH = (float) gScreenHeight - 1.0f;
+    // Note: have to subtract a bit here because at 100% of the range we don't want to be >= screen width or height!
+    const float screenW = (float) gScreenWidth - 0.5f;
+    const float screenH = (float) gScreenHeight - 0.5f;
 
     // All coords are in the range -1 to +1 now.
     // Bring in the range 0-1 and then expand to screen width and height:
