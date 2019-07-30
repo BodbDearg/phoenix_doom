@@ -259,7 +259,7 @@ void initMathTables() noexcept {
         // This is largely based on GLM's 'perspectiveRH_ZO' - see definition of 'ProjectionMatrix'
         // for more details about these calculations:
         const float f = std::tan(FOV * 0.5f);
-        const float a = 2.0f;   // 3DO doom appears to use a fixed aspect of 2.0!
+        const float a = VIEW_ASPECT_RATIO;
 
         gProjMatrix.r0c0 = 1.0f / f;
         gProjMatrix.r1c1 = a / f;

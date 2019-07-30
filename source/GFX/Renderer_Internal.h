@@ -37,6 +37,7 @@ namespace Renderer {
     static constexpr float      Z_NEAR              = 1.0f;                         // Near plane Z value
     static constexpr float      Z_RANGE_SIZE        = 16384.0f;                     // Size of the range of Z values allowed
     static constexpr float      Z_FAR               = Z_NEAR + Z_RANGE_SIZE;        // Far plane Z value
+    static constexpr float      VIEW_ASPECT_RATIO   = 2.0f;                         // Aspect ratio used for perspective projection
     static constexpr uint32_t   HEIGHTBITS          = 6;                            // Number of bits for texture height
     static constexpr uint32_t   FIXEDTOHEIGHT       = FRACBITS - HEIGHTBITS;        // Number of unused bits from fixed to SCALEBITS
     static constexpr uint32_t   SCALEBITS           = 9;                            // Number of bits for texture scale

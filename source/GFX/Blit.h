@@ -60,6 +60,13 @@ namespace Blit {
         BCF_V_WRAP_256
     );
 
+    // If set the perspective correction is performed at each pixel textured.
+    // Requirements:
+    //  (1) Inverse depth start value and inverse depth step MUST be specified.
+    //  (2) In this mode all input texcoords and texcoord step values are assummed
+    //      to be already divided by depth.
+    static constexpr uint32_t BCF_PERSP_CORRECT = 0x00100000;
+
     //----------------------------------------------------------------------------------------------------------------------
     // Utility that determines how much to step (in texels) per pixel to render the entire of the given
     // texture dimension in the given render area dimension (both in pixels).
@@ -175,22 +182,24 @@ namespace Blit {
     //------------------------------------------------------------------------------------------------------------------
     template <uint32_t BC_FLAGS>
     inline void blitColumn(
-        const ImageData& srcImg,                    // Input texture and dimensions
-        const float srcX,                           // Where to start blitting from in the input texture: x
-        const float srcY,                           // Where to start blitting from in the input texture: y
-        const float srcYSubPixelAdjustment,         // An adjustment applied to the first stepping of the src Y value - used for sub-pixel stability adjustments to prevent 'shaking' and 'wiggle'
-        uint32_t* const pDstPixels,                 // Output image pixels
-        const uint32_t dstW,                        // Output image width
-        [[maybe_unused]] const uint32_t dstH,       // Output image height
-        const uint32_t dstX,                        // Where to start blitting to in output image: x
-        const uint32_t dstY,                        // Where to start blitting to in output image: y
-        const uint32_t dstCount,                    // How many pixels to blit to the output image (in positive x or y direction)
-        [[maybe_unused]] const float srcXStep,      // Texture coordinate x step
-        [[maybe_unused]] const float srcYStep,      // Texture coordinate y step
-        [[maybe_unused]] const float rMul = 1.0f,   // Color multiply value: red
-        [[maybe_unused]] const float gMul = 1.0f,   // Color multiply value: green
-        [[maybe_unused]] const float bMul = 1.0f,   // Color multiply value: blue
-        [[maybe_unused]] const float aMul = 1.0f    // Color multiply value: alpha
+        const ImageData& srcImg,                            // Input texture and dimensions
+        const float srcX,                                   // Where to start blitting from in the input texture: x
+        const float srcY,                                   // Where to start blitting from in the input texture: y
+        const float srcYSubPixelAdjustment,                 // An adjustment applied to the first stepping of the src Y value - used for sub-pixel stability adjustments to prevent 'shaking' and 'wiggle'
+        uint32_t* const pDstPixels,                         // Output image pixels
+        const uint32_t dstW,                                // Output image width
+        [[maybe_unused]] const uint32_t dstH,               // Output image height
+        const uint32_t dstX,                                // Where to start blitting to in output image: x
+        const uint32_t dstY,                                // Where to start blitting to in output image: y
+        const uint32_t dstCount,                            // How many pixels to blit to the output image (in positive x or y direction)
+        [[maybe_unused]] const float srcXStep,              // Texture coordinate x step
+        [[maybe_unused]] const float srcYStep,              // Texture coordinate y step
+        [[maybe_unused]] const float rMul = 1.0f,           // Color multiply value: red
+        [[maybe_unused]] const float gMul = 1.0f,           // Color multiply value: green
+        [[maybe_unused]] const float bMul = 1.0f,           // Color multiply value: blue
+        [[maybe_unused]] const float aMul = 1.0f,           // Color multiply value: alpha
+        [[maybe_unused]] const float invDepthStart = 0.0f,  // Start value for inverse depth: used for perspective correct texturing
+        [[maybe_unused]] const float invDepthStep = 0.0f    // Step value for inverse depth: used for perspective correct texturing
     ) noexcept {
         // Basic sanity checks
         BLIT_ASSERT(srcImg.pPixels);
@@ -231,6 +240,14 @@ namespace Blit {
             dstStep = dstW;
         }
 
+        // Used to keep track of inverse depth for perspective correct adjustments
+        constexpr bool DO_PERSP_CORRECT = ((BC_FLAGS & BCF_PERSP_CORRECT) != 0);
+        [[maybe_unused]] float curInvDepth;
+
+        if constexpr (DO_PERSP_CORRECT) {
+            curInvDepth = invDepthStart;
+        }
+
         // Where to start reading from the in the source image; optimize for certain scenarios based on the input flags...
         // For example if the image is in column major format (the default) and we are only stepping in the y direction
         // then we can just index into a column rather than doing full two dimensional addressing.
@@ -250,8 +267,8 @@ namespace Blit {
         
         constexpr bool IS_SRC_COL_MAJOR = ((BC_FLAGS & BCF_ROW_MAJOR_IMG) == 0);
         constexpr bool IS_SRC_ROW_MAJOR = (!IS_SRC_COL_MAJOR);
-        constexpr bool USE_SRC_ROW_INDEXING = (IS_SRC_ROW_MAJOR && ((BC_FLAGS & BCF_STEP_ANY) == BCF_STEP_X));
-        constexpr bool USE_SRC_COL_INDEXING = (IS_SRC_COL_MAJOR && ((BC_FLAGS & BCF_STEP_ANY) == BCF_STEP_Y));
+        constexpr bool USE_SRC_ROW_INDEXING = (IS_SRC_ROW_MAJOR && ((BC_FLAGS & BCF_STEP_ANY) == BCF_STEP_X) && (!DO_PERSP_CORRECT));
+        constexpr bool USE_SRC_COL_INDEXING = (IS_SRC_COL_MAJOR && ((BC_FLAGS & BCF_STEP_ANY) == BCF_STEP_Y) && (!DO_PERSP_CORRECT));
 
         if constexpr (USE_SRC_ROW_INDEXING) {
             // Stepping in x direction in a row major image.
@@ -282,13 +299,22 @@ namespace Blit {
                 srcPixelRGBA5551 = pSrcRowOrCol[curSrcYInt];
             }
             else {
-                const uint32_t curSrcXInt = wrapXCoord<BC_FLAGS>((int32_t) curSrcX, srcW);
-                const uint32_t curSrcYInt = wrapYCoord<BC_FLAGS>((int32_t) curSrcY, srcH);
+                uint32_t curSrcXInt; 
+                uint32_t curSrcYInt; 
+                
+                if (DO_PERSP_CORRECT) {
+                    const float actualSrcX = curSrcX / curInvDepth;
+                    const float actualSrcY = curSrcY / curInvDepth;
+                    curSrcXInt = wrapXCoord<BC_FLAGS>((int32_t) actualSrcX, srcW);
+                    curSrcYInt = wrapYCoord<BC_FLAGS>((int32_t) actualSrcY, srcH);
+                } else {
+                    curSrcXInt = wrapXCoord<BC_FLAGS>((int32_t) curSrcX, srcW);
+                    curSrcYInt = wrapYCoord<BC_FLAGS>((int32_t) curSrcY, srcH);
+                }
 
                 if constexpr (IS_SRC_COL_MAJOR) {
                     srcPixelRGBA5551 = pSrcPixels[curSrcXInt * srcH + curSrcYInt];
-                }
-                else {
+                } else {
                     srcPixelRGBA5551 = pSrcPixels[curSrcYInt * srcW + curSrcXInt];
                 }
             }
@@ -359,6 +385,10 @@ namespace Blit {
             if constexpr ((BC_FLAGS & BCF_STEP_Y) != 0) {
                 nextSrcY += srcYStep;
                 curSrcY = nextSrcY;
+            }
+
+            if constexpr ((BC_FLAGS & BCF_PERSP_CORRECT) != 0) {
+                curInvDepth += invDepthStep;
             }
 
             pDstPixel += dstStep;

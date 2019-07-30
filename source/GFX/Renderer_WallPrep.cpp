@@ -817,7 +817,7 @@ static void clipAndEmitFlatColumn(
 
     {
         FlatFragment frag;
-        frag.x = x;
+        frag.x = x;        
         frag.y = ztInt;
         frag.height = columnHeight;
         frag.endWorldX = worldX;
@@ -1249,7 +1249,7 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
                 clipAndEmitFlatColumn<FragEmitFlags::CEILING>(
                     x,
                     0.0f,
-                    upperTz,
+                    upperTz - 1.0f,     // Note: wall gets priority over the border pixel
                     clipBounds,
                     worldX,
                     worldY,
@@ -1262,7 +1262,7 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
         if constexpr (EMIT_FLOOR) {
             clipAndEmitFlatColumn<FragEmitFlags::FLOOR>(
                 x,
-                lowerBz,
+                lowerBz - 1.0f,     // Note: wall gets priority over the border pixel
                 viewH - 1.0f,
                 clipBounds,
                 worldX,
