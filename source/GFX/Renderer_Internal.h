@@ -247,10 +247,10 @@ namespace Renderer {
         uint16_t            y;
         uint16_t            height;
         uint16_t            _unused1;
+        float               yFloat;
         float               endWorldX;
         float               endWorldY;
         float               endWorldZ;
-        uint32_t            _unused2;
         const ImageData*    pImageData;
     };
 

@@ -260,7 +260,7 @@ void drawAllFloorFragments() noexcept {
         // Pretend the floor column is unclipped for the purposes of stepping.
         const float invNearDepth = 1.0f / nearDepth;
         const float invFarDepth = 1.0f / farDepth;
-        const float numStepsUnclipped = (float) gScreenHeight - flatFrag.y;
+        const float numStepsUnclipped = (float) gScreenHeight - flatFrag.yFloat;
         const float divNumSteps = (numStepsUnclipped > 1.0f) ? 1.0f / (numStepsUnclipped - 1.0f) : 0.0f;
         const float invDepthStep = (invNearDepth - invFarDepth) * divNumSteps;
 

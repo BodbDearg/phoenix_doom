@@ -817,9 +817,10 @@ static void clipAndEmitFlatColumn(
 
     {
         FlatFragment frag;
-        frag.x = x;        
+        frag.x = x;
         frag.y = ztInt;
         frag.height = columnHeight;
+        frag.yFloat = curZt;
         frag.endWorldX = worldX;
         frag.endWorldY = worldY;
         frag.endWorldZ = worldZ;
