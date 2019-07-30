@@ -212,48 +212,21 @@ void drawAllVisPlanes() noexcept {
 }
 
 void drawAllFloorFragments() noexcept {
-    // The view position
-    const float viewX = gViewX;
-    const float viewY = gViewY;
-    const float viewZ = gViewZ;
-
-    // Get a view direction and a perpendicular to it
-    const float viewDirX = std::cos(gViewAngle);
-    const float viewDirY = std::sin(gViewAngle);
-    const float viewPerpX = viewDirY;
-    const float viewPerpY = -viewDirX;
-
-    // Near plane width and height
-    const float nearPlaneW = Z_NEAR * std::tan(FOV * 0.5f) * 2.0f;
-    const float halfNearPlaneW = nearPlaneW * 0.5f;
-    float nearPlaneH = nearPlaneW / VIEW_ASPECT_RATIO;
-    const float halfNearPlaneH = nearPlaneH * 0.5f;
-    
-    // Compute the two worldspace end points of the view near plane
-    const float viewNearP1x = viewX + viewDirX * Z_NEAR - halfNearPlaneW * viewPerpX;
-    const float viewNearP1y = viewY + viewDirY * Z_NEAR - halfNearPlaneW * viewPerpY;
-    const float viewNearP2x = viewX + viewDirX * Z_NEAR + halfNearPlaneW * viewPerpX;
-    const float viewNearP2y = viewY + viewDirY * Z_NEAR + halfNearPlaneW * viewPerpY;
-
-    // Compute the step in world coordinates for each view colum
-    const float viewNearColumnStepX = (viewNearP2x - viewNearP1x) / ((float) gScreenWidth - 1.0f);
-    const float viewNearColumnStepY = (viewNearP2y - viewNearP1y) / ((float) gScreenWidth - 1.0f);
-
     for (const FlatFragment& flatFrag : gFloorFragments) {
         // Compute the x,y and z coordinate at which the bottom of screen column lies in world space.
         // This yields a position along the near plane:
-        float nearX = viewNearP1x + (float) flatFrag.x * viewNearColumnStepX;
-        float nearY = viewNearP1y + (float) flatFrag.x * viewNearColumnStepY;
-        float nearZ = viewZ - halfNearPlaneH;
+        float nearX = gNearPlaneP1x + (float) flatFrag.x * gNearPlaneXStepPerViewCol;
+        float nearY = gNearPlaneP1y + (float) flatFrag.x * gNearPlaneYStepPerViewCol;
+        float nearZ = gNearPlaneBz;
 
         // Compute the intersection of a ray going from the view point & through the near plane point, 
         // against the plane that we are drawing. This will become the new 'near' plane point and will
         // determine where to access in the flat texture:
         {
             // This is the ray direction
-            const float rayDirX = nearX - viewX;
-            const float rayDirY = nearY - viewY;
-            const float rayDirZ = nearZ - viewZ;
+            const float rayDirX = nearX - gViewX;
+            const float rayDirY = nearY - gViewY;
+            const float rayDirZ = nearZ - gViewZ;
 
             // Calculate first: AXd + BYd + CZd
             // I.E - The dot product of the plane normal (0, 0, 1) with the ray direction:
@@ -263,40 +236,25 @@ void drawAllFloorFragments() noexcept {
             // I.E - The dot product of the ray origin with the plane normal (0, 0, 1) plus
             // the distance of the plane from the origin along it's normal:
             const float planeOffset = flatFrag.endWorldZ;
-            const float dividend = viewZ - planeOffset;
+            const float dividend = gViewZ - planeOffset;
 
             // Compute the ray intersection time: -(AX0 + BY0 + CZ0 + D) / (AXd + BYd + CZd)
             const float intersectT = -dividend / divisor;
 
             // Using the intersect time, compute the world intersect point
-            nearX = viewX + rayDirX * intersectT;
-            nearY = viewY + rayDirY * intersectT;
-            nearZ = viewZ + rayDirZ * intersectT;
+            nearX = gViewX + rayDirX * intersectT;
+            nearY = gViewY + rayDirY * intersectT;
+            nearZ = gViewZ + rayDirZ * intersectT;
         }
 
         // Get the depth at which the first pixel in the floor plane column lies
-        float nearDepth;
-
-        {
-            const float dx = nearX - viewX;
-            const float dy = nearY - viewY;
-            const float dz = nearZ - viewZ;
-            nearDepth = std::sqrtf(dx * dx + dy * dy + dz * dz);
-        }
+        const float nearDepth = FMath::distance3d(nearX, nearY, nearZ, gViewX, gViewY, gViewZ);
 
         // Get the distance of the flat fragment to the view (far depth)
         const float farX = flatFrag.endWorldX;
         const float farY = flatFrag.endWorldY;
         const float farZ = flatFrag.endWorldZ;
-
-        float farDepth;
-
-        {
-            const float dx = farX - viewX;
-            const float dy = farY - viewY;
-            const float dz = farZ - viewZ;
-            farDepth = std::sqrtf(dx * dx + dy * dy + dz * dz);
-        }
+        const float farDepth = FMath::distance3d(farX, farY, farZ, gViewX, gViewY, gViewZ);
 
         // Figure out the inverse depths and inverse depth step.
         // Pretend the floor column is unclipped for the purposes of stepping.

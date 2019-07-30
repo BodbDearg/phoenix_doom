@@ -50,12 +50,28 @@ Fixed                       gViewZFrac;
 float                       gViewX;
 float                       gViewY;
 float                       gViewZ;
+float                       gViewDirX;
+float                       gViewDirY;
+float                       gViewPerpX;
+float                       gViewPerpY;
 angle_t                     gViewAngleBAM;
 float                       gViewAngle;
 Fixed                       gViewCosFrac;
 Fixed                       gViewSinFrac;
 float                       gViewCos;
 float                       gViewSin;
+float                       gNearPlaneW;
+float                       gNearPlaneH;
+float                       gNearPlaneHalfW;
+float                       gNearPlaneHalfH;
+float                       gNearPlaneP1x;
+float                       gNearPlaneP1y;
+float                       gNearPlaneP2x;
+float                       gNearPlaneP2y;
+float                       gNearPlaneTz;
+float                       gNearPlaneBz;
+float                       gNearPlaneXStepPerViewCol;
+float                       gNearPlaneYStepPerViewCol;
 ProjectionMatrix            gProjMatrix;
 uint32_t                    gExtraLight;
 angle_t                     gClipAngleBAM;
@@ -152,17 +168,43 @@ static void preDrawSetup() noexcept {
         gViewCos = std::cos(-gViewAngle + FMath::ANGLE_90<float>);
     }
 
-    // Other misc setup
+    // View vectors
+    gViewDirX = std::cos(gViewAngle);
+    gViewDirY = std::sin(gViewAngle);
+    gViewPerpX = gViewDirY;
+    gViewPerpY = -gViewDirX;
+
+    // Near plane width and height
+    gNearPlaneW = Z_NEAR * std::tan(FOV * 0.5f) * 2.0f;
+    gNearPlaneH = gNearPlaneW / VIEW_ASPECT_RATIO;
+    gNearPlaneHalfW = gNearPlaneW * 0.5f;
+    gNearPlaneHalfH = gNearPlaneH * 0.5f;
+    
+    // Near plane left and right side x,y and top and bottom z
+    gNearPlaneP1x = gViewX + gViewDirX * Z_NEAR - gNearPlaneHalfW * gViewPerpX;
+    gNearPlaneP1y = gViewY + gViewDirY * Z_NEAR - gNearPlaneHalfW * gViewPerpY;
+    gNearPlaneP2x = gViewX + gViewDirX * Z_NEAR + gNearPlaneHalfW * gViewPerpX;
+    gNearPlaneP2y = gViewY + gViewDirY * Z_NEAR + gNearPlaneHalfW * gViewPerpY;
+    gNearPlaneTz = gViewZ + gNearPlaneHalfH;
+    gNearPlaneBz = gViewZ - gNearPlaneHalfH;
+
+    // World X and Y step per column of screen pixels at the near plane
+    gNearPlaneXStepPerViewCol = (gNearPlaneP2x - gNearPlaneP1x) / ((float) gScreenWidth - 1.0f);
+    gNearPlaneYStepPerViewCol = (gNearPlaneP2y - gNearPlaneP1y) / ((float) gScreenWidth - 1.0f);
+
+    // Clear render arrays & buffers
     setupSegYClipArrayForDraw();
     gWallFragments.clear();
     gFloorFragments.clear();
     gCeilFragments.clear();
 
+    gpEndVisPlane = gVisPlanes + 1;     // visplanes[0] is left empty
+    gpEndVisWall = gVisWalls;           // No walls added yet
+    gpEndVisSprite = gVisSprites;       // No sprites added yet
+    gpEndOpening = gOpenings;           // No openings found
+
+    // Other misc setup
     gExtraLight = player.extralight << 6;       // Init the extra lighting value
-    gpEndVisPlane = gVisPlanes + 1;             // visplanes[0] is left empty
-    gpEndVisWall = gVisWalls;                   // No walls added yet
-    gpEndVisSprite = gVisSprites;               // No sprites added yet
-    gpEndOpening = gOpenings;                   // No openings found
 }
 
 void init() noexcept {

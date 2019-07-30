@@ -82,4 +82,15 @@ namespace FMath {
     static inline T lerp(const T a, const T b, const T t) noexcept {
         return a + (b - a) * t;
     }
+
+    //------------------------------------------------------------------------------------------------------------------
+    // Get the 3D distance between two points
+    //------------------------------------------------------------------------------------------------------------------
+    template <class T>
+    static inline T distance3d(const T x1, const T y1, const T z1, const T x2, const T y2, const T z2) noexcept {
+        const T dx = x2 - x1;
+        const T dy = y2 - y1;
+        const T dz = z2 - z1;
+        return std::sqrt(dx * dx + dy * dy + dz * dz);
+    }
 }

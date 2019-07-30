@@ -323,12 +323,28 @@ namespace Renderer {
     extern float                        gViewX;                             // Camera x,y,z
     extern float                        gViewY;
     extern float                        gViewZ;
+    extern float                        gViewDirX;                          // View 2D forward/direction vector
+    extern float                        gViewDirY;
+    extern float                        gViewPerpX;                         // View 2D perpendicular/right vector
+    extern float                        gViewPerpY;
     extern angle_t                      gViewAngleBAM;                      // Camera angle
     extern float                        gViewAngle;                         // Camera angle
     extern Fixed                        gViewCosFrac;                       // Camera sine, cosine from angle
     extern Fixed                        gViewSinFrac;
     extern float                        gViewCos;                           // Camera sine, cosine from angle
     extern float                        gViewSin;
+    extern float                        gNearPlaneW;                        // Width and height of the near plane
+    extern float                        gNearPlaneH;
+    extern float                        gNearPlaneHalfW;                    // Half width and height of the near plane
+    extern float                        gNearPlaneHalfH;
+    extern float                        gNearPlaneP1x;                      // Near plane left side x,y
+    extern float                        gNearPlaneP1y;
+    extern float                        gNearPlaneP2x;                      // Near plane right side x,y
+    extern float                        gNearPlaneP2y;
+    extern float                        gNearPlaneTz;                       // Near plane top and bottom z
+    extern float                        gNearPlaneBz;
+    extern float                        gNearPlaneXStepPerViewCol;          // How much to step world x and y for each successive screen column of pixels at the near plane
+    extern float                        gNearPlaneYStepPerViewCol;
     extern ProjectionMatrix             gProjMatrix;                        // 3D projection matrix
     extern uint32_t                     gExtraLight;                        // Bumped light from gun blasts
     extern angle_t                      gClipAngleBAM;                      // Leftmost clipping angle
