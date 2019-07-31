@@ -345,6 +345,7 @@ namespace Renderer {
     extern float                        gNearPlaneBz;
     extern float                        gNearPlaneXStepPerViewCol;          // How much to step world x and y for each successive screen column of pixels at the near plane
     extern float                        gNearPlaneYStepPerViewCol;
+    extern float                        gNearPlaneZStepPerViewColPixel;     // How much to step world z for each successive pixel in a screen column at the near plane
     extern ProjectionMatrix             gProjMatrix;                        // 3D projection matrix
     extern uint32_t                     gExtraLight;                        // Bumped light from gun blasts
     extern angle_t                      gClipAngleBAM;                      // Leftmost clipping angle

@@ -211,94 +211,72 @@ void drawAllVisPlanes() noexcept {
     }
 }
 
-//----------------------------------------------------------------------------------------------------------------------
-// Draws a vertical column of a floor or ceiling.
-// Params, in order of appearance:
-//
-//  (1) Source floor image (MUST be 64x64, 3DO Doom uses 64x64 for all floors)
-//  (2) Start and end X and Y in the flat texture
-//  (3) Start and end depth of the flat column
-//  (4) Destination X for the column on the screen
-//  (5) Start and end destination Y value on the screen
-//----------------------------------------------------------------------------------------------------------------------
-void drawFlatColumn(
-    const ImageData& srcImg,
-    const float begSrcX,
-    const float begSrcY,
-    const float endSrcX,
-    const float endSrcY,
-    const float begDepth,
-    const float endDepth,
-    const uint32_t dstX,
-    const float begDstY,
-    const float endDstY
-) noexcept {
-    // Basic sanity checks
-    BLIT_ASSERT(srcImg.pPixels);
-    BLIT_ASSERT(srcImg.width > 0);
-    BLIT_ASSERT(srcImg.height > 0);
-    BLIT_ASSERT(dstX < gScreenWidth);
-    BLIT_ASSERT(begDstY >= 0.0f && begDstY < (float) gScreenHeight);
-    BLIT_ASSERT(endDstY >= 0.0f && endDstY < (float) gScreenHeight);
+void drawFlatColumn(const FlatFragment& flatFrag) noexcept {
+    // Cache some useful values
+    const uint16_t dstX = flatFrag.x;
+    const uint16_t dstY = flatFrag.y;
+    const uint16_t dstH = flatFrag.height;
 
-    // Some values needed for drawing
-    const uint32_t screenW = gScreenWidth;
+    const float viewX = gViewX;
+    const float viewY = gViewY;
+    const float viewZ = gViewZ;
+    const float planeZ = flatFrag.endWorldZ;
+    const float nearPlaneZStep = gNearPlaneZStepPerViewColPixel;
 
-    // Various values divided by depth, so we can interpolate linearly and get perspective correct results
-    const float invBegDepth = 1.0f / begDepth;
-    const float invEndDepth = 1.0f / endDepth;
+    const uint16_t* const pSrcPixels = flatFrag.pImageData->pPixels;
 
-    const float begSrcXid = begSrcX * invBegDepth;
-    const float begSrcYid = begSrcY * invBegDepth;
-    const float endSrcXid = endSrcX * invEndDepth;
-    const float endSrcYid = endSrcY * invEndDepth;
+    // The x and y coordinate in world space of the screen column being drawn
+    const float nearPlaneX = gNearPlaneP1x + (float) dstX * gNearPlaneXStepPerViewCol;
+    const float nearPlaneY = gNearPlaneP1y + (float) dstX * gNearPlaneYStepPerViewCol;
 
-    // The image we will read from and the screen column we will output too
-    const uint16_t* const pSrcPixels = (const uint16_t*) srcImg.pPixels;
+    // This is the z value in world space of the current screen pixel being rendered
+    float nearPlaneZ = gNearPlaneTz + (float) dstY * nearPlaneZStep;
 
+    // Where to start outputting to
     const uint32_t startScreenX = gScreenXOffset + dstX;
-    const uint32_t startScreenY = gScreenYOffset + (uint32_t) begDstY;
+    const uint32_t startScreenY = gScreenYOffset + dstY;
     uint32_t* const pDstPixels = Video::gFrameBuffer + (startScreenY * Video::SCREEN_WIDTH) + startScreenX;
 
-    // Stepping variables
-    float dstY = begDstY;
+    // Draw the column!
     uint32_t* pDstPixel = pDstPixels;
+    uint32_t* pEndDstPixel = pDstPixels + (dstH * Video::SCREEN_WIDTH);
 
-    const float unclippedYRange = (float) gScreenHeight - begDstY;
-    const float dstYSize = unclippedYRange;
-    const float invDstYSize = 1.0f / unclippedYRange;
+    while (pDstPixel < pEndDstPixel) {
+        // Compute the intersection of a ray going from the camera through the near plane (screen) point; find out where
+        // this ray will hit the plane that we are drawing. This gives us a world XY coordinate which allows us to decide
+        // which pixel to use. World XY also allows us to find distance from the viewer, for shading...
+        float intersectX;
+        float intersectY;
+        float intersectZ;
 
-    const float invDepthStep = (invEndDepth - invBegDepth) * invDstYSize;
-    const float srcXidStep = (endSrcXid - begSrcXid) * invDstYSize;
-    const float srcYidStep = (endSrcYid - begSrcYid) * invDstYSize;
+        {
+            // This is the ray direction
+            const float rayDirX = nearPlaneX - gViewX;
+            const float rayDirY = nearPlaneY - gViewY;
+            const float rayDirZ = nearPlaneZ - gViewZ;
 
-    float invDepth = invBegDepth;
-    float srcXid = begSrcXid;
-    float srcYid = begSrcYid;
+            // Calculate first: AXd + BYd + CZd
+            // I.E - The dot product of the plane normal (0, 0, 1) with the ray direction:
+            const float divisor = rayDirZ;
 
-    float nextInvDepth;
-    float nextSrcXid;
-    float nextSrcYid;
+            // Calculate: AX0 + BY0 + CZ0 + D
+            // I.E - The dot product of the ray origin with the plane normal (0, 0, 1) plus
+            // the distance of the plane from the origin along it's normal:
+            const float dividend = viewZ - planeZ;
 
-    {
-        // A small adjustment based on sub pixel position for stability
-        float t = std::fmodf(begDstY, 1.0f);
-        nextInvDepth = invBegDepth - t * invDepthStep;
-        nextSrcXid = begSrcXid - t * srcXidStep;
-        nextSrcYid = begSrcYid - t * srcYidStep;
-    }
-    
-    // Main pixel blitting loop
-    while (dstY <= endDstY) {
-        // Get the depth and source x and y
-        const float depth = 1.0f / invDepth;
-        const float srcX = srcXid * depth;
-        const float srcY = srcYid * depth;
+            // Compute the ray intersection time: -(AX0 + BY0 + CZ0 + D) / (AXd + BYd + CZd)
+            const float intersectT = -dividend / divisor;
+
+            // Using the intersect time, compute the world intersect point
+            intersectX = viewX + rayDirX * intersectT;
+            intersectY = viewY + rayDirY * intersectT;
+            intersectZ = viewZ + rayDirZ * intersectT;
+        }
 
         // Get the source pixel (RGBA5551 format).
         // Note that the flat texture is always expected to be 64x64, hence we can wraparound with a simple bitwise AND:
-        const uint32_t curSrcXInt = (uint32_t) srcX & 63;
-        const uint32_t curSrcYInt = (uint32_t) srcY & 63;
+        const uint32_t curSrcXInt = (uint32_t) intersectX & 63;
+        const uint32_t curSrcYInt = (uint32_t) intersectY & 63;
         const uint16_t srcPixelRGBA5551 = pSrcPixels[curSrcYInt * 64 + curSrcXInt];
         
         // Extract RGB components and shift such that the maximum value is 255 instead of 31.
@@ -328,78 +306,15 @@ void drawFlatColumn(
             (uint32_t(b) << 8)
         );
 
-        // Stepping in the source and destination
-        dstY += 1.0f;
-
-        nextInvDepth += invDepthStep;
-        nextSrcXid += srcXidStep;
-        nextSrcYid += srcYidStep;
-
-        invDepth = nextInvDepth;
-        srcXid = nextSrcXid;
-        srcYid = nextSrcYid;
-
+        // Move onto the next pixel
         pDstPixel += Video::SCREEN_WIDTH;
+        nearPlaneZ += nearPlaneZStep;
     }
 }
 
 void drawAllFloorFragments() noexcept {
     for (const FlatFragment& flatFrag : gFloorFragments) {
-        // Compute the x,y and z coordinate at which the bottom of screen column lies in world space.
-        // This yields a position along the near plane:
-        float nearX = gNearPlaneP1x + (float) flatFrag.x * gNearPlaneXStepPerViewCol;
-        float nearY = gNearPlaneP1y + (float) flatFrag.x * gNearPlaneYStepPerViewCol;
-        float nearZ = gNearPlaneBz;
-
-        // Compute the intersection of a ray going from the view point & through the near plane point, 
-        // against the plane that we are drawing. This will become the new 'near' plane point and will
-        // determine where to access in the flat texture:
-        {
-            // This is the ray direction
-            const float rayDirX = nearX - gViewX;
-            const float rayDirY = nearY - gViewY;
-            const float rayDirZ = nearZ - gViewZ;
-
-            // Calculate first: AXd + BYd + CZd
-            // I.E - The dot product of the plane normal (0, 0, 1) with the ray direction:
-            const float divisor = rayDirZ;
-
-            // Calculate: AX0 + BY0 + CZ0 + D
-            // I.E - The dot product of the ray origin with the plane normal (0, 0, 1) plus
-            // the distance of the plane from the origin along it's normal:
-            const float planeOffset = flatFrag.endWorldZ;
-            const float dividend = gViewZ - planeOffset;
-
-            // Compute the ray intersection time: -(AX0 + BY0 + CZ0 + D) / (AXd + BYd + CZd)
-            const float intersectT = -dividend / divisor;
-
-            // Using the intersect time, compute the world intersect point
-            nearX = gViewX + rayDirX * intersectT;
-            nearY = gViewY + rayDirY * intersectT;
-            nearZ = gViewZ + rayDirZ * intersectT;
-        }
-
-        // Get the depth at which the first pixel in the floor plane column lies
-        const float nearDepth = FMath::distance3d(nearX, nearY, nearZ, gViewX, gViewY, gViewZ);
-
-        // Get the distance of the flat fragment to the view (far depth)
-        const float farX = flatFrag.endWorldX;
-        const float farY = flatFrag.endWorldY;
-        const float farZ = flatFrag.endWorldZ;
-        const float farDepth = FMath::distance3d(farX, farY, farZ, gViewX, gViewY, gViewZ);
-
-        drawFlatColumn(
-            *flatFrag.pImageData,
-            farX,
-            farY,
-            nearX,
-            nearY,
-            farDepth,
-            nearDepth,
-            flatFrag.x,
-            flatFrag.yFloat,
-            (float) flatFrag.y + ((float) flatFrag.height - 0.0001f)
-        );
+        drawFlatColumn(flatFrag);
     }
 }
 

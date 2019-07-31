@@ -72,6 +72,7 @@ float                       gNearPlaneTz;
 float                       gNearPlaneBz;
 float                       gNearPlaneXStepPerViewCol;
 float                       gNearPlaneYStepPerViewCol;
+float                       gNearPlaneZStepPerViewColPixel;
 ProjectionMatrix            gProjMatrix;
 uint32_t                    gExtraLight;
 angle_t                     gClipAngleBAM;
@@ -191,6 +192,7 @@ static void preDrawSetup() noexcept {
     // World X and Y step per column of screen pixels at the near plane
     gNearPlaneXStepPerViewCol = (gNearPlaneP2x - gNearPlaneP1x) / ((float) gScreenWidth - 1.0f);
     gNearPlaneYStepPerViewCol = (gNearPlaneP2y - gNearPlaneP1y) / ((float) gScreenWidth - 1.0f);
+    gNearPlaneZStepPerViewColPixel = (gNearPlaneBz - gNearPlaneTz) / ((float) gScreenHeight - 1.0f);
 
     // Clear render arrays & buffers
     setupSegYClipArrayForDraw();
