@@ -211,7 +211,24 @@ void drawAllVisPlanes() noexcept {
     }
 }
 
-void drawFlatColumn(const FlatFragment flatFrag) noexcept {
+//----------------------------------------------------------------------------------------------------------------------
+// What type of flat is being drawn
+//----------------------------------------------------------------------------------------------------------------------
+enum class DrawFlatMode {
+    FLOOR,
+    CEILING
+};
+
+//----------------------------------------------------------------------------------------------------------------------
+// Draw one vertical column of a flat.
+// 
+// Unlike the original version of 3DO Doom (and PC Doom) I do not bother with visplanes, or converting vertical floor
+// columns into horizontal floor columns. These days it seems to make sense to lean more on the fast arithmetic 
+// performance of the CPU instead of trawling through memory (slow) trying to match up visplanes and convert vertical
+// columns into horizontal ones.
+//----------------------------------------------------------------------------------------------------------------------
+template <DrawFlatMode MODE>
+static inline void drawFlatColumn(const FlatFragment flatFrag) noexcept {
     // Cache some useful values
     const float viewX = gViewX;
     const float viewY = gViewY;
@@ -227,6 +244,11 @@ void drawFlatColumn(const FlatFragment flatFrag) noexcept {
     const float nearPlaneX = gNearPlaneP1x + ((float) flatFrag.x + 0.5f) * gNearPlaneXStepPerViewCol;
     const float nearPlaneY = gNearPlaneP1y + ((float) flatFrag.x + 0.5f) * gNearPlaneYStepPerViewCol;
 
+    // Compute the xz direction of the ray going from the view through this screen column.
+    // Since this is constant per screen column pixel, we only need to do this once here:
+    const float rayDirX = nearPlaneX - viewX;
+    const float rayDirY = nearPlaneY - viewY;
+
     // This is where we store the intersection of a ray going from the view to the flat plane.
     // For the first pixel in the flat column however, always use the world position of the start of the column as the 'intersection'.
     // This helps prevent artifacts/inaccuracies where sometimes we step past parts of the texture and wraparound when we shouldn't.
@@ -235,17 +257,35 @@ void drawFlatColumn(const FlatFragment flatFrag) noexcept {
     float intersectY = flatFrag.worldY;
     float intersectZ = flatFrag.worldZ;
 
-    // Where to start outputting to
+    // Where to start outputting to and where we end outputting.
+    // Note that floors rendered in a top to bottom direction, while ceilings are bottom to top:
+    int32_t curDstY;
+    int32_t endDstY;
+
+    if constexpr (MODE == DrawFlatMode::FLOOR) {
+        curDstY = (int32_t)(flatFrag.y);
+        endDstY = (int32_t)(flatFrag.y + flatFrag.height);
+    } else {
+        curDstY = (int32_t)(flatFrag.y + flatFrag.height - 1);
+        endDstY = (int32_t)(flatFrag.y - 1);
+    }
+
     const uint32_t startScreenX = gScreenXOffset + flatFrag.x;
-    const uint32_t startScreenY = gScreenYOffset + flatFrag.y;
-    uint32_t* const pDstPixels = Video::gFrameBuffer + (startScreenY * Video::SCREEN_WIDTH) + startScreenX;
+    const uint32_t startScreenY = gScreenYOffset + (uint32_t) curDstY;
 
     // Draw the column!
-    uint16_t curDstY = flatFrag.y;
-    const uint16_t endDstY = flatFrag.y + flatFrag.height;
-    uint32_t* pDstPixel = pDstPixels;
+    uint32_t* pDstPixel = Video::gFrameBuffer + (startScreenY * Video::SCREEN_WIDTH) + startScreenX;
 
-    while (curDstY < endDstY) {
+    while (true) {
+        // Are we done?
+        if constexpr (MODE == DrawFlatMode::FLOOR) {
+            if (curDstY >= endDstY)
+                break;
+        } else {
+            if (curDstY <= endDstY)
+                break;
+        }
+
         // Get the source pixel (RGBA5551 format).
         // Note that the flat texture is always expected to be 64x64, hence we can wraparound with a simple bitwise AND:
         const uint32_t curSrcXInt = (uint32_t) intersectX & 63;
@@ -280,8 +320,13 @@ void drawFlatColumn(const FlatFragment flatFrag) noexcept {
         );
 
         // Move onto the next pixel
-        pDstPixel += Video::SCREEN_WIDTH;
-        ++curDstY;
+        if constexpr (MODE == DrawFlatMode::FLOOR) {
+            ++curDstY;
+            pDstPixel += Video::SCREEN_WIDTH;
+        } else {
+            --curDstY;
+            pDstPixel -= Video::SCREEN_WIDTH;
+        }
 
         // For the upcoming pixel, compute the intersection of a ray going from the camera through the near plane (screen) point.
         // Find out where this ray will hit the plane that we are drawing. This gives us a world XY coordinate which allows us
@@ -291,19 +336,29 @@ void drawFlatColumn(const FlatFragment flatFrag) noexcept {
             // Note: take the center position of the pixel to improve accuracy, hence + 0.5 here:
             const float nearPlaneZ = nearPlaneTz + nearPlaneZStep * ((float) curDstY + 0.5f);
 
-            // This is the ray direction
-            const float rayDirX = nearPlaneX - gViewX;
-            const float rayDirY = nearPlaneY - gViewY;
-            const float rayDirZ = nearPlaneZ - gViewZ;
+            // The non constant portion of ray direction
+            const float rayDirZ = nearPlaneZ - viewZ;
 
             // Calculate first: AXd + BYd + CZd
-            // I.E - The dot product of the plane normal (0, 0, 1) with the ray direction:
-            const float divisor = rayDirZ;
+            // I.E - The dot product of the plane normal (0, 0, 1) or (0, 0, -1) with the ray direction:
+            float divisor;
+            
+            if constexpr (MODE == DrawFlatMode::FLOOR) {
+                divisor = rayDirZ;
+            } else {
+                divisor = -rayDirZ;
+            }
 
             // Calculate: AX0 + BY0 + CZ0 + D
-            // I.E - The dot product of the ray origin with the plane normal (0, 0, 1) plus
+            // I.E - The dot product of the ray origin with the plane normal (0, 0, 1) or (0, 0, -1) plus
             // the distance of the plane from the origin along it's normal:
-            const float dividend = viewZ - flatPlaneZ;
+            float dividend;
+            
+            if constexpr (MODE == DrawFlatMode::FLOOR) {
+                dividend = viewZ - flatPlaneZ;
+            } else {
+                dividend = -viewZ + flatPlaneZ;
+            }
 
             // Compute the ray intersection time: -(AX0 + BY0 + CZ0 + D) / (AXd + BYd + CZd)
             const float intersectT = -dividend / divisor;
@@ -318,57 +373,14 @@ void drawFlatColumn(const FlatFragment flatFrag) noexcept {
 
 void drawAllFloorFragments() noexcept {
     for (const FlatFragment& flatFrag : gFloorFragments) {
-        drawFlatColumn(flatFrag);
+        drawFlatColumn<DrawFlatMode::FLOOR>(flatFrag);
     }
 }
 
 void drawAllCeilingFragments() noexcept {
-    /*
-    const float viewX = gViewX;
-    const float viewY = gViewY;
-
     for (const FlatFragment& flatFrag : gCeilFragments) {
-        // Get the Z distance away at which the flat fragment will meet the view plane.
-        // Note that this assumes a vertical FOV of 90 degrees!
-        const float clipDistFromView = std::fabsf(flatFrag.endWorldZ - gViewZ);
-
-        // Get the distance of the flat fragment to the view
-        const float fragEndX = flatFrag.endWorldX;
-        const float fragEndY = flatFrag.endWorldY;
-        const float viewToEndX = fragEndX - viewX;
-        const float viewToEndY = fragEndY - viewY;
-        const float endToViewDist = std::sqrtf(viewToEndX * viewToEndX + viewToEndY * viewToEndY);
-
-        // Figure out the world X and Y coordinate for the flat where it intersects the view
-        const float clipT = clipDistFromView / endToViewDist;
-        const float clipWorldX = viewX + viewToEndX * clipT;
-        const float clipWorldY = viewY + viewToEndY * clipT;
-
-        Blit::blitColumn<
-            Blit::BCF_STEP_X |
-            Blit::BCF_STEP_Y |
-            Blit::BCF_H_WRAP_64 |
-            Blit::BCF_V_WRAP_64 |
-            Blit::BCF_COLOR_MULT_RGB
-        >(
-            *flatFrag.pImageData,
-            flatFrag.endWorldX,
-            flatFrag.endWorldY,
-            0.0f,
-            Video::gFrameBuffer,
-            Video::SCREEN_WIDTH,
-            Video::SCREEN_HEIGHT,
-            flatFrag.x + gScreenXOffset,
-            flatFrag.y + gScreenYOffset,
-            flatFrag.height,
-            viewToEndX / flatFrag.height,   // TODO: X STEP
-            viewToEndY / flatFrag.height,   // TODO: Y STEP
-            1.0f,   // TODO
-            1.0f,   // TODO
-            1.0f    // TODO
-        );
+        drawFlatColumn<DrawFlatMode::CEILING>(flatFrag);
     }
-    */
 }
 
 END_NAMESPACE(Renderer)

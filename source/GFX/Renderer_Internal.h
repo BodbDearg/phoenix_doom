@@ -246,7 +246,7 @@ namespace Renderer {
         uint32_t            x;
         uint32_t            y;
         uint32_t            height;
-        float               worldX;         // World position at which the column starts
+        float               worldX;         // World position at the wall which the column was generated at
         float               worldY;
         float               worldZ;
         const ImageData*    pImageData;
