@@ -243,14 +243,12 @@ namespace Renderer {
     // Describes a column of a floor or ceiling to be drawn
     //------------------------------------------------------------------------------------------------------------------
     struct FlatFragment {
-        uint16_t            x;
-        uint16_t            y;
-        uint16_t            height;
-        uint16_t            _unused1;
-        float               yFloat;
-        float               endWorldX;
-        float               endWorldY;
-        float               endWorldZ;
+        uint32_t            x;
+        uint32_t            y;
+        uint32_t            height;
+        float               worldX;         // World position at which the column starts
+        float               worldY;
+        float               worldZ;
         const ImageData*    pImageData;
     };
 

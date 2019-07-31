@@ -820,10 +820,9 @@ static void clipAndEmitFlatColumn(
         frag.x = x;
         frag.y = ztInt;
         frag.height = columnHeight;
-        frag.yFloat = curZt;
-        frag.endWorldX = worldX;
-        frag.endWorldY = worldY;
-        frag.endWorldZ = worldZ;
+        frag.worldX = worldX;
+        frag.worldY = worldY;
+        frag.worldZ = worldZ;
         frag.pImageData = &texture;
 
         if constexpr (FLAGS == FragEmitFlags::FLOOR) {    

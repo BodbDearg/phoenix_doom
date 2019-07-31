@@ -190,9 +190,9 @@ static void preDrawSetup() noexcept {
     gNearPlaneBz = gViewZ - gNearPlaneHalfH;
 
     // World X and Y step per column of screen pixels at the near plane
-    gNearPlaneXStepPerViewCol = (gNearPlaneP2x - gNearPlaneP1x) / ((float) gScreenWidth - 1.0f);
-    gNearPlaneYStepPerViewCol = (gNearPlaneP2y - gNearPlaneP1y) / ((float) gScreenWidth - 1.0f);
-    gNearPlaneZStepPerViewColPixel = (gNearPlaneBz - gNearPlaneTz) / ((float) gScreenHeight - 1.0f);
+    gNearPlaneXStepPerViewCol = (gNearPlaneP2x - gNearPlaneP1x) / ((float) gScreenWidth);
+    gNearPlaneYStepPerViewCol = (gNearPlaneP2y - gNearPlaneP1y) / ((float) gScreenWidth);
+    gNearPlaneZStepPerViewColPixel = (gNearPlaneBz - gNearPlaneTz) / ((float) gScreenHeight);
 
     // Clear render arrays & buffers
     setupSegYClipArrayForDraw();

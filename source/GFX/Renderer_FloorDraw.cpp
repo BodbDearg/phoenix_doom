@@ -211,68 +211,41 @@ void drawAllVisPlanes() noexcept {
     }
 }
 
-void drawFlatColumn(const FlatFragment& flatFrag) noexcept {
+void drawFlatColumn(const FlatFragment flatFrag) noexcept {
     // Cache some useful values
-    const uint16_t dstX = flatFrag.x;
-    const uint16_t dstY = flatFrag.y;
-    const uint16_t dstH = flatFrag.height;
-
     const float viewX = gViewX;
     const float viewY = gViewY;
     const float viewZ = gViewZ;
-    const float planeZ = flatFrag.endWorldZ;
+    const float flatPlaneZ = flatFrag.worldZ;
+    const float nearPlaneTz = gNearPlaneTz;
     const float nearPlaneZStep = gNearPlaneZStepPerViewColPixel;
 
     const uint16_t* const pSrcPixels = flatFrag.pImageData->pPixels;
 
-    // The x and y coordinate in world space of the screen column being drawn
-    const float nearPlaneX = gNearPlaneP1x + (float) dstX * gNearPlaneXStepPerViewCol;
-    const float nearPlaneY = gNearPlaneP1y + (float) dstX * gNearPlaneYStepPerViewCol;
+    // The x and y coordinate in world space of the screen column being drawn.
+    // Note: take the center position of the pixel to improve accuracy, hence + 0.5 here:
+    const float nearPlaneX = gNearPlaneP1x + ((float) flatFrag.x + 0.5f) * gNearPlaneXStepPerViewCol;
+    const float nearPlaneY = gNearPlaneP1y + ((float) flatFrag.x + 0.5f) * gNearPlaneYStepPerViewCol;
 
-    // This is the z value in world space of the current screen pixel being rendered
-    float nearPlaneZ = gNearPlaneTz + (float) dstY * nearPlaneZStep;
+    // This is where we store the intersection of a ray going from the view to the flat plane.
+    // For the first pixel in the flat column however, always use the world position of the start of the column as the 'intersection'.
+    // This helps prevent artifacts/inaccuracies where sometimes we step past parts of the texture and wraparound when we shouldn't.
+    // Fixes artifacts on some levels with 64x64 teleporter textures for example:
+    float intersectX = flatFrag.worldX;
+    float intersectY = flatFrag.worldY;
+    float intersectZ = flatFrag.worldZ;
 
     // Where to start outputting to
-    const uint32_t startScreenX = gScreenXOffset + dstX;
-    const uint32_t startScreenY = gScreenYOffset + dstY;
+    const uint32_t startScreenX = gScreenXOffset + flatFrag.x;
+    const uint32_t startScreenY = gScreenYOffset + flatFrag.y;
     uint32_t* const pDstPixels = Video::gFrameBuffer + (startScreenY * Video::SCREEN_WIDTH) + startScreenX;
 
     // Draw the column!
+    uint16_t curDstY = flatFrag.y;
+    const uint16_t endDstY = flatFrag.y + flatFrag.height;
     uint32_t* pDstPixel = pDstPixels;
-    uint32_t* pEndDstPixel = pDstPixels + (dstH * Video::SCREEN_WIDTH);
 
-    while (pDstPixel < pEndDstPixel) {
-        // Compute the intersection of a ray going from the camera through the near plane (screen) point; find out where
-        // this ray will hit the plane that we are drawing. This gives us a world XY coordinate which allows us to decide
-        // which pixel to use. World XY also allows us to find distance from the viewer, for shading...
-        float intersectX;
-        float intersectY;
-        float intersectZ;
-
-        {
-            // This is the ray direction
-            const float rayDirX = nearPlaneX - gViewX;
-            const float rayDirY = nearPlaneY - gViewY;
-            const float rayDirZ = nearPlaneZ - gViewZ;
-
-            // Calculate first: AXd + BYd + CZd
-            // I.E - The dot product of the plane normal (0, 0, 1) with the ray direction:
-            const float divisor = rayDirZ;
-
-            // Calculate: AX0 + BY0 + CZ0 + D
-            // I.E - The dot product of the ray origin with the plane normal (0, 0, 1) plus
-            // the distance of the plane from the origin along it's normal:
-            const float dividend = viewZ - planeZ;
-
-            // Compute the ray intersection time: -(AX0 + BY0 + CZ0 + D) / (AXd + BYd + CZd)
-            const float intersectT = -dividend / divisor;
-
-            // Using the intersect time, compute the world intersect point
-            intersectX = viewX + rayDirX * intersectT;
-            intersectY = viewY + rayDirY * intersectT;
-            intersectZ = viewZ + rayDirZ * intersectT;
-        }
-
+    while (curDstY < endDstY) {
         // Get the source pixel (RGBA5551 format).
         // Note that the flat texture is always expected to be 64x64, hence we can wraparound with a simple bitwise AND:
         const uint32_t curSrcXInt = (uint32_t) intersectX & 63;
@@ -308,7 +281,38 @@ void drawFlatColumn(const FlatFragment& flatFrag) noexcept {
 
         // Move onto the next pixel
         pDstPixel += Video::SCREEN_WIDTH;
-        nearPlaneZ += nearPlaneZStep;
+        ++curDstY;
+
+        // For the upcoming pixel, compute the intersection of a ray going from the camera through the near plane (screen) point.
+        // Find out where this ray will hit the plane that we are drawing. This gives us a world XY coordinate which allows us
+        // to decide which pixel to use. World XY also allows us to find distance from the viewer, for shading...
+        {
+            // Compute the near plane height value for this column pixel.
+            // Note: take the center position of the pixel to improve accuracy, hence + 0.5 here:
+            const float nearPlaneZ = nearPlaneTz + nearPlaneZStep * ((float) curDstY + 0.5f);
+
+            // This is the ray direction
+            const float rayDirX = nearPlaneX - gViewX;
+            const float rayDirY = nearPlaneY - gViewY;
+            const float rayDirZ = nearPlaneZ - gViewZ;
+
+            // Calculate first: AXd + BYd + CZd
+            // I.E - The dot product of the plane normal (0, 0, 1) with the ray direction:
+            const float divisor = rayDirZ;
+
+            // Calculate: AX0 + BY0 + CZ0 + D
+            // I.E - The dot product of the ray origin with the plane normal (0, 0, 1) plus
+            // the distance of the plane from the origin along it's normal:
+            const float dividend = viewZ - flatPlaneZ;
+
+            // Compute the ray intersection time: -(AX0 + BY0 + CZ0 + D) / (AXd + BYd + CZd)
+            const float intersectT = -dividend / divisor;
+
+            // Using the intersect time, compute the world intersect point
+            intersectX = viewX + rayDirX * intersectT;
+            intersectY = viewY + rayDirY * intersectT;
+            intersectZ = viewZ + rayDirZ * intersectT;
+        }
     }
 }
 
@@ -319,6 +323,7 @@ void drawAllFloorFragments() noexcept {
 }
 
 void drawAllCeilingFragments() noexcept {
+    /*
     const float viewX = gViewX;
     const float viewY = gViewY;
 
@@ -363,6 +368,7 @@ void drawAllCeilingFragments() noexcept {
             1.0f    // TODO
         );
     }
+    */
 }
 
 END_NAMESPACE(Renderer)
