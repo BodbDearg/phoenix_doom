@@ -211,6 +211,138 @@ void drawAllVisPlanes() noexcept {
     }
 }
 
+//----------------------------------------------------------------------------------------------------------------------
+// Draws a vertical column of a floor or ceiling.
+// Params, in order of appearance:
+//
+//  (1) Source floor image (MUST be 64x64, 3DO Doom uses 64x64 for all floors)
+//  (2) Start and end X and Y in the flat texture
+//  (3) Start and end depth of the flat column
+//  (4) Destination X for the column on the screen
+//  (5) Start and end destination Y value on the screen
+//----------------------------------------------------------------------------------------------------------------------
+void drawFlatColumn(
+    const ImageData& srcImg,
+    const float begSrcX,
+    const float begSrcY,
+    const float endSrcX,
+    const float endSrcY,
+    const float begDepth,
+    const float endDepth,
+    const uint32_t dstX,
+    const float begDstY,
+    const float endDstY
+) noexcept {
+    // Basic sanity checks
+    BLIT_ASSERT(srcImg.pPixels);
+    BLIT_ASSERT(srcImg.width > 0);
+    BLIT_ASSERT(srcImg.height > 0);
+    BLIT_ASSERT(dstX < gScreenWidth);
+    BLIT_ASSERT(begDstY >= 0.0f && begDstY < (float) gScreenHeight);
+    BLIT_ASSERT(endDstY >= 0.0f && endDstY < (float) gScreenHeight);
+
+    // Some values needed for drawing
+    const uint32_t screenW = gScreenWidth;
+
+    // Various values divided by depth, so we can interpolate linearly and get perspective correct results
+    const float invBegDepth = 1.0f / begDepth;
+    const float invEndDepth = 1.0f / endDepth;
+
+    const float begSrcXid = begSrcX * invBegDepth;
+    const float begSrcYid = begSrcY * invBegDepth;
+    const float endSrcXid = endSrcX * invEndDepth;
+    const float endSrcYid = endSrcY * invEndDepth;
+
+    // The image we will read from and the screen column we will output too
+    const uint16_t* const pSrcPixels = (const uint16_t*) srcImg.pPixels;
+
+    const uint32_t startScreenX = gScreenXOffset + dstX;
+    const uint32_t startScreenY = gScreenYOffset + (uint32_t) begDstY;
+    uint32_t* const pDstPixels = Video::gFrameBuffer + (startScreenY * Video::SCREEN_WIDTH) + startScreenX;
+
+    // Stepping variables
+    float dstY = begDstY;
+    uint32_t* pDstPixel = pDstPixels;
+
+    const float unclippedYRange = (float) gScreenHeight - begDstY;
+    const float dstYSize = unclippedYRange;
+    const float invDstYSize = 1.0f / unclippedYRange;
+
+    const float invDepthStep = (invEndDepth - invBegDepth) * invDstYSize;
+    const float srcXidStep = (endSrcXid - begSrcXid) * invDstYSize;
+    const float srcYidStep = (endSrcYid - begSrcYid) * invDstYSize;
+
+    float invDepth = invBegDepth;
+    float srcXid = begSrcXid;
+    float srcYid = begSrcYid;
+
+    float nextInvDepth;
+    float nextSrcXid;
+    float nextSrcYid;
+
+    {
+        // A small adjustment based on sub pixel position for stability
+        float t = std::fmodf(begDstY, 1.0f);
+        nextInvDepth = invBegDepth - t * invDepthStep;
+        nextSrcXid = begSrcXid - t * srcXidStep;
+        nextSrcYid = begSrcYid - t * srcYidStep;
+    }
+    
+    // Main pixel blitting loop
+    while (dstY <= endDstY) {
+        // Get the depth and source x and y
+        const float depth = 1.0f / invDepth;
+        const float srcX = srcXid * depth;
+        const float srcY = srcYid * depth;
+
+        // Get the source pixel (RGBA5551 format).
+        // Note that the flat texture is always expected to be 64x64, hence we can wraparound with a simple bitwise AND:
+        const uint32_t curSrcXInt = (uint32_t) srcX & 63;
+        const uint32_t curSrcYInt = (uint32_t) srcY & 63;
+        const uint16_t srcPixelRGBA5551 = pSrcPixels[curSrcYInt * 64 + curSrcXInt];
+        
+        // Extract RGB components and shift such that the maximum value is 255 instead of 31.
+        const uint16_t texR = (srcPixelRGBA5551 & uint16_t(0b1111100000000000)) >> 8;
+        const uint16_t texG = (srcPixelRGBA5551 & uint16_t(0b0000011111000000)) >> 3;
+        const uint16_t texB = (srcPixelRGBA5551 & uint16_t(0b0000000000111110)) << 2;
+
+        // Get the texture colors in 0-255 float format.
+        // Note that if we are not doing any color multiply these conversions would be redundant, but I'm guessing
+        // that the compiler would be smart enough to optimize out the useless operations in those cases (hopefully)!
+        float r = (float) texR;
+        float g = (float) texG;
+        float b = (float) texB;
+
+        /*
+        if constexpr ((BC_FLAGS & BCF_COLOR_MULT_RGB) != 0) {
+            r = std::min(r * rMul, 255.0f);
+            g = std::min(g * gMul, 255.0f);
+            b = std::min(b * bMul, 255.0f);
+        }
+        */
+
+        // Write out the pixel value
+        *pDstPixel = (
+            (uint32_t(r) << 24) |
+            (uint32_t(g) << 16) |
+            (uint32_t(b) << 8)
+        );
+
+        // Stepping in the source and destination
+        dstY += 1.0f;
+
+        nextInvDepth += invDepthStep;
+        nextSrcXid += srcXidStep;
+        nextSrcYid += srcYidStep;
+
+        invDepth = nextInvDepth;
+        srcXid = nextSrcXid;
+        srcYid = nextSrcYid;
+
+        pDstPixel += Video::SCREEN_WIDTH;
+    }
+}
+
 void drawAllFloorFragments() noexcept {
     for (const FlatFragment& flatFrag : gFloorFragments) {
         // Compute the x,y and z coordinate at which the bottom of screen column lies in world space.
@@ -256,41 +388,17 @@ void drawAllFloorFragments() noexcept {
         const float farZ = flatFrag.endWorldZ;
         const float farDepth = FMath::distance3d(farX, farY, farZ, gViewX, gViewY, gViewZ);
 
-        // Figure out the inverse depths and inverse depth step.
-        // Pretend the floor column is unclipped for the purposes of stepping.
-        const float invNearDepth = 1.0f / nearDepth;
-        const float invFarDepth = 1.0f / farDepth;
-        const float numStepsUnclipped = (float) gScreenHeight - flatFrag.yFloat;
-        const float divNumSteps = (numStepsUnclipped > 1.0f) ? 1.0f / (numStepsUnclipped - 1.0f) : 0.0f;
-        const float invDepthStep = (invNearDepth - invFarDepth) * divNumSteps;
-
-        // Blit
-        Blit::blitColumn<
-            Blit::BCF_STEP_X |
-            Blit::BCF_STEP_Y |
-            Blit::BCF_H_WRAP_64 |
-            Blit::BCF_V_WRAP_64 |
-            Blit::BCF_COLOR_MULT_RGB |
-            Blit::BCF_PERSP_CORRECT
-        >(
+        drawFlatColumn(
             *flatFrag.pImageData,
-            farX * invFarDepth,     // N.B: Must adjust for perspective correct interpolation!
-            farY * invFarDepth,     // N.B: Must adjust for perspective correct interpolation!
-            0.0f,
-            Video::gFrameBuffer,
-            Video::SCREEN_WIDTH,
-            Video::SCREEN_HEIGHT,
-            flatFrag.x + gScreenXOffset,
-            flatFrag.y + gScreenYOffset,
-            flatFrag.height,
-            (nearX * invNearDepth - farX * invFarDepth) * divNumSteps,
-            (nearY * invNearDepth - farY * invFarDepth) * divNumSteps,
-            1.0f,   // TODO
-            1.0f,   // TODO
-            1.0f,   // TODO
-            1.0f,
-            invFarDepth,
-            invDepthStep
+            farX,
+            farY,
+            nearX,
+            nearY,
+            farDepth,
+            nearDepth,
+            flatFrag.x,
+            flatFrag.yFloat,
+            (float) flatFrag.y + ((float) flatFrag.height - 0.0001f)
         );
     }
 }
