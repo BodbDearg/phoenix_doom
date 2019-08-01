@@ -283,6 +283,7 @@ static inline void drawFlatColumn(const FlatFragment flatFrag) noexcept {
     const float nearPlaneTz = gNearPlaneTz;
     const float nearPlaneZStep = gNearPlaneZStepPerViewColPixel;
 
+    const LightParams& lightParams = getLightParams(flatFrag.sectorLightLevel);
     const uint16_t* const pSrcPixels = flatFrag.pImageData->pPixels;
 
     // The x and y coordinate in world space of the screen column being drawn.
@@ -369,20 +370,16 @@ static inline void drawFlatColumn(const FlatFragment flatFrag) noexcept {
         const uint16_t texG = (srcPixelRGBA5551 & uint16_t(0b0000011111000000)) >> 3;
         const uint16_t texB = (srcPixelRGBA5551 & uint16_t(0b0000000000111110)) << 2;
 
+        // Get the distance to the view point and light multiplier for that distance
+        const float distToView = FMath::distance3d(intersectX, intersectY, intersectZ, viewX, viewY, viewZ);
+        const float lightMul = lightParams.getLightMulForDist(distToView);
+
         // Get the texture colors in 0-255 float format.
         // Note that if we are not doing any color multiply these conversions would be redundant, but I'm guessing
         // that the compiler would be smart enough to optimize out the useless operations in those cases (hopefully)!
-        float r = (float) texR;
-        float g = (float) texG;
-        float b = (float) texB;
-
-        /*
-        if constexpr ((BC_FLAGS & BCF_COLOR_MULT_RGB) != 0) {
-            r = std::min(r * rMul, 255.0f);
-            g = std::min(g * gMul, 255.0f);
-            b = std::min(b * bMul, 255.0f);
-        }
-        */
+        const float r = std::min((float) texR * lightMul, 255.0f);
+        const float g = std::min((float) texG * lightMul, 255.0f);
+        const float b = std::min((float) texB * lightMul, 255.0f);
 
         // Write out the pixel value
         *pDstPixel = (

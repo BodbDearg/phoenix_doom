@@ -671,7 +671,10 @@ static void clipAndEmitWallColumn(
     const float texX,
     const float texTy,
     const float texBy,
-    SegClip& clipBounds,
+    const float depth,
+    SegClip& clipBounds,    
+    const LightParams& lightParams,
+    const float segLightMul,
     const ImageData& texImage
 ) noexcept {
     ASSERT(x < gScreenWidth);
@@ -739,7 +742,7 @@ static void clipAndEmitWallColumn(
         frag.texcoordY = curTexTy;
         frag.texcoordYSubPixelAdjust = texYSubPixelAdjustment;
         frag.texcoordYStep = texYStep;
-        frag.lightMul = 1.0f;                   // TODO
+        frag.lightMul = lightParams.getLightMulForDist(depth) * segLightMul;
         frag.pImageData = &texImage;
 
         gWallFragments.push_back(frag);
@@ -787,6 +790,7 @@ static void clipAndEmitFlatColumn(
     const float worldY,
     const float worldZ,
     const bool bClampFirstColumnPixel,
+    const uint8_t sectorLightLevel,
     const ImageData& texture
 ) noexcept {
     ASSERT(x < gScreenWidth);
@@ -832,6 +836,7 @@ static void clipAndEmitFlatColumn(
         frag.x = x;
         frag.y = ztInt;
         frag.height = columnHeight;
+        frag.sectorLightLevel = sectorLightLevel;
         frag.bClampFirstPixel = bClampFirstColumnPixel;
         frag.depth = depth;
         frag.worldX = worldX;
@@ -907,6 +912,8 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
     // Figure out whether we should clamp the first pixel of each floor or ceiling column.
     // This is done to prevent flat textures from stepping past where they should be at far depths and shallow view angles.
     //-----------------------------------------------------------------------------------------------------------------
+    const sector_t& frontSector = *seg.frontsector;
+
     [[maybe_unused]] bool bCanClampFirstFloorColumnPixel;
     [[maybe_unused]] bool bCanClampFirstCeilingColumnPixel;
 
@@ -915,7 +922,7 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
             // Only clamp when the floor height or texture changes!
             // If adjacent subsectors use the same texture and are at the same height then we
             // want texturing to be as contiguous as possible, so don't do clamping in those cases.
-            const sector_t& frontSector = *seg.frontsector;
+            
             const sector_t& backSector = *seg.backsector;
 
             if constexpr (EMIT_FLOOR) {
@@ -977,8 +984,22 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
     }
 
     //------------------------------------------------------------------------------------------------------------------
-    // Grab any required textures
+    // Figure out effective sector light level and light params for that light level
     //------------------------------------------------------------------------------------------------------------------
+    uint32_t sectorLightLevel = frontSector.lightlevel;
+
+    if (sectorLightLevel < 240) {
+        sectorLightLevel += gExtraLight;
+    }
+
+    sectorLightLevel = std::min(sectorLightLevel, 255u);
+    const LightParams lightParams = getLightParams(sectorLightLevel);
+
+    //------------------------------------------------------------------------------------------------------------------
+    // Grab any required textures and the sector light level
+    //------------------------------------------------------------------------------------------------------------------
+    const side_t& sideDef = *seg.sidedef;
+
     [[maybe_unused]] const Texture* pMidTex;
     [[maybe_unused]] const Texture* pUpperTex;
     [[maybe_unused]] const Texture* pLowerTex;
@@ -986,24 +1007,24 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
     [[maybe_unused]] const Texture* pCeilingTex;
 
     if constexpr (EMIT_MID_WALL) {
-        pMidTex = getWallTexture(seg.sidedef->midtexture);    
+        pMidTex = getWallTexture(sideDef.midtexture);    
     }
 
     if constexpr (EMIT_UPPER_WALL) {
-        pUpperTex = getWallTexture(seg.sidedef->toptexture);
+        pUpperTex = getWallTexture(sideDef.toptexture);
     }
 
     if constexpr (EMIT_LOWER_WALL) {
-        pLowerTex = getWallTexture(seg.sidedef->bottomtexture);
+        pLowerTex = getWallTexture(sideDef.bottomtexture);
     }
 
     if constexpr (EMIT_FLOOR) {
-        pFloorTex = getFlatAnimTexture(seg.frontsector->FloorPic);
+        pFloorTex = getFlatAnimTexture(frontSector.FloorPic);
     }
 
     if constexpr (EMIT_CEILING) {
         if (seg.frontsector->CeilingPic != SKY_CEILING_PIC) {
-            pCeilingTex = getFlatAnimTexture(seg.frontsector->CeilingPic);
+            pCeilingTex = getFlatAnimTexture(frontSector.CeilingPic);
         } else {
             pCeilingTex = nullptr;
         }
@@ -1019,7 +1040,6 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
     if constexpr (EMIT_ANY_WALL) {
         // Need the line flags, line def and side def for this
         line_t& lineDef = *seg.linedef;
-        const side_t& sideDef = *seg.sidedef;
         const uint32_t lineFlags = lineDef.flags;
 
         // Populate these values lazily
@@ -1316,6 +1336,7 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
                     worldY,
                     upperWorldTz,
                     bClampFirstColPixel,
+                    sectorLightLevel,
                     pCeilingTex->data
                 );
             }
@@ -1337,6 +1358,7 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
                 worldY,
                 lowerWorldBz,
                 bClampFirstColPixel,
+                sectorLightLevel,
                 pFloorTex->data
             );
         }
@@ -1349,7 +1371,10 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
                 texX,
                 midTexTy,
                 midTexBy,
+                depth,
                 clipBounds,
+                lightParams,
+                seg.lightMul,
                 pMidTex->data
             );
         }
@@ -1362,7 +1387,10 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
                 texX,
                 upperTexTy,
                 upperTexBy,
+                depth,
                 clipBounds,
+                lightParams,
+                seg.lightMul,
                 pUpperTex->data
             );
         }
@@ -1375,7 +1403,10 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
                 texX,
                 lowerTexTy,
                 lowerTexBy,
+                depth,
                 clipBounds,
+                lightParams,
+                seg.lightMul,
                 pLowerTex->data
             );
         }

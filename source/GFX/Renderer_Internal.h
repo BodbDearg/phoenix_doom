@@ -246,6 +246,7 @@ namespace Renderer {
         uint16_t            x;
         uint16_t            y;
         uint16_t            height;
+        uint8_t             sectorLightLevel;
         bool                bClampFirstPixel;       // If true clamp the texcoord of the first pixel in the column to prevent overstepping past the world position!
         float               depth;                  // Depth of the fragment in the view
         float               worldX;                 // World position at the wall which the column was generated at
