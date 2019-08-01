@@ -658,6 +658,7 @@ namespace FragEmitFlags {
     static constexpr FragEmitFlagsT LOWER_WALL  = 0x0004;       // Emit a lower wall
     static constexpr FragEmitFlagsT FLOOR       = 0x0008;       // Emit a floor
     static constexpr FragEmitFlagsT CEILING     = 0x0010;       // Emit a ceiling
+    static constexpr FragEmitFlagsT SKY         = 0x0020;       // Emit a sky column if possible
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -892,6 +893,8 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
     constexpr bool EMIT_FLOOR       = ((FLAGS & FragEmitFlags::FLOOR) != 0);
     constexpr bool EMIT_CEILING     = ((FLAGS & FragEmitFlags::CEILING) != 0);
     constexpr bool EMIT_ANY_FLAT    = (EMIT_FLOOR || EMIT_CEILING);
+    constexpr bool EMIT_SKY         = ((FLAGS & FragEmitFlags::SKY) != 0);
+    
 
     // Sanity checks, expect p1x to be < p2x - should be ensured externally!
     ASSERT(drawSeg.p1x < drawSeg.p2x);
@@ -1120,7 +1123,7 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
     [[maybe_unused]] float lowerWorldTz;
     [[maybe_unused]] float lowerWorldBz;
 
-    if constexpr (EMIT_MID_WALL || EMIT_UPPER_WALL || EMIT_CEILING) {
+    if constexpr (EMIT_MID_WALL || EMIT_UPPER_WALL || EMIT_CEILING || EMIT_SKY) {
         upperWorldTz = FMath::doomFixed16ToFloat<float>(seg.frontsector->ceilingheight);
     }
 
@@ -1319,6 +1322,16 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
         //--------------------------------------------------------------------------------------------------------------
         // Emit all fragments
         //--------------------------------------------------------------------------------------------------------------
+        if constexpr (EMIT_SKY) {
+            if (!pCeilingTex && upperTz > 0) {
+                SkyFragment skyFrag;
+                skyFrag.x = x;
+                skyFrag.height = (uint16_t) std::ceilf(upperTz);
+
+                gSkyFragments.push_back(skyFrag);
+            }
+        }
+
         if constexpr (EMIT_CEILING) {
             if (pCeilingTex) {
                 const bool bClampFirstColPixel = (
@@ -1452,18 +1465,30 @@ void addSegToFrame(const seg_t& seg) noexcept {
             emitWallAndFlatFragments<
                 FragEmitFlags::MID_WALL |
                 FragEmitFlags::CEILING |
-                FragEmitFlags::FLOOR
+                FragEmitFlags::FLOOR |
+                FragEmitFlags::SKY
             >(drawSeg, seg);
         }
     } else {
         if (!bIsBackFacing) {
-            emitWallAndFlatFragments<
-                FragEmitFlags::UPPER_WALL |
-                FragEmitFlags::LOWER_WALL |
-                FragEmitFlags::CEILING |
-                FragEmitFlags::FLOOR
-            >(drawSeg, seg);
+            // Note: need to ignore upper walls if back sector has a sky ceiling
+            if (seg.backsector->CeilingPic != SKY_CEILING_PIC) {
+                emitWallAndFlatFragments<
+                    FragEmitFlags::UPPER_WALL |
+                    FragEmitFlags::LOWER_WALL |
+                    FragEmitFlags::CEILING |
+                    FragEmitFlags::FLOOR |
+                    FragEmitFlags::SKY
+                >(drawSeg, seg);
+            } else {
+                emitWallAndFlatFragments<
+                    FragEmitFlags::LOWER_WALL |
+                    FragEmitFlags::CEILING |
+                    FragEmitFlags::FLOOR
+                >(drawSeg, seg);
+            }
         } else {
+            // If we are facing the back of a two sided seg then all it can emit are floors and ceilings
             emitWallAndFlatFragments<
                 FragEmitFlags::CEILING |
                 FragEmitFlags::FLOOR

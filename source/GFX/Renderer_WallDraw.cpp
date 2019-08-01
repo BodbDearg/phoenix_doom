@@ -113,7 +113,7 @@ static void drawClippedWallColumn(
 //----------------------------------------------------------------------------------------------------------------------
 // Draws a single column of the sky
 //----------------------------------------------------------------------------------------------------------------------
-static void drawSkyColumn(const uint32_t viewX) noexcept {
+static void drawSkyColumn(const uint32_t viewX, const uint32_t maxColHeight) noexcept {
     // Note: sky textures are 256 pixels wide so the mask wraps it around
     const uint32_t texX = (((gXToViewAngle[viewX] + gViewAngleBAM) >> ANGLETOSKYSHIFT) & 0xFF);
 
@@ -142,7 +142,7 @@ static void drawSkyColumn(const uint32_t viewX) noexcept {
         Video::SCREEN_HEIGHT,
         viewX + gScreenXOffset,
         gScreenYOffset,
-        colHeight,
+        std::min(colHeight, maxColHeight),
         0,
         texYStep
     );
@@ -518,7 +518,7 @@ static void segLoop(const viswall_t& seg) noexcept {
             }
 
             if (clipBoundTY + 1 < bottom) {     // Valid?
-                drawSkyColumn(viewX);           // Draw the sky
+                drawSkyColumn(viewX, 128);      // Draw the sky
             }
         }
 
@@ -577,6 +577,12 @@ void drawAllWallFragments() noexcept {
             wallFrag.lightMul,
             wallFrag.lightMul
         );
+    }
+}
+
+void drawAllSkyFragments() noexcept {
+    for (const SkyFragment& skyFrag : gSkyFragments) {
+        drawSkyColumn(skyFrag.x, skyFrag.height);
     }
 }
 

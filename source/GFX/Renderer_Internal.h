@@ -238,6 +238,14 @@ namespace Renderer {
         float               lightMul;                   // Multiply value for lighting
         const ImageData*    pImageData;
     };
+
+    //------------------------------------------------------------------------------------------------------------------
+    // Describes a column of the sky to be drawn
+    //------------------------------------------------------------------------------------------------------------------
+    struct SkyFragment {
+        uint16_t    x;
+        uint16_t    height;
+    };
     
     //------------------------------------------------------------------------------------------------------------------
     // Describes a column of a floor or ceiling to be drawn
@@ -357,6 +365,7 @@ namespace Renderer {
     extern std::vector<WallFragment>    gWallFragments;                     // Wall fragments to be drawn
     extern std::vector<FlatFragment>    gFloorFragments;                    // Floor fragments to be drawn
     extern std::vector<FlatFragment>    gCeilFragments;                     // Ceiling fragments to be drawn
+    extern std::vector<SkyFragment>     gSkyFragments;                      // Sky fragments to be drawn
 
     //==================================================================================================================
     // Functions
@@ -369,6 +378,7 @@ namespace Renderer {
     void drawAllWallFragments() noexcept;
     void drawAllFloorFragments() noexcept;
     void drawAllCeilingFragments() noexcept;
+    void drawAllSkyFragments() noexcept;
     void drawAllVisPlanes() noexcept;
     void drawAllMapObjectSprites() noexcept;    
     void drawWeapons() noexcept;

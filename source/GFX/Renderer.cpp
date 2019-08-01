@@ -83,6 +83,7 @@ uint32_t                    gNumFullSegCols;
 std::vector<WallFragment>   gWallFragments;
 std::vector<FlatFragment>   gFloorFragments;
 std::vector<FlatFragment>   gCeilFragments;
+std::vector<SkyFragment>    gSkyFragments;
 
 //----------------------------------------------------------------------------------------------------------------------
 // Load in the "TextureInfo" array so that the game knows all about the wall and sky textures (Width,Height).
@@ -199,6 +200,7 @@ static void preDrawSetup() noexcept {
     gWallFragments.clear();
     gFloorFragments.clear();
     gCeilFragments.clear();
+    gSkyFragments.clear();
 
     gpEndVisPlane = gVisPlanes + 1;     // visplanes[0] is left empty
     gpEndVisWall = gVisWalls;           // No walls added yet
@@ -213,7 +215,12 @@ void init() noexcept {
     initData();                                 // Init resource managers and all of the lookup tables
     gClipAngleBAM = gXToViewAngle[0];           // Get the left clip angle from viewport
     gDoubleClipAngleBAM = gClipAngleBAM * 2;    // Precalc angle * 2
-    gWallFragments.reserve(1024 * 8);           // Reserve 8K fragments
+
+    // Fragment reserve
+    gWallFragments.reserve(1024 * 8);
+    gFloorFragments.reserve(1024 * 8);
+    gCeilFragments.reserve(1024 * 8);
+    gSkyFragments.reserve(1024);
 }
 
 void initMathTables() noexcept {
@@ -321,6 +328,7 @@ void drawPlayerView() noexcept {
     drawAllLineSegs();              // Draw all everything Z Sorted
     #endif
     
+    drawAllSkyFragments();
     drawAllFloorFragments();
     drawAllCeilingFragments();
     drawAllWallFragments();
