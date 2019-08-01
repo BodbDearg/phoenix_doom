@@ -13,6 +13,16 @@
 BEGIN_NAMESPACE(Renderer)
 
 //----------------------------------------------------------------------------------------------------------------------
+// Minimum depth at which we will begin clamping the position of the first pixel in a flat column.
+// Restricting this adjustment to larger depths becase:
+//  (1) It causes noticeable temporal aliasing when moving around in some cases, at close depths.
+//  (2) Far depths are where we get the noticeable issues with flat textures overstepping their
+//      bounds and wrapping erroneously. Things are far more accurate closer to the view, so there
+//      is no need for this adjustment at near depths...
+//----------------------------------------------------------------------------------------------------------------------
+static constexpr float MIN_DEPTH_FOR_FLAT_PIXEL_CLAMP = 256.0f;
+
+//----------------------------------------------------------------------------------------------------------------------
 // Check all the visible walls and fill in all the "Blanks" such as texture pointers and sky hack variables.
 // When finished all the viswall records are filled in.
 //----------------------------------------------------------------------------------------------------------------------
@@ -772,9 +782,11 @@ static void clipAndEmitFlatColumn(
     const float zt,
     const float zb,
     SegClip& clipBounds,
+    const float depth,
     const float worldX,
     const float worldY,
     const float worldZ,
+    const bool bClampFirstColumnPixel,
     const ImageData& texture
 ) noexcept {
     ASSERT(x < gScreenWidth);
@@ -820,6 +832,8 @@ static void clipAndEmitFlatColumn(
         frag.x = x;
         frag.y = ztInt;
         frag.height = columnHeight;
+        frag.bClampFirstPixel = bClampFirstColumnPixel;
+        frag.depth = depth;
         frag.worldX = worldX;
         frag.worldY = worldY;
         frag.worldZ = worldZ;
@@ -889,6 +903,46 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
     ASSERT(x2 < (int32_t) gScreenWidth);
     ASSERT(x1 <= x2);
     
+    //-----------------------------------------------------------------------------------------------------------------
+    // Figure out whether we should clamp the first pixel of each floor or ceiling column.
+    // This is done to prevent flat textures from stepping past where they should be at far depths and shallow view angles.
+    //-----------------------------------------------------------------------------------------------------------------
+    [[maybe_unused]] bool bCanClampFirstFloorColumnPixel;
+    [[maybe_unused]] bool bCanClampFirstCeilingColumnPixel;
+
+    if constexpr (EMIT_ANY_FLAT) {
+        if (seg.backsector) {
+            // Only clamp when the floor height or texture changes!
+            // If adjacent subsectors use the same texture and are at the same height then we
+            // want texturing to be as contiguous as possible, so don't do clamping in those cases.
+            const sector_t& frontSector = *seg.frontsector;
+            const sector_t& backSector = *seg.backsector;
+
+            if constexpr (EMIT_FLOOR) {
+                bCanClampFirstFloorColumnPixel = (
+                    (frontSector.floorheight != backSector.floorheight) ||
+                    (frontSector.FloorPic != backSector.FloorPic)
+                );
+            }
+
+            if constexpr (EMIT_CEILING) {
+                bCanClampFirstCeilingColumnPixel = (
+                    (frontSector.ceilingheight != backSector.ceilingheight) ||
+                    (frontSector.CeilingPic != backSector.CeilingPic)
+                );
+            }
+        } else {
+            // Never step past the bounds when the column starts at a fully solid wall
+            if constexpr (EMIT_FLOOR) {
+                bCanClampFirstFloorColumnPixel = true;
+            }
+
+            if constexpr (EMIT_CEILING) {
+                bCanClampFirstCeilingColumnPixel = true;
+            }
+        }
+    }
+
     //------------------------------------------------------------------------------------------------------------------
     // Figure out top and bottom z for p1 and p2 for all wall and/or floor & ceiling pieces.
     // Depending on what flags are passed, some of these coordinates may be unused:
@@ -1194,8 +1248,9 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
         const float wInv = p1InvW + invWStep * curXStepCount;
         const float w = 1.0f / wInv;
 
-        // Normalized depth
+        // Normalized depth and actual depth
         const float y = (p1y + yStep * curXStepCount) * w;
+        const float depth = w;
 
         // X texture coordinate (for walls)
         [[maybe_unused]] float texX;
@@ -1246,28 +1301,42 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
         //--------------------------------------------------------------------------------------------------------------
         if constexpr (EMIT_CEILING) {
             if (pCeilingTex) {
+                const bool bClampFirstColPixel = (
+                    bCanClampFirstCeilingColumnPixel &&
+                    (depth >= MIN_DEPTH_FOR_FLAT_PIXEL_CLAMP)
+                );
+
                 clipAndEmitFlatColumn<FragEmitFlags::CEILING>(
                     x,
                     0.0f,
-                    upperTz - 1.0f,     // Note: wall gets priority over the border pixel
+                    upperTz,
                     clipBounds,
+                    depth,
                     worldX,
                     worldY,
                     upperWorldTz,
+                    bClampFirstColPixel,
                     pCeilingTex->data
                 );
             }
         }
 
         if constexpr (EMIT_FLOOR) {
+            const bool bClampFirstColPixel = (
+                bCanClampFirstFloorColumnPixel &&
+                (depth >= MIN_DEPTH_FOR_FLAT_PIXEL_CLAMP)
+            );
+
             clipAndEmitFlatColumn<FragEmitFlags::FLOOR>(
                 x,
-                lowerBz - 1.0f,     // Note: wall gets priority over the border pixel
-                viewH - 1.0f,
+                lowerBz,
+                viewH,
                 clipBounds,
+                depth,
                 worldX,
                 worldY,
                 lowerWorldBz,
+                bClampFirstColPixel,
                 pFloorTex->data
             );
         }

@@ -126,7 +126,7 @@ uint32_t M_Ticker(void)
         gMoveCount = TICKSPERSEC;    // Move immediately on next press 
     } else {
         gMoveCount += gElapsedTime;   // Time unit 
-        if ( (gMoveCount >= (TICKSPERSEC/3)) ||      // Allow slow 
+        if ( (gMoveCount >= (TICKSPERSEC/4)) ||      // Allow slow 
             (gCursorPos == level && gMoveCount >= (TICKSPERSEC/5))) { // Fast? 
             gMoveCount = 0;      // Reset the timer 
             if (buttons & PadDown) {

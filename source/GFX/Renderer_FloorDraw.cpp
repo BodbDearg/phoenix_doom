@@ -220,6 +220,52 @@ enum class DrawFlatMode {
 };
 
 //----------------------------------------------------------------------------------------------------------------------
+// Does the intersection of a ray against a floor or ceiling plane
+//----------------------------------------------------------------------------------------------------------------------
+template <DrawFlatMode MODE>
+static inline void doRayFlatPlaneIntersection(
+    const float flatPlaneZ,
+    const float rayOriginX,
+    const float rayOriginY,
+    const float rayOriginZ,
+    const float rayDirX,
+    const float rayDirY,
+    const float rayDirZ,
+    float& intersectX,
+    float& intersectY,
+    float& intersectZ
+) noexcept {
+    // Calculate first: AXd + BYd + CZd
+    // I.E - The dot product of the plane normal (0, 0, 1) or (0, 0, -1) with the ray direction:
+    float divisor;
+    
+    if constexpr (MODE == DrawFlatMode::FLOOR) {
+        divisor = rayDirZ;
+    } else {
+        divisor = -rayDirZ;
+    }
+
+    // Calculate: AX0 + BY0 + CZ0 + D
+    // I.E - The dot product of the ray origin with the plane normal (0, 0, 1) or (0, 0, -1) plus
+    // the distance of the plane from the origin along it's normal:
+    float dividend;
+            
+    if constexpr (MODE == DrawFlatMode::FLOOR) {
+        dividend = rayOriginZ - flatPlaneZ;
+    } else {
+        dividend = -rayOriginZ + flatPlaneZ;
+    }
+
+    // Compute the ray intersection time: -(AX0 + BY0 + CZ0 + D) / (AXd + BYd + CZd)
+    const float intersectT = -dividend / divisor;
+
+    // Using the intersect time, compute the world intersect point
+    intersectX = rayOriginX + rayDirX * intersectT;
+    intersectY = rayOriginY + rayDirY * intersectT;
+    intersectZ = rayOriginZ + rayDirZ * intersectT;    
+}
+
+//----------------------------------------------------------------------------------------------------------------------
 // Draw one vertical column of a flat.
 // 
 // Unlike the original version of 3DO Doom (and PC Doom) I do not bother with visplanes, or converting vertical floor
@@ -240,7 +286,7 @@ static inline void drawFlatColumn(const FlatFragment flatFrag) noexcept {
     const uint16_t* const pSrcPixels = flatFrag.pImageData->pPixels;
 
     // The x and y coordinate in world space of the screen column being drawn.
-    // Note: take the center position of the pixel to improve accuracy, hence + 0.5 here:
+    // Note: take the horizontal center position of the pixel to improve accuracy, hence + 0.5 here:
     const float nearPlaneX = gNearPlaneP1x + ((float) flatFrag.x + 0.5f) * gNearPlaneXStepPerViewCol;
     const float nearPlaneY = gNearPlaneP1y + ((float) flatFrag.x + 0.5f) * gNearPlaneYStepPerViewCol;
 
@@ -248,14 +294,6 @@ static inline void drawFlatColumn(const FlatFragment flatFrag) noexcept {
     // Since this is constant per screen column pixel, we only need to do this once here:
     const float rayDirX = nearPlaneX - viewX;
     const float rayDirY = nearPlaneY - viewY;
-
-    // This is where we store the intersection of a ray going from the view to the flat plane.
-    // For the first pixel in the flat column however, always use the world position of the start of the column as the 'intersection'.
-    // This helps prevent artifacts/inaccuracies where sometimes we step past parts of the texture and wraparound when we shouldn't.
-    // Fixes artifacts on some levels with 64x64 teleporter textures for example:
-    float intersectX = flatFrag.worldX;
-    float intersectY = flatFrag.worldY;
-    float intersectZ = flatFrag.worldZ;
 
     // Where to start outputting to and where we end outputting.
     // Note that floors rendered in a top to bottom direction, while ceilings are bottom to top:
@@ -272,6 +310,40 @@ static inline void drawFlatColumn(const FlatFragment flatFrag) noexcept {
 
     const uint32_t startScreenX = gScreenXOffset + flatFrag.x;
     const uint32_t startScreenY = gScreenYOffset + (uint32_t) curDstY;
+
+    // This is where we store the intersection of a ray going from the view point to the flat plane.
+    // The ray passes through whatever near plane pixel on the screen we are rendering and we update
+    // the ray and location of intersection for whatever pixel we are drawing...
+    float intersectX;
+    float intersectY;
+    float intersectZ;
+
+    // If clamp was specified for the first pixel then use the world position of where the column starts to figure out
+    // the texture coordinate for the first column pixel, otherwise do a ray/plane intersection like we do in the column loop.
+    // The clamp is used to prevent over-runs of textures that are sensitive to repeating, such as 64x64 teleporters.
+    BLIT_ASSERT(flatFrag.depth >= 0.0f);
+
+    if (flatFrag.bClampFirstPixel) {
+        intersectX = flatFrag.worldX;
+        intersectY = flatFrag.worldY;
+        intersectZ = flatFrag.worldZ;
+    } else {
+        const float nearPlaneZ = nearPlaneTz + nearPlaneZStep * ((float) curDstY + 0.5f);   // Note: take the center position of the pixel to improve accuracy, hence + 0.5 here!
+        const float rayDirZ = nearPlaneZ - viewZ;
+
+        doRayFlatPlaneIntersection<MODE>(
+            flatPlaneZ,
+            viewX,
+            viewY,
+            viewZ,
+            rayDirX,
+            rayDirY,
+            rayDirZ,
+            intersectX,
+            intersectY,
+            intersectZ
+        );
+    }
 
     // Draw the column!
     uint32_t* pDstPixel = Video::gFrameBuffer + (startScreenY * Video::SCREEN_WIDTH) + startScreenX;
@@ -328,45 +400,24 @@ static inline void drawFlatColumn(const FlatFragment flatFrag) noexcept {
             pDstPixel -= Video::SCREEN_WIDTH;
         }
 
-        // For the upcoming pixel, compute the intersection of a ray going from the camera through the near plane (screen) point.
-        // Find out where this ray will hit the plane that we are drawing. This gives us a world XY coordinate which allows us
-        // to decide which pixel to use. World XY also allows us to find distance from the viewer, for shading...
+        // Compute the ray/plane intersection for the upcoming pixel to get its texture coordinate
         {
-            // Compute the near plane height value for this column pixel.
-            // Note: take the center position of the pixel to improve accuracy, hence + 0.5 here:
+            // Note: take the vertical center position of the pixel to improve accuracy, hence + 0.5 here!
             const float nearPlaneZ = nearPlaneTz + nearPlaneZStep * ((float) curDstY + 0.5f);
-
-            // The non constant portion of ray direction
             const float rayDirZ = nearPlaneZ - viewZ;
 
-            // Calculate first: AXd + BYd + CZd
-            // I.E - The dot product of the plane normal (0, 0, 1) or (0, 0, -1) with the ray direction:
-            float divisor;
-            
-            if constexpr (MODE == DrawFlatMode::FLOOR) {
-                divisor = rayDirZ;
-            } else {
-                divisor = -rayDirZ;
-            }
-
-            // Calculate: AX0 + BY0 + CZ0 + D
-            // I.E - The dot product of the ray origin with the plane normal (0, 0, 1) or (0, 0, -1) plus
-            // the distance of the plane from the origin along it's normal:
-            float dividend;
-            
-            if constexpr (MODE == DrawFlatMode::FLOOR) {
-                dividend = viewZ - flatPlaneZ;
-            } else {
-                dividend = -viewZ + flatPlaneZ;
-            }
-
-            // Compute the ray intersection time: -(AX0 + BY0 + CZ0 + D) / (AXd + BYd + CZd)
-            const float intersectT = -dividend / divisor;
-
-            // Using the intersect time, compute the world intersect point
-            intersectX = viewX + rayDirX * intersectT;
-            intersectY = viewY + rayDirY * intersectT;
-            intersectZ = viewZ + rayDirZ * intersectT;
+            doRayFlatPlaneIntersection<MODE>(
+                flatPlaneZ,
+                viewX,
+                viewY,
+                viewZ,
+                rayDirX,
+                rayDirY,
+                rayDirZ,
+                intersectX,
+                intersectY,
+                intersectZ
+            );
         }
     }
 }

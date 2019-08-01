@@ -321,9 +321,9 @@ void drawPlayerView() noexcept {
     drawAllLineSegs();              // Draw all everything Z Sorted
     #endif
     
-    drawAllWallFragments();
     drawAllFloorFragments();
     drawAllCeilingFragments();
+    drawAllWallFragments();
     drawAllVisPlanes();
     drawAllMapObjectSprites();
     drawWeapons();                  // Draw the weapons on top of the screen
