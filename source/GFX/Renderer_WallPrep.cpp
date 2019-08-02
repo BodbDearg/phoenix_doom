@@ -338,6 +338,9 @@ static void populateSegVertexAttribs(const seg_t& seg, DrawSeg& drawSeg) noexcep
     drawSeg.p2WorldY = FMath::doomFixed16ToFloat<float>(seg.v2.y);
 }
 
+//----------------------------------------------------------------------------------------------------------------------
+// Transforms the XY coordinates for the seg into view space
+//----------------------------------------------------------------------------------------------------------------------
 static void transformSegXYToViewSpace(const seg_t& inSeg, DrawSeg& outSeg) noexcept {
     // First convert from fixed point to floats
     outSeg.p1x = FMath::doomFixed16ToFloat<float>(inSeg.v1.x);
@@ -370,15 +373,18 @@ static void transformSegXYToViewSpace(const seg_t& inSeg, DrawSeg& outSeg) noexc
 }
 
 static bool isScreenSpaceSegBackFacing(const DrawSeg& seg) noexcept {
+    // Front facing segs are always left to right when drawn, so if it's opposite way then it's a back facing seg!
     return (seg.p1x >= seg.p2x);
 }
 
+//----------------------------------------------------------------------------------------------------------------------
+// Transforms the XY and W coordinates for the seg into clip space
+//----------------------------------------------------------------------------------------------------------------------
 static void transformSegXYWToClipSpace(DrawSeg& seg) noexcept {
     // Notes:
     //  (1) We treat 'y' as if it were 'z' for the purposes of these calculations, since the
     //      projection matrix has 'z' as the depth value and not y (Doom coord sys). 
     //  (2) We assume that the seg always starts off with an implicit 'w' value of '1'.
-    //
     const float y1Orig = seg.p1y;
     const float y2Orig = seg.p2y;
 
@@ -574,6 +580,10 @@ static bool clipSegAgainstRightPlane(DrawSeg& seg) noexcept {
     return true;
 }
 
+//----------------------------------------------------------------------------------------------------------------------
+// Add the clip space Z (height) values to the seg.
+// We add these lazily after other clipping operations have succeeded.
+//----------------------------------------------------------------------------------------------------------------------
 static void addClipSpaceZValuesForSeg(DrawSeg& drawSeg, const seg_t& seg) noexcept {
     const float viewZ = gViewZ;
     const float frontFloorZ = FMath::doomFixed16ToFloat<float>(seg.frontsector->floorheight);
@@ -601,6 +611,10 @@ static void addClipSpaceZValuesForSeg(DrawSeg& drawSeg, const seg_t& seg) noexce
     }
 }
 
+//----------------------------------------------------------------------------------------------------------------------
+// Do the perspective division for the seg.
+// This transforms the seg coordinates into normalized device coords.
+//----------------------------------------------------------------------------------------------------------------------
 static void doPerspectiveDivisionForSeg(DrawSeg& seg) noexcept {
     // Compute the inverse of w for p1 and p2
     const float w1Inv = 1.0f / seg.p1w;
@@ -626,6 +640,9 @@ static void doPerspectiveDivisionForSeg(DrawSeg& seg) noexcept {
     seg.p2bz_back *= w2Inv;
 }
 
+//----------------------------------------------------------------------------------------------------------------------
+// Transform the seg xz coordinates from normalized device coords into screen pixel coords.
+//----------------------------------------------------------------------------------------------------------------------
 static void transformSegXZToScreenSpace(DrawSeg& seg) noexcept {
     // Note: have to subtract a bit here because at 100% of the range we don't want to be >= screen width or height!
     const float screenW = (float) gScreenWidth - 0.5f;

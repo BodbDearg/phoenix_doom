@@ -205,6 +205,38 @@ namespace Renderer {
     };
 
     //------------------------------------------------------------------------------------------------------------------
+    // Contains details on a sprite that is queued to be drawn
+    //------------------------------------------------------------------------------------------------------------------
+    struct DrawSprite {
+        float               depth;              // Depth value for the sprite
+        float               lx;                 // Left and right screen X values
+        float               rx;
+        float               ty;                 // Top and bottom screen Y values
+        float               by;
+        float               lightMul;           // Light multiplier
+        bool                bFlip;              // Flip horizontally?
+        bool                bTransparent;       // Used for the spectre demon
+        uint16_t            texW;               // Width and height of sprite texture
+        uint16_t            texH;
+        uint16_t            _unused;
+        const uint16_t*     pPixels;            // Pixels for the sprite (in column major format)
+    };
+
+    //------------------------------------------------------------------------------------------------------------------
+    // Contains a fragment of a sprite to be drawn
+    //------------------------------------------------------------------------------------------------------------------
+    struct SpriteFragment {
+        uint16_t            x;                      // Screen x and y
+        uint16_t            y;
+        uint16_t            height;                 // Screen texcoord
+        uint16_t            texcoordX : 15;         // Which column to use from the sprite
+        uint16_t            transparent : 1;        // If '1' then draw the sprite transparent (used for spectres)
+        float               lightMul;               // Light multiplier
+        float               texcoordYStep;          // Stepping to use for the 'Y' texture coordinate
+        const ImageData*    pImageData;             // The image data for the sprite
+    };
+
+    //------------------------------------------------------------------------------------------------------------------
     // Data structure that for every column on the screen describes all of the occluding columns.
     // Used for sprite rendering.
     //------------------------------------------------------------------------------------------------------------------
@@ -317,55 +349,57 @@ namespace Renderer {
     //==================================================================================================================
     // Globals shared throughout the renderer - defined in Renderer.cpp
     //==================================================================================================================
-    extern viswall_t                    gVisWalls[MAXWALLCMDS];             // Visible wall array
-    extern viswall_t*                   gpEndVisWall;                       // End of the used viswalls range (also tells number of viswalls)
-    extern visplane_t                   gVisPlanes[MAXVISPLANES];           // Visible floor array
-    extern visplane_t*                  gpEndVisPlane;                      // End of the used visplanes range (also tells number of visplanes)
-    extern vissprite_t                  gVisSprites[MAXVISSPRITES];         // Visible sprite array
-    extern vissprite_t*                 gpEndVisSprite;                     // End of the used vissprites range (also tells the number of sprites)
-    extern uint8_t                      gOpenings[MAXOPENINGS];
-    extern uint8_t*                     gpEndOpening;
-    extern std::vector<DrawSeg>         gDrawSegs;
-    extern Fixed                        gViewXFrac;                         // Camera x,y,z
-    extern Fixed                        gViewYFrac;
-    extern Fixed                        gViewZFrac;
-    extern float                        gViewX;                             // Camera x,y,z
-    extern float                        gViewY;
-    extern float                        gViewZ;
-    extern float                        gViewDirX;                          // View 2D forward/direction vector
-    extern float                        gViewDirY;
-    extern float                        gViewPerpX;                         // View 2D perpendicular/right vector
-    extern float                        gViewPerpY;
-    extern angle_t                      gViewAngleBAM;                      // Camera angle
-    extern float                        gViewAngle;                         // Camera angle
-    extern Fixed                        gViewCosFrac;                       // Camera sine, cosine from angle
-    extern Fixed                        gViewSinFrac;
-    extern float                        gViewCos;                           // Camera sine, cosine from angle
-    extern float                        gViewSin;
-    extern float                        gNearPlaneW;                        // Width and height of the near plane
-    extern float                        gNearPlaneH;
-    extern float                        gNearPlaneHalfW;                    // Half width and height of the near plane
-    extern float                        gNearPlaneHalfH;
-    extern float                        gNearPlaneP1x;                      // Near plane left side x,y
-    extern float                        gNearPlaneP1y;
-    extern float                        gNearPlaneP2x;                      // Near plane right side x,y
-    extern float                        gNearPlaneP2y;
-    extern float                        gNearPlaneTz;                       // Near plane top and bottom z
-    extern float                        gNearPlaneBz;
-    extern float                        gNearPlaneXStepPerViewCol;          // How much to step world x and y for each successive screen column of pixels at the near plane
-    extern float                        gNearPlaneYStepPerViewCol;
-    extern float                        gNearPlaneZStepPerViewColPixel;     // How much to step world z for each successive pixel in a screen column at the near plane
-    extern ProjectionMatrix             gProjMatrix;                        // 3D projection matrix
-    extern uint32_t                     gExtraLight;                        // Bumped light from gun blasts
-    extern angle_t                      gClipAngleBAM;                      // Leftmost clipping angle
-    extern angle_t                      gDoubleClipAngleBAM;                // Doubled leftmost clipping angle
-    extern uint32_t                     gSprOpening[MAXSCREENWIDTH];        // clipped range
-    extern std::vector<SegClip>         gSegClip;                           // Used to clip seg columns (walls + floors) vertically as segs are being submitted. One entry per screen column.
-    extern uint32_t                     gNumFullSegCols;                    // The number of columns that will accept no more seg pixels. Used to stop emitting segs when we have filled the screen.
-    extern std::vector<WallFragment>    gWallFragments;                     // Wall fragments to be drawn
-    extern std::vector<FlatFragment>    gFloorFragments;                    // Floor fragments to be drawn
-    extern std::vector<FlatFragment>    gCeilFragments;                     // Ceiling fragments to be drawn
-    extern std::vector<SkyFragment>     gSkyFragments;                      // Sky fragments to be drawn
+    extern viswall_t                        gVisWalls[MAXWALLCMDS];             // Visible wall array
+    extern viswall_t*                       gpEndVisWall;                       // End of the used viswalls range (also tells number of viswalls)
+    extern visplane_t                       gVisPlanes[MAXVISPLANES];           // Visible floor array
+    extern visplane_t*                      gpEndVisPlane;                      // End of the used visplanes range (also tells number of visplanes)
+    extern vissprite_t                      gVisSprites[MAXVISSPRITES];         // Visible sprite array
+    extern vissprite_t*                     gpEndVisSprite;                     // End of the used vissprites range (also tells the number of sprites)
+    extern uint8_t                          gOpenings[MAXOPENINGS];
+    extern uint8_t*                         gpEndOpening;
+    extern std::vector<DrawSeg>             gDrawSegs;
+    extern Fixed                            gViewXFrac;                         // Camera x,y,z
+    extern Fixed                            gViewYFrac;
+    extern Fixed                            gViewZFrac;
+    extern float                            gViewX;                             // Camera x,y,z
+    extern float                            gViewY;
+    extern float                            gViewZ;
+    extern float                            gViewDirX;                          // View 2D forward/direction vector
+    extern float                            gViewDirY;
+    extern float                            gViewPerpX;                         // View 2D perpendicular/right vector
+    extern float                            gViewPerpY;
+    extern angle_t                          gViewAngleBAM;                      // Camera angle
+    extern float                            gViewAngle;                         // Camera angle
+    extern Fixed                            gViewCosFrac;                       // Camera sine, cosine from angle
+    extern Fixed                            gViewSinFrac;
+    extern float                            gViewCos;                           // Camera sine, cosine from angle
+    extern float                            gViewSin;
+    extern float                            gNearPlaneW;                        // Width and height of the near plane
+    extern float                            gNearPlaneH;
+    extern float                            gNearPlaneHalfW;                    // Half width and height of the near plane
+    extern float                            gNearPlaneHalfH;
+    extern float                            gNearPlaneP1x;                      // Near plane left side x,y
+    extern float                            gNearPlaneP1y;
+    extern float                            gNearPlaneP2x;                      // Near plane right side x,y
+    extern float                            gNearPlaneP2y;
+    extern float                            gNearPlaneTz;                       // Near plane top and bottom z
+    extern float                            gNearPlaneBz;
+    extern float                            gNearPlaneXStepPerViewCol;          // How much to step world x and y for each successive screen column of pixels at the near plane
+    extern float                            gNearPlaneYStepPerViewCol;
+    extern float                            gNearPlaneZStepPerViewColPixel;     // How much to step world z for each successive pixel in a screen column at the near plane
+    extern ProjectionMatrix                 gProjMatrix;                        // 3D projection matrix
+    extern uint32_t                         gExtraLight;                        // Bumped light from gun blasts
+    extern angle_t                          gClipAngleBAM;                      // Leftmost clipping angle
+    extern angle_t                          gDoubleClipAngleBAM;                // Doubled leftmost clipping angle
+    extern uint32_t                         gSprOpening[MAXSCREENWIDTH];        // clipped range
+    extern std::vector<SegClip>             gSegClip;                           // Used to clip seg columns (walls + floors) vertically as segs are being submitted. One entry per screen column.
+    extern uint32_t                         gNumFullSegCols;                    // The number of columns that will accept no more seg pixels. Used to stop emitting segs when we have filled the screen.
+    extern std::vector<WallFragment>        gWallFragments;                     // Wall fragments to be drawn
+    extern std::vector<FlatFragment>        gFloorFragments;                    // Floor fragments to be drawn
+    extern std::vector<FlatFragment>        gCeilFragments;                     // Ceiling fragments to be drawn
+    extern std::vector<SkyFragment>         gSkyFragments;                      // Sky fragments to be drawn
+    extern std::vector<DrawSprite>          gDrawSprites;                       // Sprites to be drawn that will later be turned into fragments (after depth sort)
+    extern std::vector<SpriteFragment>      gSpriteFragments;                   // Sprite fragments to be drawn
 
     //==================================================================================================================
     // Functions
@@ -373,6 +407,7 @@ namespace Renderer {
 
     void doBspTraversal() noexcept;
     void addSegToFrame(const seg_t& seg) noexcept;
+    void addSpriteToFrame(const mobj_t& thing) noexcept;
     void wallPrep(const int32_t leftX, const int32_t rightX, const seg_t& lineSeg, const angle_t lineAngle) noexcept;
     void drawAllLineSegs() noexcept;
     void drawAllWallFragments() noexcept;

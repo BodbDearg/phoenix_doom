@@ -1,3 +1,4 @@
+- Only mark a seg as seen if one column of it draws
 - Screen wipes
 - Finale drawing
 - Cache raw shape/cels that are being drawn

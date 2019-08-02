@@ -35,55 +35,57 @@ BEGIN_NAMESPACE(Renderer)
 //----------------------------------------------------------------------------------------------------------------------
 // Internal renderer cross module globals
 //----------------------------------------------------------------------------------------------------------------------
-viswall_t                   gVisWalls[MAXWALLCMDS];
-viswall_t*                  gpEndVisWall;
-visplane_t                  gVisPlanes[MAXVISPLANES];
-visplane_t*                 gpEndVisPlane;
-vissprite_t                 gVisSprites[MAXVISSPRITES];
-vissprite_t*                gpEndVisSprite;
-uint8_t                     gOpenings[MAXOPENINGS];
-uint8_t*                    gpEndOpening;
-std::vector<DrawSeg>        gDrawSegs;
-Fixed                       gViewXFrac;
-Fixed                       gViewYFrac;
-Fixed                       gViewZFrac;
-float                       gViewX;
-float                       gViewY;
-float                       gViewZ;
-float                       gViewDirX;
-float                       gViewDirY;
-float                       gViewPerpX;
-float                       gViewPerpY;
-angle_t                     gViewAngleBAM;
-float                       gViewAngle;
-Fixed                       gViewCosFrac;
-Fixed                       gViewSinFrac;
-float                       gViewCos;
-float                       gViewSin;
-float                       gNearPlaneW;
-float                       gNearPlaneH;
-float                       gNearPlaneHalfW;
-float                       gNearPlaneHalfH;
-float                       gNearPlaneP1x;
-float                       gNearPlaneP1y;
-float                       gNearPlaneP2x;
-float                       gNearPlaneP2y;
-float                       gNearPlaneTz;
-float                       gNearPlaneBz;
-float                       gNearPlaneXStepPerViewCol;
-float                       gNearPlaneYStepPerViewCol;
-float                       gNearPlaneZStepPerViewColPixel;
-ProjectionMatrix            gProjMatrix;
-uint32_t                    gExtraLight;
-angle_t                     gClipAngleBAM;
-angle_t                     gDoubleClipAngleBAM;
-uint32_t                    gSprOpening[MAXSCREENWIDTH];
-std::vector<SegClip>        gSegClip;
-uint32_t                    gNumFullSegCols;
-std::vector<WallFragment>   gWallFragments;
-std::vector<FlatFragment>   gFloorFragments;
-std::vector<FlatFragment>   gCeilFragments;
-std::vector<SkyFragment>    gSkyFragments;
+viswall_t                       gVisWalls[MAXWALLCMDS];
+viswall_t*                      gpEndVisWall;
+visplane_t                      gVisPlanes[MAXVISPLANES];
+visplane_t*                     gpEndVisPlane;
+vissprite_t                     gVisSprites[MAXVISSPRITES];
+vissprite_t*                    gpEndVisSprite;
+uint8_t                         gOpenings[MAXOPENINGS];
+uint8_t*                        gpEndOpening;
+std::vector<DrawSeg>            gDrawSegs;
+Fixed                           gViewXFrac;
+Fixed                           gViewYFrac;
+Fixed                           gViewZFrac;
+float                           gViewX;
+float                           gViewY;
+float                           gViewZ;
+float                           gViewDirX;
+float                           gViewDirY;
+float                           gViewPerpX;
+float                           gViewPerpY;
+angle_t                         gViewAngleBAM;
+float                           gViewAngle;
+Fixed                           gViewCosFrac;
+Fixed                           gViewSinFrac;
+float                           gViewCos;
+float                           gViewSin;
+float                           gNearPlaneW;
+float                           gNearPlaneH;
+float                           gNearPlaneHalfW;
+float                           gNearPlaneHalfH;
+float                           gNearPlaneP1x;
+float                           gNearPlaneP1y;
+float                           gNearPlaneP2x;
+float                           gNearPlaneP2y;
+float                           gNearPlaneTz;
+float                           gNearPlaneBz;
+float                           gNearPlaneXStepPerViewCol;
+float                           gNearPlaneYStepPerViewCol;
+float                           gNearPlaneZStepPerViewColPixel;
+ProjectionMatrix                gProjMatrix;
+uint32_t                        gExtraLight;
+angle_t                         gClipAngleBAM;
+angle_t                         gDoubleClipAngleBAM;
+uint32_t                        gSprOpening[MAXSCREENWIDTH];
+std::vector<SegClip>            gSegClip;
+uint32_t                        gNumFullSegCols;
+std::vector<WallFragment>       gWallFragments;
+std::vector<FlatFragment>       gFloorFragments;
+std::vector<FlatFragment>       gCeilFragments;
+std::vector<SkyFragment>        gSkyFragments;
+std::vector<DrawSprite>         gDrawSprites;
+std::vector<SpriteFragment>     gSpriteFragments;
 
 //----------------------------------------------------------------------------------------------------------------------
 // Load in the "TextureInfo" array so that the game knows all about the wall and sky textures (Width,Height).
@@ -201,6 +203,8 @@ static void preDrawSetup() noexcept {
     gFloorFragments.clear();
     gCeilFragments.clear();
     gSkyFragments.clear();
+    gDrawSprites.clear();
+    gSpriteFragments.clear();
 
     gpEndVisPlane = gVisPlanes + 1;     // visplanes[0] is left empty
     gpEndVisWall = gVisWalls;           // No walls added yet
@@ -221,6 +225,8 @@ void init() noexcept {
     gFloorFragments.reserve(1024 * 8);
     gCeilFragments.reserve(1024 * 8);
     gSkyFragments.reserve(1024);
+    gDrawSprites.reserve(128);
+    gSpriteFragments.reserve(1024 * 4);
 }
 
 void initMathTables() noexcept {
