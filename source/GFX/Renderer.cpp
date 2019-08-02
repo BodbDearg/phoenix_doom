@@ -352,7 +352,7 @@ float LightParams::getLightMulForDist(const float dist) const noexcept {
 }
 
 LightParams getLightParams(const uint32_t sectorLightLevel) noexcept {
-    const uint32_t lightMax = std::min(sectorLightLevel, C_ARRAY_SIZE(gLightCoefs) - 1);
+    const uint32_t lightMax = std::min(sectorLightLevel, (uint32_t) C_ARRAY_SIZE(gLightCoefs) - 1);
 
     LightParams out;
     out.lightMin = gLightMins[lightMax];
