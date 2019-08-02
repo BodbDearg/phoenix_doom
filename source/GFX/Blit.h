@@ -175,7 +175,9 @@ namespace Blit {
     //------------------------------------------------------------------------------------------------------------------
     template <uint32_t BC_FLAGS>
     inline void blitColumn(
-        const ImageData& srcImg,                            // Input texture and dimensions
+        const uint16_t* const pSrcPixels,                   // Pixel data for source image
+        const uint32_t srcW,                                // Width of source image
+        const uint32_t srcH,                                // Height of source image
         const float srcX,                                   // Where to start blitting from in the input texture: x
         const float srcY,                                   // Where to start blitting from in the input texture: y
         const float srcYSubPixelAdjustment,                 // An adjustment applied to the first stepping of the src Y value - used for sub-pixel stability adjustments to prevent 'shaking' and 'wiggle'
@@ -193,9 +195,9 @@ namespace Blit {
         [[maybe_unused]] const float aMul = 1.0f            // Color multiply value: alpha
     ) noexcept {
         // Basic sanity checks
-        BLIT_ASSERT(srcImg.pPixels);
-        BLIT_ASSERT(srcImg.width > 0);
-        BLIT_ASSERT(srcImg.height > 0);
+        BLIT_ASSERT(pSrcPixels);
+        BLIT_ASSERT(srcW > 0);
+        BLIT_ASSERT(srcH > 0);
         BLIT_ASSERT(rMul >= 0.0f);
         BLIT_ASSERT(gMul >= 0.0f);
         BLIT_ASSERT(bMul >= 0.0f);
@@ -208,11 +210,6 @@ namespace Blit {
                 return;
         }
         
-        // Stuff these into locals to hint to the compiler that they will not change
-        const uint32_t srcW = srcImg.width;
-        const uint32_t srcH = srcImg.height;
-        const uint16_t* const pSrcPixels = (const uint16_t*) srcImg.pPixels;
-
         // Where to start and stop outputing to and the pointer step to make on each output pixel
         BLIT_ASSERT(dstX < dstW);
         BLIT_ASSERT(dstY < dstH);
@@ -362,5 +359,50 @@ namespace Blit {
 
             pDstPixel += dstStep;
         }
+    }
+
+    //------------------------------------------------------------------------------------------------------------------
+    // Convenience overload that takes an image data object.
+    // See the main function for documentation.
+    //------------------------------------------------------------------------------------------------------------------
+    template <uint32_t BC_FLAGS>
+    inline void blitColumn(
+        const ImageData& srcImg,
+        const float srcX,
+        const float srcY,
+        const float srcYSubPixelAdjustment,
+        uint32_t* const pDstPixels,
+        const uint32_t dstW,
+        const uint32_t dstH,
+        const uint32_t dstX,
+        const uint32_t dstY,
+        const uint32_t dstCount,
+        const float srcXStep,
+        const float srcYStep,
+        const float rMul = 1.0f,
+        const float gMul = 1.0f,
+        const float bMul = 1.0f,
+        const float aMul = 1.0f
+    ) noexcept {
+        blitColumn<BC_FLAGS>(
+            srcImg.pPixels,
+            srcImg.width,
+            srcImg.height,
+            srcX,
+            srcY,
+            srcYSubPixelAdjustment,
+            pDstPixels,
+            dstW,
+            dstH,
+            dstX,
+            dstY,
+            dstCount,
+            srcXStep,
+            srcYStep,
+            rMul,
+            gMul,
+            bMul,
+            aMul
+        );
     }
 }

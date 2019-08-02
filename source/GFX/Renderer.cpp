@@ -339,7 +339,7 @@ void drawPlayerView() noexcept {
     drawAllCeilingFragments();
     drawAllWallFragments();
     drawAllVisPlanes();
-    drawAllMapObjectSprites();
+    drawAllSprites();
     drawWeapons();                  // Draw the weapons on top of the screen
     doPostFx();                     // Draw color overlay if needed    
 }

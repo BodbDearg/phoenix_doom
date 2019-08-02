@@ -180,9 +180,11 @@ static void addSectorSpritesToFrame(sector_t& sector) noexcept {
         sector.validcount = gValidCount;        // Mark it           
         mobj_t* pThing = sector.thinglist;      // Init the thing list
 
-        while (pThing) {                        // Traverse the linked list
-            addMapObjToFrame(*pThing);          // Draw the object if ok...
-            pThing = pThing->snext;             // Next?
+        // Traverse the linked list and add each sprite
+        while (pThing) {
+            addMapObjToFrame(*pThing);
+            addSpriteToFrame(*pThing);
+            pThing = pThing->snext;
         }
     }
 }

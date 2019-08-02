@@ -228,12 +228,12 @@ namespace Renderer {
     struct SpriteFragment {
         uint16_t            x;                      // Screen x and y
         uint16_t            y;
-        uint16_t            height;                 // Screen texcoord
-        uint16_t            texcoordX : 15;         // Which column to use from the sprite
+        uint16_t            height;                 // Screen height
+        uint16_t            texH : 15;              // Height of the sprite texture
         uint16_t            transparent : 1;        // If '1' then draw the sprite transparent (used for spectres)
         float               lightMul;               // Light multiplier
         float               texcoordYStep;          // Stepping to use for the 'Y' texture coordinate
-        const ImageData*    pImageData;             // The image data for the sprite
+        const uint16_t*     pSpriteColPixels;       // The image data for the sprite (in column major format)
     };
 
     //------------------------------------------------------------------------------------------------------------------
@@ -415,7 +415,7 @@ namespace Renderer {
     void drawAllCeilingFragments() noexcept;
     void drawAllSkyFragments() noexcept;
     void drawAllVisPlanes() noexcept;
-    void drawAllMapObjectSprites() noexcept;    
+    void drawAllSprites() noexcept;    
     void drawWeapons() noexcept;
     void doPostFx() noexcept;
 

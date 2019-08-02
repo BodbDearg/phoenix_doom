@@ -505,34 +505,6 @@ void drawVisSprite(const vissprite_t& visSprite) noexcept {
 }
 
 //----------------------------------------------------------------------------------------------------------------------
-// Sorts all sprites in the 3d view submitted to the renderer from back to front
-//----------------------------------------------------------------------------------------------------------------------
-static void sortAllMapObjectSprites() noexcept {
-    std::sort(
-        gVisSprites,
-        gpEndVisSprite, 
-        [](const vissprite_t& pSpr1, const vissprite_t& pSpr2) noexcept {
-            return (pSpr1.yscale < pSpr2.yscale);
-        }
-    );
-}
-
-//----------------------------------------------------------------------------------------------------------------------
-// Draw all the sprites in the 3D view from back to front
-//----------------------------------------------------------------------------------------------------------------------
-void drawAllMapObjectSprites() noexcept {
-    sortAllMapObjectSprites();
-
-    const vissprite_t* pCurSprite = gVisSprites;
-    const vissprite_t* const pEndSprite = gpEndVisSprite;
-
-    while (pCurSprite < pEndSprite) {
-        drawVisSprite(*pCurSprite);
-        ++pCurSprite;
-    }
-}
-
-//----------------------------------------------------------------------------------------------------------------------
 // Transforms a sprite world position into viewspace and tells if it should be culled due to being behind the camera
 //----------------------------------------------------------------------------------------------------------------------
 static inline void transformWorldCoordsToViewSpace(
@@ -557,7 +529,7 @@ static inline void transformWorldCoordsToViewSpace(
     viewYOut = viewSin * translatedX + viewCos * translatedY;
 
     // Cull if behind the near plane!
-    shouldCullSprite = (viewYOut >= Z_NEAR);
+    shouldCullSprite = (viewYOut <= Z_NEAR);
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -578,7 +550,7 @@ static void transformSpriteXBoundsAndWToClipSpace(
     //      projection matrix has 'z' as the depth value and not y (Doom coord sys). 
     //  (2) We assume that the sprite always starts off with an implicit 'w' value of '1'.
     clipLxOut = viewLx * gProjMatrix.r0c0;
-    clipLxOut = viewRx * gProjMatrix.r0c0;
+    clipRxOut = viewRx * gProjMatrix.r0c0;
     clipWOut = viewY;   // Note: r3c2 is an implicit 1.0 - hence we just do this!
 
     // A screen coordinate will be onscreen if the coord is >= -w and <= w
@@ -702,6 +674,10 @@ float determineLightMultiplierForThing(const mobj_t& thing, const bool bIsFullBr
 // Does basic culling as well also.
 //----------------------------------------------------------------------------------------------------------------------
 void addSpriteToFrame(const mobj_t& thing) noexcept {
+    // The player never gets added for obvious reasons
+    if (thing.player)
+        return;
+    
     // Get the world position of the thing firstly
     const float worldX = FMath::doomFixed16ToFloat<float>(thing.x);
     const float worldY = FMath::doomFixed16ToFloat<float>(thing.y);
@@ -770,10 +746,171 @@ void addSpriteToFrame(const mobj_t& thing) noexcept {
     drawSprite.bFlip = spriteFrameAngle->flipped;
     drawSprite.bTransparent = bIsSpriteTransparent;
     drawSprite.texW = spriteFrameAngle->width;
-    drawSprite.texW = spriteFrameAngle->height;
+    drawSprite.texH = spriteFrameAngle->height;
     drawSprite.pPixels = spriteFrameAngle->pTexture;
 
     gDrawSprites.push_back(drawSprite);
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+// Sorts all sprites in the 3d view submitted to the renderer from back to front
+//----------------------------------------------------------------------------------------------------------------------
+static void sortAllSprites() noexcept {
+    std::sort(
+        gDrawSprites.begin(),
+        gDrawSprites.end(),
+        [](const DrawSprite& s1, const DrawSprite& s2) noexcept {
+            return (s1.depth < s2.depth);
+        }
+    );
+
+    /* TODO: REMOVE
+    std::sort(
+        gVisSprites,
+        gpEndVisSprite, 
+        [](const vissprite_t& pSpr1, const vissprite_t& pSpr2) noexcept {
+            return (pSpr1.yscale < pSpr2.yscale);
+        }
+    );
+    */
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+// Flip mode for a sprite
+//----------------------------------------------------------------------------------------------------------------------
+enum class SpriteFlipMode {
+    NOT_FLIPPED,
+    FLIPPED
+};
+
+//----------------------------------------------------------------------------------------------------------------------
+// Emit the sprite fragments for one draw sprite
+//----------------------------------------------------------------------------------------------------------------------
+template <SpriteFlipMode FLIP_MODE>
+static void emitFragmentsForSprite(const DrawSprite& sprite) noexcept {
+    // Figure out the size of the sprite on the screen
+    const float spriteW = sprite.rx - sprite.lx + 1.0f;
+    const float spriteH = sprite.ty - sprite.by + 1.0f;
+
+    int32_t spriteLxInt = (int32_t) sprite.lx;
+    int32_t spriteRxInt = (int32_t) sprite.rx;
+    int32_t spriteTyInt = (int32_t) sprite.ty;
+    int32_t spriteByInt = (int32_t) sprite.by;
+
+    int32_t spriteWInt = spriteRxInt - spriteLxInt + 1;
+    int32_t spriteHInt = spriteTyInt - spriteByInt + 1;
+
+    // Figure out x and y texcoord stepping
+    const float texW = (float) sprite.texW;
+    const float texH = (float) sprite.texH;
+    const float texXStep = ((float) texW - 0.001f) / spriteW;   // Note: small subtractions here since we don't want to go past the last pixel!
+    const float texYStep = ((float) texH - 0.001f) / spriteH;
+
+    // If we fall short of displaying the last row or column in a sprite then extend it by 1 row or column.
+    // This stops the last bit of a sprite from being cut off, which can be noticeable on some sprites like barrels etc.
+    // Only do this however if we will not go PAST the dimensions of the sprite!
+    {
+        const float origEndTexX = (float) spriteWInt * texXStep;
+        const float origEndTexY = (float) spriteHInt * texYStep;
+
+        if (origEndTexX < texW - 1.0f) {
+            if (((float) spriteWInt + 1) * texXStep < texW) {
+                ++spriteRxInt;
+                ++spriteWInt;
+            }
+        }
+
+        if (origEndTexY < texH - 1.0f) {
+            if (((float) spriteHInt + 1) * texYStep < texH) {
+                ++spriteByInt;
+                ++spriteHInt;
+            }
+        }
+    }
+
+    // Skip past columns that are on the left side of the screen
+    int32_t curScreenX = spriteLxInt;
+    uint32_t curColNum = 0;
+
+    if (curScreenX < 0) {
+        curColNum = -curScreenX;
+        curScreenX = 0;
+    }
+
+    // Safety, this shouldn't be required but just in case if we are TOO MUCH off screen
+    if ((int32_t) curColNum >= spriteWInt)
+        return;
+    
+    // Ensure we don't go past the right side of the screen
+    const int32_t endScreenX = std::min(spriteRxInt + 1, (int32_t) gScreenWidth);
+
+    // Emit the columns
+    while (curScreenX < endScreenX) {
+        uint16_t texX;
+        
+        if constexpr (FLIP_MODE == SpriteFlipMode::FLIPPED) {
+            const float texXf = texW - std::max(texXStep * (float) curColNum, 0.5f);
+            texX = (uint16_t) texXf;
+        } else {
+            const float texXf = texXStep * (float) curColNum;
+            texX = (uint16_t) texXf;
+        }
+
+        // TODO: CLIPPING
+        // TODO: TRANSPARENT SPRITES
+        // TODO: MAKE FRAGMENTS
+        Blit::blitColumn<
+            Blit::BCF_STEP_Y |
+            Blit::BCF_ALPHA_TEST |
+            Blit::BCF_COLOR_MULT_RGB
+        >(
+            sprite.pPixels,
+            sprite.texW,
+            sprite.texH,
+            (float) texX,
+            0.0f,
+            0.0f,
+            Video::gFrameBuffer,
+            Video::SCREEN_WIDTH,
+            Video::SCREEN_HEIGHT,
+            curScreenX + gScreenXOffset,
+            spriteTyInt + gScreenYOffset,
+            spriteHInt,
+            0.0f,
+            texYStep,
+            sprite.lightMul,
+            sprite.lightMul,
+            sprite.lightMul
+        );
+
+        ++curScreenX;
+        ++curColNum;
+    }
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+// Draw all the sprites in the 3D view from back to front
+//----------------------------------------------------------------------------------------------------------------------
+void drawAllSprites() noexcept {    
+    sortAllSprites();
+
+    for (const DrawSprite& sprite : gDrawSprites) {
+        if (sprite.bFlip) {
+            emitFragmentsForSprite<SpriteFlipMode::FLIPPED>(sprite);
+        } else {
+            emitFragmentsForSprite<SpriteFlipMode::NOT_FLIPPED>(sprite);
+        }
+    }
+
+    /* TODO: REMOVE
+    const vissprite_t* pCurSprite = gVisSprites;
+    const vissprite_t* const pEndSprite = gpEndVisSprite;
+
+    while (pCurSprite < pEndSprite) {
+        drawVisSprite(*pCurSprite);
+        ++pCurSprite;
+    }
+    */
 }
 
 END_NAMESPACE(Renderer)
