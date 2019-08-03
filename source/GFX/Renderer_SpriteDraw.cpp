@@ -806,28 +806,32 @@ static void emitFragmentsForSprite(const DrawSprite& sprite) noexcept {
     // Figure out x and y texcoord stepping
     const float texW = (float) sprite.texW;
     const float texH = (float) sprite.texH;
-    const float texXStep = ((float) texW - 0.001f) / spriteW;   // Note: small subtractions here since we don't want to go past the last pixel!
-    const float texYStep = ((float) texH - 0.001f) / spriteH;
+    const float texXStep = (spriteW > 1) ? (texW / (spriteW - 1.0f)) : 0.0f;
+    const float texYStep = (spriteH > 1) ? (texH / (spriteH - 1.0f)) : 0.0f;
 
+    // Computing a sub pixel x and y adjustment for stability. This is similar to the adjustment we do for walls.
+    // We take into account the fractional part of the first pixel when computing the distance to travel to the 2nd pixel.
+    const float subpixelXAdjust = -(sprite.lx - std::trunc(sprite.lx)) * texXStep;
+    const float subpixelYAdjust = -(sprite.ty - std::trunc(sprite.ty)) * texYStep;
+    
     // If we fall short of displaying the last row or column in a sprite then extend it by 1 row or column.
-    // This stops the last bit of a sprite from being cut off, which can be noticeable on some sprites like barrels etc.
-    // Only do this however if we will not go PAST the dimensions of the sprite!
+    // Likewise if we are double rendering the last row or column then tweak the size also.
     {
-        const float origEndTexX = (float) spriteWInt * texXStep;
-        const float origEndTexY = (float) spriteHInt * texYStep;
+        const int32_t origEndTexX = (int32_t)((float)(spriteWInt - 1) * texXStep + subpixelXAdjust);
+        const int32_t origEndTexY = (int32_t)((float)(spriteHInt - 1) * texYStep + subpixelYAdjust);
+        const float texXShortfall = texW - 1.0f - origEndTexX;
+        const float texYShortfall = texH - 1.0f - origEndTexY;
 
-        if (origEndTexX < texW - 1.0f) {
-            if (((float) spriteWInt + 1) * texXStep < texW) {
-                ++spriteRxInt;
-                ++spriteWInt;
-            }
+        if (texXShortfall > 0.0f) {
+            const int32_t extraSteps = (int32_t) std::ceil(texXShortfall / texXStep);
+            spriteRxInt += extraSteps;
+            spriteWInt += extraSteps;
         }
-
-        if (origEndTexY < texH - 1.0f) {
-            if (((float) spriteHInt + 1) * texYStep < texH) {
-                ++spriteByInt;
-                ++spriteHInt;
-            }
+        
+        if (texYShortfall > 0.0f) {
+            const int32_t extraSteps = (int32_t) std::ceil(texYShortfall / texYStep);
+            spriteByInt += extraSteps;
+            spriteHInt += extraSteps;
         }
     }
 
@@ -865,14 +869,17 @@ static void emitFragmentsForSprite(const DrawSprite& sprite) noexcept {
         Blit::blitColumn<
             Blit::BCF_STEP_Y |
             Blit::BCF_ALPHA_TEST |
-            Blit::BCF_COLOR_MULT_RGB
+            Blit::BCF_COLOR_MULT_RGB |
+            Blit::BCF_H_WRAP_CLAMP |
+            Blit::BCF_V_WRAP_CLAMP
         >(
             sprite.pPixels,
             sprite.texW,
             sprite.texH,
             (float) texX,
             0.0f,
-            0.0f,
+            subpixelXAdjust,
+            subpixelYAdjust,
             Video::gFrameBuffer,
             Video::SCREEN_WIDTH,
             Video::SCREEN_HEIGHT,

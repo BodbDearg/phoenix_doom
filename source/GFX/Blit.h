@@ -99,7 +99,7 @@ namespace Blit {
             }
 
             if constexpr ((BC_FLAGS & BCF_H_WRAP_CLAMP) != 0) {
-                x = (x >= 0) ? ((x < width) ? x : width - 1) : 0;
+                x = (x >= 0) ? ((x < (int32_t) width) ? x : (int32_t) width - 1) : 0;
             }
 
             if constexpr ((BC_FLAGS & BCF_H_WRAP_64) != 0) {
@@ -138,7 +138,7 @@ namespace Blit {
             }
 
             if constexpr ((BC_FLAGS & BCF_V_WRAP_CLAMP) != 0) {
-                y = (y >= 0) ? ((y < height) ? y : height - 1) : 0;
+                y = (y >= 0) ? ((y < (int32_t) height) ? y : (int32_t) height - 1) : 0;
             }
 
             if constexpr ((BC_FLAGS & BCF_V_WRAP_64) != 0) {
@@ -180,6 +180,7 @@ namespace Blit {
         const uint32_t srcH,                                // Height of source image
         const float srcX,                                   // Where to start blitting from in the input texture: x
         const float srcY,                                   // Where to start blitting from in the input texture: y
+        const float srcXSubPixelAdjustment,                 // An adjustment applied to the first stepping of the src X value - used for sub-pixel stability adjustments to prevent 'shaking' and 'wiggle'
         const float srcYSubPixelAdjustment,                 // An adjustment applied to the first stepping of the src Y value - used for sub-pixel stability adjustments to prevent 'shaking' and 'wiggle'
         uint32_t* const pDstPixels,                         // Output image pixels
         const uint32_t dstW,                                // Output image width
@@ -264,6 +265,7 @@ namespace Blit {
         // Main pixel blitting loop
         [[maybe_unused]] float curSrcX = srcX;
         [[maybe_unused]] float curSrcY = srcY;
+        [[maybe_unused]] float nextSrcX = srcX + srcXSubPixelAdjustment;    // Note: the adjusment is applied AFTER the first pixel
         [[maybe_unused]] float nextSrcY = srcY + srcYSubPixelAdjustment;    // Note: the adjusment is applied AFTER the first pixel
 
         while (pDstPixel < pEndDstPixel) {
@@ -360,7 +362,8 @@ namespace Blit {
 
             // Stepping in the source and destination
             if constexpr ((BC_FLAGS & BCF_STEP_X) != 0) {
-                curSrcX += srcXStep;
+                nextSrcX += srcXStep;
+                curSrcX = nextSrcX;
             }
 
             if constexpr ((BC_FLAGS & BCF_STEP_Y) != 0) {
@@ -381,6 +384,7 @@ namespace Blit {
         const ImageData& srcImg,
         const float srcX,
         const float srcY,
+        const float srcXSubPixelAdjustment,
         const float srcYSubPixelAdjustment,
         uint32_t* const pDstPixels,
         const uint32_t dstW,
@@ -401,6 +405,7 @@ namespace Blit {
             srcImg.height,
             srcX,
             srcY,
+            srcXSubPixelAdjustment,
             srcYSubPixelAdjustment,
             pDstPixels,
             dstW,

@@ -96,6 +96,7 @@ static void drawClippedWallColumn(
         (float) texX,
         texYClipped,
         0.0f,
+        0.0f,
         Video::gFrameBuffer,
         Video::SCREEN_WIDTH,
         Video::SCREEN_HEIGHT,
@@ -135,6 +136,7 @@ static void drawSkyColumn(const uint32_t viewX, const uint32_t maxColHeight) noe
     >(
         pTexture->data,
         (float) texX,
+        0.0f,
         0.0f,
         0.0f,
         Video::gFrameBuffer,
@@ -564,6 +566,7 @@ void drawAllWallFragments() noexcept {
             *wallFrag.pImageData,
             (float) wallFrag.texcoordX,
             wallFrag.texcoordY,
+            0.0f,
             wallFrag.texcoordYSubPixelAdjust,
             Video::gFrameBuffer,
             Video::SCREEN_WIDTH,
