@@ -158,13 +158,13 @@ namespace Blit {
     }
 
     //------------------------------------------------------------------------------------------------------------------
-    // Blits a column of pixels from the given source image in RGBA5551 format to the destination in RGBA8888 format.
+    // Blits a column of pixels from the given source image in ARGB1555 format to the destination in RGBA8888 format.
     // Optionally, alpha testing and blending can be applied.
     //
     // Notes:
     //  (1) Destination pixels are written with alpha 0.
     //      We do not care about alpha in the destination.
-    //  (2) Negative RGBA multipliers are *NOT* supported (considered undefined behavior).
+    //  (2) Negative ARGB multipliers are *NOT* supported (considered undefined behavior).
     //  (3) If no wrap mode is specified then the blit *MUST* be in bounds for the source image for all pixels blitted.
     //      It is assumed that the callee has ensured this is the case.
     //  (4) Depending on flags, some input variables may be unused.
@@ -267,35 +267,41 @@ namespace Blit {
         [[maybe_unused]] float nextSrcY = srcY + srcYSubPixelAdjustment;    // Note: the adjusment is applied AFTER the first pixel
 
         while (pDstPixel < pEndDstPixel) {
-            // Get the source pixel (RGBA5551 format)
-            uint16_t srcPixelRGBA5551;
+            // Get the source pixel (ARGB1555 format)
+            uint16_t srcPixelARGB1555;
 
             if constexpr (USE_SRC_ROW_INDEXING) {
                 const uint32_t curSrcXInt = wrapXCoord<BC_FLAGS>((int32_t) curSrcX, srcW);
-                srcPixelRGBA5551 = pSrcRowOrCol[curSrcXInt];
+                srcPixelARGB1555 = pSrcRowOrCol[curSrcXInt];
             }
             else if constexpr (USE_SRC_COL_INDEXING) {
                 const uint32_t curSrcYInt = wrapYCoord<BC_FLAGS>((int32_t) curSrcY, srcH);
-                srcPixelRGBA5551 = pSrcRowOrCol[curSrcYInt];
+                srcPixelARGB1555 = pSrcRowOrCol[curSrcYInt];
             }
             else {
                 const uint32_t curSrcXInt = wrapXCoord<BC_FLAGS>((int32_t) curSrcX, srcW);
                 const uint32_t curSrcYInt = wrapYCoord<BC_FLAGS>((int32_t) curSrcY, srcH);
 
                 if constexpr (IS_SRC_COL_MAJOR) {
-                    srcPixelRGBA5551 = pSrcPixels[curSrcXInt * srcH + curSrcYInt];
+                    srcPixelARGB1555 = pSrcPixels[curSrcXInt * srcH + curSrcYInt];
                 } else {
-                    srcPixelRGBA5551 = pSrcPixels[curSrcYInt * srcW + curSrcXInt];
+                    srcPixelARGB1555 = pSrcPixels[curSrcYInt * srcW + curSrcXInt];
                 }
             }
             
             // Extract RGBA components.
             // In the case of RGB, shift such that the maximum value is 255 instead of 31.
-            const uint16_t texR = (srcPixelRGBA5551 & uint16_t(0b1111100000000000)) >> 8;
-            const uint16_t texG = (srcPixelRGBA5551 & uint16_t(0b0000011111000000)) >> 3;
-            const uint16_t texB = (srcPixelRGBA5551 & uint16_t(0b0000000000111110)) << 2;
-            [[maybe_unused]] const uint16_t texA = srcPixelRGBA5551 & 0x01;
+            constexpr bool REQUIRE_ALPHA = ((BC_FLAGS & (BCF_ALPHA_TEST|BCF_COLOR_MULT_A|BCF_ALPHA_BLEND)) != 0);
+            [[maybe_unused]] uint16_t texA;
+            
+            if constexpr (REQUIRE_ALPHA) {
+                texA = (srcPixelARGB1555 & uint16_t(0b1000000000000000)) >> 15;
+            }
 
+            const uint16_t texR = (srcPixelARGB1555 & uint16_t(0b0111110000000000)) >> 7;
+            const uint16_t texG = (srcPixelARGB1555 & uint16_t(0b0000001111100000)) >> 2;
+            const uint16_t texB = (srcPixelARGB1555 & uint16_t(0b0000000000011111)) << 3;
+            
             do {
                 // Do the alpha test if enabled
                 if constexpr ((BC_FLAGS & BCF_ALPHA_TEST) != 0) {
@@ -306,10 +312,15 @@ namespace Blit {
                 // Get the texture colors in 0-255 float format.
                 // Note that if we are not doing any color multiply these conversions would be redundant, but I'm guessing
                 // that the compiler would be smart enough to optimize out the useless operations in those cases (hopefully)!
+                [[maybe_unused]] float a;
+
+                if constexpr (REQUIRE_ALPHA) {
+                    a = (float) texA;
+                }
+
                 float r = (float) texR;
                 float g = (float) texG;
                 float b = (float) texB;
-                float a = (float) texA;
 
                 if constexpr ((BC_FLAGS & BCF_COLOR_MULT_RGB) != 0) {
                     r = std::min(r * rMul, 255.0f);

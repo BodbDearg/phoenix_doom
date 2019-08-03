@@ -69,16 +69,12 @@ static void decodeWallTextureImage(Texture& tex, const std::byte* const pBytes) 
             const uint8_t color2Idx = colorIndexes & uint8_t(0x0F);
             ++pCurSrcPixels;
 
-            // Read the ARGBA1555 pixels (note: need to correct endian too)
-            const uint16_t color1ARGBA = byteSwappedU16(pPLUT[color1Idx]);
-            const uint16_t color2ARGBA = byteSwappedU16(pPLUT[color2Idx]);
-            
-            // Save the RGBA pixels
-            const uint16_t color1RGBA = (color1ARGBA << 1) | ((color1ARGBA & 0x8000) ? uint16_t(1) : uint16_t(0));
-            const uint16_t color2RGBA = (color2ARGBA << 1) | ((color2ARGBA & 0x8000) ? uint16_t(1) : uint16_t(0));
+            // Read and save the ARGB1555 pixels (note: need to correct endian too)
+            const uint16_t color1ARGB = byteSwappedU16(pPLUT[color1Idx]);
+            const uint16_t color2ARGB = byteSwappedU16(pPLUT[color2Idx]);
 
-            pCurDstPixels[0] = color1RGBA;
-            pCurDstPixels[1] = color2RGBA;
+            pCurDstPixels[0] = color1ARGB;
+            pCurDstPixels[1] = color2ARGB;
 
             pCurDstPixels += 2;
         }
@@ -120,34 +116,24 @@ static void decodeFlatTextureImage(Texture& tex, const std::byte* const pBytes) 
             const uint8_t color8Idx = pCurSrcPixels[7] & uint8_t(0x1F);
             pCurSrcPixels += 8;
 
-            // Read the ARGBA1555 pixels (note: need to correct endian too)
-            const uint16_t color1ARGBA = byteSwappedU16(pPLUT[color1Idx]);
-            const uint16_t color2ARGBA = byteSwappedU16(pPLUT[color2Idx]);
-            const uint16_t color3ARGBA = byteSwappedU16(pPLUT[color3Idx]);
-            const uint16_t color4ARGBA = byteSwappedU16(pPLUT[color4Idx]);
-            const uint16_t color5ARGBA = byteSwappedU16(pPLUT[color5Idx]);
-            const uint16_t color6ARGBA = byteSwappedU16(pPLUT[color6Idx]);
-            const uint16_t color7ARGBA = byteSwappedU16(pPLUT[color7Idx]);
-            const uint16_t color8ARGBA = byteSwappedU16(pPLUT[color8Idx]);
-            
-            // Save the RGBA pixels
-            const uint16_t color1RGBA = (color1ARGBA << 1) | ((color1ARGBA & 0x8000) ? uint16_t(1) : uint16_t(0));
-            const uint16_t color2RGBA = (color2ARGBA << 1) | ((color2ARGBA & 0x8000) ? uint16_t(1) : uint16_t(0));
-            const uint16_t color3RGBA = (color3ARGBA << 1) | ((color3ARGBA & 0x8000) ? uint16_t(1) : uint16_t(0));
-            const uint16_t color4RGBA = (color4ARGBA << 1) | ((color4ARGBA & 0x8000) ? uint16_t(1) : uint16_t(0));
-            const uint16_t color5RGBA = (color5ARGBA << 1) | ((color5ARGBA & 0x8000) ? uint16_t(1) : uint16_t(0));
-            const uint16_t color6RGBA = (color6ARGBA << 1) | ((color6ARGBA & 0x8000) ? uint16_t(1) : uint16_t(0));
-            const uint16_t color7RGBA = (color7ARGBA << 1) | ((color7ARGBA & 0x8000) ? uint16_t(1) : uint16_t(0));
-            const uint16_t color8RGBA = (color8ARGBA << 1) | ((color8ARGBA & 0x8000) ? uint16_t(1) : uint16_t(0));
+            // Read and save the ARGB1555 pixels (note: need to correct endian too)
+            const uint16_t color1ARGB = byteSwappedU16(pPLUT[color1Idx]);
+            const uint16_t color2ARGB = byteSwappedU16(pPLUT[color2Idx]);
+            const uint16_t color3ARGB = byteSwappedU16(pPLUT[color3Idx]);
+            const uint16_t color4ARGB = byteSwappedU16(pPLUT[color4Idx]);
+            const uint16_t color5ARGB = byteSwappedU16(pPLUT[color5Idx]);
+            const uint16_t color6ARGB = byteSwappedU16(pPLUT[color6Idx]);
+            const uint16_t color7ARGB = byteSwappedU16(pPLUT[color7Idx]);
+            const uint16_t color8ARGB = byteSwappedU16(pPLUT[color8Idx]);
 
-            pCurDstPixels[0] = color1RGBA;
-            pCurDstPixels[1] = color2RGBA;
-            pCurDstPixels[2] = color3RGBA;
-            pCurDstPixels[3] = color4RGBA;
-            pCurDstPixels[4] = color5RGBA;
-            pCurDstPixels[5] = color6RGBA;
-            pCurDstPixels[6] = color7RGBA;
-            pCurDstPixels[7] = color8RGBA;
+            pCurDstPixels[0] = color1ARGB;
+            pCurDstPixels[1] = color2ARGB;
+            pCurDstPixels[2] = color3ARGB;
+            pCurDstPixels[3] = color4ARGB;
+            pCurDstPixels[4] = color5ARGB;
+            pCurDstPixels[5] = color6ARGB;
+            pCurDstPixels[6] = color7ARGB;
+            pCurDstPixels[7] = color8ARGB;
 
             pCurDstPixels += 8;
         }

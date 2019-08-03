@@ -359,16 +359,16 @@ static inline void drawFlatColumn(const FlatFragment flatFrag) noexcept {
                 break;
         }
 
-        // Get the source pixel (RGBA5551 format).
+        // Get the source pixel (ARGB1555 format).
         // Note that the flat texture is always expected to be 64x64, hence we can wraparound with a simple bitwise AND:
         const uint32_t curSrcXInt = (uint32_t) intersectX & 63;
         const uint32_t curSrcYInt = (uint32_t) intersectY & 63;
-        const uint16_t srcPixelRGBA5551 = pSrcPixels[curSrcYInt * 64 + curSrcXInt];
+        const uint16_t srcPixelARGB1555 = pSrcPixels[curSrcYInt * 64 + curSrcXInt];
         
         // Extract RGB components and shift such that the maximum value is 255 instead of 31.
-        const uint16_t texR = (srcPixelRGBA5551 & uint16_t(0b1111100000000000)) >> 8;
-        const uint16_t texG = (srcPixelRGBA5551 & uint16_t(0b0000011111000000)) >> 3;
-        const uint16_t texB = (srcPixelRGBA5551 & uint16_t(0b0000000000111110)) << 2;
+        const uint16_t texR = (srcPixelARGB1555 & uint16_t(0b0111110000000000)) >> 7;
+        const uint16_t texG = (srcPixelARGB1555 & uint16_t(0b0000001111100000)) >> 2;
+        const uint16_t texB = (srcPixelARGB1555 & uint16_t(0b0000000000011111)) << 3;
 
         // Get the distance to the view point and light multiplier for that distance
         const float distToView = FMath::distance3d(intersectX, intersectY, intersectZ, viewX, viewY, viewZ);
