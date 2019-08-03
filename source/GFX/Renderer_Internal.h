@@ -142,7 +142,7 @@ namespace Renderer {
     //      a = w / h
     //
     //      r0c0 = 1 / f
-    //      r1c1 = a / f
+    //      r1c1 = -a / f
     //      r2c2 = -zf / (zn - zf)
     //      r3c2 = -(zn * zf) / (zf - zn)
     //      r2c3 = 1.0

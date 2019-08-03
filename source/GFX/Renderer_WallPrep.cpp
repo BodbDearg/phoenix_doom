@@ -1315,19 +1315,19 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
         [[maybe_unused]] float lowerBz;
 
         if constexpr (EMIT_MID_WALL || EMIT_UPPER_WALL || EMIT_CEILING) {
-            upperTz = viewH - (p1UpperTz + upperTzStep * curXStepCount);
+            upperTz = p1UpperTz + upperTzStep * curXStepCount;
         }
 
         if constexpr (EMIT_UPPER_WALL) {
-            upperBz = viewH - (p1UpperBz + upperBzStep * curXStepCount);
+            upperBz = p1UpperBz + upperBzStep * curXStepCount;
         }
 
         if constexpr (EMIT_LOWER_WALL) {
-            lowerTz = viewH - (p1LowerTz + lowerTzStep * curXStepCount);
+            lowerTz = p1LowerTz + lowerTzStep * curXStepCount;
         }
 
         if constexpr (EMIT_MID_WALL || EMIT_LOWER_WALL || EMIT_FLOOR) {
-            lowerBz = viewH - (p1LowerBz + lowerBzStep * curXStepCount);
+            lowerBz = p1LowerBz + lowerBzStep * curXStepCount;
         }
 
         //--------------------------------------------------------------------------------------------------------------

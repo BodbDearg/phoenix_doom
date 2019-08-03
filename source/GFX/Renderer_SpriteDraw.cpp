@@ -788,9 +788,12 @@ enum class SpriteFlipMode {
 //----------------------------------------------------------------------------------------------------------------------
 template <SpriteFlipMode FLIP_MODE>
 static void emitFragmentsForSprite(const DrawSprite& sprite) noexcept {
+    BLIT_ASSERT(sprite.rx >= sprite.lx);
+    BLIT_ASSERT(sprite.by >= sprite.ty);
+
     // Figure out the size of the sprite on the screen
     const float spriteW = sprite.rx - sprite.lx + 1.0f;
-    const float spriteH = sprite.ty - sprite.by + 1.0f;
+    const float spriteH = sprite.by - sprite.ty + 1.0f;
 
     int32_t spriteLxInt = (int32_t) sprite.lx;
     int32_t spriteRxInt = (int32_t) sprite.rx;
@@ -798,7 +801,7 @@ static void emitFragmentsForSprite(const DrawSprite& sprite) noexcept {
     int32_t spriteByInt = (int32_t) sprite.by;
 
     int32_t spriteWInt = spriteRxInt - spriteLxInt + 1;
-    int32_t spriteHInt = spriteTyInt - spriteByInt + 1;
+    int32_t spriteHInt = spriteByInt - spriteTyInt + 1;
 
     // Figure out x and y texcoord stepping
     const float texW = (float) sprite.texW;
