@@ -60,6 +60,13 @@ namespace Blit {
         BCF_V_WRAP_256
     );
 
+    static constexpr uint32_t BCF_H_CLIP            = 0x00100000;       // If set then clip the column to the given bounds horizontally
+    static constexpr uint32_t BCF_V_CLIP            = 0x00200000;       // If set then clip the column to the given bounds vertically
+    static constexpr uint32_t BCF_CLIP_ANY = (
+        BCF_H_CLIP |
+        BCF_V_CLIP
+    );
+
     //----------------------------------------------------------------------------------------------------------------------
     // Utility that determines how much to step (in texels) per pixel to render the entire of the given
     // texture dimension in the given render area dimension (both in pixels).
@@ -178,16 +185,17 @@ namespace Blit {
         const uint16_t* const pSrcPixels,                   // Pixel data for source image
         const uint32_t srcW,                                // Width of source image
         const uint32_t srcH,                                // Height of source image
-        const float srcX,                                   // Where to start blitting from in the input texture: x
-        const float srcY,                                   // Where to start blitting from in the input texture: y
-        const float srcXSubPixelAdjustment,                 // An adjustment applied to the first stepping of the src X value - used for sub-pixel stability adjustments to prevent 'shaking' and 'wiggle'
-        const float srcYSubPixelAdjustment,                 // An adjustment applied to the first stepping of the src Y value - used for sub-pixel stability adjustments to prevent 'shaking' and 'wiggle'
-        uint32_t* const pDstPixels,                         // Output image pixels
-        const uint32_t dstW,                                // Output image width
+        float srcX,                                         // Where to start blitting from in the input texture: x
+        float srcY,                                         // Where to start blitting from in the input texture: y
+        float srcXSubPixelAdjustment,                       // An adjustment applied to the first stepping of the src X value - used for sub-pixel stability adjustments to prevent 'shaking' and 'wiggle'
+        float srcYSubPixelAdjustment,                       // An adjustment applied to the first stepping of the src Y value - used for sub-pixel stability adjustments to prevent 'shaking' and 'wiggle'
+        uint32_t* const pDstPixels,                         // Output image pixels, this must point to the the TOP LEFT pixel of the output image
+        [[maybe_unused]] const uint32_t dstW,               // Output image width
         [[maybe_unused]] const uint32_t dstH,               // Output image height
-        const uint32_t dstX,                                // Where to start blitting to in output image: x
-        const uint32_t dstY,                                // Where to start blitting to in output image: y
-        const uint32_t dstCount,                            // How many pixels to blit to the output image (in positive x or y direction)
+        [[maybe_unused]] const uint32_t dstPixelPitch,      // The number of pixels that must be skipped to go onto a new row in the output image
+        int32_t dstX,                                       // Where to start blitting to in output image: x
+        int32_t dstY,                                       // Where to start blitting to in output image: y
+        uint32_t dstCount,                                  // How many pixels to blit to the output image (in positive x or y direction)
         [[maybe_unused]] const float srcXStep,              // Texture coordinate x step
         [[maybe_unused]] const float srcYStep,              // Texture coordinate y step
         [[maybe_unused]] const float rMul = 1.0f,           // Color multiply value: red
@@ -210,23 +218,80 @@ namespace Blit {
             if (a < FRACUNIT)
                 return;
         }
+
+        // Clip: reject an entire vertical or horizontal column if out of bounds
+        if constexpr ((BC_FLAGS & BCF_HORZ_COLUMN) == 0 && (BC_FLAGS & BCF_H_CLIP) != 0) {
+            if ((uint32_t) dstX >= dstW)    // Note: cheat and do a < 0 check in one operation by casting to unsigned and checking in this way!
+                return;
+        }
+
+        if constexpr ((BC_FLAGS & BCF_HORZ_COLUMN) != 0 && (BC_FLAGS & BCF_V_CLIP) != 0) {
+            if ((uint32_t) dstY >= dstH)    // Note: cheat and do a < 0 check in one operation by casting to unsigned and checking in this way!
+                return;
+        }
+
+        // Clip: a vertical column against the top of the draw area
+        if constexpr ((BC_FLAGS & BCF_HORZ_COLUMN) == 0 && (BC_FLAGS & BCF_V_CLIP) != 0) {
+            const int32_t numPixelsOutOfBounds = -dstY;
+
+            if (numPixelsOutOfBounds > 0) {
+                if (numPixelsOutOfBounds >= (int32_t) dstCount)     // Completely offscreen?
+                    return;
+                
+                dstY = 0;
+                srcY = srcY + srcYStep * numPixelsOutOfBounds + srcYSubPixelAdjustment;
+                srcYSubPixelAdjustment = 0;
+                dstCount -= numPixelsOutOfBounds;
+            }
+        }
+
+        // Clip: a vertical column against the bottom of the draw area
+        if constexpr ((BC_FLAGS & BCF_HORZ_COLUMN) == 0 && (BC_FLAGS & BCF_V_CLIP) != 0) {
+            const int32_t endY = dstY + dstCount;
+
+            if (endY > (int32_t) dstH) {
+                const int32_t numPixelsOutOfBounds = endY - dstH;
+                dstCount -= numPixelsOutOfBounds;
+            }
+        }
+
+        // Clip: a horizontal column against the left of the draw area
+        if constexpr ((BC_FLAGS & BCF_HORZ_COLUMN) != 0 && (BC_FLAGS & BCF_H_CLIP) != 0) {
+            const int32_t numPixelsOutOfBounds = -dstX;
+
+            if (numPixelsOutOfBounds > 0) {
+                if (numPixelsOutOfBounds >= (int32_t) dstCount)     // Completely offscreen?
+                    return;
+                
+                dstX = 0;
+                srcX = srcX + srcXStep * numPixelsOutOfBounds + srcXSubPixelAdjustment;
+                srcXSubPixelAdjustment = 0;
+                dstCount -= numPixelsOutOfBounds;
+            }
+        }
+
+        // Clip: a horizontal column against the right of the draw area
+        if constexpr ((BC_FLAGS & BCF_HORZ_COLUMN) != 0 && (BC_FLAGS & BCF_H_CLIP) != 0) {
+            const int32_t endX = dstX + dstCount;
+
+            if (endX > (int32_t) dstW) {
+                const int32_t numPixelsOutOfBounds = endX - dstW;
+                dstCount -= numPixelsOutOfBounds;
+            }
+        }
         
         // Where to start and stop outputing to and the pointer step to make on each output pixel
-        BLIT_ASSERT(dstX < dstW);
-        BLIT_ASSERT(dstY < dstH);
-        uint32_t* pDstPixel = pDstPixels + dstY * dstW + dstX;
+        BLIT_ASSERT(dstX >= 0 && dstX < (int32_t) dstW);
+        BLIT_ASSERT(dstY >= 0 && dstY < (int32_t) dstH);
+        uint32_t* pDstPixel = pDstPixels + dstY * dstPixelPitch + dstX;
         uint32_t* pEndDstPixel;
-        uint32_t dstStep;
 
         if constexpr (BC_FLAGS & BCF_HORZ_COLUMN) {
             BLIT_ASSERT(dstX + dstCount <= dstW);
             pEndDstPixel = pDstPixel + dstCount;
-            dstStep = 1;
-        }
-        else {
+        } else {
             BLIT_ASSERT(dstY + dstCount <= dstH);
-            pEndDstPixel = pDstPixel + dstCount * dstW;
-            dstStep = dstW;
+            pEndDstPixel = pDstPixel + dstCount * dstPixelPitch;
         }
 
         // Where to start reading from the in the source image; optimize for certain scenarios based on the input flags...
@@ -371,7 +436,11 @@ namespace Blit {
                 curSrcY = nextSrcY;
             }
 
-            pDstPixel += dstStep;
+            if constexpr ((BC_FLAGS & BCF_HORZ_COLUMN) != 0) {
+                pDstPixel += 1;
+            } else {
+                pDstPixel += dstPixelPitch;
+            }
         }
     }
 
@@ -389,8 +458,9 @@ namespace Blit {
         uint32_t* const pDstPixels,
         const uint32_t dstW,
         const uint32_t dstH,
-        const uint32_t dstX,
-        const uint32_t dstY,
+        const uint32_t dstPixelPitch,
+        const int32_t dstX,
+        const int32_t dstY,
         const uint32_t dstCount,
         const float srcXStep,
         const float srcYStep,
@@ -410,6 +480,7 @@ namespace Blit {
             pDstPixels,
             dstW,
             dstH,
+            dstPixelPitch,
             dstX,
             dstY,
             dstCount,

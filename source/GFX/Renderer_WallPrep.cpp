@@ -738,7 +738,7 @@ static void clipAndEmitWallColumn(
 
     if (zbInt >= clipBounds.bottom) {
         // Offscreen at the bottom - clip:
-        curZb = (float) clipBounds.bottom - FLT_EPSILON;
+        curZb = std::nextafter((float) clipBounds.bottom, -1.0f);
         zbInt = (int32_t) curZb;
         const float pixelsOffscreen = zb - curZb;
         curTexBy -= texYStep * pixelsOffscreen;
@@ -747,6 +747,12 @@ static void clipAndEmitWallColumn(
         if (curZt >= curZb)
             return;
     }
+
+    // Sanity checks
+    BLIT_ASSERT(x <= (int32_t) gScreenWidth);
+    BLIT_ASSERT(ztInt <= zbInt);
+    BLIT_ASSERT(ztInt >= 0 && ztInt < (int32_t) gScreenHeight);
+    BLIT_ASSERT(zbInt >= 0 && zbInt < (int32_t) gScreenHeight);
 
     // Emit the column fragment
     const int32_t columnHeight = zbInt - ztInt + 1;

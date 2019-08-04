@@ -806,33 +806,28 @@ static void emitFragmentsForSprite(const DrawSprite& sprite) noexcept {
     // Figure out x and y texcoord stepping
     const float texW = (float) sprite.texW;
     const float texH = (float) sprite.texH;
-    const float texXStep = (spriteW > 1) ? (texW / (spriteW - 1.0f)) : 0.0f;
-    const float texYStep = (spriteH > 1) ? (texH / (spriteH - 1.0f)) : 0.0f;
-
+    const float texXStep = (spriteW > 1) ? texW / spriteW : 0.0f;
+    const float texYStep = (spriteH > 1) ? texH / spriteH : 0.0f;
+    
     // Computing a sub pixel x and y adjustment for stability. This is similar to the adjustment we do for walls.
     // We take into account the fractional part of the first pixel when computing the distance to travel to the 2nd pixel.
     const float subpixelXAdjust = -(sprite.lx - std::trunc(sprite.lx)) * texXStep;
     const float subpixelYAdjust = -(sprite.ty - std::trunc(sprite.ty)) * texYStep;
     
     // If we fall short of displaying the last row or column in a sprite then extend it by 1 row or column.
-    // Likewise if we are double rendering the last row or column then tweak the size also.
+    // This helps ensure that sprites don't get a row or column of pixels cut off at the end and miss important borders/edges.
+    // Render these as extra rows or columns at the end.
+    bool bDoExtraCol;
+    bool bDoExtraRow;
+
     {
-        const int32_t origEndTexX = (int32_t)((float)(spriteWInt - 1) * texXStep + subpixelXAdjust);
-        const int32_t origEndTexY = (int32_t)((float)(spriteHInt - 1) * texYStep + subpixelYAdjust);
+        const float origEndTexX = (float)(spriteWInt - 1) * texXStep + subpixelXAdjust;
+        const float origEndTexY = (float)(spriteHInt - 1) * texYStep + subpixelYAdjust;
         const float texXShortfall = texW - 1.0f - origEndTexX;
         const float texYShortfall = texH - 1.0f - origEndTexY;
-
-        if (texXShortfall > 0.0f) {
-            const int32_t extraSteps = (int32_t) std::ceil(texXShortfall / texXStep);
-            spriteRxInt += extraSteps;
-            spriteWInt += extraSteps;
-        }
         
-        if (texYShortfall > 0.0f) {
-            const int32_t extraSteps = (int32_t) std::ceil(texYShortfall / texYStep);
-            spriteByInt += extraSteps;
-            spriteHInt += extraSteps;
-        }
+        bDoExtraCol = (texXShortfall > 0);
+        bDoExtraRow = (texYShortfall > 0);
     }
 
     // Skip past columns that are on the left side of the screen
@@ -849,10 +844,17 @@ static void emitFragmentsForSprite(const DrawSprite& sprite) noexcept {
         return;
     
     // Ensure we don't go past the right side of the screen
-    const int32_t endScreenX = std::min(spriteRxInt + 1, (int32_t) gScreenWidth);
+    int32_t endScreenX;
+
+    if (spriteRxInt >= (int32_t) gScreenWidth) {
+        endScreenX = (int32_t) gScreenWidth;
+    } else {
+        endScreenX = spriteRxInt + 1;
+    }
 
     // Emit the columns
     while (curScreenX < endScreenX) {
+        BLIT_ASSERT(curScreenX >= 0 && curScreenX < (int32_t) gScreenWidth);
         uint16_t texX;
         
         if constexpr (FLIP_MODE == SpriteFlipMode::FLIPPED) {
@@ -863,15 +865,13 @@ static void emitFragmentsForSprite(const DrawSprite& sprite) noexcept {
             texX = (uint16_t) texXf;
         }
 
-        // TODO: CLIPPING
-        // TODO: TRANSPARENT SPRITES
-        // TODO: MAKE FRAGMENTS
         Blit::blitColumn<
             Blit::BCF_STEP_Y |
             Blit::BCF_ALPHA_TEST |
             Blit::BCF_COLOR_MULT_RGB |
             Blit::BCF_H_WRAP_CLAMP |
-            Blit::BCF_V_WRAP_CLAMP
+            Blit::BCF_V_WRAP_CLAMP |
+            Blit::BCF_V_CLIP
         >(
             sprite.pPixels,
             sprite.texW,
@@ -880,11 +880,12 @@ static void emitFragmentsForSprite(const DrawSprite& sprite) noexcept {
             0.0f,
             subpixelXAdjust,
             subpixelYAdjust,
-            Video::gFrameBuffer,
+            Video::gFrameBuffer + gScreenYOffset * Video::SCREEN_WIDTH + gScreenXOffset,
+            gScreenWidth,
+            gScreenHeight,
             Video::SCREEN_WIDTH,
-            Video::SCREEN_HEIGHT,
-            curScreenX + gScreenXOffset,
-            spriteTyInt + gScreenYOffset,
+            curScreenX,
+            spriteTyInt,
             spriteHInt,
             0.0f,
             texYStep,
@@ -895,6 +896,70 @@ static void emitFragmentsForSprite(const DrawSprite& sprite) noexcept {
 
         ++curScreenX;
         ++curColNum;
+    }
+
+    // Do extra rows and columns if required
+    if (bDoExtraCol) {
+        Blit::blitColumn<
+            Blit::BCF_STEP_Y |
+            Blit::BCF_ALPHA_TEST |
+            Blit::BCF_COLOR_MULT_RGB |
+            Blit::BCF_V_WRAP_CLAMP |
+            Blit::BCF_H_CLIP |
+            Blit::BCF_V_CLIP
+        >(
+            sprite.pPixels,
+            sprite.texW,
+            sprite.texH,
+            (FLIP_MODE == SpriteFlipMode::FLIPPED) ? 0.0f : texW - 0.5f,
+            0.0f,
+            0.0f,
+            subpixelYAdjust,
+            Video::gFrameBuffer + gScreenYOffset * Video::SCREEN_WIDTH + gScreenXOffset,
+            gScreenWidth,
+            gScreenHeight,
+            Video::SCREEN_WIDTH,
+            spriteRxInt + 1,
+            spriteTyInt,
+            (bDoExtraRow) ? spriteHInt : spriteHInt + 1,
+            0.0f,
+            texYStep,
+            sprite.lightMul,
+            sprite.lightMul,
+            sprite.lightMul
+        );   
+    }
+
+    if (bDoExtraRow) {
+        Blit::blitColumn<
+            Blit::BCF_HORZ_COLUMN |
+            Blit::BCF_STEP_X |
+            Blit::BCF_ALPHA_TEST |
+            Blit::BCF_COLOR_MULT_RGB |
+            Blit::BCF_V_WRAP_CLAMP |
+            Blit::BCF_H_CLIP |
+            Blit::BCF_V_CLIP
+        >(
+            sprite.pPixels,
+            sprite.texW,
+            sprite.texH,
+            0.0f,
+            texH - 0.5f,
+            subpixelXAdjust,
+            0.0f,
+            Video::gFrameBuffer + gScreenYOffset * Video::SCREEN_WIDTH + gScreenXOffset,
+            gScreenWidth,
+            gScreenHeight,
+            Video::SCREEN_WIDTH,
+            spriteLxInt,
+            spriteByInt + 1,
+            (bDoExtraCol) ? spriteWInt : spriteWInt + 1,
+            texXStep,
+            0.0f,
+            sprite.lightMul,
+            sprite.lightMul,
+            sprite.lightMul
+        );
     }
 }
 
