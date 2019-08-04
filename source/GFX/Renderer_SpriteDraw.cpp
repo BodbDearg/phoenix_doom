@@ -586,10 +586,12 @@ void getSpriteDetailsForMapObj(
     const uint32_t spriteResourceNum = pStatePtr->SpriteFrame >> FF_SPRITESHIFT;
     const uint32_t spriteFrameNum = pStatePtr->SpriteFrame & FF_FRAMEMASK;
     const uint8_t spriteAngle = getThingSpriteAngleForViewpoint(thing, viewXFrac, viewYFrac);
-
+    
     // Load the current sprite for the thing and then the frame angle we want
     const Sprite* const pSprite = loadSprite(spriteResourceNum);
     ASSERT(spriteFrameNum < pSprite->numFrames);
+    ASSERT(spriteAngle < NUM_SPRITE_DIRECTIONS);
+
     const SpriteFrame* const pSpriteFrame = &pSprite->pFrames[spriteFrameNum];
     pSpriteFrameAngle = &pSpriteFrame->angles[spriteAngle];
 
@@ -698,6 +700,9 @@ void addSpriteToFrame(const mobj_t& thing) noexcept {
     bool bIsSpriteTransparent;
     const SpriteFrameAngle* spriteFrameAngle;
     getSpriteDetailsForMapObj(thing, gViewXFrac, gViewYFrac, spriteFrameAngle, bIsSpriteFullBright, bIsSpriteTransparent);
+
+    ASSERT(spriteFrameAngle->width > 0);
+    ASSERT(spriteFrameAngle->height > 0);
 
     // Figure out the clip space left and right coords for the sprite.
     // Again, cull if it is entirely offscreen!

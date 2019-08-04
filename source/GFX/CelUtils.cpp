@@ -367,6 +367,9 @@ void decodeDoomCelSprite(
         *pImageHeightOut = imageH;
     }
 
+    ASSERT(imageW > 0);
+    ASSERT(imageH > 0);
+
     // Grabbing various bits of CCB info and endian correcting
     const uint32_t imageCCBFlags = byteSwappedU32(pCCB->flags);
     const uint32_t imageDataOffset = byteSwappedU32(pCCB->sourcePtr) + 12;  // For some reason 3DO Doom added '12' to this offset to get the image data?    

@@ -266,7 +266,10 @@ const Sprite* loadSprite(const uint32_t resourceNum) {
 
         for (SpriteFrameAngle& angle : frame.angles) {
             const uint32_t requestedImageOffset = (uint32_t)(uintptr_t) angle.pTexture;
+
             const DecodedImage& decodedImage = decodedImages.at(requestedImageOffset);
+            ASSERT(decodedImage.width > 0);
+            ASSERT(decodedImage.height > 0);
 
             // Note: Doom sprites are stored in COLUMN MAJOR format, so the width is actually the height and visa versa...
             // Swap them here to account for this!
