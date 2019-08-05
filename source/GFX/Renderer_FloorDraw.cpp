@@ -26,6 +26,7 @@ static void drawFloorColumn(
     const float lightMultiplier,
     const ImageData& texData
 ) noexcept {
+    /*
     Blit::blitColumn<
         Blit::BCF_HORZ_COLUMN |     // Column is horizontal rather than vertical
         Blit::BCF_ROW_MAJOR_IMG |   // Floor textures are stored in row major format (unlike sprites and walls)
@@ -53,6 +54,7 @@ static void drawFloorColumn(
         lightMultiplier,
         lightMultiplier
     );
+    */
 }
 
 //----------------------------------------------------------------------------------------------------------------------
