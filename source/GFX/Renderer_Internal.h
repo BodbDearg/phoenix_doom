@@ -243,7 +243,7 @@ namespace Renderer {
     // Used for sprite rendering.
     //------------------------------------------------------------------------------------------------------------------
     struct OccludingColumns {
-        static constexpr uint32_t MAX_ENTRIES = 15;
+        static constexpr uint32_t MAX_ENTRIES = 32;
 
         // The number of occluding column entries.
         uint32_t count;

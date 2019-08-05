@@ -316,6 +316,24 @@ void wallPrep(
 }
 
 //----------------------------------------------------------------------------------------------------------------------
+// Reverse the draw seg by swapping p1 and p2.
+// Useful for fixing up back facing segs so we can deal with them in the same way as front facing segs.
+//----------------------------------------------------------------------------------------------------------------------
+static void swapDrawSegP1AndP2(DrawSeg& seg) noexcept {
+    std::swap(seg.p1x,          seg.p2x);
+    std::swap(seg.p1y,          seg.p2y);
+    std::swap(seg.p1w,          seg.p2w);
+    std::swap(seg.p1w_inv,      seg.p2w_inv);
+    std::swap(seg.p1tz,         seg.p2tz);
+    std::swap(seg.p1bz,         seg.p2bz);
+    std::swap(seg.p1tz_back,    seg.p2tz_back);
+    std::swap(seg.p1bz_back,    seg.p2bz_back);
+    std::swap(seg.p1TexX,       seg.p2TexX);
+    std::swap(seg.p1WorldX,     seg.p2WorldX);
+    std::swap(seg.p1WorldY,     seg.p2WorldY);
+}
+
+//----------------------------------------------------------------------------------------------------------------------
 // Populate vertex attributes for the given seg that are interpolated across the seg during rendering.
 // These attributes are not affected by any transforms, but *ARE* clipped.
 //----------------------------------------------------------------------------------------------------------------------
@@ -983,7 +1001,7 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
     constexpr bool EMIT_LOWER_WALL_OCCLUDER     = ((FLAGS & FragEmitFlags::LOWER_WALL_OCCLUDER) != 0);
 
     // Sanity checks, expect p1x to be < p2x - should be ensured externally!
-    ASSERT(drawSeg.p1x < drawSeg.p2x);
+    ASSERT(drawSeg.p1x <= drawSeg.p2x);
     
     // Get integer range of the wall
     const int32_t x1 = (int32_t) drawSeg.p1x;
@@ -1057,12 +1075,12 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
         p2UpperTz = drawSeg.p2tz;
     }
 
-    if constexpr (EMIT_UPPER_WALL) {
+    if constexpr (EMIT_UPPER_WALL || EMIT_UPPER_WALL_OCCLUDER) {
         p1UpperBz = drawSeg.p1tz_back;
         p2UpperBz = drawSeg.p2tz_back;
     }
 
-    if constexpr (EMIT_LOWER_WALL) {
+    if constexpr (EMIT_LOWER_WALL || EMIT_LOWER_WALL_OCCLUDER) {
         p1LowerTz = drawSeg.p1bz_back;
         p2LowerTz = drawSeg.p2bz_back;
     }
@@ -1213,11 +1231,11 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
         upperWorldTz = FMath::doomFixed16ToFloat<float>(seg.frontsector->ceilingheight);
     }
 
-    if constexpr (EMIT_UPPER_WALL) {
+    if constexpr (EMIT_UPPER_WALL || EMIT_UPPER_WALL_OCCLUDER) {
         upperWorldBz = FMath::doomFixed16ToFloat<float>(seg.backsector->ceilingheight);
     }
 
-    if constexpr (EMIT_LOWER_WALL) {
+    if constexpr (EMIT_LOWER_WALL || EMIT_LOWER_WALL_OCCLUDER) {
         lowerWorldTz = FMath::doomFixed16ToFloat<float>(seg.backsector->floorheight);
     }
 
@@ -1307,11 +1325,11 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
         upperTzStep = (p2UpperTz - p1UpperTz) * xRangeDivider;
     }
 
-    if constexpr (EMIT_UPPER_WALL) {
+    if constexpr (EMIT_UPPER_WALL || EMIT_UPPER_WALL_OCCLUDER) {
         upperBzStep = (p2UpperBz - p1UpperBz) * xRangeDivider;
     }
 
-    if constexpr (EMIT_LOWER_WALL) {
+    if constexpr (EMIT_LOWER_WALL || EMIT_LOWER_WALL_OCCLUDER) {
         lowerTzStep = (p2LowerTz - p1LowerTz) * xRangeDivider;
     }
 
@@ -1387,11 +1405,11 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
             upperTz = p1UpperTz + upperTzStep * curXStepCount;
         }
 
-        if constexpr (EMIT_UPPER_WALL) {
+        if constexpr (EMIT_UPPER_WALL || EMIT_UPPER_WALL_OCCLUDER) {
             upperBz = p1UpperBz + upperBzStep * curXStepCount;
         }
 
-        if constexpr (EMIT_LOWER_WALL) {
+        if constexpr (EMIT_LOWER_WALL || EMIT_LOWER_WALL_OCCLUDER) {
             lowerTz = p1LowerTz + lowerTzStep * curXStepCount;
         }
 
@@ -1516,11 +1534,11 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
         }
 
         if constexpr (EMIT_UPPER_WALL_OCCLUDER) {
-            emitOccluderColumn<EmitOccluderMode::TOP>(x, (int32_t) p1UpperTz, depth);
+            emitOccluderColumn<EmitOccluderMode::TOP>(x, (int32_t) upperBz, depth);
         }
 
         if constexpr (EMIT_LOWER_WALL_OCCLUDER) {
-            emitOccluderColumn<EmitOccluderMode::BOTTOM>(x, (int32_t) p1LowerBz, depth);
+            emitOccluderColumn<EmitOccluderMode::BOTTOM>(x, (int32_t) lowerTz, depth);
         }
     }
 }
@@ -1549,10 +1567,6 @@ void addSegToFrame(const seg_t& seg) noexcept {
     // Do perspective division and transform the seg to screen space
     doPerspectiveDivisionForSeg(drawSeg);
     transformSegXZToScreenSpace(drawSeg);
-
-    // If the seg is a zero sized or invalid range then abort
-    if (drawSeg.p1x >= drawSeg.p2x)
-        return;
     
     // Discard any segs that are back facing
     const bool bIsBackFacing = isScreenSpaceSegBackFacing(drawSeg);
@@ -1588,10 +1602,11 @@ void addSegToFrame(const seg_t& seg) noexcept {
                 >(drawSeg, seg);
             }
         } else {
-            // If we are facing the back of a two sided seg then all it can emit are floors and ceilings
+            // If we are facing the back of a two sided seg then all it can emit are occluders.
+            // We need to reverse it also, since it will be facing the wrong way (we draw left to right always).
+            swapDrawSegP1AndP2(drawSeg);
+            
             emitWallAndFlatFragments<
-                FragEmitFlags::CEILING |
-                FragEmitFlags::FLOOR |
                 FragEmitFlags::LOWER_WALL_OCCLUDER |
                 FragEmitFlags::UPPER_WALL_OCCLUDER
             >(drawSeg, seg);
