@@ -79,6 +79,7 @@ angle_t                         gClipAngleBAM;
 angle_t                         gDoubleClipAngleBAM;
 uint32_t                        gSprOpening[MAXSCREENWIDTH];
 std::vector<SegClip>            gSegClip;
+std::vector<OccludingColumns>   gOccludingCols;
 uint32_t                        gNumFullSegCols;
 std::vector<WallFragment>       gWallFragments;
 std::vector<FlatFragment>       gFloorFragments;
@@ -149,6 +150,36 @@ static void setupSegYClipArrayForDraw() noexcept {
     gNumFullSegCols = 0;
 }
 
+static void setupOccludingColumnsArrayForDraw() noexcept {
+    // Ensure the array is the correct size for the screen
+    if (gOccludingCols.size() != gScreenWidth) {
+        gOccludingCols.resize(gScreenWidth);
+    }
+
+    // Clear 8 entries in array at a time so the ops can be pipelined
+    OccludingColumns* pOccludingCols = gOccludingCols.data();
+    OccludingColumns* const pEndOccludingCols8 = pOccludingCols + ((uint32_t(gOccludingCols.size()) / 8) * 8);
+    OccludingColumns* const pEndOccludingCols = pOccludingCols + gOccludingCols.size();
+
+    while (pOccludingCols < pEndOccludingCols8) {
+        pOccludingCols[0].count = 0;
+        pOccludingCols[1].count = 0;
+        pOccludingCols[2].count = 0;
+        pOccludingCols[3].count = 0;
+        pOccludingCols[4].count = 0;
+        pOccludingCols[5].count = 0;
+        pOccludingCols[6].count = 0;
+        pOccludingCols[7].count = 0;
+        pOccludingCols += 8;
+    }
+
+    // Clear any remaining entries
+    while (pOccludingCols < pEndOccludingCols) {
+        pOccludingCols[0].count = 0;
+        ++pOccludingCols;
+    }
+}
+
 static void preDrawSetup() noexcept {
     // Set the position and angle of the view from the player
     const player_t& player = gPlayers;
@@ -199,6 +230,8 @@ static void preDrawSetup() noexcept {
 
     // Clear render arrays & buffers
     setupSegYClipArrayForDraw();
+    setupOccludingColumnsArrayForDraw();
+
     gWallFragments.clear();
     gFloorFragments.clear();
     gCeilFragments.clear();

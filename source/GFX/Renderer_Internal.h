@@ -230,9 +230,11 @@ namespace Renderer {
         uint16_t            y;
         uint16_t            height;                 // Screen height
         uint16_t            texH : 15;              // Height of the sprite texture
-        uint16_t            transparent : 1;        // If '1' then draw the sprite transparent (used for spectres)
+        uint16_t            isTransparent : 1;      // If '1' then draw the sprite transparent (used for spectres)
+        float               depth;                  // Depth that the sprite fragment is at
         float               lightMul;               // Light multiplier
-        float               texcoordYStep;          // Stepping to use for the 'Y' texture coordinate
+        float               texYStep;               // Stepping to use for the 'Y' texture coordinate
+        float               texYSubPixelAdjust;     // Sub-pixel adjustment for 'Y' texture coordinate. Applied to every pixel after the first.
         const uint16_t*     pSpriteColPixels;       // The image data for the sprite (in column major format)
     };
 
@@ -244,16 +246,21 @@ namespace Renderer {
         static constexpr uint32_t MAX_ENTRIES = 15;
 
         // The number of occluding column entries.
-        uint32_t count; 
+        uint32_t count;
 
         // The depths of each occluding column.
         // Note: is automatically in ascending order due to the nature of the BSP tree rendering - hence can be binary searched!
-        float depths[MAX_ENTRIES];    
+        float depths[MAX_ENTRIES];
 
         // How much screen real estate each occluding column occupies at the top and bottom of the screen.
         // Anything at or above the top coordinate is occluded.
         // Anything at or below the bottom coordinate is occluded.
-        ScreenYPair bounds[MAX_ENTRIES];
+        struct Bounds {
+            int16_t top;
+            int16_t bottom;
+        };
+
+        Bounds bounds[MAX_ENTRIES];
     };
 
     //------------------------------------------------------------------------------------------------------------------
@@ -393,6 +400,7 @@ namespace Renderer {
     extern angle_t                          gDoubleClipAngleBAM;                // Doubled leftmost clipping angle
     extern uint32_t                         gSprOpening[MAXSCREENWIDTH];        // clipped range
     extern std::vector<SegClip>             gSegClip;                           // Used to clip seg columns (walls + floors) vertically as segs are being submitted. One entry per screen column.
+    extern std::vector<OccludingColumns>    gOccludingCols;                     // Used to clip sprite columns. One entry per screen column.
     extern uint32_t                         gNumFullSegCols;                    // The number of columns that will accept no more seg pixels. Used to stop emitting segs when we have filled the screen.
     extern std::vector<WallFragment>        gWallFragments;                     // Wall fragments to be drawn
     extern std::vector<FlatFragment>        gFloorFragments;                    // Floor fragments to be drawn
@@ -415,7 +423,7 @@ namespace Renderer {
     void drawAllCeilingFragments() noexcept;
     void drawAllSkyFragments() noexcept;
     void drawAllVisPlanes() noexcept;
-    void drawAllSprites() noexcept;    
+    void drawAllSprites() noexcept;
     void drawWeapons() noexcept;
     void doPostFx() noexcept;
 

@@ -670,12 +670,15 @@ static void transformSegXZToScreenSpace(DrawSeg& seg) noexcept {
 typedef uint16_t FragEmitFlagsT;
 
 namespace FragEmitFlags {
-    static constexpr FragEmitFlagsT MID_WALL    = 0x0001;       // Emit a single sided wall
-    static constexpr FragEmitFlagsT UPPER_WALL  = 0x0002;       // Emit an upper wall
-    static constexpr FragEmitFlagsT LOWER_WALL  = 0x0004;       // Emit a lower wall
-    static constexpr FragEmitFlagsT FLOOR       = 0x0008;       // Emit a floor
-    static constexpr FragEmitFlagsT CEILING     = 0x0010;       // Emit a ceiling
-    static constexpr FragEmitFlagsT SKY         = 0x0020;       // Emit a sky column if possible
+    static constexpr FragEmitFlagsT MID_WALL                = 0x0001;       // Emit a single sided wall
+    static constexpr FragEmitFlagsT UPPER_WALL              = 0x0002;       // Emit an upper wall
+    static constexpr FragEmitFlagsT LOWER_WALL              = 0x0004;       // Emit a lower wall
+    static constexpr FragEmitFlagsT FLOOR                   = 0x0008;       // Emit a floor
+    static constexpr FragEmitFlagsT CEILING                 = 0x0010;       // Emit a ceiling
+    static constexpr FragEmitFlagsT SKY                     = 0x0020;       // Emit a sky column if possible
+    static constexpr FragEmitFlagsT MID_WALL_OCCLUDER       = 0x0040;       // Emit a single sided wall occluder entry
+    static constexpr FragEmitFlagsT UPPER_WALL_OCCLUDER     = 0x0080;       // Emit an upper wall occluder entry
+    static constexpr FragEmitFlagsT LOWER_WALL_OCCLUDER     = 0x0100;       // Emit a lower wall occluder entry
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -900,6 +903,64 @@ static void clipAndEmitFlatColumn(
 }
 
 //----------------------------------------------------------------------------------------------------------------------
+// What type of occluder we are emitting to occlude sprites.
+//----------------------------------------------------------------------------------------------------------------------
+enum class EmitOccluderMode {
+    TOP,        // Occlude at the given screen coordinate and above
+    BOTTOM      // Occlude at the given screen coordinate and below
+};
+
+//----------------------------------------------------------------------------------------------------------------------
+// Emits an occluder column that occludes sprites.
+// Either the top or bottom can be occluded.
+//----------------------------------------------------------------------------------------------------------------------
+template <EmitOccluderMode MODE>
+static void emitOccluderColumn(
+    const uint32_t x,
+    const int32_t screenYCoord,
+    const float depth
+) noexcept {
+    ASSERT(x < gScreenWidth);
+    
+    // Get the occluding columns bounds entry that we want
+    OccludingColumns& occludingCols = gOccludingCols[x];
+    const uint32_t numOccludersForCol = occludingCols.count;
+
+    if (numOccludersForCol <= 0 || occludingCols.depths[numOccludersForCol - 1] != depth) {
+        // Need a new occluding columns bounds entry.
+        // Abort if we have reached the engine limit of occluders per column. Raise the limit if you run into this:
+        ASSERT_LOG(numOccludersForCol < OccludingColumns::MAX_ENTRIES, "Too many occluders for column!");
+
+        if (numOccludersForCol >= OccludingColumns::MAX_ENTRIES)
+            return;
+        
+        ++occludingCols.count;
+        occludingCols.depths[numOccludersForCol] = depth;
+        OccludingColumns::Bounds& bounds = occludingCols.bounds[numOccludersForCol];
+
+        if constexpr (MODE == EmitOccluderMode::TOP) {
+            bounds.top = (int16_t) screenYCoord;
+            bounds.bottom = gScreenHeight;
+        } else {
+            static_assert(MODE == EmitOccluderMode::BOTTOM);
+            bounds.top = -1;
+            bounds.bottom = (int16_t) screenYCoord;
+        }
+    } else {
+        // Re-use an existing entry since it is at the same depth
+        OccludingColumns::Bounds& bounds = occludingCols.bounds[numOccludersForCol - 1];
+
+        if constexpr (MODE == EmitOccluderMode::TOP) {
+            bounds.top = (int16_t) screenYCoord;
+        }
+        else {
+            static_assert(MODE == EmitOccluderMode::BOTTOM);
+            bounds.bottom = (int16_t) screenYCoord;
+        }
+    }
+}
+
+//----------------------------------------------------------------------------------------------------------------------
 // Emits wall and floor/ceiling fragments for later rendering
 //----------------------------------------------------------------------------------------------------------------------
 template <FragEmitFlagsT FLAGS>
@@ -909,15 +970,17 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
     //-----------------------------------------------------------------------------------------------------------------
 
     // For readability's sake:
-    constexpr bool EMIT_MID_WALL    = ((FLAGS & FragEmitFlags::MID_WALL) != 0);
-    constexpr bool EMIT_UPPER_WALL  = ((FLAGS & FragEmitFlags::UPPER_WALL) != 0);
-    constexpr bool EMIT_LOWER_WALL  = ((FLAGS & FragEmitFlags::LOWER_WALL) != 0);
-    constexpr bool EMIT_ANY_WALL    = (EMIT_MID_WALL || EMIT_UPPER_WALL || EMIT_LOWER_WALL);
-    constexpr bool EMIT_FLOOR       = ((FLAGS & FragEmitFlags::FLOOR) != 0);
-    constexpr bool EMIT_CEILING     = ((FLAGS & FragEmitFlags::CEILING) != 0);
-    constexpr bool EMIT_ANY_FLAT    = (EMIT_FLOOR || EMIT_CEILING);
-    constexpr bool EMIT_SKY         = ((FLAGS & FragEmitFlags::SKY) != 0);
-    
+    constexpr bool EMIT_MID_WALL                = ((FLAGS & FragEmitFlags::MID_WALL) != 0);
+    constexpr bool EMIT_UPPER_WALL              = ((FLAGS & FragEmitFlags::UPPER_WALL) != 0);
+    constexpr bool EMIT_LOWER_WALL              = ((FLAGS & FragEmitFlags::LOWER_WALL) != 0);
+    constexpr bool EMIT_ANY_WALL                = (EMIT_MID_WALL || EMIT_UPPER_WALL || EMIT_LOWER_WALL);
+    constexpr bool EMIT_FLOOR                   = ((FLAGS & FragEmitFlags::FLOOR) != 0);
+    constexpr bool EMIT_CEILING                 = ((FLAGS & FragEmitFlags::CEILING) != 0);
+    constexpr bool EMIT_ANY_FLAT                = (EMIT_FLOOR || EMIT_CEILING);
+    constexpr bool EMIT_SKY                     = ((FLAGS & FragEmitFlags::SKY) != 0);
+    constexpr bool EMIT_MID_WALL_OCCLUDER       = ((FLAGS & FragEmitFlags::MID_WALL_OCCLUDER) != 0);
+    constexpr bool EMIT_UPPER_WALL_OCCLUDER     = ((FLAGS & FragEmitFlags::UPPER_WALL_OCCLUDER) != 0);
+    constexpr bool EMIT_LOWER_WALL_OCCLUDER     = ((FLAGS & FragEmitFlags::LOWER_WALL_OCCLUDER) != 0);
 
     // Sanity checks, expect p1x to be < p2x - should be ensured externally!
     ASSERT(drawSeg.p1x < drawSeg.p2x);
@@ -989,7 +1052,7 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
     [[maybe_unused]] float p1LowerBz;
     [[maybe_unused]] float p2LowerBz;
 
-    if constexpr (EMIT_MID_WALL || EMIT_UPPER_WALL || EMIT_CEILING) {
+    if constexpr (EMIT_MID_WALL || EMIT_UPPER_WALL || EMIT_CEILING || EMIT_UPPER_WALL_OCCLUDER) {
         p1UpperTz = drawSeg.p1tz;
         p2UpperTz = drawSeg.p2tz;
     }
@@ -1004,7 +1067,7 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
         p2LowerTz = drawSeg.p2bz_back;
     }
 
-    if constexpr (EMIT_MID_WALL || EMIT_LOWER_WALL || EMIT_FLOOR) {
+    if constexpr (EMIT_MID_WALL || EMIT_LOWER_WALL || EMIT_FLOOR || EMIT_LOWER_WALL_OCCLUDER) {
         p1LowerBz = drawSeg.p1bz;
         p2LowerBz = drawSeg.p2bz;
     }
@@ -1343,7 +1406,7 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
         curXStepCount = nextXStepCount;
 
         //--------------------------------------------------------------------------------------------------------------
-        // Emit all fragments
+        // Emit all fragments and occluding columns
         //--------------------------------------------------------------------------------------------------------------
         if constexpr (EMIT_SKY) {
             if (!pCeilingTex && upperTz > 0) {
@@ -1446,6 +1509,19 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
                 pLowerTex->data
             );
         }
+
+        if constexpr (EMIT_MID_WALL_OCCLUDER) {
+            // A solid wall will gobble up the entire screen and occlude everything!
+            emitOccluderColumn<EmitOccluderMode::TOP>(x, gScreenHeight, depth);
+        }
+
+        if constexpr (EMIT_UPPER_WALL_OCCLUDER) {
+            emitOccluderColumn<EmitOccluderMode::TOP>(x, (int32_t) p1UpperTz, depth);
+        }
+
+        if constexpr (EMIT_LOWER_WALL_OCCLUDER) {
+            emitOccluderColumn<EmitOccluderMode::BOTTOM>(x, (int32_t) p1LowerBz, depth);
+        }
     }
 }
 
@@ -1489,7 +1565,8 @@ void addSegToFrame(const seg_t& seg) noexcept {
                 FragEmitFlags::MID_WALL |
                 FragEmitFlags::CEILING |
                 FragEmitFlags::FLOOR |
-                FragEmitFlags::SKY
+                FragEmitFlags::SKY |
+                FragEmitFlags::MID_WALL_OCCLUDER
             >(drawSeg, seg);
         }
     } else {
@@ -1514,7 +1591,9 @@ void addSegToFrame(const seg_t& seg) noexcept {
             // If we are facing the back of a two sided seg then all it can emit are floors and ceilings
             emitWallAndFlatFragments<
                 FragEmitFlags::CEILING |
-                FragEmitFlags::FLOOR
+                FragEmitFlags::FLOOR |
+                FragEmitFlags::LOWER_WALL_OCCLUDER |
+                FragEmitFlags::UPPER_WALL_OCCLUDER
             >(drawSeg, seg);
         }
     }

@@ -765,7 +765,7 @@ static void sortAllSprites() noexcept {
         gDrawSprites.begin(),
         gDrawSprites.end(),
         [](const DrawSprite& s1, const DrawSprite& s2) noexcept {
-            return (s1.depth < s2.depth);
+            return (s1.depth > s2.depth);
         }
     );
 
@@ -809,22 +809,24 @@ static void emitFragmentsForSprite(const DrawSprite& sprite) noexcept {
     int32_t spriteHInt = spriteByInt - spriteTyInt + 1;
 
     // Figure out x and y texcoord stepping
-    const float texW = (float) sprite.texW;
-    const float texH = (float) sprite.texH;
+    const uint16_t texWInt = sprite.texW;
+    const uint16_t texHInt = sprite.texH;
+    const float texW = texWInt;
+    const float texH = texHInt;
     const float texXStep = (spriteW > 1) ? texW / spriteW : 0.0f;
     const float texYStep = (spriteH > 1) ? texH / spriteH : 0.0f;
     
     // Computing a sub pixel x and y adjustment for stability. This is similar to the adjustment we do for walls.
     // We take into account the fractional part of the first pixel when computing the distance to travel to the 2nd pixel.
-    const float subpixelXAdjust = -(sprite.lx - std::trunc(sprite.lx)) * texXStep;
-    const float subpixelYAdjust = -(sprite.ty - std::trunc(sprite.ty)) * texYStep;
+    const float texSubPixelXAdjust = -(sprite.lx - std::trunc(sprite.lx)) * texXStep;
+    const float texSubPixelYAdjust = -(sprite.ty - std::trunc(sprite.ty)) * texYStep;
 
     // If we fall short of displaying the last column in a sprite then extend it by 1 column.
     // This helps ensure that sprites don't get a column of pixels cut off at the end and miss important borders/edges.
     bool bDoExtraCol;
 
     {
-        const float origEndTexX = (float)(spriteWInt - 1) * texXStep + subpixelXAdjust;
+        const float origEndTexX = (float)(spriteWInt - 1) * texXStep + texSubPixelXAdjust;
         const float texXShortfall = texW - 1.0f - origEndTexX;
         bDoExtraCol = (texXShortfall > 0.0f);
     }
@@ -870,77 +872,146 @@ static void emitFragmentsForSprite(const DrawSprite& sprite) noexcept {
             if (texX >= texW)
                 break;
 
-            Blit::blitColumn<
-                Blit::BCF_STEP_Y |
-                Blit::BCF_ALPHA_TEST |
-                Blit::BCF_COLOR_MULT_RGB |
-                Blit::BCF_V_WRAP_DISCARD |
-                Blit::BCF_V_CLIP
-            >(
-                sprite.pPixels,
-                sprite.texW,
-                sprite.texH,
-                (float) texX,
-                0.0f,
-                0.0f,
-                subpixelYAdjust,
-                Video::gFrameBuffer + gScreenYOffset * Video::SCREEN_WIDTH + gScreenXOffset,
-                gScreenWidth,
-                gScreenHeight,
-                Video::SCREEN_WIDTH,
-                curScreenX,
-                spriteTyInt,
-                spriteHInt,
-                0.0f,
-                texYStep,
-                sprite.lightMul,
-                sprite.lightMul,
-                sprite.lightMul
-            );
+            SpriteFragment frag;
+            frag.x = curScreenX;
+            frag.y = spriteTyInt;
+            frag.height = spriteHInt;
+            frag.texH = texHInt;
+            frag.isTransparent = (sprite.bTransparent) ? 1 : 0;
+            frag.depth = sprite.depth;
+            frag.lightMul = sprite.lightMul;
+            frag.texYStep = texYStep;
+            frag.texYSubPixelAdjust = texSubPixelYAdjust;
+            frag.pSpriteColPixels = sprite.pPixels + texX * texHInt;
+
+            gSpriteFragments.push_back(frag);
 
             ++curScreenX;
             ++curColNum;
 
             if constexpr (FLIP_MODE == SpriteFlipMode::FLIPPED) {
-                texXf = texW - std::max(texXStep * (float) curColNum + subpixelXAdjust, 0.5f);
+                texXf = texW - std::max(texXStep * (float) curColNum + texSubPixelXAdjust, 0.5f);
             } else {
-                texXf = std::fmax(texXStep * (float) curColNum + subpixelXAdjust, 0.0f);
+                texXf = std::fmax(texXStep * (float) curColNum + texSubPixelXAdjust, 0.0f);
             }
         }
     }
 
     // Do an extra column at the end if required
     if (bDoExtraCol) {
-        Blit::blitColumn<
-            Blit::BCF_STEP_Y |
-            Blit::BCF_ALPHA_TEST |
-            Blit::BCF_COLOR_MULT_RGB |
-            Blit::BCF_H_WRAP_DISCARD |
-            Blit::BCF_V_WRAP_DISCARD |
-            Blit::BCF_H_CLIP |
-            Blit::BCF_V_CLIP
-        >(
-            sprite.pPixels,
-            sprite.texW,
-            sprite.texH,
-            (FLIP_MODE == SpriteFlipMode::FLIPPED) ? 0.0f : std::nextafterf(texW, 0.0f),
-            0.0f,
-            0.0f,
-            subpixelYAdjust,
-            Video::gFrameBuffer + gScreenYOffset * Video::SCREEN_WIDTH + gScreenXOffset,
-            gScreenWidth,
-            gScreenHeight,
-            Video::SCREEN_WIDTH,
-            spriteRxInt + 1,
-            spriteTyInt,
-            spriteHInt,
-            0.0f,
-            texYStep,
-            sprite.lightMul,
-            sprite.lightMul,
-            sprite.lightMul
-        );
+        curScreenX = spriteRxInt + 1;
+
+        if (curScreenX < (int32_t) gScreenWidth) {
+            const uint16_t texX = (FLIP_MODE == SpriteFlipMode::FLIPPED) ? 0 : texWInt - 1;
+
+            SpriteFragment frag;
+            frag.x = curScreenX;
+            frag.y = spriteTyInt;
+            frag.height = spriteHInt;
+            frag.texH = texHInt;
+            frag.isTransparent = (sprite.bTransparent) ? 1 : 0;
+            frag.depth = sprite.depth;
+            frag.lightMul = sprite.lightMul;
+            frag.texYStep = texYStep;
+            frag.texYSubPixelAdjust = texSubPixelYAdjust;
+            frag.pSpriteColPixels = sprite.pPixels + texX * texHInt;
+
+            gSpriteFragments.push_back(frag);
+        }
     }
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+// Draws a single sprite fragment
+//----------------------------------------------------------------------------------------------------------------------
+void drawSpriteFragment(const SpriteFragment frag) noexcept {
+    BLIT_ASSERT(frag.x < gScreenWidth);
+
+    // Firstly figure out the top and bottom clip bounds for the sprite fragment    
+    int16_t yClipT = -1;
+    int16_t yClipB = gScreenHeight;
+
+    {
+        const OccludingColumns& occludingCols = gOccludingCols[frag.x];
+        const uint32_t numOccludingCols = occludingCols.count;
+        BLIT_ASSERT(numOccludingCols < OccludingColumns::MAX_ENTRIES);
+
+        for (uint32_t i = 0; i < numOccludingCols; ++i) {
+            // Ignore if the sprite is in front!
+            if (frag.depth <= occludingCols.depths[i])
+                continue;
+
+            // Update the clip bounds
+            const OccludingColumns::Bounds bounds = occludingCols.bounds[i];
+            yClipT = std::max(yClipT, bounds.top);
+            yClipB = std::min(yClipB, bounds.bottom);
+        }
+    }
+
+    // If we are drawing nothing then bail
+    if (yClipT >= yClipB)
+        return;
+
+    // Do clipping against the top of the bounds
+    float srcTexY = 0.0f;
+    float srcTexYSubPixelAdjust = frag.texYSubPixelAdjust;
+    uint32_t dstY = frag.y;
+    uint32_t dstCount = frag.height;
+
+    if ((int32_t) dstY < yClipT) {
+        const uint32_t numPixelsOffscreen = (uint32_t)(yClipT - (int32_t) dstY);
+
+        if (numPixelsOffscreen >= dstCount)
+            return;
+        
+        srcTexY = frag.texYStep * (float) numPixelsOffscreen + srcTexYSubPixelAdjust;
+        srcTexYSubPixelAdjust = 0.0f;
+        dstY += numPixelsOffscreen;
+        dstCount -= numPixelsOffscreen;
+    }
+
+    // Do clipping against the bottom of the bounds
+    {
+        const uint32_t endY = dstY + dstCount;
+
+        if ((int32_t) endY > yClipB) {
+            const uint32_t numPixelsOffscreen = (uint32_t)((int32_t) endY - yClipB);
+
+            if (numPixelsOffscreen >= dstCount)
+                return;
+
+            dstCount -= numPixelsOffscreen;
+        }
+    }
+
+    // Draw the actual sprite column
+    Blit::blitColumn<
+        Blit::BCF_STEP_Y |
+        Blit::BCF_ALPHA_TEST |
+        Blit::BCF_COLOR_MULT_RGB |
+        Blit::BCF_V_WRAP_DISCARD |
+        Blit::BCF_V_CLIP
+    >(
+        frag.pSpriteColPixels,
+        1,
+        frag.texH,
+        0.0f,
+        srcTexY,
+        0.0f,
+        srcTexYSubPixelAdjust,
+        Video::gFrameBuffer + gScreenYOffset * Video::SCREEN_WIDTH + gScreenXOffset,
+        gScreenWidth,
+        gScreenHeight,
+        Video::SCREEN_WIDTH,
+        frag.x,
+        dstY,
+        dstCount,
+        0.0f,
+        frag.texYStep,
+        frag.lightMul,
+        frag.lightMul,
+        frag.lightMul
+    );
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -955,6 +1026,10 @@ void drawAllSprites() noexcept {
         } else {
             emitFragmentsForSprite<SpriteFlipMode::NOT_FLIPPED>(sprite);
         }
+    }
+
+    for (const SpriteFragment& spriteFrag : gSpriteFragments) {
+        drawSpriteFragment(spriteFrag);
     }
 
     /* TODO: REMOVE
