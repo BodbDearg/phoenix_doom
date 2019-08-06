@@ -284,6 +284,8 @@ static void loadLineSegs(const uint32_t lumpResourceNum) noexcept {
     seg_t* pDstLineSeg = gLineSegs.data();
     
     while (pSrcLineSeg < pEndSrcLineSeg) {
+        // Note: deliberately NOT initializing the seg light multiplier here.
+        // That is done at a later stage.
         pDstLineSeg->v1 = gVertexes[byteSwappedU32(pSrcLineSeg->v1)];
         pDstLineSeg->v2 = gVertexes[byteSwappedU32(pSrcLineSeg->v2)];
         pDstLineSeg->angle = byteSwappedU32(pSrcLineSeg->angle);
@@ -301,11 +303,11 @@ static void loadLineSegs(const uint32_t lumpResourceNum) noexcept {
             pDstLineSeg->backsector = pLine->SidePtr[side ^ 1]->sector;
         }
         
-        // Init the finea ngle on the line
+        // Init the fine angle on the line
         if (pLine->v1.x == pDstLineSeg->v1.x && pLine->v1.y == pDstLineSeg->v1.y) {
             pLine->fineangle = pDstLineSeg->angle >> ANGLETOFINESHIFT;  // This is a point only
         }
-    
+
         ++pSrcLineSeg;
         ++pDstLineSeg;
     }

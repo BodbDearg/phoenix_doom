@@ -607,10 +607,16 @@ static void addClipSpaceZValuesForSeg(DrawSeg& drawSeg, const seg_t& seg) noexce
     const float frontFloorZ = FMath::doomFixed16ToFloat<float>(seg.frontsector->floorheight);
     const float frontCeilZ = FMath::doomFixed16ToFloat<float>(seg.frontsector->ceilingheight);
 
-    drawSeg.p1tz = (frontCeilZ - viewZ) * gProjMatrix.r1c1;
-    drawSeg.p1bz = (frontFloorZ - viewZ) * gProjMatrix.r1c1;
-    drawSeg.p2tz = (frontCeilZ - viewZ) * gProjMatrix.r1c1;
-    drawSeg.p2bz = (frontFloorZ - viewZ) * gProjMatrix.r1c1;
+    const float p1ViewCeilZ = frontCeilZ - viewZ;
+    const float p1ViewFloorZ = frontFloorZ - viewZ;
+
+    drawSeg.bEmitCeiling = (p1ViewCeilZ > 0.0f);
+    drawSeg.bEmitFloor = (p1ViewFloorZ < 0.0f);
+
+    drawSeg.p1tz = p1ViewCeilZ * gProjMatrix.r1c1;
+    drawSeg.p1bz = p1ViewFloorZ * gProjMatrix.r1c1;
+    drawSeg.p2tz = p1ViewCeilZ * gProjMatrix.r1c1;
+    drawSeg.p2bz = p1ViewFloorZ * gProjMatrix.r1c1;
 
     if (seg.backsector) {
         const float backFloorZ = FMath::doomFixed16ToFloat<float>(seg.backsector->floorheight);
@@ -1028,8 +1034,7 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
         if (seg.backsector) {
             // Only clamp when the floor height or texture changes!
             // If adjacent subsectors use the same texture and are at the same height then we
-            // want texturing to be as contiguous as possible, so don't do clamping in those cases.
-            
+            // want texturing to be as contiguous as possible, so don't do clamping in those cases.            
             const sector_t& backSector = *seg.backsector;
 
             if constexpr (EMIT_FLOOR) {
@@ -1129,7 +1134,7 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
         pFloorTex = getFlatAnimTexture(frontSector.FloorPic);
     }
 
-    if constexpr (EMIT_CEILING) {
+    if constexpr (EMIT_CEILING || EMIT_SKY) {
         if (seg.frontsector->CeilingPic != SKY_CEILING_PIC) {
             pCeilingTex = getFlatAnimTexture(frontSector.CeilingPic);
         } else {
@@ -1543,6 +1548,27 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
     }
 }
 
+//----------------------------------------------------------------------------------------------------------------------
+// Emits wall and floor/ceiling fragments for later rendering.
+// The status of whether to emit floor or ceiling is decided at runtime.
+//----------------------------------------------------------------------------------------------------------------------
+template <FragEmitFlagsT FLAGS>
+static inline void emitWallAndFlatFragmentsWithRuntimeFlatCulling(const DrawSeg& drawSeg, const seg_t seg) noexcept {
+    if (drawSeg.bEmitFloor) {
+        if (drawSeg.bEmitCeiling) {
+            emitWallAndFlatFragments<FLAGS | FragEmitFlags::FLOOR | FragEmitFlags::CEILING>(drawSeg, seg);
+        } else {
+            emitWallAndFlatFragments<FLAGS | FragEmitFlags::FLOOR>(drawSeg, seg);
+        }
+    } else {
+        if (drawSeg.bEmitCeiling) {
+            emitWallAndFlatFragments<FLAGS | FragEmitFlags::CEILING>(drawSeg, seg);
+        } else {
+            emitWallAndFlatFragments<FLAGS>(drawSeg, seg);
+        }
+    }
+}
+
 void addSegToFrame(const seg_t& seg) noexcept {
     // First transform the seg into viewspace and populate vertex attributes
     DrawSeg drawSeg;
@@ -1561,24 +1587,22 @@ void addSegToFrame(const seg_t& seg) noexcept {
     if (!clipSegAgainstRightPlane(drawSeg))
         return;
     
-    // Now that the seg is not rejected, fill in the height values
+    // Now that the seg is not rejected, fill in the height values and also determine if we can draw the ceiling or floor based on those
     addClipSpaceZValuesForSeg(drawSeg, seg);
 
     // Do perspective division and transform the seg to screen space
     doPerspectiveDivisionForSeg(drawSeg);
     transformSegXZToScreenSpace(drawSeg);
     
-    // Discard any segs that are back facing
+    // Check various seg properties
     const bool bIsBackFacing = isScreenSpaceSegBackFacing(drawSeg);
 
     // Emit all wall and floor fragments for the seg
     if (!seg.backsector) {
         // We only emit fragments for solid walls if NOT back facing
         if (!bIsBackFacing) {
-            emitWallAndFlatFragments<
+            emitWallAndFlatFragmentsWithRuntimeFlatCulling<
                 FragEmitFlags::MID_WALL |
-                FragEmitFlags::CEILING |
-                FragEmitFlags::FLOOR |
                 FragEmitFlags::SKY |
                 FragEmitFlags::MID_WALL_OCCLUDER
             >(drawSeg, seg);
@@ -1587,19 +1611,13 @@ void addSegToFrame(const seg_t& seg) noexcept {
         if (!bIsBackFacing) {
             // Note: need to ignore upper walls if back sector has a sky ceiling
             if (seg.backsector->CeilingPic != SKY_CEILING_PIC) {
-                emitWallAndFlatFragments<
+                emitWallAndFlatFragmentsWithRuntimeFlatCulling<
                     FragEmitFlags::UPPER_WALL |
                     FragEmitFlags::LOWER_WALL |
-                    FragEmitFlags::CEILING |
-                    FragEmitFlags::FLOOR |
                     FragEmitFlags::SKY
                 >(drawSeg, seg);
             } else {
-                emitWallAndFlatFragments<
-                    FragEmitFlags::LOWER_WALL |
-                    FragEmitFlags::CEILING |
-                    FragEmitFlags::FLOOR
-                >(drawSeg, seg);
+                emitWallAndFlatFragmentsWithRuntimeFlatCulling<FragEmitFlags::LOWER_WALL>(drawSeg, seg);
             }
         } else {
             // If we are facing the back of a two sided seg then all it can emit are occluders.

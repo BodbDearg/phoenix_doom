@@ -192,6 +192,12 @@ namespace Renderer {
         float p2bz_back;
 
         //--------------------------------------------------------------------------------------------------------------
+        // Whether or not we should emit a ceiling or floor for this seg
+        //--------------------------------------------------------------------------------------------------------------
+        bool bEmitCeiling;
+        bool bEmitFloor;
+
+        //--------------------------------------------------------------------------------------------------------------
         // Vertex attributes that are not affected by any transforms except for clipping.
         // These are interpolated across columns in the seg also.
         //--------------------------------------------------------------------------------------------------------------
