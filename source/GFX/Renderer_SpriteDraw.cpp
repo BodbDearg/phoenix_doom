@@ -940,7 +940,7 @@ void drawSpriteFragment(const SpriteFragment frag) noexcept {
             // Ignore if the sprite is in front!
             if (frag.depth <= occludingCols.depths[i])
                 continue;
-
+            
             // Update the clip bounds
             const OccludingColumns::Bounds bounds = occludingCols.bounds[i];
             yClipT = std::max(yClipT, bounds.top);

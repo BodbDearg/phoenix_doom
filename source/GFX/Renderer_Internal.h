@@ -192,10 +192,19 @@ namespace Renderer {
         float p2bz_back;
 
         //--------------------------------------------------------------------------------------------------------------
-        // Whether or not we should emit a ceiling or floor for this seg
+        // Some flags on what to emit.
+        // Set these early on during draw seg generation because it's easier to determine this stuff there!
         //--------------------------------------------------------------------------------------------------------------
+
+        // Should we emit a floor or ceiling for a front facing seg?
         bool bEmitCeiling;
         bool bEmitFloor;
+
+        // Set only for a two sided seg, undefined otherwise.
+        // Whether we emit an upper or lower occluder for a front facing seg.
+        // These properties are unused for back facing segs...
+        bool bEmitFrontUpperOccluder;
+        bool bEmitFrontLowerOccluder;
 
         //--------------------------------------------------------------------------------------------------------------
         // Vertex attributes that are not affected by any transforms except for clipping.

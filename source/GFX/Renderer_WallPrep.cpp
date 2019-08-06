@@ -604,28 +604,33 @@ static bool clipSegAgainstRightPlane(DrawSeg& seg) noexcept {
 //----------------------------------------------------------------------------------------------------------------------
 static void addClipSpaceZValuesForSeg(DrawSeg& drawSeg, const seg_t& seg) noexcept {
     const float viewZ = gViewZ;
+
     const float frontFloorZ = FMath::doomFixed16ToFloat<float>(seg.frontsector->floorheight);
-    const float frontCeilZ = FMath::doomFixed16ToFloat<float>(seg.frontsector->ceilingheight);
+    const float frontCeilZ = FMath::doomFixed16ToFloat<float>(seg.frontsector->ceilingheight);    
+    const float frontFloorViewZ = frontFloorZ - viewZ;
+    const float frontCeilViewZ = frontCeilZ - viewZ;
+    
+    drawSeg.bEmitCeiling = (frontCeilViewZ > 0.0f);
+    drawSeg.bEmitFloor = (frontFloorViewZ < 0.0f);
 
-    const float p1ViewCeilZ = frontCeilZ - viewZ;
-    const float p1ViewFloorZ = frontFloorZ - viewZ;
-
-    drawSeg.bEmitCeiling = (p1ViewCeilZ > 0.0f);
-    drawSeg.bEmitFloor = (p1ViewFloorZ < 0.0f);
-
-    drawSeg.p1tz = p1ViewCeilZ * gProjMatrix.r1c1;
-    drawSeg.p1bz = p1ViewFloorZ * gProjMatrix.r1c1;
-    drawSeg.p2tz = p1ViewCeilZ * gProjMatrix.r1c1;
-    drawSeg.p2bz = p1ViewFloorZ * gProjMatrix.r1c1;
+    drawSeg.p1tz = frontCeilViewZ * gProjMatrix.r1c1;
+    drawSeg.p1bz = frontFloorViewZ * gProjMatrix.r1c1;
+    drawSeg.p2tz = frontCeilViewZ * gProjMatrix.r1c1;
+    drawSeg.p2bz = frontFloorViewZ * gProjMatrix.r1c1;
 
     if (seg.backsector) {
         const float backFloorZ = FMath::doomFixed16ToFloat<float>(seg.backsector->floorheight);
         const float backCeilZ = FMath::doomFixed16ToFloat<float>(seg.backsector->ceilingheight);
+        const float backFloorViewZ = backFloorZ - viewZ;
+        const float backCeilViewZ = backCeilZ - viewZ;
 
-        drawSeg.p1tz_back = (backCeilZ - viewZ) * gProjMatrix.r1c1;
-        drawSeg.p1bz_back = (backFloorZ - viewZ) * gProjMatrix.r1c1;
-        drawSeg.p2tz_back = (backCeilZ - viewZ) * gProjMatrix.r1c1;
-        drawSeg.p2bz_back = (backFloorZ - viewZ) * gProjMatrix.r1c1;
+        drawSeg.p1tz_back = backCeilViewZ * gProjMatrix.r1c1;
+        drawSeg.p1bz_back = backFloorViewZ * gProjMatrix.r1c1;
+        drawSeg.p2tz_back = backCeilViewZ * gProjMatrix.r1c1;
+        drawSeg.p2bz_back = backFloorViewZ * gProjMatrix.r1c1;
+
+        drawSeg.bEmitFrontUpperOccluder = ((backCeilZ < frontCeilZ) && (viewZ >= backCeilZ));
+        drawSeg.bEmitFrontLowerOccluder = ((backFloorZ > frontFloorZ) && (viewZ <= backFloorZ));
     }
     else {
         drawSeg.p1tz_back = 0.0f;
@@ -945,22 +950,23 @@ static void emitOccluderColumn(
     const float depth
 ) noexcept {
     ASSERT(x < gScreenWidth);
-    
-    // Get the occluding columns bounds entry that we want
-    OccludingColumns& occludingCols = gOccludingCols[x];
-    const uint32_t numOccludersForCol = occludingCols.count;
 
-    if (numOccludersForCol <= 0 || occludingCols.depths[numOccludersForCol - 1] != depth) {
+    // Determine if we need a new occluder column
+    OccludingColumns& occludingCols = gOccludingCols[x];
+    const uint32_t numOccludingCols = occludingCols.count;
+    const uint32_t curOccludingColIdx = numOccludingCols - 1;
+
+    if (numOccludingCols <= 0 || occludingCols.depths[curOccludingColIdx] < depth) {
         // Need a new occluding columns bounds entry.
         // Abort if we have reached the engine limit of occluders per column. Raise the limit if you run into this:
-        ASSERT_LOG(numOccludersForCol < OccludingColumns::MAX_ENTRIES, "Too many occluders for column!");
+        ASSERT_LOG(numOccludingCols < OccludingColumns::MAX_ENTRIES, "Too many occluders for column!");
 
-        if (numOccludersForCol >= OccludingColumns::MAX_ENTRIES)
+        if (numOccludingCols >= OccludingColumns::MAX_ENTRIES)
             return;
         
         ++occludingCols.count;
-        occludingCols.depths[numOccludersForCol] = depth;
-        OccludingColumns::Bounds& bounds = occludingCols.bounds[numOccludersForCol];
+        occludingCols.depths[numOccludingCols] = depth;
+        OccludingColumns::Bounds& bounds = occludingCols.bounds[numOccludingCols];
 
         if constexpr (MODE == EmitOccluderMode::TOP) {
             bounds.top = (int16_t) screenYCoord;
@@ -970,16 +976,20 @@ static void emitOccluderColumn(
             bounds.top = -1;
             bounds.bottom = (int16_t) screenYCoord;
         }
-    } else {
-        // Re-use an existing entry since it is at the same depth
-        OccludingColumns::Bounds& bounds = occludingCols.bounds[numOccludersForCol - 1];
+    } 
+    else {
+        // Re-use an existing column bounds entry.
+        // Depth must be equal to re-use the existing entry however, and clipped range must be increasing always...
+        OccludingColumns::Bounds& bounds = occludingCols.bounds[curOccludingColIdx];
+
+        if (depth < occludingCols.depths[curOccludingColIdx])
+            return;
 
         if constexpr (MODE == EmitOccluderMode::TOP) {
-            bounds.top = (int16_t) screenYCoord;
-        }
-        else {
+            bounds.top = std::max((int16_t) screenYCoord, bounds.top);
+        } else {
             static_assert(MODE == EmitOccluderMode::BOTTOM);
-            bounds.bottom = (int16_t) screenYCoord;
+            bounds.bottom = std::min((int16_t) screenYCoord, bounds.bottom);
         }
     }
 }
@@ -1075,7 +1085,7 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
     [[maybe_unused]] float p1LowerBz;
     [[maybe_unused]] float p2LowerBz;
 
-    if constexpr (EMIT_MID_WALL || EMIT_UPPER_WALL || EMIT_CEILING || EMIT_UPPER_WALL_OCCLUDER) {
+    if constexpr (EMIT_MID_WALL || EMIT_UPPER_WALL || EMIT_CEILING) {
         p1UpperTz = drawSeg.p1tz;
         p2UpperTz = drawSeg.p2tz;
     }
@@ -1090,7 +1100,7 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
         p2LowerTz = drawSeg.p2bz_back;
     }
 
-    if constexpr (EMIT_MID_WALL || EMIT_LOWER_WALL || EMIT_FLOOR || EMIT_LOWER_WALL_OCCLUDER) {
+    if constexpr (EMIT_MID_WALL || EMIT_LOWER_WALL || EMIT_FLOOR) {
         p1LowerBz = drawSeg.p1bz;
         p2LowerBz = drawSeg.p2bz;
     }
@@ -1376,12 +1386,9 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
         // Do perspective correct adjustments where required.
         //--------------------------------------------------------------------------------------------------------------
 
-        // 1/w and w
+        // 1/w and w (depth)
         const float wInv = p1InvW + invWStep * curXStepCount;
         const float w = 1.0f / wInv;
-
-        // Normalized depth and actual depth
-        const float y = (p1y + yStep * curXStepCount) * w;
         const float depth = w;
 
         // X texture coordinate (for walls)
@@ -1550,7 +1557,7 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
 
 //----------------------------------------------------------------------------------------------------------------------
 // Emits wall and floor/ceiling fragments for later rendering.
-// The status of whether to emit floor or ceiling is decided at runtime.
+// The status of whether to emit floor or ceiling is decided at runtime based on the draw seg.
 //----------------------------------------------------------------------------------------------------------------------
 template <FragEmitFlagsT FLAGS>
 static inline void emitWallAndFlatFragmentsWithRuntimeFlatCulling(const DrawSeg& drawSeg, const seg_t seg) noexcept {
@@ -1565,6 +1572,40 @@ static inline void emitWallAndFlatFragmentsWithRuntimeFlatCulling(const DrawSeg&
             emitWallAndFlatFragments<FLAGS | FragEmitFlags::CEILING>(drawSeg, seg);
         } else {
             emitWallAndFlatFragments<FLAGS>(drawSeg, seg);
+        }
+    }
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+// Emits wall and floor/ceiling fragments for later rendering.
+// The status of whether to emit floor or ceiling and upper/lower occluders is decided at runtime based on the draw seg.
+//----------------------------------------------------------------------------------------------------------------------
+template <FragEmitFlagsT FLAGS>
+static inline void emitWallAndFlatFragmentsWithRuntimeFlatCullingAndFrontOccluders(const DrawSeg& drawSeg, const seg_t seg) noexcept {
+    if (drawSeg.bEmitFrontUpperOccluder) {
+        if (drawSeg.bEmitFrontLowerOccluder) {
+            emitWallAndFlatFragmentsWithRuntimeFlatCulling<
+                FLAGS |
+                FragEmitFlags::UPPER_WALL_OCCLUDER | 
+                FragEmitFlags::LOWER_WALL_OCCLUDER
+            >
+            (drawSeg, seg);
+        } else {
+            emitWallAndFlatFragmentsWithRuntimeFlatCulling<
+                FLAGS |
+                FragEmitFlags::UPPER_WALL_OCCLUDER
+            >
+            (drawSeg, seg);
+        }
+    } else {
+        if (drawSeg.bEmitFrontLowerOccluder) {
+            emitWallAndFlatFragmentsWithRuntimeFlatCulling<
+                FLAGS |
+                FragEmitFlags::LOWER_WALL_OCCLUDER
+            >
+            (drawSeg, seg);
+        } else {
+            emitWallAndFlatFragmentsWithRuntimeFlatCulling<FLAGS>(drawSeg, seg); 
         }
     }
 }
@@ -1599,7 +1640,7 @@ void addSegToFrame(const seg_t& seg) noexcept {
 
     // Emit all wall and floor fragments for the seg
     if (!seg.backsector) {
-        // We only emit fragments for solid walls if NOT back facing
+        // Fully solid wall with no lower or upper parts: we only emit fragments for solid walls if NOT back facing
         if (!bIsBackFacing) {
             emitWallAndFlatFragmentsWithRuntimeFlatCulling<
                 FragEmitFlags::MID_WALL |
@@ -1608,16 +1649,18 @@ void addSegToFrame(const seg_t& seg) noexcept {
             >(drawSeg, seg);
         }
     } else {
+        // Two sided seg that may have upper and lower parts to draw.
+        // We only actually emit fragments if it is front facing however...
         if (!bIsBackFacing) {
             // Note: need to ignore upper walls if back sector has a sky ceiling
             if (seg.backsector->CeilingPic != SKY_CEILING_PIC) {
-                emitWallAndFlatFragmentsWithRuntimeFlatCulling<
+                emitWallAndFlatFragmentsWithRuntimeFlatCullingAndFrontOccluders<
                     FragEmitFlags::UPPER_WALL |
                     FragEmitFlags::LOWER_WALL |
                     FragEmitFlags::SKY
                 >(drawSeg, seg);
             } else {
-                emitWallAndFlatFragmentsWithRuntimeFlatCulling<FragEmitFlags::LOWER_WALL>(drawSeg, seg);
+                emitWallAndFlatFragmentsWithRuntimeFlatCullingAndFrontOccluders<FragEmitFlags::LOWER_WALL>(drawSeg, seg);
             }
         } else {
             // If we are facing the back of a two sided seg then all it can emit are occluders.
