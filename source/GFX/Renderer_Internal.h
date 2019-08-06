@@ -242,7 +242,7 @@ namespace Renderer {
     //------------------------------------------------------------------------------------------------------------------
     struct SpriteFragment {
         uint16_t            x;                      // Screen x and y
-        uint16_t            y;
+        int16_t             y;
         uint16_t            height;                 // Screen height
         uint16_t            texH : 15;              // Height of the sprite texture
         uint16_t            isTransparent : 1;      // If '1' then draw the sprite transparent (used for spectres)
