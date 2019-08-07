@@ -20,7 +20,7 @@ BEGIN_NAMESPACE(Renderer)
 //      bounds and wrapping erroneously. Things are far more accurate closer to the view, so there
 //      is no need for this adjustment at near depths...
 //----------------------------------------------------------------------------------------------------------------------
-static constexpr float MIN_DEPTH_FOR_FLAT_PIXEL_CLAMP = 256.0f;
+static constexpr float MIN_DEPTH_FOR_FLAT_PIXEL_CLAMP = 128.0f;
 
 //----------------------------------------------------------------------------------------------------------------------
 // Check all the visible walls and fill in all the "Blanks" such as texture pointers and sky hack variables.
