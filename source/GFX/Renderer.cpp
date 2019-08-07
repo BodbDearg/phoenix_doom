@@ -32,6 +32,10 @@ static constexpr Fixed STRETCHES[6] = {
 
 BEGIN_NAMESPACE(Renderer)
 
+#if ENABLE_DEBUG_CAMERA_Z_MOVEMENT
+    float gDebugCameraZOffset;
+#endif
+
 //----------------------------------------------------------------------------------------------------------------------
 // Internal renderer cross module globals
 //----------------------------------------------------------------------------------------------------------------------
@@ -193,6 +197,13 @@ static void preDrawSetup() noexcept {
     gViewZ = FMath::doomFixed16ToFloat<float>(player.viewz);
     gViewAngleBAM = mapObj.angle;
     gViewAngle = FMath::doomAngleToRadians<float>(mapObj.angle);
+
+    #if ENABLE_DEBUG_CAMERA_Z_MOVEMENT
+    {
+        gViewZFrac += FMath::floatToDoomFixed16(gDebugCameraZOffset);
+        gViewZ += gDebugCameraZOffset;
+    }
+    #endif
 
     // Precompute sine and cosine of view angle
     {

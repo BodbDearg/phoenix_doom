@@ -2,7 +2,17 @@
 
 #include "Base/Macros.h"
 
+// Enable to allow moving up and down the camera along the Z axis.
+// Useful to test how the renderer reacts to different height adjustments.
+#ifndef ENABLE_DEBUG_CAMERA_Z_MOVEMENT
+    #define ENABLE_DEBUG_CAMERA_Z_MOVEMENT 1
+#endif
+
 BEGIN_NAMESPACE(Renderer)
+
+#if ENABLE_DEBUG_CAMERA_Z_MOVEMENT
+    extern float gDebugCameraZOffset;
+#endif
 
 // Used to compute scale factors
 static constexpr uint32_t REFERENCE_SCREEN_WIDTH = 320;

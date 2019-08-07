@@ -2,6 +2,7 @@
 
 #include "Base/Endian.h"
 #include "Game/Resources.h"
+#include "GFX/Renderer.h"
 #include <cstddef>
 #include <SDL.h>
 
@@ -128,6 +129,16 @@ uint32_t ReadJoyButtons(uint32_t PadNum) noexcept
     if (state[SDL_SCANCODE_E]) {
         buttons |= PadRightShift;
     }
+
+    #if ENABLE_DEBUG_CAMERA_Z_MOVEMENT
+        if (state[SDL_SCANCODE_PAGEUP]) {
+            Renderer::gDebugCameraZOffset += 1.0f;
+        }
+
+        if (state[SDL_SCANCODE_PAGEDOWN]) {
+            Renderer::gDebugCameraZOffset -= 1.0f;
+        }
+    #endif
 
     return buttons;    
 
