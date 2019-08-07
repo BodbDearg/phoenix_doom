@@ -786,7 +786,7 @@ static void clipAndEmitWallColumn(
         curTexTy += texYStep * pixelsOffscreen;
         
         // If the clipped size is now invalid then skip
-        if (curZt >= curZb)
+        if (curZt > curZb)
             return;
         
         // Note: no sub adjustement when we clip, it's already done implicitly as part of clipping
@@ -808,7 +808,7 @@ static void clipAndEmitWallColumn(
         curTexBy -= texYStep * pixelsOffscreen;
         
         // If the clipped size is now invalid then skip
-        if (curZt >= curZb)
+        if (curZt > curZb)
             return;
     }
 
@@ -881,6 +881,7 @@ static void clipAndEmitFlatColumn(
     const uint8_t sectorLightLevel,
     const ImageData& texture
 ) noexcept {
+    static_assert(FLAGS == FragEmitFlags::FLOOR || FLAGS == FragEmitFlags::CEILING);
     ASSERT(x < gScreenWidth);
 
     // Only bother emitting wall fragments if the column height would be > 0
@@ -900,9 +901,8 @@ static void clipAndEmitFlatColumn(
         ztInt = (int32_t) curZt;
         
         // If the clipped size is now invalid then skip
-        if (curZt >= curZb) {
+        if (curZt > curZb)
             return;
-        }
     }
 
     if (zbInt >= clipBounds.bottom) {
@@ -911,9 +911,8 @@ static void clipAndEmitFlatColumn(
         zbInt = (int32_t) curZb;
         
         // If the clipped size is now invalid then skip
-        if (curZt >= curZb) {
+        if (curZt > curZb)
             return;
-        }
     }
 
     // Emit the floor or ceiling fragment
@@ -950,9 +949,7 @@ static void clipAndEmitFlatColumn(
         }
     }
     else {
-        static_assert(FLAGS == FragEmitFlags::FLOOR);
-
-        if (ztInt - 1 > clipBounds.top) {
+        if (ztInt - 1 >= clipBounds.top) {
             clipBounds = SegClip{ clipBounds.top, (int16_t) ztInt };
         } else {
             clipBounds = SegClip{ 0, 0 };
