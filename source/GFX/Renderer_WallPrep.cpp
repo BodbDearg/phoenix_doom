@@ -627,35 +627,44 @@ static void addClipSpaceZValuesForSeg(DrawSeg& drawSeg, const seg_t& seg) noexce
         drawSeg.p1tz_back = backCeilViewZ * gProjMatrix.r1c1;
         drawSeg.p1bz_back = backFloorViewZ * gProjMatrix.r1c1;
         drawSeg.p2tz_back = backCeilViewZ * gProjMatrix.r1c1;
-        drawSeg.p2bz_back = backFloorViewZ * gProjMatrix.r1c1;
+        drawSeg.p2bz_back = backFloorViewZ * gProjMatrix.r1c1;        
 
-        // Whether to emit lower wall occluders
-        if (frontFloorZ < backFloorZ) {
-            drawSeg.bEmitLowerOccluder = (viewZ <= backFloorZ);
+        // Whether to emit upper and lower wall occluders
+        const float clipFloorZ = std::fmax(frontFloorZ, backFloorZ);
+
+        if (clipFloorZ < backCeilZ) {
+            // Not a closed door, crusher etc.
+            if (frontFloorZ < backFloorZ) {
+                drawSeg.bEmitLowerOccluder = (viewZ <= backFloorZ);
+                drawSeg.bLowerOccluderUsesBackZ = true;
+            } 
+            else if (frontFloorZ > backFloorZ) {
+                drawSeg.bEmitLowerOccluder = (viewZ >= backFloorZ);
+                drawSeg.bLowerOccluderUsesBackZ = false;
+            } 
+            else {
+                drawSeg.bEmitLowerOccluder = false;
+            }
+
+            if (frontCeilZ < backCeilZ) {
+                drawSeg.bEmitUpperOccluder = (viewZ <= backCeilZ);
+                drawSeg.bUpperOccluderUsesBackZ = false;
+            } 
+            else if (frontCeilZ > backCeilZ) {
+                drawSeg.bEmitUpperOccluder = (viewZ >= backCeilZ);
+                drawSeg.bUpperOccluderUsesBackZ = true;
+            } 
+            else {
+                drawSeg.bEmitUpperOccluder = false;
+            }
+        } else {
+            // Closed door or crusher
+            drawSeg.bEmitLowerOccluder = true;
             drawSeg.bLowerOccluderUsesBackZ = true;
-        } 
-        else if (frontFloorZ > backFloorZ) {
-            drawSeg.bEmitLowerOccluder = (viewZ >= backFloorZ);
-            drawSeg.bLowerOccluderUsesBackZ = false;
-        } 
-        else {
-            drawSeg.bEmitLowerOccluder = false;
-        }
-
-        // Whether to emit upper wall occluders
-        if (frontCeilZ < backCeilZ) {
-            drawSeg.bEmitUpperOccluder = (viewZ <= backCeilZ);
-            drawSeg.bUpperOccluderUsesBackZ = false;
-        } 
-        else if (frontCeilZ > backCeilZ) {
-            drawSeg.bEmitUpperOccluder = (viewZ >= backCeilZ);
+            drawSeg.bEmitUpperOccluder = true;
             drawSeg.bUpperOccluderUsesBackZ = true;
-        } 
-        else {
-            drawSeg.bEmitUpperOccluder = false;
         }
-    }
-    else {
+    } else {
         drawSeg.p1tz_back = 0.0f;
         drawSeg.p1bz_back = 0.0f;
         drawSeg.p2tz_back = 0.0f;
