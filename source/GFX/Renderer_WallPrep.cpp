@@ -860,8 +860,6 @@ static void clipAndEmitWallColumn(
             gNumFullSegCols++;
         }
     }
-
-    gSegClip[x] = clipBounds;
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -956,8 +954,6 @@ static void clipAndEmitFlatColumn(
             gNumFullSegCols++;
         }
     }
-
-    gSegClip[x] = clipBounds;
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -1055,14 +1051,13 @@ static void emitOccluderColumn(
     } else {
         // Re-use an existing column bounds entry if at the same depth.
         //
-        // Note that if the depth of the existing column is GREATER then ignore the emit occluder request.
+        // Note that if the depth of the existing column is GREATER then pretend the occluder request is
+        // at a greater depth and only allow it to extend the clipped area.
+        //
         // Normally this should *NOT* happen because we render front to back, but there appears to be some
         // rare cases where this does not occur for some strange reason, maybe due to the imperfect nature
         // of the BSP splits and lower accuracy of fixed point numbers?
         //
-        if (occludingCols.depths[curOccluderIdx] > depth)
-            return;
-        
         OccludingColumns::Bounds& bounds = occludingCols.bounds[curOccluderIdx];
 
         if constexpr (MODE == EmitOccluderMode::TOP) {
@@ -1482,7 +1477,7 @@ static void emitDrawSegColumns(const DrawSeg& drawSeg, const seg_t seg) noexcept
         // Grab the clip bounds for this column.
         // If it is fully filled (top >= bottom) then just skip over it and go to the next step
         //--------------------------------------------------------------------------------------------------------------
-        SegClip clipBounds = gSegClip[x];
+        SegClip& clipBounds = gSegClip[x];
 
         if (clipBounds.top >= clipBounds.bottom) {
             nextXStepCount += 1.0f;
@@ -1654,6 +1649,13 @@ static void emitDrawSegColumns(const DrawSeg& drawSeg, const seg_t seg) noexcept
         if constexpr (EMIT_MID_WALL_OCCLUDER) {
             // A solid wall will gobble up the entire screen and occlude everything!
             emitOccluderColumn<EmitOccluderMode::TOP>(x, gScreenHeight, depth);
+        } else {
+            // Even if it's not asked for, if we find the column at this pixel is now
+            // fully occluded then mark that as the case with an occluder column:
+            if (clipBounds.top >= clipBounds.bottom) {
+                emitOccluderColumn<EmitOccluderMode::TOP>(x, gScreenHeight, depth);
+                continue;
+            }
         }
 
         if constexpr (EMIT_LOWER_WALL_OCCLUDER) {
