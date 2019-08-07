@@ -972,43 +972,96 @@ static void emitOccluderColumn(
     const int32_t screenYCoord,
     const float depth
 ) noexcept {
+    static_assert(MODE == EmitOccluderMode::TOP || MODE == EmitOccluderMode::BOTTOM);
     ASSERT(x < gScreenWidth);
+
+    // Ignore the request if the bound is already offscreen
+    if constexpr (MODE == EmitOccluderMode::TOP) {
+        if (screenYCoord < 0)
+            return;
+    } else {
+        if (screenYCoord >= (int32_t) gScreenHeight)
+            return;
+    }
 
     // Determine if we need a new occluder column
     OccludingColumns& occludingCols = gOccludingCols[x];
     const uint32_t numOccludingCols = occludingCols.count;
-    const uint32_t curOccludingColIdx = numOccludingCols - 1;
+    const uint32_t curOccluderIdx = numOccludingCols - 1;
 
-    if (numOccludingCols <= 0 || occludingCols.depths[curOccludingColIdx] != depth) {
-        // Need a new occluding columns bounds entry.
-        // Abort if we have reached the engine limit of occluders per column. Raise the limit if you run into this:
+    if (numOccludingCols <= 0) {
+        // No occluders for this column yet: need a new occluding columns bounds entry
         ASSERT_LOG(numOccludingCols < OccludingColumns::MAX_ENTRIES, "Too many occluders for column!");
 
         if (numOccludingCols >= OccludingColumns::MAX_ENTRIES)
             return;
         
         ++occludingCols.count;
-        occludingCols.depths[numOccludingCols] = depth;
-        OccludingColumns::Bounds& bounds = occludingCols.bounds[numOccludingCols];
+        occludingCols.depths[0] = depth;
+        OccludingColumns::Bounds& bounds = occludingCols.bounds[0];
 
         if constexpr (MODE == EmitOccluderMode::TOP) {
             bounds.top = (int16_t) screenYCoord;
             bounds.bottom = gScreenHeight;
         } else {
-            static_assert(MODE == EmitOccluderMode::BOTTOM);
+            
             bounds.top = -1;
             bounds.bottom = (int16_t) screenYCoord;
         }
-    } 
-    else {
-        // Re-use an existing column bounds entry.
-        // Note that we can only GROW the occluded bounds, never shrink!
-        OccludingColumns::Bounds& bounds = occludingCols.bounds[curOccludingColIdx];
+    }
+    else if (occludingCols.depths[curOccluderIdx] < depth) {
+        // Closer occluders at this column.
+        // Only emit a new occluder if it would decrease the number of visible pixels.
+        const OccludingColumns::Bounds prevBounds = occludingCols.bounds[curOccluderIdx];
+        const int32_t numRowsVisible = std::max((int32_t) prevBounds.bottom - (int32_t) prevBounds.top - 1, 0);
+        
+        // Figure out the new bounds and new number of rows visible.
+        // Only emit the occluder which is deeper in if it occludes more:
+        const int16_t newBound = (int16_t) screenYCoord;
+        bool bEmitOccluder;
+
+        if constexpr (MODE == EmitOccluderMode::TOP) {
+            const int32_t newNumRowsVisible = std::max((int32_t) prevBounds.bottom - (int32_t) newBound - 1, 0);
+            bEmitOccluder = (newNumRowsVisible < numRowsVisible);
+        } else {
+            const int32_t newNumRowsVisible = std::max((int32_t) newBound - (int32_t) prevBounds.top - 1, 0);
+            bEmitOccluder = (newNumRowsVisible < numRowsVisible);
+        }
+
+        if (bEmitOccluder) {
+            ASSERT_LOG(numOccludingCols < OccludingColumns::MAX_ENTRIES, "Too many occluders for column!");
+
+            if (numOccludingCols >= OccludingColumns::MAX_ENTRIES)
+                return;
+            
+            ++occludingCols.count;
+            occludingCols.depths[numOccludingCols] = depth;
+            OccludingColumns::Bounds& bounds = occludingCols.bounds[numOccludingCols];
+
+            if constexpr (MODE == EmitOccluderMode::TOP) {
+                bounds.top = newBound;
+                bounds.bottom = prevBounds.bottom;
+            } else {
+                bounds.top = prevBounds.top;
+                bounds.bottom = newBound;
+            }
+        }
+    } else {
+        // Re-use an existing column bounds entry if at the same depth.
+        //
+        // Note that if the depth of the existing column is GREATER then ignore the emit occluder request.
+        // Normally this should *NOT* happen because we render front to back, but there appears to be some
+        // rare cases where this does not occur for some strange reason, maybe due to the imperfect nature
+        // of the BSP splits and lower accuracy of fixed point numbers?
+        //
+        if (occludingCols.depths[curOccluderIdx] > depth)
+            return;
+        
+        OccludingColumns::Bounds& bounds = occludingCols.bounds[curOccluderIdx];
 
         if constexpr (MODE == EmitOccluderMode::TOP) {
             bounds.top = std::max((int16_t) screenYCoord, bounds.top);
         } else {
-            static_assert(MODE == EmitOccluderMode::BOTTOM);
             bounds.bottom = std::min((int16_t) screenYCoord, bounds.bottom);
         }
     }
@@ -1437,7 +1490,7 @@ static void emitDrawSegColumns(const DrawSeg& drawSeg, const seg_t seg) noexcept
         //--------------------------------------------------------------------------------------------------------------
 
         // 1/w and w (depth)
-        const float wInv = p1InvW + invWStep * curXStepCount;
+        const float wInv = (x < x2) ? p1InvW + invWStep * curXStepCount : p2InvW;
         const float w = 1.0f / wInv;
         const float depth = w;
 

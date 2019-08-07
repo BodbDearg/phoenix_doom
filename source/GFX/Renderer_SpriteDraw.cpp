@@ -934,7 +934,7 @@ void drawSpriteFragment(const SpriteFragment frag) noexcept {
     {
         const OccludingColumns& occludingCols = gOccludingCols[frag.x];
         const uint32_t numOccludingCols = occludingCols.count;
-        BLIT_ASSERT(numOccludingCols < OccludingColumns::MAX_ENTRIES);
+        BLIT_ASSERT(numOccludingCols <= OccludingColumns::MAX_ENTRIES);
 
         for (uint32_t i = 0; i < numOccludingCols; ++i) {
             // Ignore if the sprite is in front!
