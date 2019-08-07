@@ -958,8 +958,8 @@ void drawSpriteFragment(const SpriteFragment frag) noexcept {
     uint32_t dstY = frag.y;
     uint32_t dstCount = frag.height;
 
-    if ((int32_t) dstY < yClipT) {
-        const uint32_t numPixelsOffscreen = (uint32_t)(yClipT - (int32_t) dstY);
+    if ((int32_t) dstY <= yClipT) {
+        const uint32_t numPixelsOffscreen = (uint32_t)(yClipT - (int32_t) dstY + 1);
 
         if (numPixelsOffscreen >= dstCount)
             return;
