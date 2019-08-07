@@ -629,8 +629,31 @@ static void addClipSpaceZValuesForSeg(DrawSeg& drawSeg, const seg_t& seg) noexce
         drawSeg.p2tz_back = backCeilViewZ * gProjMatrix.r1c1;
         drawSeg.p2bz_back = backFloorViewZ * gProjMatrix.r1c1;
 
-        drawSeg.bEmitFrontUpperOccluder = ((backCeilZ < frontCeilZ) && (viewZ >= backCeilZ));
-        drawSeg.bEmitFrontLowerOccluder = ((backFloorZ > frontFloorZ) && (viewZ <= backFloorZ));
+        // Whether to emit lower wall occluders
+        if (frontFloorZ < backFloorZ) {
+            drawSeg.bEmitLowerOccluder = (viewZ <= backFloorZ);
+            drawSeg.bLowerOccluderUsesBackZ = true;
+        } 
+        else if (frontFloorZ > backFloorZ) {
+            drawSeg.bEmitLowerOccluder = (viewZ >= backFloorZ);
+            drawSeg.bLowerOccluderUsesBackZ = false;
+        } 
+        else {
+            drawSeg.bEmitLowerOccluder = false;
+        }
+
+        // Whether to emit upper wall occluders
+        if (frontCeilZ < backCeilZ) {
+            drawSeg.bEmitUpperOccluder = (viewZ <= backCeilZ);
+            drawSeg.bUpperOccluderUsesBackZ = false;
+        } 
+        else if (frontCeilZ > backCeilZ) {
+            drawSeg.bEmitUpperOccluder = (viewZ >= backCeilZ);
+            drawSeg.bUpperOccluderUsesBackZ = true;
+        } 
+        else {
+            drawSeg.bEmitUpperOccluder = false;
+        }
     }
     else {
         drawSeg.p1tz_back = 0.0f;
@@ -956,7 +979,7 @@ static void emitOccluderColumn(
     const uint32_t numOccludingCols = occludingCols.count;
     const uint32_t curOccludingColIdx = numOccludingCols - 1;
 
-    if (numOccludingCols <= 0 || occludingCols.depths[curOccludingColIdx] < depth) {
+    if (numOccludingCols <= 0 || occludingCols.depths[curOccludingColIdx] != depth) {
         // Need a new occluding columns bounds entry.
         // Abort if we have reached the engine limit of occluders per column. Raise the limit if you run into this:
         ASSERT_LOG(numOccludingCols < OccludingColumns::MAX_ENTRIES, "Too many occluders for column!");
@@ -979,11 +1002,8 @@ static void emitOccluderColumn(
     } 
     else {
         // Re-use an existing column bounds entry.
-        // Depth must be equal to re-use the existing entry however, and clipped range must be increasing always...
+        // Note that we can only GROW the occluded bounds, never shrink!
         OccludingColumns::Bounds& bounds = occludingCols.bounds[curOccludingColIdx];
-
-        if (depth < occludingCols.depths[curOccludingColIdx])
-            return;
 
         if constexpr (MODE == EmitOccluderMode::TOP) {
             bounds.top = std::max((int16_t) screenYCoord, bounds.top);
@@ -995,13 +1015,14 @@ static void emitOccluderColumn(
 }
 
 //----------------------------------------------------------------------------------------------------------------------
-// Emits wall and floor/ceiling fragments for later rendering
+// Emits wall and potentially floor/ceiling fragments for each column of the draw seg (for later rendering).
+// Also potentially emits occluders if specified.
 //----------------------------------------------------------------------------------------------------------------------
 template <FragEmitFlagsT FLAGS>
-static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) noexcept {
-    //-----------------------------------------------------------------------------------------------------------------
+static void emitDrawSegColumns(const DrawSeg& drawSeg, const seg_t seg) noexcept {
+    //------------------------------------------------------------------------------------------------------------------
     // Some setup logic
-    //-----------------------------------------------------------------------------------------------------------------
+    //------------------------------------------------------------------------------------------------------------------
 
     // For readability's sake:
     constexpr bool EMIT_MID_WALL                = ((FLAGS & FragEmitFlags::MID_WALL) != 0);
@@ -1364,10 +1385,39 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
     float nextXStepCount = -(drawSeg.p1x - (float) x1);     // Adjustement for sub-pixel pos to prevent wiggle
 
     //------------------------------------------------------------------------------------------------------------------
-    // Emit each column
+    // Caching some useful stuff
     //------------------------------------------------------------------------------------------------------------------
     const float viewH = (float) gScreenHeight;
 
+    [[maybe_unused]] bool bEmitFloor;
+    [[maybe_unused]] bool bEmitCeiling;
+
+    if constexpr (EMIT_FLOOR) {
+        bEmitFloor = drawSeg.bEmitFloor;
+    }
+
+    if constexpr (EMIT_CEILING) {
+        bEmitCeiling = drawSeg.bEmitCeiling;
+    }
+
+    [[maybe_unused]] bool bEmitLowerWallOccluder;
+    [[maybe_unused]] bool bEmitUpperWallOccluder;
+    [[maybe_unused]] bool bLowerWallOccluderUsesBackZ;
+    [[maybe_unused]] bool bUpperWallOccluderUsesBackZ;
+
+    if constexpr (EMIT_LOWER_WALL_OCCLUDER) {
+        bEmitLowerWallOccluder = drawSeg.bEmitLowerOccluder;
+        bLowerWallOccluderUsesBackZ = drawSeg.bLowerOccluderUsesBackZ;
+    }
+
+    if constexpr (EMIT_UPPER_WALL_OCCLUDER) {
+        bEmitUpperWallOccluder = drawSeg.bEmitUpperOccluder;
+        bUpperWallOccluderUsesBackZ = drawSeg.bUpperOccluderUsesBackZ;
+    }
+
+    //------------------------------------------------------------------------------------------------------------------
+    // Emit each column
+    //------------------------------------------------------------------------------------------------------------------
     for (int32_t x = x1; x <= x2; ++x) {
         //--------------------------------------------------------------------------------------------------------------
         // Grab the clip bounds for this column.
@@ -1438,18 +1488,31 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
         //--------------------------------------------------------------------------------------------------------------
         // Emit all fragments and occluding columns
         //--------------------------------------------------------------------------------------------------------------
-        if constexpr (EMIT_SKY) {
-            if (!pCeilingTex && upperTz > 0) {
-                SkyFragment skyFrag;
-                skyFrag.x = x;
-                skyFrag.height = (uint16_t) std::ceilf(upperTz);
+        if constexpr (EMIT_FLOOR) {
+            if (bEmitFloor) {
+                const bool bClampFirstColPixel = (
+                    bCanClampFirstFloorColumnPixel &&
+                    (depth >= MIN_DEPTH_FOR_FLAT_PIXEL_CLAMP)
+                );
 
-                gSkyFragments.push_back(skyFrag);
+                clipAndEmitFlatColumn<FragEmitFlags::FLOOR>(
+                    x,
+                    lowerBz,
+                    viewH,
+                    clipBounds,
+                    depth,
+                    worldX,
+                    worldY,
+                    lowerWorldBz,
+                    bClampFirstColPixel,
+                    sectorLightLevel,
+                    pFloorTex->data
+                );
             }
         }
 
-        if constexpr (EMIT_CEILING) {
-            if (pCeilingTex) {
+        if constexpr (EMIT_CEILING) {           
+            if (bEmitCeiling && pCeilingTex) {
                 const bool bClampFirstColPixel = (
                     bCanClampFirstCeilingColumnPixel &&
                     (depth >= MIN_DEPTH_FOR_FLAT_PIXEL_CLAMP)
@@ -1471,25 +1534,14 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
             }
         }
 
-        if constexpr (EMIT_FLOOR) {
-            const bool bClampFirstColPixel = (
-                bCanClampFirstFloorColumnPixel &&
-                (depth >= MIN_DEPTH_FOR_FLAT_PIXEL_CLAMP)
-            );
+        if constexpr (EMIT_SKY) {
+            if ((!pCeilingTex) && (upperTz > 0)) {
+                SkyFragment skyFrag;
+                skyFrag.x = x;
+                skyFrag.height = (uint16_t) std::ceilf(upperTz);
 
-            clipAndEmitFlatColumn<FragEmitFlags::FLOOR>(
-                x,
-                lowerBz,
-                viewH,
-                clipBounds,
-                depth,
-                worldX,
-                worldY,
-                lowerWorldBz,
-                bClampFirstColPixel,
-                sectorLightLevel,
-                pFloorTex->data
-            );
+                gSkyFragments.push_back(skyFrag);
+            }
         }
 
         if constexpr (EMIT_MID_WALL) {
@@ -1505,22 +1557,6 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
                 lightParams,
                 seg.lightMul,
                 pMidTex->data
-            );
-        }
-
-        if constexpr (EMIT_UPPER_WALL) {
-            clipAndEmitWallColumn<FragEmitFlags::UPPER_WALL>(
-                x,
-                upperTz,
-                upperBz,
-                texX,
-                upperTexTy,
-                upperTexBy,
-                depth,
-                clipBounds,
-                lightParams,
-                seg.lightMul,
-                pUpperTex->data
             );
         }
 
@@ -1540,72 +1576,39 @@ static void emitWallAndFlatFragments(const DrawSeg& drawSeg, const seg_t seg) no
             );
         }
 
+        if constexpr (EMIT_UPPER_WALL) {
+            clipAndEmitWallColumn<FragEmitFlags::UPPER_WALL>(
+                x,
+                upperTz,
+                upperBz,
+                texX,
+                upperTexTy,
+                upperTexBy,
+                depth,
+                clipBounds,
+                lightParams,
+                seg.lightMul,
+                pUpperTex->data
+            );
+        }
+
         if constexpr (EMIT_MID_WALL_OCCLUDER) {
             // A solid wall will gobble up the entire screen and occlude everything!
             emitOccluderColumn<EmitOccluderMode::TOP>(x, gScreenHeight, depth);
         }
 
-        if constexpr (EMIT_UPPER_WALL_OCCLUDER) {
-            emitOccluderColumn<EmitOccluderMode::TOP>(x, (int32_t) upperBz, depth);
-        }
-
         if constexpr (EMIT_LOWER_WALL_OCCLUDER) {
-            emitOccluderColumn<EmitOccluderMode::BOTTOM>(x, (int32_t) lowerTz, depth);
+            if (bEmitLowerWallOccluder) {
+                const float z = (bLowerWallOccluderUsesBackZ) ? lowerTz : lowerBz;
+                emitOccluderColumn<EmitOccluderMode::BOTTOM>(x, (int32_t) z, depth);
+            }
         }
-    }
-}
 
-//----------------------------------------------------------------------------------------------------------------------
-// Emits wall and floor/ceiling fragments for later rendering.
-// The status of whether to emit floor or ceiling is decided at runtime based on the draw seg.
-//----------------------------------------------------------------------------------------------------------------------
-template <FragEmitFlagsT FLAGS>
-static inline void emitWallAndFlatFragmentsWithRuntimeFlatCulling(const DrawSeg& drawSeg, const seg_t seg) noexcept {
-    if (drawSeg.bEmitFloor) {
-        if (drawSeg.bEmitCeiling) {
-            emitWallAndFlatFragments<FLAGS | FragEmitFlags::FLOOR | FragEmitFlags::CEILING>(drawSeg, seg);
-        } else {
-            emitWallAndFlatFragments<FLAGS | FragEmitFlags::FLOOR>(drawSeg, seg);
-        }
-    } else {
-        if (drawSeg.bEmitCeiling) {
-            emitWallAndFlatFragments<FLAGS | FragEmitFlags::CEILING>(drawSeg, seg);
-        } else {
-            emitWallAndFlatFragments<FLAGS>(drawSeg, seg);
-        }
-    }
-}
-
-//----------------------------------------------------------------------------------------------------------------------
-// Emits wall and floor/ceiling fragments for later rendering.
-// The status of whether to emit floor or ceiling and upper/lower occluders is decided at runtime based on the draw seg.
-//----------------------------------------------------------------------------------------------------------------------
-template <FragEmitFlagsT FLAGS>
-static inline void emitWallAndFlatFragmentsWithRuntimeFlatCullingAndFrontOccluders(const DrawSeg& drawSeg, const seg_t seg) noexcept {
-    if (drawSeg.bEmitFrontUpperOccluder) {
-        if (drawSeg.bEmitFrontLowerOccluder) {
-            emitWallAndFlatFragmentsWithRuntimeFlatCulling<
-                FLAGS |
-                FragEmitFlags::UPPER_WALL_OCCLUDER | 
-                FragEmitFlags::LOWER_WALL_OCCLUDER
-            >
-            (drawSeg, seg);
-        } else {
-            emitWallAndFlatFragmentsWithRuntimeFlatCulling<
-                FLAGS |
-                FragEmitFlags::UPPER_WALL_OCCLUDER
-            >
-            (drawSeg, seg);
-        }
-    } else {
-        if (drawSeg.bEmitFrontLowerOccluder) {
-            emitWallAndFlatFragmentsWithRuntimeFlatCulling<
-                FLAGS |
-                FragEmitFlags::LOWER_WALL_OCCLUDER
-            >
-            (drawSeg, seg);
-        } else {
-            emitWallAndFlatFragmentsWithRuntimeFlatCulling<FLAGS>(drawSeg, seg); 
+        if constexpr (EMIT_UPPER_WALL_OCCLUDER) {
+            if (bEmitUpperWallOccluder) {
+                const float z = (bUpperWallOccluderUsesBackZ) ? upperBz : upperTz;
+                emitOccluderColumn<EmitOccluderMode::TOP>(x, (int32_t) z, depth);
+            }
         }
     }
 }
@@ -1628,59 +1631,55 @@ void addSegToFrame(const seg_t& seg) noexcept {
     if (!clipSegAgainstRightPlane(drawSeg))
         return;
     
-    // Now that the seg is not rejected, fill in the height values and also determine if we can draw the ceiling or floor based on those
+    // Now that the seg is not rejected fill in the height values.
+    // This function and also determines if we can draw the ceiling/floor and emit occluders based on those z values.
     addClipSpaceZValuesForSeg(drawSeg, seg);
 
     // Do perspective division and transform the seg to screen space
     doPerspectiveDivisionForSeg(drawSeg);
     transformSegXZToScreenSpace(drawSeg);
     
-    // Check various seg properties
-    const bool bIsBackFacing = isScreenSpaceSegBackFacing(drawSeg);
+    // Determine if the seg is back facing and cull if it is
+    if (isScreenSpaceSegBackFacing(drawSeg))
+        return;
 
     // Emit all wall and floor fragments for the seg
     if (!seg.backsector) {
-        // Fully solid wall with no lower or upper parts: we only emit fragments for solid walls if NOT back facing
-        if (!bIsBackFacing) {
-            emitWallAndFlatFragmentsWithRuntimeFlatCulling<
-                FragEmitFlags::MID_WALL |
-                FragEmitFlags::SKY |
-                FragEmitFlags::MID_WALL_OCCLUDER
-            >(drawSeg, seg);
-        }
+        // Fully solid wall with no lower or upper parts
+        emitDrawSegColumns<
+            FragEmitFlags::MID_WALL |
+            FragEmitFlags::MID_WALL_OCCLUDER |
+            FragEmitFlags::FLOOR |
+            FragEmitFlags::CEILING |
+            FragEmitFlags::SKY
+        >(drawSeg, seg);
     } else {
         // Two sided seg that may have upper and lower parts to draw.
-        // We only actually emit fragments if it is front facing however...
-        if (!bIsBackFacing) {
-            // Note: need to ignore upper walls if back sector has a sky ceiling
-            if (seg.backsector->CeilingPic != SKY_CEILING_PIC) {
-                emitWallAndFlatFragmentsWithRuntimeFlatCullingAndFrontOccluders<
-                    FragEmitFlags::UPPER_WALL |
-                    FragEmitFlags::LOWER_WALL |
-                    FragEmitFlags::SKY
-                >(drawSeg, seg);
-            } else {
-                emitWallAndFlatFragmentsWithRuntimeFlatCullingAndFrontOccluders<FragEmitFlags::LOWER_WALL>(drawSeg, seg);
-            }
-        } else {
-            // If we are facing the back of a two sided seg then all it can emit are occluders.
-            // We need to reverse it also, since it will be facing the wrong way (we draw left to right always).
-            swapDrawSegP1AndP2(drawSeg);
-            
-            emitWallAndFlatFragments<
+        // Note: need to ignore upper walls if back sector has a sky ceiling
+        if (seg.backsector->CeilingPic != SKY_CEILING_PIC) {
+            emitDrawSegColumns<
+                FragEmitFlags::LOWER_WALL |
+                FragEmitFlags::UPPER_WALL |
                 FragEmitFlags::LOWER_WALL_OCCLUDER |
-                FragEmitFlags::UPPER_WALL_OCCLUDER
+                FragEmitFlags::UPPER_WALL_OCCLUDER |
+                FragEmitFlags::FLOOR |
+                FragEmitFlags::CEILING |
+                FragEmitFlags::SKY
+            >(drawSeg, seg);
+        } else {
+            emitDrawSegColumns<
+                FragEmitFlags::LOWER_WALL |
+                FragEmitFlags::LOWER_WALL_OCCLUDER |
+                FragEmitFlags::UPPER_WALL_OCCLUDER |
+                FragEmitFlags::FLOOR |
+                FragEmitFlags::CEILING
             >(drawSeg, seg);
         }
     }
 
-    // Grab the flags for the seg's linedef and mark it as seen (if visible)
-    const bool bIsLineSeen = (!bIsBackFacing);
-
-    if (bIsLineSeen) {
-        line_t& lineDef = *seg.linedef;
-        lineDef.flags |= ML_MAPPED;
-    }
+    // Grab the flags for the seg's linedef and mark it as seen (since it's visible)
+    line_t& lineDef = *seg.linedef;
+    lineDef.flags |= ML_MAPPED;
 }
 
 END_NAMESPACE(Renderer)

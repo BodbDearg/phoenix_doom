@@ -201,10 +201,15 @@ namespace Renderer {
         bool bEmitFloor;
 
         // Set only for a two sided seg, undefined otherwise.
-        // Whether we emit an upper or lower occluder for a front facing seg.
-        // These properties are unused for back facing segs...
-        bool bEmitFrontUpperOccluder;
-        bool bEmitFrontLowerOccluder;
+        // Whether we emit an upper or lower occluder for a seg.
+        bool bEmitUpperOccluder;
+        bool bEmitLowerOccluder;
+
+        // Whether to use the front or back sector z values for upper and lower occluders.
+        // This is determined based on the camera height relative to the occluding segs.
+        // Unused for anything other than two sided segs.
+        bool bUpperOccluderUsesBackZ;
+        bool bLowerOccluderUsesBackZ;
 
         //--------------------------------------------------------------------------------------------------------------
         // Vertex attributes that are not affected by any transforms except for clipping.
