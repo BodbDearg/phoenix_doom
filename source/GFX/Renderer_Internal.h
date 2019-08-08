@@ -45,6 +45,15 @@ namespace Renderer {
     static constexpr float      MIN_RENDER_SCALE    = 1 / 256.0f;
     static constexpr float      MAX_RENDER_SCALE    = 64.0f;
 
+    // An extra Z offset applied to all rendered sprites: this is a strange one!
+    //
+    // The original 3DO Doom appeared to apply an offset of +5.0 to the Z position of all sprites to get them out of the ground.
+    // I actually found this was 1 unit too and left a 1 pixel gap in many cases between the sprite and the ground, so I'm
+    // adjusting back down to 4.0 for improved accuracy. As to WHY this offset is required, I have absolutely no idea...
+    // Perhaps it is a consequence of how the sprites were processed for 3DO, or even something originating from the Jag port?
+    //
+    static constexpr float SPRITE_EXTRA_Z_OFFSET = 4.0f;
+
     //==================================================================================================================
     // Data structures
     //==================================================================================================================

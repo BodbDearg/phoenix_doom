@@ -519,7 +519,7 @@ static inline void transformWorldCoordsToViewSpace(
     // Transform by view position first
     const float translatedX = worldX - gViewX;
     const float translatedY = worldY - gViewY;
-    viewZOut = worldZ - gViewZ;
+    viewZOut = worldZ - gViewZ + SPRITE_EXTRA_Z_OFFSET;     // Node: have to apply a weird hack offset here (3DO Doom did this)
 
     // Do 2D rotation by view angle.
     // Rotation matrix formula from: https://en.wikipedia.org/wiki/Rotation_matrix
