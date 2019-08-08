@@ -886,30 +886,24 @@ static void clipAndEmitFlatColumn(
     if (zt >= zb)
         return;
     
-    // Clip the column against the top and bottom of the current seg clip bounds
+    // Clip the column against the top and bottom of the current seg clip bounds.
+    // If the size after clipping is invalid also reject the column.
     int32_t zbInt = (int32_t) zb;
     int32_t ztInt = (int32_t) zt;
 
-    float curZt = zt;
-    float curZb = zb;
-
     if (ztInt <= clipBounds.top) {
-        // Offscreen at the top - clip:
-        curZt = (float) clipBounds.top + 1.0f;
-        ztInt = (int32_t) curZt;
+        // Offscreen at the top, clip:
+        ztInt = (int32_t) clipBounds.top + 1;
         
-        // If the clipped size is now invalid then skip
-        if (curZt > curZb)
+        if (ztInt > zbInt)
             return;
     }
 
     if (zbInt >= clipBounds.bottom) {
-        // Offscreen at the bottom - clip:
-        curZb = (float) clipBounds.bottom - 1.0f;
-        zbInt = (int32_t) curZb;
+        // Offscreen at the bottom, clip:
+        zbInt = (int32_t) clipBounds.bottom - 1;
         
-        // If the clipped size is now invalid then skip
-        if (curZt > curZb)
+        if (ztInt > zbInt)
             return;
     }
 
