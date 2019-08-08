@@ -985,33 +985,66 @@ void drawSpriteFragment(const SpriteFragment frag) noexcept {
     }
 
     // Draw the actual sprite column
-    Blit::blitColumn<
-        Blit::BCF_STEP_Y |
-        Blit::BCF_ALPHA_TEST |
-        Blit::BCF_COLOR_MULT_RGB |
-        Blit::BCF_V_WRAP_DISCARD |
-        Blit::BCF_V_CLIP
-    >(
-        frag.pSpriteColPixels,
-        1,
-        frag.texH,
-        0.0f,
-        srcTexY,
-        0.0f,
-        srcTexYSubPixelAdjust,
-        Video::gFrameBuffer + gScreenYOffset * Video::SCREEN_WIDTH + gScreenXOffset,
-        gScreenWidth,
-        gScreenHeight,
-        Video::SCREEN_WIDTH,
-        frag.x,
-        dstY,
-        dstCount,
-        0.0f,
-        frag.texYStep,
-        frag.lightMul,
-        frag.lightMul,
-        frag.lightMul
-    );
+    if (!frag.isTransparent) {
+        Blit::blitColumn<
+            Blit::BCF_STEP_Y |
+            Blit::BCF_ALPHA_TEST |
+            Blit::BCF_COLOR_MULT_RGB |
+            Blit::BCF_V_WRAP_DISCARD |
+            Blit::BCF_V_CLIP
+        >(
+            frag.pSpriteColPixels,
+            1,
+            frag.texH,
+            0.0f,
+            srcTexY,
+            0.0f,
+            srcTexYSubPixelAdjust,
+            Video::gFrameBuffer + gScreenYOffset * Video::SCREEN_WIDTH + gScreenXOffset,
+            gScreenWidth,
+            gScreenHeight,
+            Video::SCREEN_WIDTH,
+            frag.x,
+            dstY,
+            dstCount,
+            0.0f,
+            frag.texYStep,
+            frag.lightMul,
+            frag.lightMul,
+            frag.lightMul
+        );
+    } else {
+        Blit::blitColumn<
+            Blit::BCF_STEP_Y |
+            Blit::BCF_ALPHA_TEST |
+            Blit::BCF_ALPHA_BLEND |
+            Blit::BCF_COLOR_MULT_RGB |
+            Blit::BCF_COLOR_MULT_A |
+            Blit::BCF_V_WRAP_DISCARD |
+            Blit::BCF_V_CLIP
+        >(
+            frag.pSpriteColPixels,
+            1,
+            frag.texH,
+            0.0f,
+            srcTexY,
+            0.0f,
+            srcTexYSubPixelAdjust,
+            Video::gFrameBuffer + gScreenYOffset * Video::SCREEN_WIDTH + gScreenXOffset,
+            gScreenWidth,
+            gScreenHeight,
+            Video::SCREEN_WIDTH,
+            frag.x,
+            dstY,
+            dstCount,
+            0.0f,
+            frag.texYStep,
+            frag.lightMul * MF_SHADOW_COLOR_MULT,
+            frag.lightMul * MF_SHADOW_COLOR_MULT,
+            frag.lightMul * MF_SHADOW_COLOR_MULT,
+            MF_SHADOW_ALPHA
+        );
+    }
 }
 
 //----------------------------------------------------------------------------------------------------------------------

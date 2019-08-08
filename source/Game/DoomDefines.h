@@ -24,6 +24,10 @@ static constexpr Fixed      MISSILERANGE    = 32 * 64 * FRACUNIT;   // Range of 
 static constexpr Fixed      FLOATSPEED      = 8 * FRACUNIT;         // Speed an object can float vertically
 static constexpr Fixed      SKULLSPEED      = 40 * FRACUNIT;        // Speed of the skull to attack
 
+// Graphics
+static constexpr float  MF_SHADOW_ALPHA         = 0.5f;     // Alpha to render things with that have the 'MF_SHADOW' map thing flag applied
+static constexpr float  MF_SHADOW_COLOR_MULT    = 0.1f;     // Color multiply to render things with that have the 'MF_SHADOW' map thing flag applied
+
 // Misc
 static constexpr uint32_t   SKY_CEILING_PIC = UINT32_MAX;           // Texture number that indicates a sky texture
 

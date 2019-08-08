@@ -424,10 +424,10 @@ namespace Blit {
                 // Do alpha blending with the destination pixel if enabled
                 if constexpr (DO_ALPHA_BLEND) {
                     // Read the destination pixel RGBA and convert to 0-255 float
-                    const uint16_t dstPixelRGBA5551 = *pDstPixel;
-                    const float dstR = (float)((dstPixelRGBA5551 >> 11) << 3);
-                    const float dstG = (float)((dstPixelRGBA5551 >> 6) << 3);
-                    const float dstB = (float)((dstPixelRGBA5551 >> 1) << 3);
+                    const uint32_t dstPixelRGBA8888 = *pDstPixel;
+                    const float dstR = (float)((uint8_t)(dstPixelRGBA8888 >> 24));
+                    const float dstG = (float)((uint8_t)(dstPixelRGBA8888 >> 16));
+                    const float dstB = (float)((uint8_t)(dstPixelRGBA8888 >> 8));
 
                     // Source and destination blend factors
                     const float srcFactor = a;
@@ -435,8 +435,8 @@ namespace Blit {
 
                     // Do the blend
                     r = r * srcFactor + dstR * dstFactor;
-                    g = r * srcFactor + dstG * dstFactor;
-                    b = r * srcFactor + dstB * dstFactor;
+                    g = g * srcFactor + dstG * dstFactor;
+                    b = b * srcFactor + dstB * dstFactor;
                 }
 
                 // Write out the pixel value
