@@ -743,6 +743,18 @@ namespace FragEmitFlags {
 }
 
 //----------------------------------------------------------------------------------------------------------------------
+// Marks the given seg clip bounds as fully occluded
+//----------------------------------------------------------------------------------------------------------------------
+static inline void markSegClipBoundsFullyOccluded(SegClip& clipBounds) noexcept {
+    if (clipBounds.top + 1 < clipBounds.bottom) {
+        ++gNumFullSegCols;
+    }
+
+    clipBounds.top = 0;
+    clipBounds.bottom = 0;
+}
+
+//----------------------------------------------------------------------------------------------------------------------
 // Clips and emits a wall column
 //----------------------------------------------------------------------------------------------------------------------
 template <FragEmitFlagsT FLAGS>
@@ -762,8 +774,13 @@ static void clipAndEmitWallColumn(
     ASSERT(x < gScreenWidth);
 
     // Only bother emitting wall fragments if the column height would be > 0
-    if (zt >= zb)
+    if (zt >= zb) {
+        if constexpr (FLAGS == FragEmitFlags::MID_WALL) {
+            markSegClipBoundsFullyOccluded(clipBounds);
+        }
+
         return;
+    }
     
     // This is how much to step the texture in the Y direction for this column
     const float texYStep = (texBy - texTy) / (zb - zt);
@@ -785,9 +802,14 @@ static void clipAndEmitWallColumn(
         const float pixelsOffscreen = curZt - zt;
         curTexTy += texYStep * pixelsOffscreen;
         
-        // If the clipped size is now invalid then skip
-        if (curZt > curZb)
+        // If the clipped size is now invalid then skip, but fully occlude if a mid wall before we finish
+        if (curZt > curZb) {
+            if constexpr (FLAGS == FragEmitFlags::MID_WALL) {
+                markSegClipBoundsFullyOccluded(clipBounds);
+            }
+
             return;
+        }
         
         // Note: no sub adjustement when we clip, it's already done implicitly as part of clipping
         texYSubPixelAdjustment = 0.0f;
@@ -807,9 +829,14 @@ static void clipAndEmitWallColumn(
         const float pixelsOffscreen = zb - curZb;
         curTexBy -= texYStep * pixelsOffscreen;
         
-        // If the clipped size is now invalid then skip
-        if (curZt > curZb)
+        // If the clipped size is now invalid then skip, but fully occlude if a mid wall before we finish
+        if (curZt > curZb) {
+            if constexpr (FLAGS == FragEmitFlags::MID_WALL) {
+                markSegClipBoundsFullyOccluded(clipBounds);
+            }
+
             return;
+        }
     }
 
     // Sanity checks
@@ -836,11 +863,9 @@ static void clipAndEmitWallColumn(
         gWallFragments.push_back(frag);
     }
 
-    // Save new clip bounds and if the column is fully filled then mark it so by setting to all zeros (top >= bottom)
+    // Save new clip bounds
     if constexpr (FLAGS == FragEmitFlags::MID_WALL) {
-        // Solid walls always gobble up the entire column, nothing renders behind them!
-        clipBounds = SegClip{ 0, 0 };
-        gNumFullSegCols++;
+        markSegClipBoundsFullyOccluded(clipBounds);
     } 
     else if constexpr (FLAGS == FragEmitFlags::UPPER_WALL) {                
         if (zbInt + 1 < clipBounds.bottom) {
