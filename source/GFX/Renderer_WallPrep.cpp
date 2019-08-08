@@ -743,15 +743,39 @@ namespace FragEmitFlags {
 }
 
 //----------------------------------------------------------------------------------------------------------------------
-// Marks the given seg clip bounds as fully occluded
+// Adds the currently emitted wall column part (upper, lower, mid) to the given column clip bounds.
+// The wall column is specified by it's top and bottom screen space bounds.
+// Only ever grows the clip bounds and never shrinks it!
 //----------------------------------------------------------------------------------------------------------------------
-static inline void markSegClipBoundsFullyOccluded(SegClip& clipBounds) noexcept {
-    if (clipBounds.top + 1 < clipBounds.bottom) {
-        ++gNumFullSegCols;
-    }
+template <FragEmitFlagsT FLAGS>
+static inline void addWallColumnPartToClipBounds(SegClip& clipBounds, const int32_t zt, const int32_t zb) noexcept {
+    static_assert(
+        (FLAGS == FragEmitFlags::LOWER_WALL) ||
+        (FLAGS == FragEmitFlags::UPPER_WALL) ||
+        (FLAGS == FragEmitFlags::MID_WALL)
+    );
 
-    clipBounds.top = 0;
-    clipBounds.bottom = 0;
+    // If this column of the screen is already fully occluded then there is nothing to do
+    if (clipBounds.top + 1 >= clipBounds.bottom)
+        return;
+    
+    // Decide what to do
+    if constexpr (FLAGS == FragEmitFlags::MID_WALL) {
+        clipBounds = SegClip{ 0, 0 };
+        ++gNumFullSegCols;
+    }  
+    else {
+        if constexpr (FLAGS == FragEmitFlags::UPPER_WALL) {
+            clipBounds.top = std::max((int16_t) zb, clipBounds.top);
+        } else {
+            clipBounds.bottom = std::min((int16_t) zt, clipBounds.bottom);
+        }
+
+        if (clipBounds.top + 1 >= clipBounds.bottom) {
+            clipBounds = SegClip{ 0, 0 };
+            ++gNumFullSegCols;
+        }
+    }
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -772,86 +796,75 @@ static void clipAndEmitWallColumn(
     const ImageData& texImage
 ) noexcept {
     ASSERT(x < gScreenWidth);
-
-    // Only bother emitting wall fragments if the column height would be > 0
-    if (zt >= zb) {
-        if constexpr (FLAGS == FragEmitFlags::MID_WALL) {
-            markSegClipBoundsFullyOccluded(clipBounds);
-        }
-
-        return;
-    }
     
-    // This is how much to step the texture in the Y direction for this column
-    const float texYStep = (texBy - texTy) / (zb - zt);
-
-    // Clip the column against the top and bottom of the current seg clip bounds
-    int32_t zbInt = (int32_t) zb;
-    int32_t ztInt = (int32_t) zt;
-
-    float curZt = zt;
-    float curZb = zb;
-    float curTexTy = texTy;
-    float curTexBy = texBy;
-    float texYSubPixelAdjustment;
-
-    if (ztInt <= clipBounds.top) {
-        // Offscreen at the top - clip:
-        curZt = (float) clipBounds.top + 1.0f;
-        ztInt = (int32_t) curZt;
-        const float pixelsOffscreen = curZt - zt;
-        curTexTy += texYStep * pixelsOffscreen;
-        
-        // If the clipped size is now invalid then skip, but fully occlude if a mid wall before we finish
-        if (curZt > curZb) {
+    // This fake loop allows us to discard the column due to clipping
+    do {
+        // Don't emit anything if size is <= 0, except if a mid wall (occlude everything in that case)
+        if (zt >= zb) {
             if constexpr (FLAGS == FragEmitFlags::MID_WALL) {
-                markSegClipBoundsFullyOccluded(clipBounds);
+                break;
+            } else {
+                return;     // No occluding if not a mid wall
             }
-
-            return;
         }
         
-        // Note: no sub adjustement when we clip, it's already done implicitly as part of clipping
-        texYSubPixelAdjustment = 0.0f;
-    }
-    else {
-        // Small adjustment to account for eventual integer rounding of the z coordinate. For more 'solid' and less
-        // 'fuzzy' and temporally unstable texture mapping, we need to make adjustments based on the sub pixel y-position
-        // of the column. If for example the true pixel Y position is 0.25 units above it's integer position then count
-        // 0.25 pixels as already having been 'stepped' and adjust the texture coordinate accordingly:
-        texYSubPixelAdjustment = -(curZt - std::trunc(curZt)) * texYStep;
-    }
+        // This is how much to step the texture in the Y direction for this column
+        const float texYStep = (texBy - texTy) / (zb - zt);
 
-    if (zbInt >= clipBounds.bottom) {
-        // Offscreen at the bottom - clip:
-        curZb = std::nextafter((float) clipBounds.bottom, -1.0f);
-        zbInt = (int32_t) curZb;
-        const float pixelsOffscreen = zb - curZb;
-        curTexBy -= texYStep * pixelsOffscreen;
+        int32_t curZbInt = (int32_t) zb;
+        int32_t curZtInt = (int32_t) zt;
+        float curZt = zt;
+        float curZb = zb;
+        float curTexTy = texTy;
+        float curTexBy = texBy;
+        float texYSubPixelAdjustment;
+
+        if (curZtInt <= clipBounds.top) {
+            // Offscreen at the top - clip:
+            curZt = (float) clipBounds.top + 1.0f;
+            curZtInt = (int32_t) curZt;
+            const float pixelsOffscreen = curZt - zt;
+            curTexTy += texYStep * pixelsOffscreen;
+            
+            // If the clipped size is now invalid then skip
+            if (curZt >= curZb)
+                break;
         
-        // If the clipped size is now invalid then skip, but fully occlude if a mid wall before we finish
-        if (curZt > curZb) {
-            if constexpr (FLAGS == FragEmitFlags::MID_WALL) {
-                markSegClipBoundsFullyOccluded(clipBounds);
-            }
-
-            return;
+            // Note: no sub adjustement when we clip, it's already done implicitly as part of clipping
+            texYSubPixelAdjustment = 0.0f;
         }
-    }
+        else {
+            // Small adjustment to account for eventual integer rounding of the z coordinate. For more 'solid' and less
+            // 'fuzzy' and temporally unstable texture mapping, we need to make adjustments based on the sub pixel y-position
+            // of the column. If for example the true pixel Y position is 0.25 units above it's integer position then count
+            // 0.25 pixels as already having been 'stepped' and adjust the texture coordinate accordingly:
+            texYSubPixelAdjustment = -(curZt - std::trunc(curZt)) * texYStep;
+        }
 
-    // Sanity checks
-    BLIT_ASSERT(x <= (int32_t) gScreenWidth);
-    BLIT_ASSERT(ztInt <= zbInt);
-    BLIT_ASSERT(ztInt >= 0 && ztInt < (int32_t) gScreenHeight);
-    BLIT_ASSERT(zbInt >= 0 && zbInt < (int32_t) gScreenHeight);
+        if (curZbInt >= clipBounds.bottom) {
+            // Offscreen at the bottom - clip:
+            curZb = std::nextafter((float) clipBounds.bottom, -1.0f);
+            curZbInt = (int32_t) curZb;
+            const float pixelsOffscreen = zb - curZb;
+            curTexBy -= texYStep * pixelsOffscreen;
+        
+            // If the clipped size is now invalid then skip
+            if (curZt >= curZb)
+                break;
+        }
 
-    // Emit the column fragment
-    const int32_t columnHeight = zbInt - ztInt + 1;
+        // Sanity checks
+        BLIT_ASSERT(x <= (int32_t) gScreenWidth);
+        BLIT_ASSERT(curZtInt <= curZbInt);
+        BLIT_ASSERT(curZtInt >= 0 && curZtInt < (int32_t) gScreenHeight);
+        BLIT_ASSERT(curZbInt >= 0 && curZbInt < (int32_t) gScreenHeight);
 
-    {
+        // Emit the column fragment
+        const int32_t columnHeight = curZbInt - curZtInt + 1;
+
         WallFragment frag;
         frag.x = x;
-        frag.y = (uint16_t) ztInt;
+        frag.y = (uint16_t) curZtInt;
         frag.height = (uint16_t) columnHeight;
         frag.texcoordX = (uint16_t) texX;
         frag.texcoordY = curTexTy;
@@ -861,30 +874,11 @@ static void clipAndEmitWallColumn(
         frag.pImageData = &texImage;
 
         gWallFragments.push_back(frag);
-    }
 
-    // Save new clip bounds
-    if constexpr (FLAGS == FragEmitFlags::MID_WALL) {
-        markSegClipBoundsFullyOccluded(clipBounds);
-    } 
-    else if constexpr (FLAGS == FragEmitFlags::UPPER_WALL) {                
-        if (zbInt + 1 < clipBounds.bottom) {
-            clipBounds = SegClip{ (int16_t) zbInt, clipBounds.bottom };
-        } else {
-            clipBounds = SegClip{ 0, 0 };
-            gNumFullSegCols++;                    
-        }
-    }
-    else {
-        static_assert(FLAGS == FragEmitFlags::LOWER_WALL);
+    } while (false);
 
-        if (ztInt - 1 > clipBounds.top) {
-            clipBounds = SegClip{ clipBounds.top, (int16_t) ztInt };
-        } else {
-            clipBounds = SegClip{ 0, 0 };
-            gNumFullSegCols++;
-        }
-    }
+    // Add this column to the clip bounds for this screen column
+    addWallColumnPartToClipBounds<FLAGS>(clipBounds, (int32_t) zt, (int32_t) std::floor(zb));
 }
 
 //----------------------------------------------------------------------------------------------------------------------
