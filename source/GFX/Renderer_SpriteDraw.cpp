@@ -664,7 +664,7 @@ float determineLightMultiplierForThing(const mobj_t& thing, const bool bIsFullBr
     if (bIsFullBright) {
         sectorLightLevel = 255;
     } else {
-        sectorLightLevel = thing.subsector->sector->lightlevel;
+        sectorLightLevel = thing.subsector->sector->lightlevel + gExtraLight;
     }
 
     const LightParams lightParams = getLightParams(sectorLightLevel);
