@@ -1,3 +1,7 @@
+------------------------------------------------------------------------------------------------------------------------
+TODO
+------------------------------------------------------------------------------------------------------------------------
+
 - Only mark a seg as seen if one column of it draws
 - Screen wipes
 - Finale drawing
@@ -7,11 +11,7 @@
 - Intro logos
 - Intro videos? (maybe)
 - Fix view bob not working.
-- Fix wall columns not being rendered occasionally.
-- Investigate floor texture mapping at steep angles (sometimes very inprecise, most noticable on teleports)
 - Fix weird chainsaw sound
-- Fix odd floor 'twitching' issue in level 2, near the entrance to the chainsaw area (by blinking lights).
-- Implement transparent demons
 - Higher resolution + fullscreen support
 - WASD + Mouse support
 - Gamepad support
@@ -21,8 +21,8 @@
 - Loading and saving the save file with preferences and map reached.
 - Cheats support
 - FPS counter
-- Fix address sanitizer crash on angle LUT lookup (easy to reproduce on MacOS with Xcode)
-- Maybe add menu sounds?
+- Fix address sanitizer crash on angle LUT lookup (easy to reproduce on MacOS with Xcode) (might not be applicable anymore)
+- Maybe add menu sounds? (might not be applicable anymore)
 - Do lighting effects on player gun.
 - Maybe center numbers on HUD?
 - Optimize audio mixing for different channel counts and bit depths
@@ -32,13 +32,20 @@
 - Ensure last map accessible via menu (wasn't on 3DO version?)
 - Change endian macros to be 'big endian to host' (more portable)
 - Fix lost souls jumping UP suddenly when starting to fly
+- Crash sometimes on reading textures
+- Crash sometimes on thing 'check height' (seems to happen sometimes on level 2, at lift to viewing room opposite chainsaw)
 
+------------------------------------------------------------------------------------------------------------------------
 Possible original 3DO or PC Doom bugs:
+------------------------------------------------------------------------------------------------------------------------
 
-- Anything that can be done about the artifacts when rendering flats when the eye is almost level with the flat?
 - Wall sliding sometimes 'sticking' (may be original Doom behavior - investigate)
-- Level 15: strange bug where wall in room beyond visible through sky after opening door (on 3DO orig + PSX version also)
 Bug happens in courtyard area beyond the yellow door (courtyard with red key).
-- Fix bug with bottom of sprites rendering past walls (1 or 2px more than we should have?) (found on PC version also, renderer or thing data issue?)
 - Investigate sprites poking through walls bug (visible on level 7 shotgun at start)
+
+------------------------------------------------------------------------------------------------------------------------
+Known issues: document
+------------------------------------------------------------------------------------------------------------------------
+
+- Bug with bottom of sprites rendering past walls (1 or 2px more than we should have?) (found on PC version also, seems to be just a Doom Engine thing)
 - Issue on level 10 with small crate textures (found this in 3DO version - data problem?)
