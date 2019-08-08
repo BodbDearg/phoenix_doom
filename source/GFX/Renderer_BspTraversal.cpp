@@ -425,6 +425,11 @@ static void addSubsectorToFrame(subsector_t& sub) noexcept {
 // If I should process this box then return 'true'.
 //----------------------------------------------------------------------------------------------------------------------
 static bool checkBBox(const Fixed bspcoord[BOXCOUNT]) noexcept {
+    // TODO: REMOVE EVENTUALLY!
+    #if HACK_TEST_HIGH_RES_RENDERING
+        return true;
+    #endif
+
     // Left and right angles for view
     angle_t angle1;
     angle_t angle2;

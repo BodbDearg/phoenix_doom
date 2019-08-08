@@ -8,6 +8,11 @@
     #define ENABLE_DEBUG_CAMERA_Z_MOVEMENT 1
 #endif
 
+// TODO: REMOVE EVENTUALLY, once high resolution support is properly implemented.
+// Define to enable a quick hack to test higher resolution rendering.
+#define HACK_TEST_HIGH_RES_RENDERING 0
+#define HACK_TEST_HIGH_RENDER_SCALE 3
+
 BEGIN_NAMESPACE(Renderer)
 
 #if ENABLE_DEBUG_CAMERA_Z_MOVEMENT

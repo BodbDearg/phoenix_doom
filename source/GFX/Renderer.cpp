@@ -18,11 +18,41 @@ static constexpr Fixed computeStretch(const uint32_t width, const uint32_t heigh
     );
 }
 
-static constexpr uint32_t SCREEN_WIDTHS[6] = { 280, 256, 224, 192, 160, 128 };
-static constexpr uint32_t SCREEN_HEIGHTS[6] = { 160, 144, 128, 112, 96, 80 };
+static constexpr uint32_t SCREEN_WIDTHS[6] = {
+// TODO: REMOVE
+#if HACK_TEST_HIGH_RES_RENDERING
+    280 * HACK_TEST_HIGH_RENDER_SCALE,
+#else
+    280,
+#endif
+    256,
+    224,
+    192,
+    160,
+    128
+};
+
+static constexpr uint32_t SCREEN_HEIGHTS[6] = {
+// TODO: REMOVE
+#if HACK_TEST_HIGH_RES_RENDERING
+    160 * HACK_TEST_HIGH_RENDER_SCALE,
+#else
+    160,
+#endif
+    144,
+    128,
+    112,
+    96,
+    80
+};
 
 static constexpr Fixed STRETCHES[6] = {
+// TODO: REMOVE
+#if HACK_TEST_HIGH_RES_RENDERING
+    computeStretch(280 * HACK_TEST_HIGH_RENDER_SCALE, 160 * HACK_TEST_HIGH_RENDER_SCALE),
+#else
     computeStretch(280, 160),
+#endif
     computeStretch(256, 144),
     computeStretch(224, 128),
     computeStretch(192, 112),
@@ -278,67 +308,77 @@ void initMathTables() noexcept {
     gScreenHeight = SCREEN_HEIGHTS[gScreenSize];
     gCenterX = gScreenWidth / 2;
     gCenterY = gScreenHeight / 2;
-    gScreenXOffset = (320 - gScreenWidth) / 2;
-    gScreenYOffset = (160 - gScreenHeight) / 2;
+    // TODO: REMOVE
+    #if HACK_TEST_HIGH_RES_RENDERING
+        gScreenXOffset = (320 * HACK_TEST_HIGH_RENDER_SCALE - gScreenWidth) / 2;
+        gScreenYOffset = (160 * HACK_TEST_HIGH_RENDER_SCALE - gScreenHeight) / 2;
+    #else
+        gScreenXOffset = (320 - gScreenWidth) / 2;
+        gScreenYOffset = (160 - gScreenHeight) / 2;
+    #endif
+
     gGunXScale = (gScreenWidth * 0x100000) / 320;       // Get the 3DO scale factor for the gun shape and the y scale
     gGunYScale = (gScreenHeight * 0x10000) / 160;
     gStretch = STRETCHES[gScreenSize];
     gStretchWidth = gStretch * ((int) gScreenWidth / 2);
 
-    // Create the 'view angle to x' table
-    {
-        const Fixed j = fixedDiv(gCenterX << FRACBITS, gFineTangent[FINEANGLES / 4 + FIELDOFVIEW / 2]);
+    // TODO: REMOVE
+    #if !HACK_TEST_HIGH_RES_RENDERING
+        // Create the 'view angle to x' table
+        {
+            const Fixed j = fixedDiv(gCenterX << FRACBITS, gFineTangent[FINEANGLES / 4 + FIELDOFVIEW / 2]);
 
-        for (uint32_t i = 0; i < FINEANGLES / 2; i += 2) {
-            Fixed t;
-            if (gFineTangent[i] > FRACUNIT * 2) {
-                t = -1;
-            } else if (gFineTangent[i] < -FRACUNIT * 2) {
-                t = gScreenWidth + 1;
-            } else {
-                t = fixedMul(gFineTangent[i], j);
-                t = ((gCenterX << FRACBITS) - t + FRACUNIT - 1) >> FRACBITS;
-                if (t < -1) {
+            for (uint32_t i = 0; i < FINEANGLES / 2; i += 2) {
+                Fixed t;
+                if (gFineTangent[i] > FRACUNIT * 2) {
                     t = -1;
-                } else if ( t > (int) gScreenWidth + 1) {
+                } else if (gFineTangent[i] < -FRACUNIT * 2) {
                     t = gScreenWidth + 1;
+                } else {
+                    t = fixedMul(gFineTangent[i], j);
+                    t = ((gCenterX << FRACBITS) - t + FRACUNIT - 1) >> FRACBITS;
+                    if (t < -1) {
+                        t = -1;
+                    } else if ( t > (int) gScreenWidth + 1) {
+                        t = gScreenWidth + 1;
+                    }
                 }
+                gViewAngleToX[i / 2] = t;
             }
-            gViewAngleToX[i / 2] = t;
         }
-    }
     
-    // Using the 'view angle to x' table, create 'x to view angle' table
-    for (uint32_t i = 0; i <= gScreenWidth; ++i) {
-        uint32_t x = 0;
-        while (gViewAngleToX[x] > (int) i) {
-            ++x;
+        // Using the 'view angle to x' table, create 'x to view angle' table
+        for (uint32_t i = 0; i <= gScreenWidth; ++i) {
+            uint32_t x = 0;
+            while (gViewAngleToX[x] > (int) i) {
+                ++x;
+            }
+            gXToViewAngle[i] = (x << (ANGLETOFINESHIFT + 1)) - ANG90;
         }
-        gXToViewAngle[i] = (x << (ANGLETOFINESHIFT + 1)) - ANG90;
-    }
     
-    // Set the minimums and maximums for 'view angle to x' 
-    for (uint32_t i = 0; i < FINEANGLES / 4; ++i) {
-        if (gViewAngleToX[i] == -1) {
-            gViewAngleToX[i] = 0;
-        } else if (gViewAngleToX[i] == gScreenWidth + 1) {
-            gViewAngleToX[i] = gScreenWidth;
+        // Set the minimums and maximums for 'view angle to x' 
+        for (uint32_t i = 0; i < FINEANGLES / 4; ++i) {
+            if (gViewAngleToX[i] == -1) {
+                gViewAngleToX[i] = 0;
+            } else if (gViewAngleToX[i] == gScreenWidth + 1) {
+                gViewAngleToX[i] = gScreenWidth;
+            }
         }
-    }
     
-    // Make the 'y slope' table for floor and ceiling textures
-    for (uint32_t i = 0; i < gScreenHeight; ++i) {
-        float j = (float) i - (float) gScreenHeight * 0.5f + 0.5f;
-        j = FMath::doomFixed16ToFloat<float>(gStretchWidth) / std::abs(j);
-        j = std::fmin(j, 8192.0f);
-        gYSlope[i] = j;
-    }
+        // Make the 'y slope' table for floor and ceiling textures
+        for (uint32_t i = 0; i < gScreenHeight; ++i) {
+            float j = (float) i - (float) gScreenHeight * 0.5f + 0.5f;
+            j = FMath::doomFixed16ToFloat<float>(gStretchWidth) / std::abs(j);
+            j = std::fmin(j, 8192.0f);
+            gYSlope[i] = j;
+        }
 
-    // Create the distance scale table for floor and ceiling textures 
-    for (uint32_t i = 0; i < gScreenWidth; ++i) {
-        const float c = std::cos(getViewAngleForX(i));
-        gDistScale[i] = (1.0f / std::abs(c));
-    }
+        // Create the distance scale table for floor and ceiling textures 
+        for (uint32_t i = 0; i < gScreenWidth; ++i) {
+            const float c = std::cos(getViewAngleForX(i));
+            gDistScale[i] = (1.0f / std::abs(c));
+        }
+    #endif  // #if !HACK_TEST_HIGH_RES_RENDERING
 
     // Create the lighting tables
     for (uint32_t i = 0; i < 256; ++i) {

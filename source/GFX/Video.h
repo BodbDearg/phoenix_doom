@@ -2,10 +2,19 @@
 
 #include "Base/Fixed.h"
 
+// TODO: REMOVE
+#include "Renderer.h"
+
 namespace Video {
     // DC: FIXME: DO NOT HARDCODE LIKE THIS!
-    static constexpr uint32_t SCREEN_WIDTH = 320;
-    static constexpr uint32_t SCREEN_HEIGHT = 200;  // Note: the actual 3DO vertical res was 240 but 40 px was not drawn to (black letterbox)
+    // TODO: REMOVE
+    #if HACK_TEST_HIGH_RES_RENDERING
+        static constexpr uint32_t SCREEN_WIDTH = 320 * HACK_TEST_HIGH_RENDER_SCALE;
+        static constexpr uint32_t SCREEN_HEIGHT = 200 * HACK_TEST_HIGH_RENDER_SCALE;
+    #else
+        static constexpr uint32_t SCREEN_WIDTH = 320;
+        static constexpr uint32_t SCREEN_HEIGHT = 200;  // Note: the actual 3DO vertical res was 240 but 40 px was not drawn to (black letterbox)
+    #endif
 
     // The 32-bit framebuffer to draw to
     extern uint32_t* gFrameBuffer;
