@@ -800,7 +800,7 @@ static void clipAndEmitWallColumn(
     // This fake loop allows us to discard the column due to clipping
     do {
         // Don't emit anything if size is <= 0, except if a mid wall (occlude everything in that case)
-        if (zt >= zb) {
+        if (zt >= zb || zb < 0.0f || zt >= (float) gScreenHeight) {
             if constexpr (FLAGS == FragEmitFlags::MID_WALL) {
                 break;
             } else {
