@@ -111,7 +111,7 @@ static void addMapObjToFrame(const mobj_t& thing) noexcept {
     const uint8_t spriteAngle = getThingSpriteAngleForViewpoint(gViewXFrac, gViewYFrac, thing);
 
     // Load the current sprite for the thing and the info for the actual sprite to use
-    const Sprite* const pSprite = loadSprite(spriteResourceNum);
+    const Sprite* const pSprite = Sprites::load(spriteResourceNum);
     ASSERT(spriteFrameNum < pSprite->numFrames);
 
     const SpriteFrame* const pSpriteFrame = &pSprite->pFrames[spriteFrameNum];

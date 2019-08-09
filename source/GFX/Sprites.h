@@ -1,9 +1,10 @@
 #pragma once
 
+#include "Base/Macros.h"
 #include <cstdint>
 
 //----------------------------------------------------------------------------------------------------------------------
-// Provides access to Doom format sprites from the game's resource file.
+// Module that provides access to Doom format sprites from the game's resource file.
 //
 // When I say 'Doom format' I mean that they are in a format specific to this game and very much distinct from the
 // generalized 3DO format ('CEL') files used elsewhere in the game. Note: the sprites used here are also NOT in the same
@@ -41,13 +42,15 @@ struct Sprite {
     uint32_t        resourceNum;
 };
 
-void spritesInit();
-void spritesShutdown();
-void spritesFreeAll();
+BEGIN_NAMESPACE(Sprites)
 
-uint32_t getNumSprites();
-uint32_t getFirstSpriteResourceNum();
-uint32_t getEndSpriteResourceNum();     // N.B: 1 past the end index!
+void init() noexcept;
+void shutdown() noexcept;
+void freeAll() noexcept;
+
+uint32_t getNumSprites() noexcept;
+uint32_t getFirstSpriteResourceNum() noexcept;
+uint32_t getEndSpriteResourceNum() noexcept;        // N.B: 1 past the end index!
 
 //----------------------------------------------------------------------------------------------------------------------
 // Notes:
@@ -55,6 +58,8 @@ uint32_t getEndSpriteResourceNum();     // N.B: 1 past the end index!
 //  (2) Resource number given MUST be within the range of resource numbers used for sprites!
 //      To check if valid, query the start and end sprite resource number.
 //----------------------------------------------------------------------------------------------------------------------
-const Sprite* getSprite(const uint32_t resourceNum);
-const Sprite* loadSprite(const uint32_t resourceNum);
-void freeSprite(const uint32_t resourceNum);
+const Sprite* get(const uint32_t resourceNum) noexcept;
+const Sprite* load(const uint32_t resourceNum) noexcept;
+void free(const uint32_t resourceNum) noexcept;
+
+END_NAMESPACE(Sprites)

@@ -588,7 +588,7 @@ void getSpriteDetailsForMapObj(
     const uint8_t spriteAngle = getThingSpriteAngleForViewpoint(thing, viewXFrac, viewYFrac);
     
     // Load the current sprite for the thing and then the frame angle we want
-    const Sprite* const pSprite = loadSprite(spriteResourceNum);
+    const Sprite* const pSprite = Sprites::load(spriteResourceNum);
     ASSERT(spriteFrameNum < pSprite->numFrames);
     ASSERT(spriteAngle < NUM_SPRITE_DIRECTIONS);
 

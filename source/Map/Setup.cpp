@@ -316,7 +316,7 @@ void ReleaseMapMemory() {
     mapDataShutdown();
     MEM_FREE_AND_NULL(gLineArrayBuffer);
     texturesFreeAll();
-    spritesFreeAll();
+    Sprites::freeAll();
     InitThinkers();         // Dispose of all remaining memory
 }
 

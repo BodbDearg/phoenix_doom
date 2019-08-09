@@ -10,6 +10,8 @@
 #include <map>
 #include <vector>
 
+BEGIN_NAMESPACE(Sprites)
+
 static std::vector<Sprite>  gSprites;
 static std::vector<void*>   gTmpPtrList;
 
@@ -115,39 +117,39 @@ static SpriteImageHeader readSpriteFrameHeader(const std::byte* const pData) noe
     return header;
 }
 
-void spritesInit() {
+void init() noexcept {
     gSprites.resize(getNumSprites());
 }
 
-void spritesShutdown() {
-    spritesFreeAll();
+void shutdown() noexcept {
+    freeAll();
     gSprites.clear();
 }
 
-void spritesFreeAll() {
+void freeAll() noexcept {
     for (Sprite& sprite : gSprites) {
         freeSprite(sprite);
     }
 }
 
-uint32_t getNumSprites() {
+uint32_t getNumSprites() noexcept {
     return uint32_t(rLASTSPRITE - rFIRSTSPRITE);
 }
 
-uint32_t getFirstSpriteResourceNum() {
+uint32_t getFirstSpriteResourceNum() noexcept {
     return uint32_t(rFIRSTSPRITE);
 }
 
-uint32_t getEndSpriteResourceNum() {
+uint32_t getEndSpriteResourceNum() noexcept {
     return uint32_t(rLASTSPRITE);
 }
 
-const Sprite* getSprite(const uint32_t resourceNum) {
+const Sprite* get(const uint32_t resourceNum) noexcept {
     Sprite& sprite = getSpriteForResourceNum(resourceNum);
     return &sprite;
 }
 
-const Sprite* loadSprite(const uint32_t resourceNum) {
+const Sprite* load(const uint32_t resourceNum) noexcept {
     // Just give back the sprite if it is already loaded
     Sprite& sprite = getSpriteForResourceNum(resourceNum);
     const bool bIsSpriteLoaded = (sprite.pFrames != nullptr);
@@ -283,7 +285,9 @@ const Sprite* loadSprite(const uint32_t resourceNum) {
     return &sprite;
 }
 
-void freeSprite(const uint32_t resourceNum) {
+void free(const uint32_t resourceNum) noexcept {
     Sprite& sprite = getSpriteForResourceNum(resourceNum);
     freeSprite(sprite);
 }
+
+END_NAMESPACE(Sprites)
