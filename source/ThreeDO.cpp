@@ -91,7 +91,7 @@ void InitTools() {
     #endif
 
     audioLoadAllSounds();
-    resourcesInit();
+    Resources::init();
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -221,9 +221,9 @@ void DrawPlaque(uint32_t RezNum)
     SetMyScreen(PrevPage);      // Draw to the active screen 
     #endif
 
-    const CelControlBlock* const pPic = (const CelControlBlock*) loadResourceData(RezNum);
+    const CelControlBlock* const pPic = (const CelControlBlock*) Resources::loadData(RezNum);
     DrawShape(160 - (getCCBWidth(pPic) / 2), 80, pPic);
-    releaseResource(RezNum);
+    Resources::release(RezNum);
 
     // FIXME: DC: Required for screen wipe?
     #if 0

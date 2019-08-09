@@ -159,7 +159,7 @@ const Sprite* loadSprite(const uint32_t resourceNum) {
     // Otherwise load the raw sprite data and then determine the number of sprite frames defined for this resource by
     // reading the offset to the data for the first sprite frame. This offset tells us the size of the 'uint32_t' frame
     // offsets array at the start of the data, and thus the number of frames:
-    const std::byte* const pSpriteData = (const std::byte*) loadResourceData(resourceNum);
+    const std::byte* const pSpriteData = (const std::byte*) Resources::loadData(resourceNum);
     const uint32_t* const pFrameOffsets = (const uint32_t*) pSpriteData;
 
     const uint32_t firstFrameOffset = byteSwappedU32(pFrameOffsets[0]);

@@ -54,8 +54,8 @@ static bool gTimerInited;
 // Draw a shape using a resource number
 //---------------------------------------------------------------------------------------------------------------------
 void DrawRezShape(uint32_t x, uint32_t y, uint32_t RezNum) noexcept {
-    DrawShape(x, y, reinterpret_cast<const CelControlBlock*>(loadResourceData(RezNum)));
-    releaseResource(RezNum);
+    DrawShape(x, y, reinterpret_cast<const CelControlBlock*>(Resources::loadData(RezNum)));
+    Resources::release(RezNum);
 }
 
 /**********************************

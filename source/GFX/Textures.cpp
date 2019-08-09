@@ -141,7 +141,7 @@ static void decodeFlatTextureImage(Texture& tex, const std::byte* const pBytes) 
 }
 
 static void loadTexture(Texture& tex, uint32_t textureNum, const bool bIsWallTexture) noexcept {
-    const std::byte* const pRawTexBytes = loadResourceData(tex.resourceNum);
+    const std::byte* const pRawTexBytes = Resources::loadData(tex.resourceNum);
 
     if (bIsWallTexture) {
         decodeWallTextureImage(tex, pRawTexBytes);
@@ -150,8 +150,8 @@ static void loadTexture(Texture& tex, uint32_t textureNum, const bool bIsWallTex
         decodeFlatTextureImage(tex, pRawTexBytes);
     }
 
-    freeResource(tex.resourceNum);      // Don't need the raw data anymore!
-    tex.animTexNum = textureNum;        // Initially the texture is not animated to display another frame
+    Resources::free(tex.resourceNum);       // Don't need the raw data anymore!
+    tex.animTexNum = textureNum;            // Initially the texture is not animated to display another frame
 }
 
 static void freeTexture(Texture& tex) noexcept {
@@ -173,7 +173,7 @@ void texturesInit() noexcept {
     // Read the header for all the texture info.
     // Note that we do NOT byte swap the original resources the may be cached and reused multiple times.
     // If we byte swapped the originals then we might double swap back to big endian accidently...
-    const std::byte* pData = (const std::byte*) loadResourceData(rTEXTURE1);
+    const std::byte* pData = (const std::byte*) Resources::loadData(rTEXTURE1);
     
     TextureInfoHeader header = (const TextureInfoHeader&) *pData;
     header.swapEndian();
@@ -203,7 +203,7 @@ void texturesInit() noexcept {
     }
     
     // Now done with this resource
-    releaseResource(rTEXTURE1);
+    Resources::release(rTEXTURE1);
     
     // We don't have texture info for flats, all flats for 3DO are 64x64.
     // This was done orignally to help optimize the flat renderer, which was done in software on the 3DO's CPU.

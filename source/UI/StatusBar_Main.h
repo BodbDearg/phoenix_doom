@@ -22,7 +22,7 @@ struct stbar_t {
 
 extern stbar_t gStBar;   // Pass messages to the status bar
 
-void ST_Start();
-void ST_Stop();
+void ST_Start() noexcept;
+void ST_Stop() noexcept;
 void ST_Ticker();
 void ST_Drawer();

@@ -281,9 +281,9 @@ void O_Control(player_t *player)
 
 void O_Drawer(void) {
     // Erase old and Draw new cursor frame
-    DrawMShape(CURSORX, CURSOR_Y_POS[gCursorPos], GetShapeIndexPtr(loadResourceData(rSKULLS), gCursorFrame));
-    releaseResource(rSKULLS);
-    const void* const pShapes = loadResourceData(rSLIDER);
+    DrawMShape(CURSORX, CURSOR_Y_POS[gCursorPos], GetShapeIndexPtr(Resources::loadData(rSKULLS), gCursorFrame));
+    Resources::release(rSKULLS);
+    const void* const pShapes = Resources::loadData(rSLIDER);
 
     // Draw menu text
     PrintBigFontCenter(160, 10, "Options");
@@ -322,6 +322,6 @@ void O_Drawer(void) {
         DrawMShape(SLIDERX + 5 + offset, SIZEY + 20, GetShapeIndexPtr(pShapes, HANDLE));
     }
 
-    releaseResource(rSLIDER);
+    Resources::release(rSLIDER);
     Video::present();
 }

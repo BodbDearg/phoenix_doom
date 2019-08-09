@@ -1,15 +1,23 @@
 #pragma once
 
-#include "Base/Resource.h"
+#include "Base/Macros.h"
+#include <cstddef>
+#include <cstdint>
 
-void resourcesInit();
-void resourcesShutdown();
+struct Resource;
+
+BEGIN_NAMESPACE(Resources)
+
+void init() noexcept;
+void shutdown() noexcept;
     
-const Resource* getResource(const uint32_t num);
-std::byte* getResourceData(const uint32_t num);
+const Resource* get(const uint32_t num) noexcept;
+std::byte* getData(const uint32_t num) noexcept;
 
-const Resource* loadResource(const uint32_t num);
-std::byte* loadResourceData(const uint32_t num);
+const Resource* load(const uint32_t num) noexcept;
+std::byte* loadData(const uint32_t num) noexcept;
 
-void freeResource(const uint32_t num);
-void releaseResource(const uint32_t num);
+void free(const uint32_t num) noexcept;
+void release(const uint32_t num) noexcept;
+
+END_NAMESPACE(Resources)

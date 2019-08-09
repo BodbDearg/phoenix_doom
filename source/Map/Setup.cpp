@@ -3,6 +3,7 @@
 #include "Base/Endian.h"
 #include "Base/Mem.h"
 #include "Base/Random.h"
+#include "Base/Resource.h"
 #include "Game/Data.h"
 #include "Game/DoomMain.h"
 #include "Game/DoomRez.h"
@@ -132,7 +133,7 @@ static void GroupLines(void)
 //---------------------------------------------------------------------------------------------------------------------
 static void LoadThings(const uint32_t lumpResourceNum) {
     // Load the things resource
-    const Resource* const pResource = loadResource(lumpResourceNum);
+    const Resource* const pResource = Resources::load(lumpResourceNum);
     const std::byte* const pResourceData = pResource->pData;
     
     // Get the number of things first (first u32)
@@ -157,7 +158,7 @@ static void LoadThings(const uint32_t lumpResourceNum) {
     }
     
     // Done with this list
-    freeResource(lumpResourceNum);
+    Resources::free(lumpResourceNum);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -266,8 +267,8 @@ static void PreloadWalls() {
         uint32_t tableIdx = 0;
         
         while (PRELOAD_TABLE[tableIdx] != -1) {
-            loadResourceData(PRELOAD_TABLE[tableIdx]);
-            releaseResource(PRELOAD_TABLE[tableIdx]);
+            Resources::loadData(PRELOAD_TABLE[tableIdx]);
+            Resources::release(PRELOAD_TABLE[tableIdx]);
             ++tableIdx;
         }
     }

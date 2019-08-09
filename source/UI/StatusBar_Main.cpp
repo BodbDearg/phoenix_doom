@@ -128,35 +128,26 @@ static void CycleFlash(sbflash_t *FlashPtr)
     }
 }
 
-/**********************************
-
-    Locate and load all needed graphics
-    for the status bar
-
-**********************************/
-
-void ST_Start()
-{
-    gSBObj = loadResourceData(rSBARSHP);            // Status bar shapes
-    gFaces = loadResourceData(rFACES);              // Load all the face frames
-    gStatusBarShape = loadResourceData(rSTBAR);     // Load the status bar
-    memset(&gStBar, 0, sizeof(gStBar));             // Reset the status bar
-    gFaceTics = 0;                                  // Reset the face tic count
-    gGibDraw = false;                               // Don't draw gibbed head sequence
+//----------------------------------------------------------------------------------------------------------------------
+// Locate and load all needed graphics for the status bar.
+//----------------------------------------------------------------------------------------------------------------------
+void ST_Start() noexcept {
+    gSBObj = Resources::loadData(rSBARSHP);             // Status bar shapes
+    gFaces = Resources::loadData(rFACES);               // Load all the face frames
+    gStatusBarShape = Resources::loadData(rSTBAR);      // Load the status bar
+    memset(&gStBar, 0, sizeof(gStBar));                 // Reset the status bar
+    gFaceTics = 0;                                      // Reset the face tic count
+    gGibDraw = false;                                   // Don't draw gibbed head sequence
     memset(&gFlashCards, 0, sizeof(gFlashCards));
 }
 
-/**********************************
-
-    Release resources allocated by the status bar
-
-**********************************/
-
-void ST_Stop()
-{
-    releaseResource(rSBARSHP);  // Status bar shapes
-    releaseResource(rFACES);    // All the face frames
-    releaseResource(rSTBAR);    // Lower bar
+//----------------------------------------------------------------------------------------------------------------------
+// Release resources allocated by the status bar
+//----------------------------------------------------------------------------------------------------------------------
+void ST_Stop() noexcept {
+    Resources::release(rSBARSHP);       // Status bar shapes
+    Resources::release(rFACES);         // All the face frames
+    Resources::release(rSTBAR);         // Lower bar
 }
 
 /**********************************

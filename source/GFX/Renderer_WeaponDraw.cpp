@@ -20,7 +20,7 @@ static void DrawAWeapon(const pspdef_t& psp, const bool bShadow) noexcept {
     // FIXME: DC: clean this up
     const state_t* const StatePtr = psp.StatePtr;                                               // Get the state struct pointer
     const uint32_t rezNum = StatePtr->SpriteFrame >> FF_SPRITESHIFT;                            // Get the file
-    const uint16_t* input = (uint16_t*) loadResourceData(rezNum);                               // Get the main pointer
+    const uint16_t* input = (uint16_t*) Resources::loadData(rezNum);                            // Get the main pointer
     input = (const uint16_t*) GetShapeIndexPtr(input, StatePtr->SpriteFrame & FF_FRAMEMASK);    // Pointer to the xy offset'd shape
     
     // FIXME: DC: Reimplement/replace
@@ -49,7 +49,7 @@ static void DrawAWeapon(const pspdef_t& psp, const bool bShadow) noexcept {
     x += gScreenXOffset;
     y += gScreenYOffset + 2;                                    // Add 2 pixels to cover up the hole in the bottom
     DrawMShape(x, y, (const CelControlBlock*) &input[2]);       // Draw the weapon's shape
-    releaseResource(rezNum);
+    Resources::release(rezNum);
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -83,8 +83,8 @@ void drawWeapons() noexcept {
     // Draw the border
     {
         const uint32_t borderRezNum = gScreenSize + rBACKGROUNDMASK;
-        DrawMShape(0,0, (const CelControlBlock*) loadResourceData(borderRezNum));      
-        releaseResource(borderRezNum);
+        DrawMShape(0,0, (const CelControlBlock*) Resources::loadData(borderRezNum));      
+        Resources::release(borderRezNum);
     }
 }
 

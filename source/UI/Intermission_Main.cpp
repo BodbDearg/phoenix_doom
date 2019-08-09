@@ -115,8 +115,8 @@ void PrintBigFont(uint32_t x, uint32_t y, const char* string) {
                 continue;
             }
         }
-        if (!Current) {                             // Do I need the ASCII set? 
-            ucharx = loadResourceData(rCHARSET);    // Make sure I have the text font 
+        if (!Current) {                                 // Do I need the ASCII set? 
+            ucharx = Resources::loadData(rCHARSET);     // Make sure I have the text font 
             Current = ucharx;
         }
         const CelControlBlock* const pShape = GetShapeIndexPtr(Current,c);  // Get the shape pointer 
@@ -124,8 +124,8 @@ void PrintBigFont(uint32_t x, uint32_t y, const char* string) {
         x+=getCCBWidth(pShape)+1;       // Get the width to tab 
     } while ((c = string[0])!=0);       // Next index 
     
-    if (ucharx) {                       // Did I load the ASCII font? 
-        releaseResource(rCHARSET);      // Release the ASCII font 
+    if (ucharx) {                           // Did I load the ASCII font? 
+        Resources::release(rCHARSET);       // Release the ASCII font 
     }
 }
 
@@ -171,16 +171,18 @@ uint32_t GetBigStringWidth(const char* string) {
                 continue;
             }
         }
-        if (!Current) {                             // Do I need ucharx? 
-            ucharx = loadResourceData(rCHARSET);    // Load it in 
-            Current = ucharx;                       // Set the pointer 
+        if (!Current) {                                 // Do I need ucharx? 
+            ucharx = Resources::loadData(rCHARSET);     // Load it in 
+            Current = ucharx;                           // Set the pointer 
         }
         const CelControlBlock* const pShape = GetShapeIndexPtr(Current,c);  // Get the shape pointer 
         Width+=getCCBWidth(pShape)+1;          // Get the width to tab 
     } while ((c = string[0])!=0);       // Next index 
+
     if (ucharx) {                       // Did I load in the ASCII font? 
-        releaseResource(rCHARSET);      // Release the text font 
+        Resources::release(rCHARSET);   // Release the text font 
     }
+
     return Width;
 }
 
@@ -307,9 +309,9 @@ void IN_Drawer() {
     Video::debugClear();
     DrawRezShape(0,0,rBACKGRNDBROWN);   // Load and draw the skulls 
     
-    const void* IntermisShapes = loadResourceData(rINTERMIS);   // Load the intermission shapes 
-    PrintBigFontCenter(160,10, MAP_NAMES[gGameMap-1]);          // Print the current map name 
-    PrintBigFontCenter(160,34, FINISHED);                       // Print "Finished" 
+    const void* IntermisShapes = Resources::loadData(rINTERMIS);    // Load the intermission shapes 
+    PrintBigFontCenter(160,10, MAP_NAMES[gGameMap-1]);              // Print the current map name 
+    PrintBigFontCenter(160,34, FINISHED);                           // Print "Finished" 
     
     if (gNextMap != 23) {
         PrintBigFontCenter(160,162, ENTERING);
@@ -323,6 +325,6 @@ void IN_Drawer() {
     PrintNumber(KVALX,KVALY,gKillValue, PNFLAGS_PERCENT|PNFLAGS_RIGHT);     // Print the numbers 
     PrintNumber(IVALX,IVALY,gItemValue, PNFLAGS_PERCENT|PNFLAGS_RIGHT);
     PrintNumber(SVALX,SVALY,gSecretValue,PNFLAGS_PERCENT|PNFLAGS_RIGHT);
-    releaseResource(rINTERMIS);
+    Resources::release(rINTERMIS);
     Video::present();                                                       // Show the screen 
 }

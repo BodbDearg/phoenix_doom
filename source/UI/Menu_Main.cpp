@@ -188,11 +188,11 @@ void M_Drawer() {
         O_Drawer();
     } 
     else {    
-        const void* const pShapes = loadResourceData(rMAINMENU);   // Load shape group
+        const void* const pShapes = Resources::loadData(rMAINMENU);     // Load shape group
 
         // Draw new skull        
-        DrawMShape(CURSORX, gCursorYs[gCursorPos], GetShapeIndexPtr(loadResourceData(rSKULLS), gCursorFrame));
-        releaseResource(rSKULLS);
+        DrawMShape(CURSORX, gCursorYs[gCursorPos], GetShapeIndexPtr(Resources::loadData(rSKULLS), gCursorFrame));
+        Resources::release(rSKULLS);
 
         // Draw start level information
         PrintBigFont(CURSORX + 24, AREAY, "Level");
@@ -204,7 +204,7 @@ void M_Drawer() {
 
         // Draw the options screen
         PrintBigFont(CURSORX + 24, OPTIONSY, "Options Menu");
-        releaseResource(rMAINMENU);
+        Resources::release(rMAINMENU);
         Video::present();
     }
 }

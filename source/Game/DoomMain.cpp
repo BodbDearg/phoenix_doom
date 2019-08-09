@@ -338,7 +338,7 @@ static void RunDemo(uint32_t demoname) {
 // Main entry point for DOOM!!!!
 //----------------------------------------------------------------------------------------------------------------------
 void D_DoomMain() {
-    gBigNumFont = loadResourceData(rBIGNUMB);   // Cache the large numeric font (Needed always)
+    gBigNumFont = Resources::loadData(rBIGNUMB);    // Cache the large numeric font (Needed always)
 
     Renderer::init();   // Init refresh system
     P_Init();           // Init main code
