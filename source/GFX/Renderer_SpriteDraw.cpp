@@ -797,8 +797,8 @@ static void emitFragmentsForSprite(const DrawSprite& sprite) noexcept {
     BLIT_ASSERT(sprite.by >= sprite.ty);
 
     // Figure out the size of the sprite on the screen
-    const float spriteW = sprite.rx - sprite.lx + 1.0f;
-    const float spriteH = sprite.by - sprite.ty + 1.0f;
+    const float spriteW = sprite.rx - sprite.lx;
+    const float spriteH = sprite.by - sprite.ty;
 
     int32_t spriteLxInt = (int32_t) sprite.lx;
     int32_t spriteRxInt = (int32_t) sprite.rx;
