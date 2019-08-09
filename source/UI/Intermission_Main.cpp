@@ -120,9 +120,9 @@ void PrintBigFont(uint32_t x, uint32_t y, const char* string) {
             Current = ucharx;
         }
         const CelControlBlock* const pShape = GetShapeIndexPtr(Current,c);  // Get the shape pointer 
-        DrawMShape(x, y2, pShape);      // Draw the char 
-        x+=getCCBWidth(pShape)+1;       // Get the width to tab 
-    } while ((c = string[0])!=0);       // Next index 
+        DrawMShape(x, y2, pShape);                  // Draw the char 
+        x += CelUtils::getCCBWidth(pShape)+1;       // Get the width to tab 
+    } while ((c = string[0])!=0);                   // Next index 
     
     if (ucharx) {                           // Did I load the ASCII font? 
         Resources::release(rCHARSET);       // Release the ASCII font 
@@ -176,7 +176,7 @@ uint32_t GetBigStringWidth(const char* string) {
             Current = ucharx;                           // Set the pointer 
         }
         const CelControlBlock* const pShape = GetShapeIndexPtr(Current,c);  // Get the shape pointer 
-        Width+=getCCBWidth(pShape)+1;          // Get the width to tab 
+        Width += CelUtils::getCCBWidth(pShape)+1;          // Get the width to tab 
     } while ((c = string[0])!=0);       // Next index 
 
     if (ucharx) {                       // Did I load in the ASCII font? 

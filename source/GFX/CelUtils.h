@@ -1,6 +1,7 @@
 #pragma once
 
-#include <stdint.h>
+#include "Base/Macros.h"
+#include <cstdint>
 
 //----------------------------------------------------------------------------------------------------------------------
 // Utility stuff relating to 3DO CEL files.
@@ -46,9 +47,11 @@ typedef struct CelControlBlock {
 	int32_t     height;
 } CelControlBlock;
 
+BEGIN_NAMESPACE(CelUtils)
+
 // Determine the width and height from the given Cel Control Block
-extern uint16_t getCCBWidth(const CelControlBlock* const pCCB);
-extern uint16_t getCCBHeight(const CelControlBlock* const pCCB);
+extern uint16_t getCCBWidth(const CelControlBlock* const pCCB) noexcept;
+extern uint16_t getCCBHeight(const CelControlBlock* const pCCB) noexcept;
 
 //----------------------------------------------------------------------------------------------------------------------
 // Decodes the CEL image data for a Doom sprite and saves it to the given output.
@@ -60,4 +63,6 @@ void decodeDoomCelSprite(
     uint16_t** pImageOut,
     uint16_t* pImageWidthOut,
     uint16_t* pImageHeightOut
-);
+) noexcept;
+
+END_NAMESPACE(CelUtils)

@@ -222,7 +222,7 @@ void DrawPlaque(uint32_t RezNum)
     #endif
 
     const CelControlBlock* const pPic = (const CelControlBlock*) Resources::loadData(RezNum);
-    DrawShape(160 - (getCCBWidth(pPic) / 2), 80, pPic);
+    DrawShape(160 - (CelUtils::getCCBWidth(pPic) / 2), 80, pPic);
     Resources::release(RezNum);
 
     // FIXME: DC: Required for screen wipe?
@@ -236,7 +236,7 @@ static void DrawShapeImpl(const uint32_t x1, const uint32_t y1, const CelControl
     uint16_t* pImage;
     uint16_t imageW;
     uint16_t imageH;
-    decodeDoomCelSprite(pShape, &pImage, &imageW, &imageH);
+    CelUtils::decodeDoomCelSprite(pShape, &pImage, &imageW, &imageH);
     
     const uint32_t xEnd = x1 + imageW;
     const uint32_t yEnd = y1 + imageH;

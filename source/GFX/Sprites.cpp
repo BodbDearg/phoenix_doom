@@ -254,7 +254,7 @@ const Sprite* load(const uint32_t resourceNum) noexcept {
         const uint32_t imageDataOffset = iter->first;
         DecodedImage& decodedImage = iter->second;
 
-        decodeDoomCelSprite(
+        CelUtils::decodeDoomCelSprite(
             (const CelControlBlock*)(pSpriteData + imageDataOffset),
             &decodedImage.pPixels,
             &decodedImage.width,
