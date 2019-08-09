@@ -15,8 +15,8 @@
 #include <cstring>
 
 static void loadSkyTexture() {
-    const uint32_t skyTexNum = getCurrentSkyTexNum();
-    loadWallTexture(skyTexNum);
+    const uint32_t skyTexNum = Textures::getCurrentSkyTexNum();
+    Textures::loadWall(skyTexNum);
 }
 
 //---------------------------------------------------------------------------------------------------------------------

@@ -172,8 +172,8 @@ static void LoadingPlaque() {
 // Preload all the wall and flat shapes
 //---------------------------------------------------------------------------------------------------------------------
 static void PreloadWalls() {
-    const uint32_t numWallTex = getNumWallTextures();
-    const uint32_t numFlatTex = getNumFlatTextures();
+    const uint32_t numWallTex = Textures::getNumWallTextures();
+    const uint32_t numFlatTex = Textures::getNumFlatTextures();
     const uint32_t numLoadTexFlags = (numWallTex > numFlatTex) ? numWallTex : numFlatTex;
     
     // This array holds which textures (and flats, later) to load
@@ -212,7 +212,7 @@ static void PreloadWalls() {
     // Now load in the wall textures that were marked for loading
     for (uint32_t texNum = 0; texNum < numWallTex; ++texNum) {
         if (bLoadTexFlags[texNum]) {
-            loadWallTexture(texNum);
+            Textures::loadWall(texNum);
         }
     }
     
@@ -258,7 +258,7 @@ static void PreloadWalls() {
     // Now load all of the flat textures we marked for loading
     for (uint32_t texNum = 0; texNum < numFlatTex; ++texNum) {
         if (bLoadTexFlags[texNum]) {
-            loadFlatTexture(texNum);
+            Textures::loadFlat(texNum);
         }
     }
     
@@ -315,7 +315,7 @@ void SetupLevel(uint32_t map) {
 void ReleaseMapMemory() {
     mapDataShutdown();
     MEM_FREE_AND_NULL(gLineArrayBuffer);
-    texturesFreeAll();
+    Textures::freeAll();
     Sprites::freeAll();
     InitThinkers();         // Dispose of all remaining memory
 }

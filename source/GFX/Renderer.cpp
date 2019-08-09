@@ -129,7 +129,7 @@ std::vector<SpriteFragment>     gSpriteFragments;
 //----------------------------------------------------------------------------------------------------------------------
 static void initData() noexcept {
     // Initialize render asset managers
-    texturesInit();
+    Textures::init();
     Sprites::init();
     
     // Create a recipocal mul table so that I can divide 0-8191 from 1.0.

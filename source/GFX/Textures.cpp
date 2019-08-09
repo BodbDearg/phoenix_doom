@@ -7,6 +7,8 @@
 #include "Game/Resources.h"
 #include <vector>
 
+BEGIN_NAMESPACE(Textures)
+
 struct TextureInfoHeader {
     uint32_t    numWallTextures;
     uint32_t    firstWallTexture;       // Resource number
@@ -169,7 +171,7 @@ static void clearTextures(std::vector<Texture>& textures) noexcept {
     textures.clear();
 }
 
-void texturesInit() noexcept {
+void init() noexcept {
     // Read the header for all the texture info.
     // Note that we do NOT byte swap the original resources the may be cached and reused multiple times.
     // If we byte swapped the originals then we might double swap back to big endian accidently...
@@ -219,14 +221,14 @@ void texturesInit() noexcept {
     }
 }
 
-void texturesShutdown() noexcept {
+void shutdown() noexcept {
     clearTextures(gWallTextures);
     clearTextures(gFlatTextures);
     gFirstWallTexResourceNum = 0;
     gFirstFlatTexResourceNum = 0;
 }
 
-void texturesFreeAll() noexcept {
+void freeAll() noexcept {
     freeTextures(gWallTextures);
     freeTextures(gFlatTextures);
 }
@@ -261,32 +263,32 @@ uint32_t getCurrentSkyTexNum() noexcept {
     }
 }
 
-const Texture* getWallTexture(const uint32_t num) noexcept {
+const Texture* getWall(const uint32_t num) noexcept {
     ASSERT(num < gWallTextures.size());
     return &gWallTextures[num];
 }
 
-const Texture* getFlatTexture(const uint32_t num) noexcept {
+const Texture* getFlat(const uint32_t num) noexcept {
     ASSERT(num < gFlatTextures.size());
     return &gFlatTextures[num];
 }
 
-void loadWallTexture(const uint32_t num) noexcept {
+void loadWall(const uint32_t num) noexcept {
     ASSERT(num < gWallTextures.size());
     loadTexture(gWallTextures[num], num, true);
 }
 
-void loadFlatTexture(const uint32_t num) noexcept {
+void loadFlat(const uint32_t num) noexcept {
     ASSERT(num < gFlatTextures.size());
     loadTexture(gFlatTextures[num], num, false);
 }
 
-void freeWallTexture(const uint32_t num) noexcept {
+void freeWall(const uint32_t num) noexcept {
     ASSERT(num < gWallTextures.size());
     freeTexture(gWallTextures[num]);
 }
 
-void freeFlatTexture(const uint32_t num) noexcept {
+void freeFlat(const uint32_t num) noexcept {
     ASSERT(num < gFlatTextures.size());
     freeTexture(gFlatTextures[num]);
 }
@@ -303,12 +305,14 @@ void setFlatAnimTexNum(const uint32_t num, const uint32_t animTexNum) noexcept {
     gFlatTextures[num].animTexNum = animTexNum;
 }
 
-const Texture* getWallAnimTexture(const uint32_t num) noexcept {
-    const Texture* const pOrigTexture = getWallTexture(num);
-    return getWallTexture(pOrigTexture->animTexNum);
+const Texture* getWallAnim(const uint32_t num) noexcept {
+    const Texture* const pOrigTexture = getWall(num);
+    return getWall(pOrigTexture->animTexNum);
 }
 
-const Texture* getFlatAnimTexture(const uint32_t num) noexcept {
-    const Texture* const pOrigTexture = getFlatTexture(num);
-    return getFlatTexture(pOrigTexture->animTexNum);
+const Texture* getFlatAnim(const uint32_t num) noexcept {
+    const Texture* const pOrigTexture = getFlat(num);
+    return getFlat(pOrigTexture->animTexNum);
 }
+
+END_NAMESPACE(Textures)

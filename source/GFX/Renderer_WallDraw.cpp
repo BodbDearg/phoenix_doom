@@ -120,7 +120,7 @@ static void drawSkyColumn(const uint32_t viewX, const uint32_t maxColHeight) noe
     const uint32_t texX = (((gXToViewAngle[viewX] + gViewAngleBAM) >> ANGLETOSKYSHIFT) & 0xFF);
 
     // Figure out the sky column height and texel step (y)
-    const Texture* const pTexture = (const Texture*) getWallTexture(getCurrentSkyTexNum());     // FIXME: don't keep doing this for each column
+    const Texture* const pTexture = (const Texture*) Textures::getWall(Textures::getCurrentSkyTexNum());    // FIXME: don't keep doing this for each column
     const uint32_t skyTexH = pTexture->data.height;
 
     const Fixed skyScale = fixedDiv(intToFixed(gScreenHeight), intToFixed(Renderer::REFERENCE_3D_VIEW_HEIGHT));

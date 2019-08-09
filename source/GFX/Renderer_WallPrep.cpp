@@ -221,7 +221,7 @@ void wallPrep(
 
     // Single sided line? (no back sector) They only have a center texture.
     if (pBackSector == &gEmptySector) {
-        curWall.t_texture = getWallAnimTexture(sideDef.midtexture);
+        curWall.t_texture = Textures::getWallAnim(sideDef.midtexture);
         float t_texturemid;
         
         if (lineFlags & ML_DONTPEGBOTTOM) {     
@@ -240,7 +240,7 @@ void wallPrep(
         // Check if the bottom wall texture is visible?
         if (b_floorheight > f_floorheight) {
             // Draw the bottom texture
-            curWall.b_texture = getWallAnimTexture(sideDef.bottomtexture);
+            curWall.b_texture = Textures::getWallAnim(sideDef.bottomtexture);
             float b_texturemid;
             
             if (lineFlags & ML_DONTPEGBOTTOM) {
@@ -259,7 +259,7 @@ void wallPrep(
 
         if (b_ceilingheight < f_ceilingheight && (f_ceilingpic != -1 || b_ceilingpic != -1)) {  // Ceiling wall without sky
             // Draw the top texture
-            curWall.t_texture = getWallAnimTexture(sideDef.toptexture);
+            curWall.t_texture = Textures::getWallAnim(sideDef.toptexture);
             float t_texturemid;
             
             if (lineFlags & ML_DONTPEGTOP) {
@@ -1217,24 +1217,24 @@ static void emitDrawSegColumns(const DrawSeg& drawSeg, const seg_t seg) noexcept
     [[maybe_unused]] const Texture* pCeilingTex;
 
     if constexpr (EMIT_MID_WALL) {
-        pMidTex = getWallTexture(sideDef.midtexture);    
+        pMidTex = Textures::getWall(sideDef.midtexture);    
     }
 
     if constexpr (EMIT_UPPER_WALL) {
-        pUpperTex = getWallTexture(sideDef.toptexture);
+        pUpperTex = Textures::getWall(sideDef.toptexture);
     }
 
     if constexpr (EMIT_LOWER_WALL) {
-        pLowerTex = getWallTexture(sideDef.bottomtexture);
+        pLowerTex = Textures::getWall(sideDef.bottomtexture);
     }
 
     if constexpr (EMIT_FLOOR) {
-        pFloorTex = getFlatAnimTexture(frontSector.FloorPic);
+        pFloorTex = Textures::getFlatAnim(frontSector.FloorPic);
     }
 
     if constexpr (EMIT_CEILING || EMIT_SKY) {
         if (seg.frontsector->CeilingPic != SKY_CEILING_PIC) {
-            pCeilingTex = getFlatAnimTexture(frontSector.CeilingPic);
+            pCeilingTex = Textures::getFlatAnim(frontSector.CeilingPic);
         } else {
             pCeilingTex = nullptr;
         }

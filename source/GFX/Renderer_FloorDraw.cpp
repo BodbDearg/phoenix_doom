@@ -99,7 +99,7 @@ void drawVisPlane(
     const float baseYScale
 ) noexcept {
     // Basic plane info
-    const Texture* const pTex = getFlatAnimTexture((uint32_t) plane.picHandle);
+    const Texture* const pTex = Textures::getFlatAnim((uint32_t) plane.picHandle);
     const ImageData& texData = pTex->data;
     const float planeHeight = std::abs(plane.height);
     const LightParams lightParams = getLightParams(plane.planeLight);

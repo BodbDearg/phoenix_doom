@@ -636,7 +636,7 @@ void P_UpdateSpecials() {
             }
             
             // Set the frame
-            setFlatAnimTexNum(AnimPtr->LastPicNum, AnimPtr->CurrentPic);
+            Textures::setFlatAnimTexNum(AnimPtr->LastPicNum, AnimPtr->CurrentPic);
             ++AnimPtr;
         } while (++i < gNumFlatAnims);
     }
