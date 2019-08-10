@@ -3,6 +3,7 @@
 #include "Base/Endian.h"
 #include "Base/Tables.h"
 #include "Burger.h"
+#include "CelImages.h"
 #include "Game/Data.h"
 #include "Game/DoomRez.h"
 #include "Game/Resources.h"
@@ -17,11 +18,14 @@ static constexpr int32_t SCREENGUNY = -40;  // Y offset to center the player's w
 // Draw a single weapon or muzzle flash on the screen
 //----------------------------------------------------------------------------------------------------------------------
 static void DrawAWeapon(const pspdef_t& psp, const bool bShadow) noexcept {
-    // FIXME: DC: clean this up
-    const state_t* const StatePtr = psp.StatePtr;                                               // Get the state struct pointer
-    const uint32_t rezNum = StatePtr->SpriteFrame >> FF_SPRITESHIFT;                            // Get the file
-    const uint16_t* input = (uint16_t*) Resources::loadData(rezNum);                            // Get the main pointer
-    input = (const uint16_t*) GetShapeIndexPtr(input, StatePtr->SpriteFrame & FF_FRAMEMASK);    // Pointer to the xy offset'd shape
+    // Get the image to draw for this weapon
+    const state_t& playerSpriteState = *psp.StatePtr;
+    const uint32_t resourceNum = playerSpriteState.SpriteFrame >> FF_SPRITESHIFT;
+    const CelImageArray& weaponImgs = CelImages::loadImages(
+        resourceNum,
+        CelImages::LoadFlagBits::MASKED | CelImages::LoadFlagBits::HAS_OFFSETS
+    );
+    const CelImage& img = weaponImgs.getImage(playerSpriteState.SpriteFrame & FF_FRAMEMASK);
     
     // FIXME: DC: Reimplement/replace
     #if 0
@@ -41,15 +45,16 @@ static void DrawAWeapon(const pspdef_t& psp, const bool bShadow) noexcept {
         }
     #endif
 
-    // TODO: DC: Find a better place for these endian conversions
-    int32_t x = byteSwappedI16(input[0]);
-    int32_t y = byteSwappedI16(input[1]);
+    // FIXME: DC: need to do gun scaling etc. here
+    int32_t x = img.offsetX;
+    int32_t y = img.offsetY;
     x = ((psp.WeaponX + x ) * (int32_t) gGunXScale) >> 20;
     y = ((psp.WeaponY + SCREENGUNY + y) * (int32_t) gGunYScale) >> 16;
     x += gScreenXOffset;
-    y += gScreenYOffset + 2;                                    // Add 2 pixels to cover up the hole in the bottom
-    DrawMShape(x, y, (const CelControlBlock*) &input[2]);       // Draw the weapon's shape
-    Resources::release(rezNum);
+    y += gScreenYOffset + 2;            // Add 2 pixels to cover up the hole in the bottom
+    DrawShape(x, y, img);               // Draw the weapon's shape
+
+    CelImages::releaseImages(resourceNum);
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -83,8 +88,8 @@ void drawWeapons() noexcept {
     // Draw the border
     {
         const uint32_t borderRezNum = gScreenSize + rBACKGROUNDMASK;
-        DrawMShape(0,0, (const CelControlBlock*) Resources::loadData(borderRezNum));      
-        Resources::release(borderRezNum);
+        DrawShape(0, 0, CelImages::loadImage(borderRezNum, CelImages::LoadFlagBits::MASKED));      
+        CelImages::releaseImages(borderRezNum);
     }
 }
 

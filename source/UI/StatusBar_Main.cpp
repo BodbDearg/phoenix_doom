@@ -8,6 +8,7 @@
 #include "Game/DoomDefines.h"
 #include "Game/DoomRez.h"
 #include "Game/Resources.h"
+#include "GFX/CelImages.h"
 #include "Intermission_Main.h"
 #include <cstring>
 
@@ -92,15 +93,15 @@ typedef struct {
 
 stbar_t gStBar;      // Current state of the status bar 
 
-static void*        gStatusBarShape;            // Handle to current status bar shape 
-static void*        gSBObj;                     // Cached handle to the status bar sub shapes 
-static void*        gFaces;                     // Cached handle to the faces 
-static uint32_t     gFaceTics;                  // Time before animating the face 
-static uint32_t     gNewFace;                   // Which normal face to show
-static sbflash_t    gFlashCards[NUMCARDS];      // Info for flashing cards & Skulls 
-static bool         gGibDraw;                   // Got gibbed? 
-static uint32_t     gGibFrame;                  // Which gib frame 
-static uint32_t     gGibDelay;                  // Delay for gibbing 
+static const CelImage*          gpStatusBarShape;           // Handle to current status bar shape 
+static const CelImageArray*     gpSBObj;                    // Cached handle to the status bar sub shapes 
+static const CelImageArray*     gpFaces;                    // Cached handle to the faces 
+static uint32_t                 gFaceTics;                  // Time before animating the face 
+static uint32_t                 gNewFace;                   // Which normal face to show
+static sbflash_t                gFlashCards[NUMCARDS];      // Info for flashing cards & Skulls 
+static bool                     gGibDraw;                   // Got gibbed? 
+static uint32_t                 gGibFrame;                  // Which gib frame 
+static uint32_t                 gGibDelay;                  // Delay for gibbing 
 
 /**********************************
 
@@ -132,9 +133,10 @@ static void CycleFlash(sbflash_t *FlashPtr)
 // Locate and load all needed graphics for the status bar.
 //----------------------------------------------------------------------------------------------------------------------
 void ST_Start() noexcept {
-    gSBObj = Resources::loadData(rSBARSHP);             // Status bar shapes
-    gFaces = Resources::loadData(rFACES);               // Load all the face frames
-    gStatusBarShape = Resources::loadData(rSTBAR);      // Load the status bar
+    gpSBObj = &CelImages::loadImages(rSBARSHP, CelImages::LoadFlagBits::MASKED);        // Status bar shapes
+    gpFaces = &CelImages::loadImages(rFACES, CelImages::LoadFlagBits::MASKED);          // Load all the face frames    
+    gpStatusBarShape = &CelImages::loadImage(rSTBAR);                                   // Load the status bar
+
     memset(&gStBar, 0, sizeof(gStBar));                 // Reset the status bar
     gFaceTics = 0;                                      // Reset the face tic count
     gGibDraw = false;                                   // Don't draw gibbed head sequence
@@ -145,9 +147,9 @@ void ST_Start() noexcept {
 // Release resources allocated by the status bar
 //----------------------------------------------------------------------------------------------------------------------
 void ST_Stop() noexcept {
-    Resources::release(rSBARSHP);       // Status bar shapes
-    Resources::release(rFACES);         // All the face frames
-    Resources::release(rSTBAR);         // Lower bar
+    CelImages::releaseImages(rSBARSHP); 
+    CelImages::releaseImages(rFACES);
+    CelImages::releaseImages(rSTBAR);
 }
 
 /**********************************
@@ -220,7 +222,7 @@ void ST_Drawer()
     player_t *p;
     sbflash_t *FlashPtr;
 
-    DrawShape(0,160, (const CelControlBlock*) gStatusBarShape);           // Draw the status bar 
+    DrawShape(0, 160, *gpStatusBarShape);   // Draw the status bar 
 
 #if VBLTIMER
     ++Frames;
@@ -253,24 +255,21 @@ void ST_Drawer()
     PrintNumber(ARMORX,ARMORY,p->armorpoints,PNFLAGS_RIGHT|PNFLAGS_PERCENT);    // Draw armor 
     PrintNumber(MAPX,MAPY,gGameMap,PNFLAGS_CENTER);        // Draw AREA 
 
-    // Cards & skulls 
-
+    // Cards & skulls
     ind = 0;
     FlashPtr = gFlashCards;
     do {
         if (p->cards[ind] || FlashPtr->doDraw) {    // Flashing? 
-            DrawMShape(
-                CARD_X[ind], CARD_Y[ind],GetShapeIndexPtr(gSBObj,sb_card_b+ind));
+            DrawShape(CARD_X[ind], CARD_Y[ind], gpSBObj->getImage(sb_card_b + ind));
         }
         ++FlashPtr;
     } while (++ind<NUMCARDS);
 
-    // Weapons 
-
+    // Weapons
     ind = 0;
     do {
         if (p->weaponowned[ind+1]) {
-            DrawMShape(MICRO_NUMS_X[ind], MICRO_NUMS_Y[ind], GetShapeIndexPtr(gSBObj,sb_micro+ind));
+            DrawShape(MICRO_NUMS_X[ind], MICRO_NUMS_Y[ind], gpSBObj->getImage(sb_micro+ind));
         }
     } while (++ind<NUMMICROS);
     
@@ -309,5 +308,6 @@ void ST_Drawer()
         }
         i = i+gNewFace;  // Get shape requested 
     }
-    DrawMShape(FACEX,FACEY,GetShapeIndexPtr(gFaces,i)); // Dead man 
+    
+    DrawShape(FACEX, FACEY, gpFaces->getImage(i));  // Dead man 
 }

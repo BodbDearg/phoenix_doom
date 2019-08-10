@@ -5,6 +5,7 @@
 #include "Game/DoomDefines.h"
 #include "Game/DoomRez.h"
 #include "Game/Resources.h"
+#include "GFX/CelImages.h"
 #include "GFX/Video.h"
 #include "Intermission_Main.h"
 #include "Options_Main.h"
@@ -188,23 +189,24 @@ void M_Drawer() {
         O_Drawer();
     } 
     else {    
-        const void* const pShapes = Resources::loadData(rMAINMENU);     // Load shape group
+        const CelImageArray& shapes = CelImages::loadImages(rMAINMENU, CelImages::LoadFlagBits::MASKED);    // Load shape group
 
-        // Draw new skull        
-        DrawMShape(CURSORX, gCursorYs[gCursorPos], GetShapeIndexPtr(Resources::loadData(rSKULLS), gCursorFrame));
-        Resources::release(rSKULLS);
+        // Draw new skull
+        const CelImageArray& skullImgs = CelImages::loadImages(rSKULLS, CelImages::LoadFlagBits::MASKED);
+        DrawShape(CURSORX, gCursorYs[gCursorPos], skullImgs.getImage(gCursorFrame));
+        CelImages::releaseImages(rSKULLS);
 
         // Draw start level information
         PrintBigFont(CURSORX + 24, AREAY, "Level");
         PrintNumber(CURSORX + 40, AREAY + 20, gPlayerMap, 0);
 
         // Draw difficulty information
-        DrawMShape(CURSORX + 24, DIFFICULTYY, GetShapeIndexPtr(pShapes, DIFFSHAPE));
-        DrawMShape(CURSORX + 40, DIFFICULTYY + 20, GetShapeIndexPtr(pShapes, gPlayerSkill));
+        DrawShape(CURSORX + 24, DIFFICULTYY, shapes.getImage(DIFFSHAPE));
+        DrawShape(CURSORX + 40, DIFFICULTYY + 20, shapes.getImage(gPlayerSkill));
 
         // Draw the options screen
         PrintBigFont(CURSORX + 24, OPTIONSY, "Options Menu");
-        Resources::release(rMAINMENU);
+        CelImages::releaseImages(rMAINMENU);
         Video::present();
     }
 }

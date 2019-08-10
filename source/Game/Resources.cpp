@@ -51,4 +51,8 @@ void release(const uint32_t num) noexcept {
     // If you're using this code to do something a little more demanding however then you may want to revisit this.
 }
 
+uint32_t getEndResourceNum() noexcept {
+    return gResourceMgr.getEndResourceNum();
+}
+
 END_NAMESPACE(Resources)

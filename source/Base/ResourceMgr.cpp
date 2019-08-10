@@ -44,6 +44,7 @@ struct ResourceHeader {
 ResourceMgr::ResourceMgr() noexcept
     : mpResourceFile(nullptr)
     , mResources()
+    , mEndResourceNum(0)
 {
 }
 
@@ -103,9 +104,12 @@ void ResourceMgr::init(const char* const fileName) noexcept {
             pGroupHeader->swapEndian();
             pCurBytes += sizeof(ResourceGroupHeader);
             
+            // Figure out the end resource number for this group and contribute to the max for the manager
             uint32_t resourceNum = pGroupHeader->resourcesStartNum;
             const uint32_t endResourceNum = resourceNum + pGroupHeader->numResources;
+            mEndResourceNum = std::max(endResourceNum, mEndResourceNum);
             
+            // Create all the resources in the group
             while (resourceNum < endResourceNum) {
                 if (pCurBytes + sizeof(ResourceHeader) > pEndBytes) {
                     FATAL_ERROR_F("Resource file '%s' is invalid! Unexpected head of resource header data!", fileName);
@@ -135,6 +139,8 @@ void ResourceMgr::init(const char* const fileName) noexcept {
 }
 
 void ResourceMgr::destroy() noexcept {
+    mEndResourceNum = 0;
+
     if (mpResourceFile) {
         std::fclose(mpResourceFile);
         mpResourceFile = nullptr;

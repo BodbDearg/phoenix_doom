@@ -172,6 +172,9 @@ static void clearTextures(std::vector<Texture>& textures) noexcept {
 }
 
 void init() noexcept {
+    ASSERT(gWallTextures.empty());
+    ASSERT(gFlatTextures.empty());
+
     // Read the header for all the texture info.
     // Note that we do NOT byte swap the original resources the may be cached and reused multiple times.
     // If we byte swapped the originals then we might double swap back to big endian accidently...
@@ -205,7 +208,7 @@ void init() noexcept {
     }
     
     // Now done with this resource
-    Resources::release(rTEXTURE1);
+    Resources::free(rTEXTURE1);
     
     // We don't have texture info for flats, all flats for 3DO are 64x64.
     // This was done orignally to help optimize the flat renderer, which was done in software on the 3DO's CPU.

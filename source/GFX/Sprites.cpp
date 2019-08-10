@@ -118,6 +118,7 @@ static SpriteImageHeader readSpriteFrameHeader(const std::byte* const pData) noe
 }
 
 void init() noexcept {
+    ASSERT(gSprites.empty());
     gSprites.resize(getNumSprites());
 }
 

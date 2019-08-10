@@ -8,6 +8,7 @@
 #include "Game/DoomDefines.h"
 #include "Game/DoomRez.h"
 #include "Game/Resources.h"
+#include "GFX/CelImages.h"
 #include "GFX/Renderer.h"
 #include "GFX/Video.h"
 #include "Intermission_Main.h"
@@ -278,14 +279,14 @@ void O_Control(player_t *player)
     Draw the option screen
 
 **********************************/
-
-void O_Drawer(void) {
+void O_Drawer() {
     // Erase old and Draw new cursor frame
-    DrawMShape(CURSORX, CURSOR_Y_POS[gCursorPos], GetShapeIndexPtr(Resources::loadData(rSKULLS), gCursorFrame));
-    Resources::release(rSKULLS);
-    const void* const pShapes = Resources::loadData(rSLIDER);
+    const CelImageArray& skullImgs = CelImages::loadImages(rSKULLS, CelImages::LoadFlagBits::MASKED);
+    DrawShape(CURSORX, CURSOR_Y_POS[gCursorPos], skullImgs.getImage(gCursorFrame));
+    CelImages::releaseImages(rSKULLS);
 
     // Draw menu text
+    const CelImageArray& sliderImgs = CelImages::loadImages(rSLIDER, CelImages::LoadFlagBits::MASKED);
     PrintBigFontCenter(160, 10, "Options");
 
     if (gCursorPos < controls) {
@@ -293,17 +294,17 @@ void O_Drawer(void) {
         PrintBigFontCenter(160, MUSICVOLY, "Music Volume");
 
         // Draw scroll bars
-        DrawMShape(SLIDERX, SFXVOLY + 20, GetShapeIndexPtr(pShapes, BAR));
-        DrawMShape(SLIDERX, MUSICVOLY + 20, GetShapeIndexPtr(pShapes, BAR));
+        DrawShape(SLIDERX, SFXVOLY + 20, sliderImgs.getImage(BAR));
+        DrawShape(SLIDERX, MUSICVOLY + 20, sliderImgs.getImage(BAR));
         
         {
             const uint32_t offset = audioGetSoundVolume() * SLIDESTEP;
-            DrawMShape(SLIDERX + 5 + offset, SFXVOLY + 20, GetShapeIndexPtr(pShapes, HANDLE));
+            DrawShape(SLIDERX + 5 + offset, SFXVOLY + 20, sliderImgs.getImage(HANDLE));
         }
 
         {
             const uint32_t offset = audioGetMusicVolume() * SLIDESTEP;
-            DrawMShape(SLIDERX + 5 + offset, MUSICVOLY + 20, GetShapeIndexPtr(pShapes, HANDLE));
+            DrawShape(SLIDERX + 5 + offset, MUSICVOLY + 20, sliderImgs.getImage(HANDLE));
         }
 
     } else {
@@ -316,12 +317,12 @@ void O_Drawer(void) {
         PrintBigFont(JOYPADX + 40, JOYPADY + 40, BUTTON_B[gControlType]);
         PrintBigFont(JOYPADX + 40, JOYPADY + 60, BUTTON_C[gControlType]);
         PrintBigFontCenter(160, SIZEY, "Screen Size");
-        DrawMShape(SLIDERX, SIZEY + 20, GetShapeIndexPtr(pShapes, BAR));
+        DrawShape(SLIDERX, SIZEY + 20, sliderImgs.getImage(BAR));
         
         const uint32_t offset = (5 - gScreenSize) * 18;
-        DrawMShape(SLIDERX + 5 + offset, SIZEY + 20, GetShapeIndexPtr(pShapes, HANDLE));
+        DrawShape(SLIDERX + 5 + offset, SIZEY + 20, sliderImgs.getImage(HANDLE));
     }
 
-    Resources::release(rSLIDER);
+    CelImages::releaseImages(rSLIDER);
     Video::present();
 }
