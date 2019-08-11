@@ -1,14 +1,15 @@
 #include "Renderer_Internal.h"
 
-#include "Base/Endian.h"
 #include "Base/Tables.h"
+#include "Blit.h"
 #include "Burger.h"
 #include "CelImages.h"
 #include "Game/Data.h"
 #include "Game/DoomRez.h"
-#include "Game/Resources.h"
+#include "Map/MapData.h"
 #include "Things/Info.h"
 #include "Things/MapObj.h"
+#include "Video.h"
 
 BEGIN_NAMESPACE(Renderer)
 
@@ -26,33 +27,82 @@ static void DrawAWeapon(const pspdef_t& psp, const bool bShadow) noexcept {
         CelImages::LoadFlagBits::MASKED | CelImages::LoadFlagBits::HAS_OFFSETS
     );
     const CelImage& img = weaponImgs.getImage(playerSpriteState.SpriteFrame & FF_FRAMEMASK);
-    
-    // FIXME: DC: Reimplement/replace
-    #if 0
-        ((LongWord *)Input)[7] = GunXScale;     // Set the scale factor
-        ((LongWord *)Input)[10] = GunYScale;
-        if (Shadow) {
-            ((LongWord *)Input)[13] = 0x9C81;   // Set the shadow bits
-        } else {
-            ((LongWord *)Input)[13] = 0x1F00;   // Normal PMode
-            #if 0
-            if (StatePtr->SpriteFrame & FF_FULLBRIGHT) {
-                Color = 255;            // Full bright
-            } else {                    // Ambient light
-                Color = players.mo->subsector->sector->lightlevel;
-            }
-            #endif
-        }
-    #endif
 
-    // FIXME: DC: need to do gun scaling etc. here
-    int32_t x = img.offsetX;
-    int32_t y = img.offsetY;
-    x = ((psp.WeaponX + x ) * (int32_t) gGunXScale) >> 20;
-    y = ((psp.WeaponY + SCREENGUNY + y) * (int32_t) gGunYScale) >> 16;
-    x += gScreenXOffset;
-    y += gScreenYOffset + 2;            // Add 2 pixels to cover up the hole in the bottom
-    DrawShape(x, y, img);               // Draw the weapon's shape
+    // Figure out what light level to draw the gun at
+    float lightMul;
+
+    if ((playerSpriteState.SpriteFrame & FF_FULLBRIGHT) != 0) {
+        lightMul = 1.0f;
+    } else {
+        const LightParams& lightParams = getLightParams(gPlayers.mo->subsector->sector->lightlevel + gExtraLight);
+        lightMul = lightParams.getLightMulForDist(0.0f);
+    }
+
+    // Decide where to draw the gun sprite part
+    float gunX = (float)(img.offsetX + psp.WeaponX);
+    float gunY = (float)(img.offsetY + psp.WeaponY + SCREENGUNY);
+    gunX *= gGunXScale;
+    gunY *= gGunYScale;
+    
+    // Draw the gun sprite part.
+    // If the player has invisibility then draw using alpha blending:
+    if (bShadow) {
+        Blit::blitSprite<
+            Blit::BCF_ALPHA_TEST |
+            Blit::BCF_ALPHA_BLEND |
+            Blit::BCF_COLOR_MULT_RGB |
+            Blit::BCF_COLOR_MULT_A |
+            Blit::BCF_H_CLIP |
+            Blit::BCF_V_CLIP
+        >(
+            img.pPixels,
+            img.width,
+            img.height,
+            0.0f,
+            0.0f,
+            (float) img.width,
+            (float) img.height,
+            Video::gFrameBuffer + (gScreenYOffset * Video::SCREEN_WIDTH) + gScreenXOffset,
+            gScreenWidth,
+            gScreenHeight,
+            Video::SCREEN_WIDTH,
+            (float) gunX,
+            (float) gunY,
+            (float) img.width * gGunXScale,
+            (float) img.height * gGunYScale,
+            MF_SHADOW_COLOR_MULT,
+            MF_SHADOW_COLOR_MULT,
+            MF_SHADOW_COLOR_MULT,
+            MF_SHADOW_ALPHA
+        );
+    }
+    else {
+        Blit::blitSprite<
+            Blit::BCF_ALPHA_TEST |
+            Blit::BCF_COLOR_MULT_RGB |
+            Blit::BCF_H_CLIP |
+            Blit::BCF_V_CLIP
+        >(
+            img.pPixels,
+            img.width,
+            img.height,
+            0.0f,
+            0.0f,
+            (float) img.width,
+            (float) img.height,
+            Video::gFrameBuffer + (gScreenYOffset * Video::SCREEN_WIDTH) + gScreenXOffset,
+            gScreenWidth,
+            gScreenHeight,
+            Video::SCREEN_WIDTH,
+            (float) gunX,
+            (float) gunY,
+            (float) img.width * gGunXScale,
+            (float) img.height * gGunYScale,
+            lightMul,
+            lightMul,
+            lightMul
+        );
+    }
 
     CelImages::releaseImages(resourceNum);
 }

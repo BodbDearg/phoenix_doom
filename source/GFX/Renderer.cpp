@@ -317,8 +317,8 @@ void initMathTables() noexcept {
         gScreenYOffset = (160 - gScreenHeight) / 2;
     #endif
 
-    gGunXScale = (gScreenWidth * 0x100000) / 320;       // Get the 3DO scale factor for the gun shape and the y scale
-    gGunYScale = (gScreenHeight * 0x10000) / 160;
+    gGunXScale = (float) gScreenWidth / 320.0f;     // Get the 3DO scale factor for the gun shape and the y scale
+    gGunYScale = (float) gScreenHeight / 160.0f;
     gStretch = STRETCHES[gScreenSize];
     gStretchWidth = gStretch * ((int) gScreenWidth / 2);
 

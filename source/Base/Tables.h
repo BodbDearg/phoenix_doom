@@ -28,8 +28,8 @@ extern Fixed        gStretch;                           // Stretch factor
 extern Fixed        gStretchWidth;                      // Stretch factor * ScreenWidth
 extern uint32_t     gScreenXOffset;                     // True X coord for projected screen
 extern uint32_t     gScreenYOffset;                     // True Y coord for projected screen
-extern uint32_t     gGunXScale;                         // Scale factor for player's weapon for X
-extern uint32_t     gGunYScale;                         // Scale factor for player's weapon for Y
+extern float        gGunXScale;                         // Scale factor for player's weapon for X
+extern float        gGunYScale;                         // Scale factor for player's weapon for Y
 extern float        gLightMins[256];                    // Minimum light factors
 extern float        gLightSubs[256];                    // Light subtraction
 extern float        gLightCoefs[256];                   // Light coeffecient

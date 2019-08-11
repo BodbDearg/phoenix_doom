@@ -123,7 +123,7 @@ namespace Blit {
     //      It is assumed that the callee has ensured this is the case.
     //  (4) Depending on flags, some input variables may be unused.
     //      It is hoped that in release builds these things will simply be optimized away and carry no overhead.
-    //  (5) The output area blitted to *MUST* be in bounds.
+    //  (5) The output area blitted to *MUST* be in bounds, unless clipping is used.
     //      It is assumed the callee has already done all required clipping prior to calling this function.
     //  (6) Contrary to the input image, the output image *MUST* always be in row major format.
     //------------------------------------------------------------------------------------------------------------------
@@ -139,7 +139,7 @@ namespace Blit {
         uint32_t* const pDstPixels,                         // Output image pixels, this must point to the the TOP LEFT pixel of the output image
         [[maybe_unused]] const uint32_t dstW,               // Output image width
         [[maybe_unused]] const uint32_t dstH,               // Output image height
-        [[maybe_unused]] const uint32_t dstPixelPitch,      // The number of pixels that must be skipped to go onto a new row in the output image
+        [[maybe_unused]] const uint32_t dstPixelsPitch,     // The number of pixels that must be skipped to go onto a new row in the output image
         int32_t dstX,                                       // Where to start blitting to in output image: x
         int32_t dstY,                                       // Where to start blitting to in output image: y
         uint32_t dstCount,                                  // How many pixels to blit to the output image (in positive x or y direction)
@@ -154,6 +154,10 @@ namespace Blit {
         BLIT_ASSERT(pSrcPixels);
         BLIT_ASSERT(srcW > 0);
         BLIT_ASSERT(srcH > 0);
+        BLIT_ASSERT(pDstPixels);
+        BLIT_ASSERT(dstW > 0);
+        BLIT_ASSERT(dstH > 0);
+        BLIT_ASSERT(dstPixelsPitch > 0);
         BLIT_ASSERT(rMul >= 0.0f);
         BLIT_ASSERT(gMul >= 0.0f);
         BLIT_ASSERT(bMul >= 0.0f);
@@ -272,7 +276,7 @@ namespace Blit {
         BLIT_ASSERT(dstX >= 0 && dstX < (int32_t) dstW);
         BLIT_ASSERT(dstY >= 0 && dstY < (int32_t) dstH);
 
-        uint32_t* const pFirstDstPixel = pDstPixels + dstY * dstPixelPitch + dstX;
+        uint32_t* const pFirstDstPixel = pDstPixels + dstY * dstPixelsPitch + dstX;
         uint32_t* pDstPixel = pFirstDstPixel;
         uint32_t* pEndDstPixel;
 
@@ -282,7 +286,7 @@ namespace Blit {
         } else {
             static_assert(IS_VERT_COLUMN);
             BLIT_ASSERT(dstY + dstCount <= dstH);
-            pEndDstPixel = pDstPixel + dstCount * dstPixelPitch;
+            pEndDstPixel = pDstPixel + dstCount * dstPixelsPitch;
         }
 
         // Where to start reading from the in the source image; optimize for certain scenarios based on the input flags...
@@ -461,8 +465,122 @@ namespace Blit {
                 pDstPixel += 1;
             } else {
                 static_assert(IS_VERT_COLUMN);
-                pDstPixel += dstPixelPitch;
+                pDstPixel += dstPixelsPitch;
             }
+        }
+    }
+
+    //------------------------------------------------------------------------------------------------------------------
+    // Blits a portion of a sprite in ARGB1555 format to the destination in RGBA8888 format.
+    // Optionally, alpha testing and blending can be applied.
+    //
+    // Notes:
+    //  (1) See the 'blitColumn' documentation for most of the details on how blitting works.
+    //  (2) The wrapping mode used for this operation is always CLAMP; wrapping or discard is NOT allowed.
+    //  (3) The input image is assummed ROW MAJOR, you CANNOT use column major images.
+    //  (4) For sprite blitting the following blit column flags are NOT allowed, since they are controlled
+    //      by the sprite blit routine:
+    //          (a) Whether to output to a horizontal column or not.
+    //          (b) Whether the input image is row major (it is always assumed to be this)
+    //          (c) Whether to step in the x and y directions of the source texture.
+    //          (d) Whether to allow wrapping.
+    //------------------------------------------------------------------------------------------------------------------
+    template <uint32_t BC_FLAGS>
+    inline void blitSprite(
+        const uint16_t* const pSrcPixels,               // Pixel data for source image
+        const uint32_t srcPixelsW,                      // Width of source image
+        const uint32_t srcPixelsH,                      // Height of source image
+        float srcX,                                     // Where to start blitting from in the input texture: x & y
+        float srcY,
+        float srcW,                                     // Size of the area to blit from the input texture: width & height
+        float srcH,
+        uint32_t* const pDstPixels,                     // Output image pixels, this must point to the the TOP LEFT pixel of the output image
+        const uint32_t dstPixelsW,                      // Output image width
+        const uint32_t dstPixelsH,                      // Output image height
+        const uint32_t dstPixelsPitch,                  // The number of pixels that must be skipped to go onto a new row in the output image
+        float dstX,                                     // Where to start blitting to in output image: x & y
+        float dstY,
+        float dstW,                                     // Size of the area to blit to in the output texture: width & height
+        float dstH,
+        [[maybe_unused]] const float rMul = 1.0f,       // Color multiply value: red
+        [[maybe_unused]] const float gMul = 1.0f,       // Color multiply value: green
+        [[maybe_unused]] const float bMul = 1.0f,       // Color multiply value: blue
+        [[maybe_unused]] const float aMul = 1.0f        // Color multiply value: alpha
+    ) noexcept {
+        // These blit column flags are not allowed to be set
+        static_assert((BC_FLAGS & BCF_HORZ_COLUMN) == 0);
+        static_assert((BC_FLAGS & BCF_ROW_MAJOR_IMG) == 0);
+        static_assert((BC_FLAGS & BCF_STEP_X) == 0);
+        static_assert((BC_FLAGS & BCF_STEP_Y) == 0);
+        static_assert((BC_FLAGS & BCF_H_WRAP_WRAP) == 0);
+        static_assert((BC_FLAGS & BCF_H_WRAP_CLAMP) == 0);
+        static_assert((BC_FLAGS & BCF_H_WRAP_DISCARD) == 0);
+        static_assert((BC_FLAGS & BCF_V_WRAP_WRAP) == 0);
+        static_assert((BC_FLAGS & BCF_V_WRAP_CLAMP) == 0);
+        static_assert((BC_FLAGS & BCF_V_WRAP_DISCARD) == 0);
+
+        // Sanity checks
+        BLIT_ASSERT(pSrcPixels);
+        BLIT_ASSERT(srcPixelsW > 0);
+        BLIT_ASSERT(srcPixelsH > 0);
+        BLIT_ASSERT(srcW >= 0.0f);
+        BLIT_ASSERT(srcH >= 0.0f);
+        BLIT_ASSERT(pDstPixels);
+        BLIT_ASSERT(dstPixelsW > 0);
+        BLIT_ASSERT(dstPixelsH > 0);
+        BLIT_ASSERT(dstPixelsPitch > 0);
+
+        // Ignore if blitting to a zero sized area
+        if (dstW <= 0.0f || dstH <= 0.0f) {
+            BLIT_ASSERT(dstW == 0.0f);
+            BLIT_ASSERT(dstH == 0.0f);
+            return;
+        }
+
+        // Figure out the start and end pixel in the destination and number of rows and columns
+        const uint32_t dstX1 = (uint32_t) dstX;
+        const uint32_t dstX2 = (uint32_t)(dstX + dstW);
+        const uint32_t dstY1 = (uint32_t) dstY;
+        const uint32_t dstY2 = (uint32_t)(dstY + dstH);
+
+        const uint32_t dstXCount = (dstX2 - dstX1) + 1;
+        const uint32_t dstYCount = (dstY2 - dstY1) + 1;
+
+        // Figure out the x and y step
+        const float srcXStep = (dstXCount > 0) ? srcW / (float) dstW : 0.0f;
+        const float srcYStep = (dstYCount > 0) ? srcH / (float) dstH : 0.0f;
+
+        // Blit each row of the image
+        for (uint32_t rowNum = 0; rowNum < dstYCount; ++rowNum) {
+            blitColumn<
+                BC_FLAGS |
+                BCF_HORZ_COLUMN |
+                BCF_ROW_MAJOR_IMG |
+                BCF_STEP_X |
+                BCF_H_WRAP_CLAMP |
+                BCF_V_WRAP_CLAMP
+            >(
+                pSrcPixels,
+                srcPixelsW,
+                srcPixelsH,
+                srcX,
+                srcY + srcYStep * (float) rowNum,
+                0.0f,
+                0.0f,
+                pDstPixels,
+                dstPixelsW,
+                dstPixelsH,
+                dstPixelsPitch,
+                dstX1,
+                dstY1 + rowNum,
+                dstXCount,
+                srcXStep,
+                0.0f,
+                rMul,
+                gMul,
+                bMul,
+                aMul
+            );
         }
     }
 }
