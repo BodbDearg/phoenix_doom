@@ -17,15 +17,11 @@ extern Fixed        gFineSine[10240];
 extern angle_t      gTanToAngle[2049];
 extern angle_t      gXToViewAngle[MAXSCREENWIDTH + 1];
 extern int32_t      gViewAngleToX[FINEANGLES / 4];
-extern float        gYSlope[MAXSCREENHEIGHT];
-extern float        gDistScale[MAXSCREENWIDTH];
 extern uint32_t     gIDivTable[8192];                   // 1.0 / 0-5500 for recipocal muls   
 extern uint32_t     gCenterX;                           // Center view center X coord (integer)
 extern uint32_t     gCenterY;                           // Center view center Y coord (integer)
 extern uint32_t     gScreenWidth;                       // Width of the view screen
 extern uint32_t     gScreenHeight;                      // Height of the view screen
-extern Fixed        gStretch;                           // Stretch factor
-extern Fixed        gStretchWidth;                      // Stretch factor * ScreenWidth
 extern uint32_t     gScreenXOffset;                     // True X coord for projected screen
 extern uint32_t     gScreenYOffset;                     // True Y coord for projected screen
 extern float        gGunXScale;                         // Scale factor for player's weapon for X

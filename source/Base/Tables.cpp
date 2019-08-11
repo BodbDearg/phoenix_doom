@@ -2066,15 +2066,11 @@ angle_t gTanToAngle[2049] = {
 
 int32_t     gViewAngleToX[FINEANGLES/4];
 angle_t     gXToViewAngle[MAXSCREENWIDTH+1];
-float       gYSlope[MAXSCREENHEIGHT];
-float       gDistScale[MAXSCREENWIDTH];
 uint32_t    gIDivTable[8192];
 uint32_t    gCenterX;
 uint32_t    gCenterY;
 uint32_t    gScreenWidth;
 uint32_t    gScreenHeight;
-Fixed       gStretch;
-Fixed       gStretchWidth;
 uint32_t    gScreenXOffset;
 uint32_t    gScreenYOffset;
 float       gGunXScale;

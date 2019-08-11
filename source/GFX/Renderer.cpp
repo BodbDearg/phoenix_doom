@@ -8,16 +8,6 @@
 #include "Things/MapObj.h"
 #include <algorithm>
 
-static constexpr Fixed computeStretch(const uint32_t width, const uint32_t height) noexcept {
-    return Fixed(
-        floatToFixed(
-            (160.0f / (float) width) *
-            ((float) height / (float) Renderer::REFERENCE_3D_VIEW_HEIGHT) *
-            2.2f
-        )
-    );
-}
-
 static constexpr uint32_t SCREEN_WIDTHS[6] = {
 // TODO: REMOVE
 #if HACK_TEST_HIGH_RES_RENDERING
@@ -46,20 +36,6 @@ static constexpr uint32_t SCREEN_HEIGHTS[6] = {
     80
 };
 
-static constexpr Fixed STRETCHES[6] = {
-// TODO: REMOVE
-#if HACK_TEST_HIGH_RES_RENDERING
-    computeStretch(280 * HACK_TEST_HIGH_RENDER_SCALE, 160 * HACK_TEST_HIGH_RENDER_SCALE),
-#else
-    computeStretch(280, 160),
-#endif
-    computeStretch(256, 144),
-    computeStretch(224, 128),
-    computeStretch(192, 112),
-    computeStretch(160, 96),
-    computeStretch(128, 80)
-};
-
 BEGIN_NAMESPACE(Renderer)
 
 #if ENABLE_DEBUG_CAMERA_Z_MOVEMENT
@@ -69,14 +45,6 @@ BEGIN_NAMESPACE(Renderer)
 //----------------------------------------------------------------------------------------------------------------------
 // Internal renderer cross module globals
 //----------------------------------------------------------------------------------------------------------------------
-viswall_t                       gVisWalls[MAXWALLCMDS];
-viswall_t*                      gpEndVisWall;
-visplane_t                      gVisPlanes[MAXVISPLANES];
-visplane_t*                     gpEndVisPlane;
-vissprite_t                     gVisSprites[MAXVISSPRITES];
-vissprite_t*                    gpEndVisSprite;
-uint8_t                         gOpenings[MAXOPENINGS];
-uint8_t*                        gpEndOpening;
 std::vector<DrawSeg>            gDrawSegs;
 Fixed                           gViewXFrac;
 Fixed                           gViewYFrac;
@@ -280,11 +248,6 @@ static void preDrawSetup() noexcept {
     gDrawSprites.clear();
     gSpriteFragments.clear();
 
-    gpEndVisPlane = gVisPlanes + 1;     // visplanes[0] is left empty
-    gpEndVisWall = gVisWalls;           // No walls added yet
-    gpEndVisSprite = gVisSprites;       // No sprites added yet
-    gpEndOpening = gOpenings;           // No openings found
-
     // Other misc setup
     gExtraLight = player.extralight << 6;       // Init the extra lighting value
 }
@@ -308,6 +271,7 @@ void initMathTables() noexcept {
     gScreenHeight = SCREEN_HEIGHTS[gScreenSize];
     gCenterX = gScreenWidth / 2;
     gCenterY = gScreenHeight / 2;
+
     // TODO: REMOVE
     #if HACK_TEST_HIGH_RES_RENDERING
         gScreenXOffset = (320 * HACK_TEST_HIGH_RENDER_SCALE - gScreenWidth) / 2;
@@ -319,8 +283,6 @@ void initMathTables() noexcept {
 
     gGunXScale = (float) gScreenWidth / 320.0f;     // Get the 3DO scale factor for the gun shape and the y scale
     gGunYScale = (float) gScreenHeight / 160.0f;
-    gStretch = STRETCHES[gScreenSize];
-    gStretchWidth = gStretch * ((int) gScreenWidth / 2);
 
     // TODO: REMOVE
     #if !HACK_TEST_HIGH_RES_RENDERING
@@ -364,20 +326,6 @@ void initMathTables() noexcept {
                 gViewAngleToX[i] = gScreenWidth;
             }
         }
-    
-        // Make the 'y slope' table for floor and ceiling textures
-        for (uint32_t i = 0; i < gScreenHeight; ++i) {
-            float j = (float) i - (float) gScreenHeight * 0.5f + 0.5f;
-            j = FMath::doomFixed16ToFloat<float>(gStretchWidth) / std::abs(j);
-            j = std::fmin(j, 8192.0f);
-            gYSlope[i] = j;
-        }
-
-        // Create the distance scale table for floor and ceiling textures 
-        for (uint32_t i = 0; i < gScreenWidth; ++i) {
-            const float c = std::cos(getViewAngleForX(i));
-            gDistScale[i] = (1.0f / std::abs(c));
-        }
     #endif  // #if !HACK_TEST_HIGH_RES_RENDERING
 
     // Create the lighting tables
@@ -411,21 +359,14 @@ void initMathTables() noexcept {
 
 void drawPlayerView() noexcept {
     preDrawSetup();                 // Init variables based on camera angle
-    doBspTraversal();               // Traverse the BSP tree and build lists of walls, floors (visplanes) and sprites to render
-
-    // TODO: REMOVE
-    #if false
-    drawAllLineSegs();              // Draw all everything Z Sorted
-    #endif
-    
+    doBspTraversal();               // Traverse the BSP tree and build lists of walls, floors (visplanes) and sprites to render    
     drawAllSkyFragments();
     drawAllFloorFragments();
     drawAllCeilingFragments();
     drawAllWallFragments();
-    drawAllVisPlanes();
     drawAllSprites();
     drawWeapons();                  // Draw the weapons on top of the screen
-    doPostFx();                     // Draw color overlay if needed    
+    doPostFx();                     // Draw color overlay if needed
 }
 
 float LightParams::getLightMulForDist(const float dist) const noexcept {

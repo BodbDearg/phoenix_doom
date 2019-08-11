@@ -22,10 +22,6 @@ namespace Renderer {
     //==================================================================================================================
 
     // Limits
-    static constexpr uint32_t   MAXVISSPRITES           = 128;                      // Maximum number of visible sprites
-    static constexpr uint32_t   MAXVISPLANES            = 64;                       // Maximum number of visible floor and ceiling textures
-    static constexpr uint32_t   MAXWALLCMDS             = 128;                      // Maximum number of visible walls
-    static constexpr uint32_t   MAXOPENINGS             = MAXSCREENWIDTH * 64;      // Space for sil tables
     static constexpr Fixed      MINZ                    = FRACUNIT * 4;             // Closest z allowed (clip sprites closer than this etc.)
     static constexpr uint32_t   FIELDOFVIEW             = 2048;                     // 90 degrees of view
     static constexpr uint32_t   ANGLETOSKYSHIFT         = 22;                       // sky map is 256*128*4 maps
@@ -38,12 +34,6 @@ namespace Renderer {
     static constexpr float      Z_RANGE_SIZE        = 16384.0f;                     // Size of the range of Z values allowed
     static constexpr float      Z_FAR               = Z_NEAR + Z_RANGE_SIZE;        // Far plane Z value
     static constexpr float      VIEW_ASPECT_RATIO   = 2.0f;                         // Aspect ratio used for perspective projection
-    static constexpr uint32_t   HEIGHTBITS          = 6;                            // Number of bits for texture height
-    static constexpr uint32_t   FIXEDTOHEIGHT       = FRACBITS - HEIGHTBITS;        // Number of unused bits from fixed to SCALEBITS
-    static constexpr uint32_t   SCALEBITS           = 9;                            // Number of bits for texture scale
-    static constexpr uint32_t   FIXEDTOSCALE        = FRACBITS - SCALEBITS;         // Number of unused bits from fixed to HEIGHTBITS
-    static constexpr float      MIN_RENDER_SCALE    = 1 / 256.0f;
-    static constexpr float      MAX_RENDER_SCALE    = 64.0f;
 
     // An extra Z offset applied to all rendered sprites: this is a strange one!
     //
@@ -57,46 +47,6 @@ namespace Renderer {
     //==================================================================================================================
     // Data structures
     //==================================================================================================================
-
-    //------------------------------------------------------------------------------------------------------------------
-    // Describes a 2D shape rendered to the screen
-    //------------------------------------------------------------------------------------------------------------------
-    struct vissprite_t {
-        int32_t                     x1;             // Clipped to screen edges column range
-        int32_t                     x2;
-        int32_t                     y1;
-        int32_t                     y2;
-        Fixed                       xscale;         // Scale factor
-        Fixed                       yscale;         // Y Scale factor
-        const SpriteFrameAngle*     pSprite;        // What sprite frame to actually render
-        uint32_t                    colormap;       // 0x8000 = shadow draw,0x4000 flip, 0x3FFF color map
-        const mobj_t*               thing;          // Used for clipping...
-    };
-
-    //------------------------------------------------------------------------------------------------------------------
-    // Contains two screen space Y coordinates (top and bottom).
-    // The exact meaning of these coordinates depends on the context in which they are used/
-    //------------------------------------------------------------------------------------------------------------------
-    struct ScreenYPair {
-        uint16_t ty;        // Top y coordinate
-        uint16_t by;        // Bottom y coordinate
-
-        inline constexpr bool operator == (const ScreenYPair& other) const noexcept {
-            return (ty == other.ty && by == other.by);
-        }
-
-        inline constexpr bool isUndefined() const noexcept {
-            return (*this == UNDEFINED());
-        }
-
-        inline constexpr bool isDefined() const noexcept {
-            return (!isUndefined());
-        }
-
-        static inline constexpr ScreenYPair UNDEFINED() noexcept {
-            return ScreenYPair{ UINT16_MAX, 0 };
-        }
-    };
 
     //------------------------------------------------------------------------------------------------------------------
     // Clip bounds (top & bottom) for when emitting seg columns (floor + wall)
@@ -118,18 +68,6 @@ namespace Renderer {
         // For these light parameters, gives a light multiplier that can be applied to textures etc.
         // after doing light diminishing effects. Requires the distance of the object from the camera.
         float getLightMulForDist(const float dist) const noexcept;
-    };
-
-    //------------------------------------------------------------------------------------------------------------------
-    // Describes a floor area to be drawn
-    //------------------------------------------------------------------------------------------------------------------
-    struct visplane_t {
-        ScreenYPair     cols[MAXSCREENWIDTH + 1];
-        float           height;                     // Height of the floor
-        uint32_t        picHandle;                  // Texture handle
-        uint32_t        planeLight;                 // Light override
-        int32_t         minX;                       // Minimum x, max x
-        int32_t         maxX;
     };
 
     //------------------------------------------------------------------------------------------------------------------
@@ -331,68 +269,9 @@ namespace Renderer {
         const ImageData*    pImageData;
     };
 
-    //------------------------------------------------------------------------------------------------------------------
-    // Describe a wall segment to be drawn
-    //------------------------------------------------------------------------------------------------------------------
-    struct viswall_t {
-        int32_t         leftX;              // Leftmost x screen coord
-        int32_t         rightX;             // Rightmost inclusive x coordinates
-        uint32_t        FloorPic;           // Picture handle to floor shape
-        uint32_t        CeilingPic;         // Picture handle to ceiling shape
-        uint32_t        WallActions;        // Actions to perform for draw
-
-        float           t_topheight;        // Describe the top texture
-        float           t_bottomheight;
-        float           t_texturemid;
-        const Texture*  t_texture;          // Pointer to the top texture
-    
-        float           b_topheight;        // Describe the bottom texture
-        float           b_bottomheight;
-        float           b_texturemid;
-        const Texture*  b_texture;          // Pointer to the bottom texture
-        
-        float           floorheight;
-        float           floornewheight;
-        float           ceilingheight;
-        float           ceilingnewheight;
-
-        float           LeftScale;              // LeftX Scale
-        float           RightScale;             // RightX scale
-        Fixed           SmallScale;
-        Fixed           LargeScale;
-        uint8_t*        TopSil;                 // YClips for the top line
-        uint8_t*        BottomSil;              // YClips for the bottom line
-        float           ScaleStep;              // Scale step factor
-        angle_t         CenterAngle;            // Center angle
-        float           offset;                 // Offset to the texture
-        float           distance;
-        uint32_t        seglightlevel;
-        const seg_t*    SegPtr;                 // Pointer to line segment for clipping  
-    };
-
-    // Wall 'action' flags for a vis wall
-    static constexpr uint32_t AC_ADDFLOOR       = 0x1;
-    static constexpr uint32_t AC_ADDCEILING     = 0x2;
-    static constexpr uint32_t AC_TOPTEXTURE     = 0x4;
-    static constexpr uint32_t AC_BOTTOMTEXTURE  = 0x8;
-    static constexpr uint32_t AC_NEWCEILING     = 0x10;
-    static constexpr uint32_t AC_NEWFLOOR       = 0x20;
-    static constexpr uint32_t AC_ADDSKY         = 0x40;
-    static constexpr uint32_t AC_TOPSIL         = 0x80;
-    static constexpr uint32_t AC_BOTTOMSIL      = 0x100;
-    static constexpr uint32_t AC_SOLIDSIL       = 0x200;
-
     //==================================================================================================================
     // Globals shared throughout the renderer - defined in Renderer.cpp
     //==================================================================================================================
-    extern viswall_t                        gVisWalls[MAXWALLCMDS];             // Visible wall array
-    extern viswall_t*                       gpEndVisWall;                       // End of the used viswalls range (also tells number of viswalls)
-    extern visplane_t                       gVisPlanes[MAXVISPLANES];           // Visible floor array
-    extern visplane_t*                      gpEndVisPlane;                      // End of the used visplanes range (also tells number of visplanes)
-    extern vissprite_t                      gVisSprites[MAXVISSPRITES];         // Visible sprite array
-    extern vissprite_t*                     gpEndVisSprite;                     // End of the used vissprites range (also tells the number of sprites)
-    extern uint8_t                          gOpenings[MAXOPENINGS];
-    extern uint8_t*                         gpEndOpening;
     extern std::vector<DrawSeg>             gDrawSegs;
     extern Fixed                            gViewXFrac;                         // Camera x,y,z
     extern Fixed                            gViewYFrac;
@@ -445,13 +324,11 @@ namespace Renderer {
     void doBspTraversal() noexcept;
     void addSegToFrame(const seg_t& seg) noexcept;
     void addSpriteToFrame(const mobj_t& thing) noexcept;
-    void wallPrep(const int32_t leftX, const int32_t rightX, const seg_t& lineSeg, const angle_t lineAngle) noexcept;
     void drawAllLineSegs() noexcept;
     void drawAllWallFragments() noexcept;
     void drawAllFloorFragments() noexcept;
     void drawAllCeilingFragments() noexcept;
     void drawAllSkyFragments() noexcept;
-    void drawAllVisPlanes() noexcept;
     void drawAllSprites() noexcept;
     void drawWeapons() noexcept;
     void doPostFx() noexcept;

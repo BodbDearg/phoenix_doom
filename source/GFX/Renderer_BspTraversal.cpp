@@ -1,35 +1,15 @@
 #include "Renderer_Internal.h"
 
-#include "Base/FMath.h"
 #include "Base/Tables.h"
 #include "Game/Data.h"
 #include "Map/MapData.h"
 #include "Map/MapUtil.h"
-#include "Sprites.h"
-#include "Things/Info.h"
 #include "Things/MapObj.h"
 
 //----------------------------------------------------------------------------------------------------------------------
-// By traversing the BSP tree, I will create a viswall_t array describing all walls are are visible to the computer 
-// screen, they may be projected off the left and right sides but this is to allow for scaling of the textures
-// properly for clipping.
-// 
-// All backface walls are removed by casting two angles to the end points and seeing if the differance in the angles
-// creates a negative number (Reversed). The viswall_t record will contain the leftmost angle in unmodified 3 Space,
-// the clipped screen left x and right x and the line segment that needs to be rendered.
-//
-// I also create all the sprite records (Unsorted) so that they can be merged with the rendering system to 
-// handle clipping.
+// Module that handles traversing the BSP tree, so we can produce lists of things to draw.
 //----------------------------------------------------------------------------------------------------------------------
-
 BEGIN_NAMESPACE(Renderer)
-
-struct cliprange_t {
-    int32_t leftX;      // Left side of post
-    int32_t rightX;     // Right side of post
-};
-
-static constexpr uint32_t MAXSEGS = 32;     // Maximum number of segs to scan
 
 static uint32_t gCheckCoord[9][4] = {
     { BOXRIGHT, BOXTOP, BOXLEFT, BOXBOTTOM },       // Above,Left
@@ -43,135 +23,6 @@ static uint32_t gCheckCoord[9][4] = {
     { BOXLEFT, BOXBOTTOM, BOXRIGHT, BOXTOP }        // Below,Right
 };
 
-static cliprange_t  gSolidsegs[MAXSEGS];    // List of valid ranges to scan through
-static cliprange_t* gNewEnd;                // Pointer to the first free entry
-
-//----------------------------------------------------------------------------------------------------------------------
-// Compute the angle between two 16.16 points very precisely.
-// Uses actual trig functions.
-//----------------------------------------------------------------------------------------------------------------------
-static angle_t AngleFromPointToPoint(const Fixed p1x, const Fixed p1y, const Fixed p2x, const Fixed p2y) noexcept {
-    const float dx = FMath::doomFixed16ToFloat<float>(p2x - p1x);
-    const float dy = FMath::doomFixed16ToFloat<float>(p2y - p1y);
-    const float angle = std::atan2(dy, dx);
-    return FMath::radiansToDoomAngle(angle);
-}
-
-//----------------------------------------------------------------------------------------------------------------------
-// Get the sprite angle (0-7) to render a thing with
-//----------------------------------------------------------------------------------------------------------------------
-static uint8_t getThingSpriteAngleForViewpoint(
-    const Fixed viewpointX,
-    const Fixed viewpointY,
-    const mobj_t& thing
-) noexcept {
-    angle_t ang = PointToAngle(gViewXFrac, gViewYFrac, thing.x, thing.y);   // Get angle to thing
-    ang -= thing.angle;                                                     // Adjust for which way the thing is facing
-    const uint8_t angleIdx = (ang + (ANG45 / 2) * 9U) >> 29;                // Compute and return angle index (0-7)
-    return angleIdx;
-}
-
-//----------------------------------------------------------------------------------------------------------------------
-// I have a possible sprite record, transform to 2D coords and then see if it is clipped.
-// If the sprite is not clipped then it is prepared for rendering.
-//----------------------------------------------------------------------------------------------------------------------
-static void addMapObjToFrame(const mobj_t& thing) noexcept {
-    // This is a HACK, so I don't draw the player for the 3DO version
-    if (thing.player)
-        return;
-
-    // Don't draw the sprite if we have hit the maximum limit
-    vissprite_t* pVisSprite = gpEndVisSprite;
-
-    if (pVisSprite >= &gVisSprites[MAXVISSPRITES])
-        return;
-    
-    // Transform the origin point
-    Fixed tx = thing.x - gViewXFrac;            // Get the point in 3 Space
-    Fixed ty = thing.y - gViewYFrac;
-    Fixed tz = fixedMul(tx, gViewCosFrac);      // Rotate around the camera
-    tz += fixedMul(ty, gViewSinFrac);           // Add together
-
-    // Ignore sprite if too close to the camera (too large)
-    if (tz < MINZ)
-        return;
-    
-    // Calc the 3Space x coord
-    tx = fixedMul(tx, gViewSinFrac);
-    tx -= fixedMul(ty, gViewCosFrac);
-    
-    // Ignore sprite if greater than 45 degrees off the side
-    if (tx > (tz << 2) || tx < -(tz << 2))
-        return;
-    
-    // Figure out what sprite, frame and frame angle we want
-    const state_t* const pStatePtr = thing.state;
-    const uint32_t spriteResourceNum = pStatePtr->SpriteFrame >> FF_SPRITESHIFT;
-    const uint32_t spriteFrameNum = pStatePtr->SpriteFrame & FF_FRAMEMASK;
-    const uint8_t spriteAngle = getThingSpriteAngleForViewpoint(gViewXFrac, gViewYFrac, thing);
-
-    // Load the current sprite for the thing and the info for the actual sprite to use
-    const Sprite* const pSprite = Sprites::load(spriteResourceNum);
-    ASSERT(spriteFrameNum < pSprite->numFrames);
-
-    const SpriteFrame* const pSpriteFrame = &pSprite->pFrames[spriteFrameNum];
-    const SpriteFrameAngle* const pSpriteFrameAngle = &pSpriteFrame->angles[spriteAngle];
-
-    // Store information in a vissprite.
-    // I also will clip to screen coords.
-    const Fixed xScale = fixedDiv(gCenterX << FRACBITS, tz);        // Get the scale factor
-    pVisSprite->xscale = xScale;                                    // Save it
-    tx -= (Fixed) pSpriteFrameAngle->leftOffset << FRACBITS;        // Adjust the x to the sprite's x
-    int x1 = (fixedMul(tx, xScale) >> FRACBITS) + gCenterX;         // Scale to screen coords
-
-    if (x1 > (int) gScreenWidth)
-        return;     // Off the right side, don't draw!
-
-    int x2 = fixedMul(pSpriteFrameAngle->width, xScale) + x1;
-
-    if (x2 <= 0)
-        return;     // Off the left side, don't draw!
-    
-    // Get light level
-    const Fixed yScale = fixedMul(xScale, gStretch);    // Adjust for aspect ratio
-    pVisSprite->yscale = yScale;
-    pVisSprite->pSprite = pSpriteFrameAngle;
-    pVisSprite->x1 = x1;                                // Save the edge coords
-    pVisSprite->x2 = x2;
-    pVisSprite->thing = &thing;
-
-    if (thing.flags & MF_SHADOW) {                          // Draw a shadow...
-        x1 = 0x8000U;
-    } else if (pStatePtr->SpriteFrame & FF_FULLBRIGHT) {
-        x1 = 255;                                           // full bright
-    } else {
-        x1 = thing.subsector->sector->lightlevel;           // + extralight;
-
-        if ((uint32_t) x1 >= 256) {
-            x1 = 255;                                       // Use maximum
-        }
-    }
-
-    if (pSpriteFrameAngle->flipped != 0) {  // Reverse the shape?
-        x1 |= 0x4000;
-    }
-
-    pVisSprite->colormap = x1;                                      // Save the light value
-    tz = thing.z - gViewZFrac;
-    tz += (((Fixed) pSpriteFrameAngle->topOffset) << FRACBITS);     // Height offset
-
-    // Determine screen top and bottom Y for the sprite
-    const Fixed topY = (gCenterY << FRACBITS) - fixedMul(tz, yScale);
-    const Fixed botY = topY + fixedMul(pSpriteFrameAngle->height << FRACBITS, yScale);
-    pVisSprite->y1 = topY >> FRACBITS;
-    pVisSprite->y2 = botY >> FRACBITS;
-
-    // Check if vertically offscreen, if not use the sprite record
-    if (pVisSprite->y2 >= 0 || pVisSprite->y1 < (int) gScreenHeight) {
-        gpEndVisSprite = pVisSprite + 1;
-    }
-}
-
 //----------------------------------------------------------------------------------------------------------------------
 // Given a sector pointer, and if I hadn't already rendered the sprites, make valid sprites for the sprite list.
 //----------------------------------------------------------------------------------------------------------------------
@@ -182,218 +33,9 @@ static void addSectorSpritesToFrame(sector_t& sector) noexcept {
 
         // Traverse the linked list and add each sprite
         while (pThing) {
-            addMapObjToFrame(*pThing);
             addSpriteToFrame(*pThing);
             pThing = pThing->snext;
         }
-    }
-}
-
-//----------------------------------------------------------------------------------------------------------------------
-// Store the data describing a wall section that needs to be drawn
-//----------------------------------------------------------------------------------------------------------------------
-static void storeWallRange(
-    const uint32_t leftX, 
-    const uint32_t rightX,
-    const seg_t& curLine,
-    const angle_t lineAngle
-) noexcept {
-    wallPrep(leftX, rightX, curLine, lineAngle);    // Create the wall data
-}
-
-//----------------------------------------------------------------------------------------------------------------------
-// Clips a wall segment and adds it to the solid wall segment list for masking.
-//----------------------------------------------------------------------------------------------------------------------
-static void clipSolidWallSegment(
-    const int32_t leftX,
-    const int32_t rightX,
-    const seg_t& curLine,
-    const angle_t lineAngle
-) noexcept {
-    // Init start table
-    cliprange_t* pStartCR = gSolidsegs;
-    
-    // Find the first range that touches the range (adjacent pixels are touching)
-    {
-        const int32_t temp = leftX - 1;
-        while (pStartCR->rightX < temp) {      // Loop down
-            ++pStartCR;                        // Next entry
-        }
-    }
-
-    if (leftX < pStartCR->leftX) {                                  // Clipped on the left?
-        if (rightX < pStartCR->leftX - 1) {                         // post is entirely visible, so insert a new clippost
-            storeWallRange(leftX, rightX, curLine, lineAngle);      // Draw the wall
-            cliprange_t* pNextCR = gNewEnd;
-            gNewEnd = pNextCR + 1;                                  // Save the new last entry
-
-            while (pNextCR != pStartCR) {                           // Copy the current entry over
-                --pNextCR;                                          // Move back one
-                pNextCR[1] = pNextCR[0];                            // Copy the struct
-            }
-
-            pStartCR->leftX = leftX;                                // Insert the new record
-            pStartCR->rightX = rightX;
-            return;                                                 // Exit now
-        }
-
-        // Oh oh, there is a wall in front, clip me      
-        storeWallRange(leftX, pStartCR->leftX - 1, curLine, lineAngle);     // I am clipped on the right
-        pStartCR->leftX = leftX;                                            // Adjust the clip size to a new left edge
-    }
-
-    if (rightX <= pStartCR->rightX) {       // Is the rest obscured?
-        return;                             // Yep, exit now
-    }
-
-    // Start has the first post group that needs to be removed
-    cliprange_t* pNextCR = pStartCR;
-    cliprange_t* pNextCR2 = pNextCR + 1;
-
-    while (rightX >= pNextCR2->leftX - 1) {
-        // There is a fragment between two posts
-        storeWallRange(pNextCR->rightX + 1, pNextCR2->leftX - 1, curLine, lineAngle);
-        pNextCR = pNextCR2;
-        if (rightX <= pNextCR2->rightX) {           // bottom is contained in next
-            pStartCR->rightX = pNextCR2->rightX;    // adjust the clip size
-            goto crunch;                            // Don't store the final fragment
-        }
-        ++pNextCR2;
-    }
-
-    storeWallRange(pNextCR->rightX + 1, rightX, curLine, lineAngle);    // Save the final fragment
-    pStartCR->rightX = rightX;                                          // Adjust the clip size (Clipped on the left)
-    
-crunch:
-    // Remove start + 1 to next from the clip list, because start now covers their area
-    if (pNextCR != pStartCR) {      // Do I need to remove any?
-        if (pNextCR != gNewEnd) {   // remove a post
-            do {
-                ++pNextCR;
-                ++pStartCR;
-                pStartCR[0] = pNextCR[0];   // Copy the struct
-            } while (pNextCR != gNewEnd);
-        }
-        gNewEnd = pStartCR + 1;             // All disposed!
-    }
-}
-
-//----------------------------------------------------------------------------------------------------------------------
-// Clips a wall segment but does not add it to the solid wall segment list for masking.
-//----------------------------------------------------------------------------------------------------------------------
-static void clipPassWallSegment(
-    const int32_t leftX,
-    const int32_t rightX,
-    const seg_t& curLine,
-    const angle_t lineAngle
-) noexcept {
-    // Find the first range that touches the range (adjacent pixels are touching)
-    cliprange_t *pClipRange = gSolidsegs;
-
-    {
-        const int32_t temp = leftX - 1;         // Leftmost edge I can ignore
-        while (pClipRange->rightX < temp) {     // Skip over non-touching posts
-            ++pClipRange;                       // Next index    
-        }
-    }
-
-    if (leftX < pClipRange->leftX) {                                            // Is the left side visible?
-        if (rightX < pClipRange->leftX - 1) {                                   // Post is entirely visible (above start)
-            storeWallRange(leftX, rightX, curLine, lineAngle);                  // Store the range!
-            return;                                                             // Exit now!
-        }
-        storeWallRange(leftX, pClipRange->leftX - 1, curLine, lineAngle);       // Oh oh, I clipped on the right!
-    }
-    
-    // At this point, I know that some leftmost pixels are hidden.
-    if (rightX <= pClipRange->rightX) {     // All are hidden?
-        return;                             // Don't draw.
-    }
-    
-    // Now draw all fragments behind solid posts
-    cliprange_t* pNextClipRange = pClipRange + 1;   // Next index
-
-    while (rightX >= pNextClipRange->leftX - 1) {
-        storeWallRange(pClipRange->rightX + 1, pNextClipRange->leftX - 1, curLine, lineAngle);
-        if (rightX <= pNextClipRange->rightX) {     // Is the rest hidden?
-            return;
-        }
-        pClipRange = pNextClipRange;    // Next index
-        ++pNextClipRange;               // Inc running pointer
-    }
-
-    // Draw the final fragment
-    storeWallRange(pClipRange->rightX + 1, rightX, curLine, lineAngle);
-}
-
-//----------------------------------------------------------------------------------------------------------------------
-// Clips the given segment and adds any visible pieces to the line list.
-// I also add to the solid wall list so that I can rule out BSP sections quickly.
-//----------------------------------------------------------------------------------------------------------------------
-static void addSegToFrameOld(seg_t& seg, sector_t& frontSector) noexcept {
-    // TODO: REMOVE THIS!!
-    // TODO: REMOVE THIS!!
-
-    angle_t angle1 = AngleFromPointToPoint(gViewXFrac, gViewYFrac, seg.v1.x, seg.v1.y);     // Calc the angle for the left edge
-    angle_t angle2 = AngleFromPointToPoint(gViewXFrac, gViewYFrac, seg.v2.x, seg.v2.y);     // Now the right edge
-    
-    const angle_t span = angle1 - angle2;   // Get the line span
-    if (span >= ANG180) {                   // Backwards?
-        return;                             // Don't handle backwards lines
-    }
-
-    const angle_t lineAngle = angle1;       // Store the leftmost angle for StoreWallRange
-    angle1 -= gViewAngleBAM;                // Adjust the angle for viewangle
-    angle2 -= gViewAngleBAM;
-
-    angle_t tspan = angle1 + gClipAngleBAM;     // Adjust the center x of 0
-    if (tspan > gDoubleClipAngleBAM) {          // Possibly off the left side?
-        tspan -= gDoubleClipAngleBAM;           // See if it's visible
-        if (tspan >= span) {                    // Off the left?
-            return;                             // Remove it
-        }
-        angle1 = gClipAngleBAM;                 // Clip the left edge
-    }
-
-    tspan = gClipAngleBAM - angle2;             // Get the right edge adjustment
-    if (tspan > gDoubleClipAngleBAM) {          // Possibly off the right side?
-        tspan -= gDoubleClipAngleBAM;
-        if (tspan >= span) {                    // Off the right?
-            return;                             // Off the right side
-        }
-        angle2 = -(int32_t) gClipAngleBAM;      // Clip the right side
-    }
-
-    // The seg is in the view range, but not necessarily visible.
-    // It may be a line for specials or imbedded floor line.
-    angle1 = (angle1 + ANG90) >> (ANGLETOFINESHIFT + 1);        // Convert angles to table indexs
-    angle2 = (angle2 + ANG90) >> (ANGLETOFINESHIFT + 1);
-    angle1 = gViewAngleToX[angle1];                             // Get the screen x left
-    angle2 = gViewAngleToX[angle2];                             // Screen x right
-
-    if (angle1 >= angle2) {
-        return;     // This is too small to bother with or invalid
-    }
-
-    --angle2;                                           // Make the right side inclusive
-    sector_t* const pBackSector = seg.backsector;       // Get the back sector
-
-    if ((!pBackSector) ||                                               // Single sided line?
-        (pBackSector->ceilingheight <= frontSector.floorheight) ||      // Closed door?
-        (pBackSector->floorheight >= frontSector.ceilingheight)
-    ) {
-        clipSolidWallSegment(angle1, angle2, seg, lineAngle);           // Make a SOLID wall
-        return;
-    }
-
-    if ((pBackSector->ceilingheight != frontSector.ceilingheight) ||    // Normal window
-        (pBackSector->floorheight != frontSector.floorheight) ||
-        (pBackSector->CeilingPic != frontSector.CeilingPic) ||          // Different texture
-        (pBackSector->FloorPic != frontSector.FloorPic) ||              // Floor texture
-        (pBackSector->lightlevel != frontSector.lightlevel) ||          // Differant light?
-        seg.sidedef->midtexture                                         // Center wall texture?
-    ) {
-        clipPassWallSegment(angle1, angle2, seg, lineAngle);            // Render but allow walls behind it
     }
 }
 
@@ -409,11 +51,6 @@ static void addSubsectorToFrame(subsector_t& sub) noexcept {
     seg_t* const pEndLineSeg = pLineSeg + sub.numsublines;
     
     while (pLineSeg < pEndLineSeg) {
-        // TODO: REMOVE
-        #if false
-            addSegToFrameOld(*pLineSeg, sector);
-        #endif
-
         addSegToFrame(*pLineSeg);
         ++pLineSeg;
     }
@@ -504,19 +141,22 @@ static bool checkBBox(const Fixed bspcoord[BOXCOUNT]) noexcept {
 
     --angle2;
 
-    // Use start
-    {
-        cliprange_t* pSolid = gSolidsegs;                   // Pointer to the solid walls
-        if (pSolid->rightX < (int32_t) angle2) {            // Scan through the sorted list
-            do {
-                ++pSolid;                                   // Next entry
-            } while (pSolid->rightX < (int32_t) angle2);
-        }
+    // FIXME: Do we need to reimplement?
+    #if 0
+        // Use start
+        {
+            cliprange_t* pSolid = gSolidsegs;                   // Pointer to the solid walls
+            if (pSolid->rightX < (int32_t) angle2) {            // Scan through the sorted list
+                do {
+                    ++pSolid;                                   // Next entry
+                } while (pSolid->rightX < (int32_t) angle2);
+            }
 
-        if ((int32_t) angle1 >= pSolid->leftX && (int32_t) angle2 <= pSolid->rightX) {
-            return false;   // This block is behind a solid wall!
-        }    
-    }
+            if ((int32_t) angle1 >= pSolid->leftX && (int32_t) angle2 <= pSolid->rightX) {
+                return false;   // This block is behind a solid wall!
+            }    
+        }
+    #endif
 
     return true;    // Process me!
 }
@@ -555,11 +195,6 @@ static void addBspNodeToFrame(const node_t* const pNode) noexcept {
 //---------------------------------------------------------------------------------------------------------------------
 void doBspTraversal() noexcept {
     ++gValidCount;                          // For sprite recursion
-    gSolidsegs[0].leftX = -0x4000;          // Fake leftmost post
-    gSolidsegs[0].rightX = -1;
-    gSolidsegs[1].leftX = gScreenWidth;     // Fake rightmost post
-    gSolidsegs[1].rightX = 0x4000;
-    gNewEnd = gSolidsegs + 2;               // Init the free memory pointer
     addBspNodeToFrame(gpBSPTreeRoot);       // Begin traversing the BSP tree for all walls in render range
 }
 

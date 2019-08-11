@@ -13,7 +13,7 @@
 
 BEGIN_NAMESPACE(Renderer)
 
-static constexpr int32_t SCREENGUNY = -40;  // Y offset to center the player's weapon properly
+static constexpr int32_t SCREEN_GUN_Y = -40;  // Y offset to center the player's weapon properly
 
 //----------------------------------------------------------------------------------------------------------------------
 // Draw a single weapon or muzzle flash on the screen
@@ -40,7 +40,7 @@ static void DrawAWeapon(const pspdef_t& psp, const bool bShadow) noexcept {
 
     // Decide where to draw the gun sprite part
     float gunX = (float)(img.offsetX + psp.WeaponX);
-    float gunY = (float)(img.offsetY + psp.WeaponY + SCREENGUNY);
+    float gunY = (float)(img.offsetY + psp.WeaponY + SCREEN_GUN_Y);
     gunX *= gGunXScale;
     gunY *= gGunYScale;
     
