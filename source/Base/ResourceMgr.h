@@ -15,12 +15,16 @@ public:
     ~ResourceMgr() noexcept;
     
     void init(const char* const fileName) noexcept;
-    void destroy() noexcept;
-    
+    void destroy() noexcept;   
+
     const Resource* getResource(const uint32_t number) const noexcept;
     const Resource* loadResource(const uint32_t number) noexcept;
     const Resource* freeResource(const uint32_t number) noexcept;
     
+    inline uint32_t getEndResourceNum() const noexcept {
+        return mEndResourceNum;
+    }
+
 private:    
     static bool compareResourcesByNumber(const Resource& r1, const Resource& r2) noexcept;
     
@@ -34,4 +38,5 @@ private:
     
     FILE*                   mpResourceFile;
     std::vector<Resource>   mResources;
+    uint32_t                mEndResourceNum;    // 1 past the last valid resource number
 };

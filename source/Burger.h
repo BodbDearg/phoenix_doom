@@ -9,6 +9,8 @@
 #endif
 */
 
+struct CelImage;
+
 // DC: this is in the 3DO SDK - define for now to fix compile errors
 typedef int32_t Item;
 
@@ -16,10 +18,15 @@ typedef int32_t Item;
 extern uint8_t* gVideoPointer;
 extern uint32_t gFramebufferWidth;
 extern uint32_t gFramebufferHeight;
-extern void DrawShape(const uint32_t x1, const uint32_t y1, const struct CelControlBlock* const pShape) noexcept;
-extern void DrawMShape(const uint32_t x1, const uint32_t y1, const struct CelControlBlock* const pShape) noexcept;
+
+// TODO: TEMP
+void DrawShape(
+    const uint32_t x1,
+    const uint32_t y1,
+    const CelImage& image
+) noexcept;
+
 extern void DrawARect(const uint32_t x, const uint32_t y, const uint32_t width, const uint32_t height, const uint16_t color) noexcept;
-extern const struct CelControlBlock* GetShapeIndexPtr(const void* ShapeArrayPtr, uint32_t Index) noexcept;
 extern void DrawRezShape(uint32_t x, uint32_t y, uint32_t RezNum) noexcept;
 
 // Input handlers 

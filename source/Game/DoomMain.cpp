@@ -7,6 +7,7 @@
 #include "DoomDefines.h"
 #include "DoomRez.h"
 #include "Game.h"
+#include "GFX/CelImages.h"
 #include "GFX/Renderer.h"
 #include "GFX/Video.h"
 #include "Map/Setup.h"
@@ -338,7 +339,7 @@ static void RunDemo(uint32_t demoname) {
 // Main entry point for DOOM!!!!
 //----------------------------------------------------------------------------------------------------------------------
 void D_DoomMain() {
-    gBigNumFont = loadResourceData(rBIGNUMB);   // Cache the large numeric font (Needed always)
+    gpBigNumFont = &CelImages::loadImages(rBIGNUMB, CelImages::LoadFlagBits::MASKED);   // Cache the large numeric font (Needed always)
 
     Renderer::init();   // Init refresh system
     P_Init();           // Init main code

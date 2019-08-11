@@ -17,20 +17,18 @@ extern Fixed        gFineSine[10240];
 extern angle_t      gTanToAngle[2049];
 extern angle_t      gXToViewAngle[MAXSCREENWIDTH + 1];
 extern int32_t      gViewAngleToX[FINEANGLES / 4];
-extern uint32_t     gYSlope[MAXSCREENHEIGHT];           // 6.10 frac
-extern uint32_t     gDistScale[MAXSCREENWIDTH];         // 1.15 frac
 extern uint32_t     gIDivTable[8192];                   // 1.0 / 0-5500 for recipocal muls   
-extern uint32_t     gCenterX;                           // Center X coord in fixed point
-extern uint32_t     gCenterY;                           // Center Y coord in fixed point
+extern uint32_t     gCenterX;                           // Center view center X coord (integer)
+extern uint32_t     gCenterY;                           // Center view center Y coord (integer)
 extern uint32_t     gScreenWidth;                       // Width of the view screen
 extern uint32_t     gScreenHeight;                      // Height of the view screen
-extern Fixed        gStretch;                           // Stretch factor
-extern Fixed        gStretchWidth;                      // Stretch factor * ScreenWidth
 extern uint32_t     gScreenXOffset;                     // True X coord for projected screen
 extern uint32_t     gScreenYOffset;                     // True Y coord for projected screen
-extern uint32_t     gGunXScale;                         // Scale factor for player's weapon for X
-extern uint32_t     gGunYScale;                         // Scale factor for player's weapon for Y
-extern Fixed        gLightMins[256];                    // Minimum light factors
-extern Fixed        gLightSubs[256];                    // Light subtraction
-extern Fixed        gLightCoefs[256];                   // Light coeffecient
-extern Fixed        gPlaneLightCoef[256];               // Plane light coeffecient
+extern float        gGunXScale;                         // Scale factor for player's weapon for X
+extern float        gGunYScale;                         // Scale factor for player's weapon for Y
+extern float        gLightMins[256];                    // Minimum light factors
+extern float        gLightSubs[256];                    // Light subtraction
+extern float        gLightCoefs[256];                   // Light coeffecient
+
+// Returns the view angle for the given x screen coordinate
+float getViewAngleForX(const int32_t x) noexcept;

@@ -1,41 +1,44 @@
 #include "Resources.h"
 
+#include "Base/Resource.h"
 #include "Base/ResourceMgr.h"
+
+BEGIN_NAMESPACE(Resources)
 
 static const char* const RESOURCE_FILE_PATH = "REZFILE";
 static ResourceMgr gResourceMgr;
 
-void resourcesInit() {
+void init() noexcept {
     gResourceMgr.init(RESOURCE_FILE_PATH);
 }
 
-void resourcesShutdown() {
+void shutdown() noexcept {
     gResourceMgr.destroy();
 }
 
-const Resource* getResource(const uint32_t num) {
+const Resource* get(const uint32_t num) noexcept {
     return gResourceMgr.getResource(num);
 }
 
-std::byte* getResourceData(const uint32_t num) {
-    const Resource* pResource = getResource(num);
+std::byte* getData(const uint32_t num) noexcept {
+    const Resource* pResource = get(num);
     return (pResource != nullptr) ? pResource->pData : nullptr;
 }
 
-const Resource* loadResource(const uint32_t num) {
+const Resource* load(const uint32_t num) noexcept {
     return gResourceMgr.loadResource(num);
 }
 
-std::byte* loadResourceData(const uint32_t num) {
-    const Resource* pResource = loadResource(num);
+std::byte* loadData(const uint32_t num) noexcept {
+    const Resource* pResource = load(num);
     return (pResource != nullptr) ? pResource->pData : nullptr;
 }
 
-void freeResource(const uint32_t num) {
+void free(const uint32_t num) noexcept {
     gResourceMgr.freeResource(num);
 }
 
-void releaseResource(const uint32_t num) {
+void release(const uint32_t num) noexcept {
     // At the moment I'm not implementing any kind of mark and purge memory management system like what
     // Burgerlib had in the original 3DO source - this call is merely for documentation purposes throughout
     // the code as a statement of intent. The code can still use this call to say 'Hey, I don't need this
@@ -47,3 +50,9 @@ void releaseResource(const uint32_t num) {
     //
     // If you're using this code to do something a little more demanding however then you may want to revisit this.
 }
+
+uint32_t getEndResourceNum() noexcept {
+    return gResourceMgr.getEndResourceNum();
+}
+
+END_NAMESPACE(Resources)

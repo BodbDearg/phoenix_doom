@@ -7,6 +7,8 @@
 #include "Game/Resources.h"
 #include <vector>
 
+BEGIN_NAMESPACE(Textures)
+
 struct TextureInfoHeader {
     uint32_t    numWallTextures;
     uint32_t    firstWallTexture;       // Resource number
@@ -69,16 +71,12 @@ static void decodeWallTextureImage(Texture& tex, const std::byte* const pBytes) 
             const uint8_t color2Idx = colorIndexes & uint8_t(0x0F);
             ++pCurSrcPixels;
 
-            // Read the ARGBA1555 pixels (note: need to correct endian too)
-            const uint16_t color1ARGBA = byteSwappedU16(pPLUT[color1Idx]);
-            const uint16_t color2ARGBA = byteSwappedU16(pPLUT[color2Idx]);
-            
-            // Save the RGBA pixels
-            const uint16_t color1RGBA = (color1ARGBA << 1) | ((color1ARGBA & 0x8000) ? uint16_t(1) : uint16_t(0));
-            const uint16_t color2RGBA = (color2ARGBA << 1) | ((color2ARGBA & 0x8000) ? uint16_t(1) : uint16_t(0));
+            // Read and save the ARGB1555 pixels (note: need to correct endian too)
+            const uint16_t color1ARGB = byteSwappedU16(pPLUT[color1Idx]);
+            const uint16_t color2ARGB = byteSwappedU16(pPLUT[color2Idx]);
 
-            pCurDstPixels[0] = color1RGBA;
-            pCurDstPixels[1] = color2RGBA;
+            pCurDstPixels[0] = color1ARGB;
+            pCurDstPixels[1] = color2ARGB;
 
             pCurDstPixels += 2;
         }
@@ -120,34 +118,24 @@ static void decodeFlatTextureImage(Texture& tex, const std::byte* const pBytes) 
             const uint8_t color8Idx = pCurSrcPixels[7] & uint8_t(0x1F);
             pCurSrcPixels += 8;
 
-            // Read the ARGBA1555 pixels (note: need to correct endian too)
-            const uint16_t color1ARGBA = byteSwappedU16(pPLUT[color1Idx]);
-            const uint16_t color2ARGBA = byteSwappedU16(pPLUT[color2Idx]);
-            const uint16_t color3ARGBA = byteSwappedU16(pPLUT[color3Idx]);
-            const uint16_t color4ARGBA = byteSwappedU16(pPLUT[color4Idx]);
-            const uint16_t color5ARGBA = byteSwappedU16(pPLUT[color5Idx]);
-            const uint16_t color6ARGBA = byteSwappedU16(pPLUT[color6Idx]);
-            const uint16_t color7ARGBA = byteSwappedU16(pPLUT[color7Idx]);
-            const uint16_t color8ARGBA = byteSwappedU16(pPLUT[color8Idx]);
-            
-            // Save the RGBA pixels
-            const uint16_t color1RGBA = (color1ARGBA << 1) | ((color1ARGBA & 0x8000) ? uint16_t(1) : uint16_t(0));
-            const uint16_t color2RGBA = (color2ARGBA << 1) | ((color2ARGBA & 0x8000) ? uint16_t(1) : uint16_t(0));
-            const uint16_t color3RGBA = (color3ARGBA << 1) | ((color3ARGBA & 0x8000) ? uint16_t(1) : uint16_t(0));
-            const uint16_t color4RGBA = (color4ARGBA << 1) | ((color4ARGBA & 0x8000) ? uint16_t(1) : uint16_t(0));
-            const uint16_t color5RGBA = (color5ARGBA << 1) | ((color5ARGBA & 0x8000) ? uint16_t(1) : uint16_t(0));
-            const uint16_t color6RGBA = (color6ARGBA << 1) | ((color6ARGBA & 0x8000) ? uint16_t(1) : uint16_t(0));
-            const uint16_t color7RGBA = (color7ARGBA << 1) | ((color7ARGBA & 0x8000) ? uint16_t(1) : uint16_t(0));
-            const uint16_t color8RGBA = (color8ARGBA << 1) | ((color8ARGBA & 0x8000) ? uint16_t(1) : uint16_t(0));
+            // Read and save the ARGB1555 pixels (note: need to correct endian too)
+            const uint16_t color1ARGB = byteSwappedU16(pPLUT[color1Idx]);
+            const uint16_t color2ARGB = byteSwappedU16(pPLUT[color2Idx]);
+            const uint16_t color3ARGB = byteSwappedU16(pPLUT[color3Idx]);
+            const uint16_t color4ARGB = byteSwappedU16(pPLUT[color4Idx]);
+            const uint16_t color5ARGB = byteSwappedU16(pPLUT[color5Idx]);
+            const uint16_t color6ARGB = byteSwappedU16(pPLUT[color6Idx]);
+            const uint16_t color7ARGB = byteSwappedU16(pPLUT[color7Idx]);
+            const uint16_t color8ARGB = byteSwappedU16(pPLUT[color8Idx]);
 
-            pCurDstPixels[0] = color1RGBA;
-            pCurDstPixels[1] = color2RGBA;
-            pCurDstPixels[2] = color3RGBA;
-            pCurDstPixels[3] = color4RGBA;
-            pCurDstPixels[4] = color5RGBA;
-            pCurDstPixels[5] = color6RGBA;
-            pCurDstPixels[6] = color7RGBA;
-            pCurDstPixels[7] = color8RGBA;
+            pCurDstPixels[0] = color1ARGB;
+            pCurDstPixels[1] = color2ARGB;
+            pCurDstPixels[2] = color3ARGB;
+            pCurDstPixels[3] = color4ARGB;
+            pCurDstPixels[4] = color5ARGB;
+            pCurDstPixels[5] = color6ARGB;
+            pCurDstPixels[6] = color7ARGB;
+            pCurDstPixels[7] = color8ARGB;
 
             pCurDstPixels += 8;
         }
@@ -155,7 +143,7 @@ static void decodeFlatTextureImage(Texture& tex, const std::byte* const pBytes) 
 }
 
 static void loadTexture(Texture& tex, uint32_t textureNum, const bool bIsWallTexture) noexcept {
-    const std::byte* const pRawTexBytes = loadResourceData(tex.resourceNum);
+    const std::byte* const pRawTexBytes = Resources::loadData(tex.resourceNum);
 
     if (bIsWallTexture) {
         decodeWallTextureImage(tex, pRawTexBytes);
@@ -164,8 +152,8 @@ static void loadTexture(Texture& tex, uint32_t textureNum, const bool bIsWallTex
         decodeFlatTextureImage(tex, pRawTexBytes);
     }
 
-    freeResource(tex.resourceNum);      // Don't need the raw data anymore!
-    tex.animTexNum = textureNum;        // Initially the texture is not animated to display another frame
+    Resources::free(tex.resourceNum);       // Don't need the raw data anymore!
+    tex.animTexNum = textureNum;            // Initially the texture is not animated to display another frame
 }
 
 static void freeTexture(Texture& tex) noexcept {
@@ -183,11 +171,14 @@ static void clearTextures(std::vector<Texture>& textures) noexcept {
     textures.clear();
 }
 
-void texturesInit() noexcept {
+void init() noexcept {
+    ASSERT(gWallTextures.empty());
+    ASSERT(gFlatTextures.empty());
+
     // Read the header for all the texture info.
     // Note that we do NOT byte swap the original resources the may be cached and reused multiple times.
     // If we byte swapped the originals then we might double swap back to big endian accidently...
-    const std::byte* pData = (const std::byte*) loadResourceData(rTEXTURE1);
+    const std::byte* pData = (const std::byte*) Resources::loadData(rTEXTURE1);
     
     TextureInfoHeader header = (const TextureInfoHeader&) *pData;
     header.swapEndian();
@@ -217,7 +208,7 @@ void texturesInit() noexcept {
     }
     
     // Now done with this resource
-    releaseResource(rTEXTURE1);
+    Resources::free(rTEXTURE1);
     
     // We don't have texture info for flats, all flats for 3DO are 64x64.
     // This was done orignally to help optimize the flat renderer, which was done in software on the 3DO's CPU.
@@ -233,14 +224,14 @@ void texturesInit() noexcept {
     }
 }
 
-void texturesShutdown() noexcept {
+void shutdown() noexcept {
     clearTextures(gWallTextures);
     clearTextures(gFlatTextures);
     gFirstWallTexResourceNum = 0;
     gFirstFlatTexResourceNum = 0;
 }
 
-void texturesFreeAll() noexcept {
+void freeAll() noexcept {
     freeTextures(gWallTextures);
     freeTextures(gFlatTextures);
 }
@@ -275,32 +266,32 @@ uint32_t getCurrentSkyTexNum() noexcept {
     }
 }
 
-const Texture* getWallTexture(const uint32_t num) noexcept {
+const Texture* getWall(const uint32_t num) noexcept {
     ASSERT(num < gWallTextures.size());
     return &gWallTextures[num];
 }
 
-const Texture* getFlatTexture(const uint32_t num) noexcept {
+const Texture* getFlat(const uint32_t num) noexcept {
     ASSERT(num < gFlatTextures.size());
     return &gFlatTextures[num];
 }
 
-void loadWallTexture(const uint32_t num) noexcept {
+void loadWall(const uint32_t num) noexcept {
     ASSERT(num < gWallTextures.size());
     loadTexture(gWallTextures[num], num, true);
 }
 
-void loadFlatTexture(const uint32_t num) noexcept {
+void loadFlat(const uint32_t num) noexcept {
     ASSERT(num < gFlatTextures.size());
     loadTexture(gFlatTextures[num], num, false);
 }
 
-void freeWallTexture(const uint32_t num) noexcept {
+void freeWall(const uint32_t num) noexcept {
     ASSERT(num < gWallTextures.size());
     freeTexture(gWallTextures[num]);
 }
 
-void freeFlatTexture(const uint32_t num) noexcept {
+void freeFlat(const uint32_t num) noexcept {
     ASSERT(num < gFlatTextures.size());
     freeTexture(gFlatTextures[num]);
 }
@@ -317,12 +308,14 @@ void setFlatAnimTexNum(const uint32_t num, const uint32_t animTexNum) noexcept {
     gFlatTextures[num].animTexNum = animTexNum;
 }
 
-const Texture* getWallAnimTexture(const uint32_t num) noexcept {
-    const Texture* const pOrigTexture = getWallTexture(num);
-    return getWallTexture(pOrigTexture->animTexNum);
+const Texture* getWallAnim(const uint32_t num) noexcept {
+    const Texture* const pOrigTexture = getWall(num);
+    return getWall(pOrigTexture->animTexNum);
 }
 
-const Texture* getFlatAnimTexture(const uint32_t num) noexcept {
-    const Texture* const pOrigTexture = getFlatTexture(num);
-    return getFlatTexture(pOrigTexture->animTexNum);
+const Texture* getFlatAnim(const uint32_t num) noexcept {
+    const Texture* const pOrigTexture = getFlat(num);
+    return getFlat(pOrigTexture->animTexNum);
 }
+
+END_NAMESPACE(Textures)

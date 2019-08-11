@@ -6,6 +6,8 @@
 #include <cstring>
 #include <type_traits>
 
+BEGIN_NAMESPACE(CelUtils)
+
 //-------------------------------------------------------------------------------------------------
 // Utility class that allows for N bits (up to 64) to be read from a stream of unknown size.
 // The most significant bits are read first.
@@ -120,7 +122,7 @@ static constexpr uint16_t OPAQUE_PIXEL_BITS = 0x8000;
 //-------------------------------------------------------------------------------------------------
 // Determines how many bits per pixel a CEL is
 //-------------------------------------------------------------------------------------------------
-static uint8_t getCCBBitsPerPixel(const CelControlBlock& ccb) {
+static uint8_t getCCBBitsPerPixel(const CelControlBlock& ccb) noexcept {
     const uint32_t ccbPre0 = byteSwappedU32(ccb.pre0);
     const uint8_t mode = ccbPre0 & 0x07;                    // The first 3-bits define the format
 
@@ -325,7 +327,7 @@ static uint16_t* decodeCelImageData(
     return pImageOut;
 }
 
-uint16_t getCCBWidth(const CelControlBlock* const pCCB) {
+uint16_t getCCBWidth(const CelControlBlock* const pCCB) noexcept {
     ASSERT(pCCB);
 
     // DC: this logic comes from the original 3DO Doom source.
@@ -335,7 +337,7 @@ uint16_t getCCBWidth(const CelControlBlock* const pCCB) {
     return width;
 }
 
-uint16_t getCCBHeight(const CelControlBlock* const pCCB) {
+uint16_t getCCBHeight(const CelControlBlock* const pCCB) noexcept {
     ASSERT(pCCB);
 
     // DC: this logic comes from the original 3DO Doom source.
@@ -351,7 +353,7 @@ void decodeDoomCelSprite(
     uint16_t** pImageOut,
     uint16_t* pImageWidthOut,
     uint16_t* pImageHeightOut
-) {
+) noexcept {
     ASSERT(pCCB);
     ASSERT(pImageOut);
 
@@ -366,6 +368,9 @@ void decodeDoomCelSprite(
     if (pImageHeightOut) {
         *pImageHeightOut = imageH;
     }
+
+    ASSERT(imageW > 0);
+    ASSERT(imageH > 0);
 
     // Grabbing various bits of CCB info and endian correcting
     const uint32_t imageCCBFlags = byteSwappedU32(pCCB->flags);
@@ -404,3 +409,5 @@ void decodeDoomCelSprite(
         bIsColorIndexed
     );
 }
+
+END_NAMESPACE(CelUtils)

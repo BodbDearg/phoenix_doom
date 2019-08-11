@@ -2,6 +2,10 @@
 
 #include "Base/Endian.h"
 #include "Game/Resources.h"
+#include "GFX/Blit.h"
+#include "GFX/CelImages.h"
+#include "GFX/Renderer.h"
+#include "GFX/Video.h"
 #include <cstddef>
 #include <SDL.h>
 
@@ -49,27 +53,49 @@ uint32_t gLastTick;      // Time last waited at
 static volatile uint32_t gTickValue;
 static bool gTimerInited;
 
+// TODO: REMOVE THIS
+void DrawShape(
+    const uint32_t x1,
+    const uint32_t y1,
+    const CelImage& image
+) noexcept {
+    for (uint32_t y = 0; y < image.height; ++y) {
+        Blit::blitColumn<
+            Blit::BCF_HORZ_COLUMN |
+            Blit::BCF_ROW_MAJOR_IMG |
+            Blit::BCF_STEP_X |
+            Blit::BCF_ALPHA_TEST |
+            Blit::BCF_H_CLIP |
+            Blit::BCF_V_CLIP
+        >(
+            image.pPixels, 
+            image.width,
+            image.height,
+            0.0f,
+            (float) y,
+            0.0f,
+            0.0f,
+            Video::gFrameBuffer,
+            Video::SCREEN_WIDTH,
+            Video::SCREEN_HEIGHT,
+            Video::SCREEN_WIDTH,
+            x1,
+            y1 + y,
+            image.width,
+            1.0f,
+            0.0f
+        );
+    }
+}
+
 //---------------------------------------------------------------------------------------------------------------------
 // Draw a shape using a resource number
 //---------------------------------------------------------------------------------------------------------------------
 void DrawRezShape(uint32_t x, uint32_t y, uint32_t RezNum) noexcept {
-    DrawShape(x, y, reinterpret_cast<const CelControlBlock*>(loadResourceData(RezNum)));
-    releaseResource(RezNum);
+    const CelImage& img = CelImages::loadImage(RezNum, CelImages::LoadFlagBits::NONE);
+    DrawShape(x, y, img);
+    CelImages::releaseImages(RezNum);
 }
-
-/**********************************
-
-    Return the pointer of a shape from a shape array
-
-**********************************/
-
-const struct CelControlBlock* GetShapeIndexPtr(const void* ShapeArrayPtr, uint32_t Index) noexcept
-{
-    const uint32_t* const pShapeArrayOffsets = (const uint32_t*) ShapeArrayPtr;
-    const uint32_t shapeArrayOffset = byteSwappedU32(pShapeArrayOffsets[Index]);
-    return (const CelControlBlock*) &((std::byte*) ShapeArrayPtr)[shapeArrayOffset];
-}
-
 
 /**********************************
 
@@ -128,6 +154,16 @@ uint32_t ReadJoyButtons(uint32_t PadNum) noexcept
     if (state[SDL_SCANCODE_E]) {
         buttons |= PadRightShift;
     }
+
+    #if ENABLE_DEBUG_CAMERA_Z_MOVEMENT
+        if (state[SDL_SCANCODE_PAGEUP]) {
+            Renderer::gDebugCameraZOffset += 1.0f;
+        }
+
+        if (state[SDL_SCANCODE_PAGEDOWN]) {
+            Renderer::gDebugCameraZOffset -= 1.0f;
+        }
+    #endif
 
     return buttons;    
 
@@ -249,4 +285,36 @@ uint32_t SaveAFile(const char* FileName, void *data, uint32_t dataSize) noexcept
 {
     // DC: FIXME: reimplement/replace
     return -1;
+}
+
+/**********************************
+
+    This code is functionally equivalent to the Burgerlib
+    version except that it is using the cached CCB system.
+
+**********************************/
+void DrawARect(const uint32_t x, const uint32_t y, const uint32_t width, const uint32_t height, const uint16_t color) noexcept {
+
+    const uint32_t color32 = Video::rgba5551ToScreenCol(color);
+
+    // Clip the rect bounds
+    if (x >= Video::SCREEN_WIDTH || y >= Video::SCREEN_HEIGHT)
+        return;
+    
+    const uint32_t xEnd = std::min(x + width, Video::SCREEN_WIDTH);
+    const uint32_t yEnd = std::min(y + height, Video::SCREEN_HEIGHT);
+
+    // Fill the color
+    uint32_t* pRow = Video::gFrameBuffer + x + (y * Video::SCREEN_WIDTH);
+
+    for (uint32_t yCur = y; yCur < yEnd; ++yCur) {
+        uint32_t* pPixel = pRow;
+
+        for (uint32_t xCur = x; xCur < xEnd; ++xCur) {
+            *pPixel = color32;
+            ++pPixel;
+        }
+
+        pRow += Video::SCREEN_WIDTH;
+    }
 }

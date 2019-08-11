@@ -10,6 +10,7 @@
 #include "Game/DoomMain.h"
 #include "Game/Resources.h"
 #include "GFX/CelUtils.h"
+#include "GFX/CelImages.h"
 #include "GFX/Renderer.h"
 #include "GFX/Sprites.h"
 #include "GFX/Textures.h"
@@ -66,7 +67,7 @@ static void SetMyScreen(uint32_t Page)
     Return TRUE if all systems are GO!
 
 **********************************/
-void InitTools() {
+void initTools() {
     // DC: 3DO specific - disabling
     #if 0
         #if 1
@@ -83,26 +84,35 @@ void InitTools() {
         #endif
     #endif
 
-    audioInit();
-
     // FIXME: REIMPLEMENT
     #if 0
         SetMyScreen(0);     // Init the video display 
     #endif
 
     audioLoadAllSounds();
-    resourcesInit();
+    Resources::init();
+    CelImages::init();
+    audioInit();
+}
+
+void shutdownTools() noexcept {    
+    audioShutdown();
+    CelImages::shutdown();
+    Resources::shutdown();
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 // Main entry point for 3DO
 //---------------------------------------------------------------------------------------------------------------------
 void ThreeDOMain() {
-    InitTools();                // Init the 3DO tool system
+    initTools();
     Video::init();
-    ReadPrefsFile();            // Load defaults
-    D_DoomMain();               // Start doom
+    
+    ReadPrefsFile();    // Load defaults
+    D_DoomMain();       // Start doom
+
     Video::shutdown();
+    shutdownTools();
 }
 
 int32_t StdReadFile(const char* const fName, char* buf)
@@ -221,113 +231,12 @@ void DrawPlaque(uint32_t RezNum)
     SetMyScreen(PrevPage);      // Draw to the active screen 
     #endif
 
-    const CelControlBlock* const pPic = (const CelControlBlock*) loadResourceData(RezNum);
-    DrawShape(160 - (getCCBWidth(pPic) / 2), 80, pPic);
-    releaseResource(RezNum);
+    const CelImage& img = CelImages::loadImage(RezNum);
+    DrawShape(160 - img.width / 2, 80, img);
+    CelImages::releaseImages(RezNum);
 
     // FIXME: DC: Required for screen wipe?
     #if 0
     SetMyScreen(gWorkPage);      // Reset to normal 
     #endif
-}
-
-static void DrawShapeImpl(const uint32_t x1, const uint32_t y1, const CelControlBlock* const pShape, bool bIsMasked) noexcept {
-    // TODO: DC - This is temp!
-    uint16_t* pImage;
-    uint16_t imageW;
-    uint16_t imageH;
-    decodeDoomCelSprite(pShape, &pImage, &imageW, &imageH);
-    
-    const uint32_t xEnd = x1 + imageW;
-    const uint32_t yEnd = y1 + imageH;
-    const uint16_t* pCurImagePixel = pImage;
-
-    for (uint32_t y = y1; y < yEnd; ++y) {
-        for (uint32_t x = x1; x < xEnd; ++x) {
-            if (x >= 0 && x < Video::SCREEN_WIDTH) {
-                if (y >= 0 && y < Video::SCREEN_HEIGHT) {
-                    const uint16_t color = *pCurImagePixel;
-                    const uint16_t colorA = (color & 0b1000000000000000) >> 10;
-                    const uint16_t colorR = (color & 0b0111110000000000) >> 10;
-                    const uint16_t colorG = (color & 0b0000001111100000) >> 5;
-                    const uint16_t colorB = (color & 0b0000000000011111) >> 0;
-
-                    bool bTransparentPixel = false;
-
-                    if (bIsMasked) {
-                        bTransparentPixel = ((color & 0x7FFF) == 0);
-                    }
-
-                    if (colorA == 0) {
-                        bTransparentPixel = true;
-                    }
-
-                    if (!bTransparentPixel) {
-                        const uint32_t finalColor = (
-                            (colorR << 27) |
-                            (colorG << 19) |
-                            (colorB << 11) |
-                            255
-                        );
-
-                        Video::gFrameBuffer[y * Video::SCREEN_WIDTH + x] = finalColor;
-                    }
-                }
-            }
-
-            ++pCurImagePixel;
-        }
-    }
-
-    MemFree(pImage);
-}
-
-/**********************************
-
-    Draw a masked shape on the screen
-
-**********************************/
-void DrawMShape(const uint32_t x1, const uint32_t y1, const CelControlBlock* const pShape) noexcept {
-    DrawShapeImpl(x1, y1, pShape, true);
-}
-
-/**********************************
-
-    Draw an unmasked shape on the screen
-
-**********************************/
-void DrawShape(const uint32_t x1, const uint32_t y1, const CelControlBlock* const pShape) noexcept {
-    DrawShapeImpl(x1, y1, pShape, false);
-}
-
-/**********************************
-
-    This code is functionally equivalent to the Burgerlib
-    version except that it is using the cached CCB system.
-
-**********************************/
-void DrawARect(const uint32_t x, const uint32_t y, const uint32_t width, const uint32_t height, const uint16_t color) noexcept {
-
-    const uint32_t color32 = Video::rgba5551ToScreenCol(color);
-
-    // Clip the rect bounds
-    if (x >= Video::SCREEN_WIDTH || y >= Video::SCREEN_HEIGHT)
-        return;
-    
-    const uint32_t xEnd = std::min(x + width, Video::SCREEN_WIDTH);
-    const uint32_t yEnd = std::min(y + height, Video::SCREEN_HEIGHT);
-
-    // Fill the color
-    uint32_t* pRow = Video::gFrameBuffer + x + (y * Video::SCREEN_WIDTH);
-
-    for (uint32_t yCur = y; yCur < yEnd; ++yCur) {
-        uint32_t* pPixel = pRow;
-
-        for (uint32_t xCur = x; xCur < xEnd; ++xCur) {
-            *pPixel = color32;
-            ++pPixel;
-        }
-
-        pRow += Video::SCREEN_WIDTH;
-    }
 }

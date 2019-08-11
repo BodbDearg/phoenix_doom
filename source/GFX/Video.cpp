@@ -4,6 +4,9 @@
 #include "Base/Mem.h"
 #include <SDL.h>
 
+// TODO: REMOVE
+#include "Renderer.h"
+
 static SDL_Window*     gWindow;
 static SDL_Renderer*   gRenderer;
 static SDL_Texture*    gFramebufferTexture;
@@ -25,8 +28,14 @@ void Video::init() noexcept {
         "PhoenixDoom",
         SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED,
-        SCREEN_WIDTH * 5,
-        SCREEN_HEIGHT * 5,
+        // TODO: REMOVE
+        #if HACK_TEST_HIGH_RES_RENDERING
+            (SCREEN_WIDTH * 6) / HACK_TEST_HIGH_RENDER_SCALE,
+            (SCREEN_HEIGHT * 6) / HACK_TEST_HIGH_RENDER_SCALE,
+        #else
+            SCREEN_WIDTH * 6,
+            SCREEN_HEIGHT * 6,
+        #endif
         windowCreateFlags
     );
     

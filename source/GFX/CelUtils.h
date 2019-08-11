@@ -1,8 +1,9 @@
 #pragma once
 
-#include <stdint.h>
+#include "Base/Macros.h"
+#include <cstdint>
 
-//--------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 // Utility stuff relating to 3DO CEL files.
 // Needed because some resources in 3DO Doom are in the native 3DO 'CEL' format.
 // 
@@ -16,16 +17,16 @@
 //      If you want a more complete and robust reference for how to decode/encode 3DO CEL files,
 //      check out various resources available on the net, including the GIMP CEL plugin:
 //          https://github.com/ewhac/gimp-plugin-3docel
-//--------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 
-//--------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 // Definition for a 3DO Cel Control Block (CCB).
 // This is used for draw operations with the 3DO hardware, and within CEL files on disk.
 // Obtained this from the 3DO SDK headers.
 //
 // More info about it here:
 //  https://github.com/trapexit/3DO-information/blob/master/software/sdk/3DO%20Online%20Developer%20Documentation/ppgfldr/smmfldr/cdmfldr/08CDM001.html
-//--------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 typedef struct CelControlBlock {
 	uint32_t    flags;
     uint32_t    nextPtr;        // N.B: can't use CelControlBlock* since that introduces 64-bit incompatibilities!
@@ -46,18 +47,22 @@ typedef struct CelControlBlock {
 	int32_t     height;
 } CelControlBlock;
 
-// Determine the width and height from the given Cel Control Block
-extern uint16_t getCCBWidth(const CelControlBlock* const pCCB);
-extern uint16_t getCCBHeight(const CelControlBlock* const pCCB);
+BEGIN_NAMESPACE(CelUtils)
 
-//--------------------------------------------------------------------------------------------------
+// Determine the width and height from the given Cel Control Block
+extern uint16_t getCCBWidth(const CelControlBlock* const pCCB) noexcept;
+extern uint16_t getCCBHeight(const CelControlBlock* const pCCB) noexcept;
+
+//----------------------------------------------------------------------------------------------------------------------
 // Decodes the CEL image data for a Doom sprite and saves it to the given output.
 // The input image data is assumed to follow the pointer to the cel control block.
-// The output image data is saved in RGBA5551 little endian format.
-//--------------------------------------------------------------------------------------------------
+// The output image data is saved in ARGB1555 little endian format.
+//----------------------------------------------------------------------------------------------------------------------
 void decodeDoomCelSprite(
     const CelControlBlock* const pCCB,
     uint16_t** pImageOut,
     uint16_t* pImageWidthOut,
     uint16_t* pImageHeightOut
-);
+) noexcept;
+
+END_NAMESPACE(CelUtils)

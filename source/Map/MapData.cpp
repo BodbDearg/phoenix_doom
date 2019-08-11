@@ -1,7 +1,9 @@
 #include "MapData.h"
 
 #include "Base/Endian.h"
+#include "Base/FMath.h"
 #include "Base/Macros.h"
+#include "Base/Resource.h"
 #include "Base/Tables.h"
 #include "Game/DoomRez.h"
 #include "Game/Resources.h"
@@ -76,7 +78,7 @@ static std::vector<line_t**>        gBlockMapLineLists;
 static std::vector<mobj_t*>         gBlockMapThingLists;
 
 static void loadVertexes(const uint32_t lumpResourceNum) noexcept {
-    const Resource* const pResource = loadResource(lumpResourceNum);
+    const Resource* const pResource = Resources::load(lumpResourceNum);
     
     const uint32_t numVerts = pResource->size / sizeof(vertex_t);
     gNumVertexes = numVerts;
@@ -94,12 +96,12 @@ static void loadVertexes(const uint32_t lumpResourceNum) noexcept {
         ++pDstVert;
     }
     
-    freeResource(lumpResourceNum);
+    Resources::free(lumpResourceNum);
 }
 
 static void loadSectors(const uint32_t lumpResourceNum) noexcept {
     // Load the sectors resource
-    const Resource* const pResource = loadResource(lumpResourceNum);
+    const Resource* const pResource = Resources::load(lumpResourceNum);
     const std::byte* const pResourceData = (const std::byte*) pResource->pData;
     
     // Get the number of sectors first (first u32)
@@ -131,13 +133,13 @@ static void loadSectors(const uint32_t lumpResourceNum) noexcept {
     }
     
     // Don't need this anymore
-    freeResource(lumpResourceNum);
+    Resources::free(lumpResourceNum);
 }
 
 static void loadSides(const uint32_t lumpResourceNum) noexcept {
     // Load the side defs resource
     ASSERT_LOG(gSectors.size() > 0, "Sectors must be loaded first!");
-    const Resource* const pResource = loadResource(lumpResourceNum);
+    const Resource* const pResource = Resources::load(lumpResourceNum);
     const std::byte* const pResourceData = (const std::byte*) pResource->pData;
     
     // Get the number of side defs first (first u32)
@@ -170,13 +172,13 @@ static void loadSides(const uint32_t lumpResourceNum) noexcept {
     }
     
     // Don't need this anymore
-    freeResource(lumpResourceNum);
+    Resources::free(lumpResourceNum);
 }
 
 static void loadLines(const uint32_t lumpResourceNum) noexcept {
     // Load the line defs resource
     ASSERT_LOG(gSides.size() > 0, "Sides must be loaded first!");
-    const Resource* const pResource = loadResource(lumpResourceNum);
+    const Resource* const pResource = Resources::load(lumpResourceNum);
     const std::byte* const pResourceData = (const std::byte*) pResource->pData;
     
     // Get the number of line defs first (first u32)
@@ -258,14 +260,14 @@ static void loadLines(const uint32_t lumpResourceNum) noexcept {
     }
     
     // Don't need this anymore
-    freeResource(lumpResourceNum);
+    Resources::free(lumpResourceNum);
 }
 
 static void loadLineSegs(const uint32_t lumpResourceNum) noexcept {
     // Load the line segs resource
     ASSERT_LOG(gVertexes.size() > 0, "Vertices must be loaded first!");
     ASSERT_LOG(gLines.size() > 0, "Lines must be loaded first!");
-    const Resource* const pResource = loadResource(lumpResourceNum);
+    const Resource* const pResource = Resources::load(lumpResourceNum);
     const std::byte* const pResourceData = (const std::byte*) pResource->pData;
     
     // Get the number of line segments first (first u32)
@@ -283,6 +285,8 @@ static void loadLineSegs(const uint32_t lumpResourceNum) noexcept {
     seg_t* pDstLineSeg = gLineSegs.data();
     
     while (pSrcLineSeg < pEndSrcLineSeg) {
+        // Note: deliberately NOT initializing the seg light multiplier here.
+        // That is done at a later stage.
         pDstLineSeg->v1 = gVertexes[byteSwappedU32(pSrcLineSeg->v1)];
         pDstLineSeg->v2 = gVertexes[byteSwappedU32(pSrcLineSeg->v2)];
         pDstLineSeg->angle = byteSwappedU32(pSrcLineSeg->angle);
@@ -300,23 +304,23 @@ static void loadLineSegs(const uint32_t lumpResourceNum) noexcept {
             pDstLineSeg->backsector = pLine->SidePtr[side ^ 1]->sector;
         }
         
-        // Init the finea ngle on the line
+        // Init the fine angle on the line
         if (pLine->v1.x == pDstLineSeg->v1.x && pLine->v1.y == pDstLineSeg->v1.y) {
             pLine->fineangle = pDstLineSeg->angle >> ANGLETOFINESHIFT;  // This is a point only
         }
-    
+
         ++pSrcLineSeg;
         ++pDstLineSeg;
     }
     
     // Don't need this anymore
-    freeResource(lumpResourceNum);
+    Resources::free(lumpResourceNum);
 }
 
 static void loadSubSectors(const uint32_t lumpResourceNum) noexcept {
     // Load the sub sectors resource
     ASSERT_LOG(gLineSegs.size() > 0, "Line segments must be loaded first!");
-    const Resource* const pResource = loadResource(lumpResourceNum);
+    const Resource* const pResource = Resources::load(lumpResourceNum);
     const std::byte* const pResourceData = (const std::byte*) pResource->pData;
     
     // Get the number of sub sectors first (first u32)
@@ -345,13 +349,13 @@ static void loadSubSectors(const uint32_t lumpResourceNum) noexcept {
     }
     
     // Don't need this anymore
-    freeResource(lumpResourceNum);
+    Resources::free(lumpResourceNum);
 }
 
 static void loadNodes(const uint32_t lumpResourceNum) noexcept {
     // Load the nodes resource
     ASSERT_LOG(gSubSectors.size() > 0, "Sub sectors must be loaded first!");
-    const Resource* const pResource = loadResource(lumpResourceNum);
+    const Resource* const pResource = Resources::load(lumpResourceNum);
     const std::byte* const pResourceData = (const std::byte*) pResource->pData;
     
     // Get the number of nodes first (first u32)
@@ -407,19 +411,19 @@ static void loadNodes(const uint32_t lumpResourceNum) noexcept {
     gpBSPTreeRoot = &gNodes.back();
     
     // Don't need this anymore
-    freeResource(lumpResourceNum);
+    Resources::free(lumpResourceNum);
 }
 
 static void loadReject(const uint32_t lumpResourceNum) noexcept {
     // Note: this one is easy!
-    gpRejectMatrix = (const uint8_t*) loadResourceData(lumpResourceNum);
+    gpRejectMatrix = (const uint8_t*) Resources::loadData(lumpResourceNum);
     gLoadedRejectMatrixResourceNum = lumpResourceNum;
 }
 
 static void loadBlockMap(const uint32_t lumpResourceNum) noexcept {
     // Load the block map resource
     ASSERT_LOG(gLines.size() > 0, "Lines must be loaded first!");
-    const Resource* const pResource = loadResource(lumpResourceNum);
+    const Resource* const pResource = Resources::load(lumpResourceNum);
     const std::byte* const pResourceData = (const std::byte*) pResource->pData;
     
     // Read the header info for the blockmap (first 4 32-bit integers)
@@ -496,7 +500,25 @@ static void loadBlockMap(const uint32_t lumpResourceNum) noexcept {
     gpBlockMapThingLists = gBlockMapThingLists.data();
     
     // Don't need this anymore
-    freeResource(lumpResourceNum);
+    Resources::free(lumpResourceNum);
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+// Computes the 'light multiplier' for each line segment.
+// This multiplier is used to achieve so called 'fake contrast'.
+//----------------------------------------------------------------------------------------------------------------------
+static void calcSegLightMultipliers() noexcept {
+    constexpr float MIN_LIGHT_MUL = 0.75f;
+    constexpr float MAX_LIGHT_MUL = 1.05f;
+
+    for (seg_t& seg : gLineSegs) {
+        const float segDirX = FMath::doomFixed16ToFloat<float>(seg.v2.x - seg.v1.x);
+        const float segDirY = FMath::doomFixed16ToFloat<float>(seg.v2.y - seg.v1.y);
+        const float segAngle = std::atan2(segDirY, segDirX) + FMath::ANGLE_90<float>;
+        const float lerpFactor = std::abs(std::cos(segAngle));
+
+        seg.lightMul = MIN_LIGHT_MUL * lerpFactor + MAX_LIGHT_MUL * (1.0f - lerpFactor);
+    }
 }
 
 // External data pointers and information
@@ -535,6 +557,9 @@ void mapDataInit(const uint32_t mapNum) {
     loadNodes(mapStartLump + ML_NODES);
     loadReject(mapStartLump + ML_REJECT);
     loadBlockMap(mapStartLump + ML_BLOCKMAP);
+
+    // Post processing of map data
+    calcSegLightMultipliers();
 }
 
 void mapDataShutdown() {
@@ -566,7 +591,7 @@ void mapDataShutdown() {
     gpBSPTreeRoot = nullptr;
     
     if (gLoadedRejectMatrixResourceNum > 0) {
-        freeResource(gLoadedRejectMatrixResourceNum);
+        Resources::free(gLoadedRejectMatrixResourceNum);
         gLoadedRejectMatrixResourceNum = 0;
     }
     

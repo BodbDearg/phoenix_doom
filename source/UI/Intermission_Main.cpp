@@ -7,6 +7,7 @@
 #include "Game/DoomDefines.h"
 #include "Game/DoomRez.h"
 #include "Game/Resources.h"
+#include "GFX/CelImages.h"
 #include "GFX/CelUtils.h"
 #include "GFX/Video.h"
 #include <cstring>
@@ -79,18 +80,18 @@ static uint32_t gBangCount;          // Delay for gunshot sound
 
 void PrintBigFont(uint32_t x, uint32_t y, const char* string) {
     uint32_t y2,c;
-    const void *ucharx;
-    const void *Current;
+    const CelImageArray* gpUCharx;
+    const CelImageArray* gpCurrent;
 
     c = string[0];      // Get the first char 
    if (!c) {            // No string to print? 
         return;         // Exit now 
     }
-    ucharx = 0;         // Assume ASCII font is NOT loaded 
+    gpUCharx = nullptr; // Assume ASCII font is NOT loaded 
     do {
         ++string;       // Place here so "continue" will work 
         y2 = y;         // Assume normal y coord 
-        Current = gBigNumFont;   // Assume numeric font 
+        gpCurrent = gpBigNumFont;   // Assume numeric font 
         if (c >= '0' && c<='9') {
             c-= '0';    
         } else if (c=='%') {        // Percent 
@@ -98,7 +99,7 @@ void PrintBigFont(uint32_t x, uint32_t y, const char* string) {
         } else if (c=='-') {        // Minus 
             c = 11;
         } else {
-            Current = ucharx;   // Assume I use the ASCII set 
+            gpCurrent = gpUCharx;   // Assume I use the ASCII set 
             if (c >= 'A' && c <= 'Z') { // Upper case? 
                 c-='A';
             } else if (c >= 'a' && c <= 'z') {
@@ -115,17 +116,20 @@ void PrintBigFont(uint32_t x, uint32_t y, const char* string) {
                 continue;
             }
         }
-        if (!Current) {                             // Do I need the ASCII set? 
-            ucharx = loadResourceData(rCHARSET);    // Make sure I have the text font 
-            Current = ucharx;
+        
+        // Do I need the ASCII set? Make sure I have the text font.
+        if (!gpCurrent) {
+            gpUCharx = &CelImages::loadImages(rCHARSET, CelImages::LoadFlagBits::MASKED);
+            gpCurrent = gpUCharx;
         }
-        const CelControlBlock* const pShape = GetShapeIndexPtr(Current,c);  // Get the shape pointer 
-        DrawMShape(x, y2, pShape);      // Draw the char 
-        x+=getCCBWidth(pShape)+1;       // Get the width to tab 
-    } while ((c = string[0])!=0);       // Next index 
+
+        const CelImage& shape = gpCurrent->getImage(c);     // Get the shape pointer
+        DrawShape(x, y2, shape);                            // Draw the char
+        x += shape.width + 1;                               // Get the width to tab
+    } while ((c = string[0])!=0);                           // Next index
     
-    if (ucharx) {                       // Did I load the ASCII font? 
-        releaseResource(rCHARSET);      // Release the ASCII font 
+    if (gpUCharx) {                             // Did I load the ASCII font? 
+        CelImages::releaseImages(rCHARSET);     // Release the ASCII font
     }
 }
 
@@ -138,18 +142,18 @@ void PrintBigFont(uint32_t x, uint32_t y, const char* string) {
 
 uint32_t GetBigStringWidth(const char* string) {
     uint32_t c,Width;
-    const void* ucharx;
-    const void* Current;
+    const CelImageArray* gpUCharx;
+    const CelImageArray* gpCurrent;
 
     c = string[0];      // Get a char 
     if (!c) {           // No string to print? 
         return 0;
     }
-    ucharx = 0; // Only load in the ASCII set if I really need it 
+    gpUCharx = nullptr; // Only load in the ASCII set if I really need it 
     Width = 0;
     do {
         ++string;
-        Current = gBigNumFont;   // Assume numeric font 
+        gpCurrent = gpBigNumFont;   // Assume numeric font 
         if (c >= '0' && c<='9') {
             c-= '0';    
         } else if (c=='%') {        // Percent 
@@ -157,7 +161,7 @@ uint32_t GetBigStringWidth(const char* string) {
         } else if (c=='-') {        // Minus 
             c = 11;
         } else {
-            Current = ucharx;   // Assume I use the ASCII set 
+            gpCurrent = gpUCharx;   // Assume I use the ASCII set 
             if (c >= 'A' && c <= 'Z') { // Upper case? 
                 c-='A';
             } else if (c >= 'a' && c <= 'z') {
@@ -171,16 +175,21 @@ uint32_t GetBigStringWidth(const char* string) {
                 continue;
             }
         }
-        if (!Current) {                             // Do I need ucharx? 
-            ucharx = loadResourceData(rCHARSET);    // Load it in 
-            Current = ucharx;                       // Set the pointer 
+
+        // Do I need the ASCII set? Make sure I have the text font.
+        if (!gpCurrent) {
+            gpUCharx = &CelImages::loadImages(rCHARSET, CelImages::LoadFlagBits::MASKED);
+            gpCurrent = gpUCharx;
         }
-        const CelControlBlock* const pShape = GetShapeIndexPtr(Current,c);  // Get the shape pointer 
-        Width+=getCCBWidth(pShape)+1;          // Get the width to tab 
-    } while ((c = string[0])!=0);       // Next index 
-    if (ucharx) {                       // Did I load in the ASCII font? 
-        releaseResource(rCHARSET);      // Release the text font 
+
+        const CelImage& shape = gpCurrent->getImage(c);     // Get the shape pointer
+        Width += shape.width + 1;                           // Get the width to tab 
+    } while ((c = string[0])!=0);                           // Next index 
+
+    if (gpUCharx) {                             // Did I load the ASCII font? 
+        CelImages::releaseImages(rCHARSET);     // Release the ASCII font
     }
+
     return Width;
 }
 
@@ -193,22 +202,25 @@ uint32_t GetBigStringWidth(const char* string) {
 **********************************/
 
 void PrintNumber(uint32_t x, uint32_t y, uint32_t value, uint32_t Flags) {
-    char v[16];     // Buffer for text string 
+    char v[16];                                     // Buffer for text string 
+    LongWordToAscii(value, v);                      // Convert to string 
+    value = (uint32_t) std::strlen((char*) v);      // Get the length in chars 
 
-    LongWordToAscii(value, v);      // Convert to string 
-    value = strlen((char*) v);      // Get the length in chars 
-    if (Flags& PNFLAGS_PERCENT) {          // Append a percent sign? 
-        v[value] = '%';             // Append it 
+    if (Flags& PNFLAGS_PERCENT) {                   // Append a percent sign? 
+        v[value] = '%';                             // Append it 
         ++value;
-        v[value] = 0;               // Make sure it's zero terminated 
+        v[value] = 0;                               // Make sure it's zero terminated 
     }
-    if (Flags & PNFLAGS_CENTER) {           // Center it? 
+
+    if (Flags & PNFLAGS_CENTER) {       // Center it? 
         PrintBigFontCenter(x, y, v);
         return;
     }
+
     if (Flags & PNFLAGS_RIGHT) {        // Right justified? 
-        x-=GetBigStringWidth(v);
+        x -= GetBigStringWidth(v);
     }
+
     PrintBigFont(x,y,v);    // Print the string 
 }
 
@@ -305,24 +317,26 @@ uint32_t IN_Ticker() {
 **********************************/
 void IN_Drawer() {
     Video::debugClear();
-    DrawRezShape(0,0,rBACKGRNDBROWN);   // Load and draw the skulls 
+    DrawRezShape(0, 0, rBACKGRNDBROWN);     // Load and draw the skulls 
     
-    const void* IntermisShapes = loadResourceData(rINTERMIS);   // Load the intermission shapes 
-    PrintBigFontCenter(160,10, MAP_NAMES[gGameMap-1]);          // Print the current map name 
-    PrintBigFontCenter(160,34, FINISHED);                       // Print "Finished" 
+    const CelImageArray& intermisShapes = CelImages::loadImages(rINTERMIS, CelImages::LoadFlagBits::MASKED);
+
+    PrintBigFontCenter(160,10, MAP_NAMES[gGameMap-1]);              // Print the current map name 
+    PrintBigFontCenter(160,34, FINISHED);                           // Print "Finished" 
     
     if (gNextMap != 23) {
         PrintBigFontCenter(160,162, ENTERING);
         PrintBigFontCenter(160,182, MAP_NAMES[gNextMap-1]);
     }
     
-    DrawMShape(71,KVALY, GetShapeIndexPtr(IntermisShapes,KillShape));       // Draw the shapes 
-    DrawMShape(65,IVALY, GetShapeIndexPtr(IntermisShapes,ItemsShape));
-    DrawMShape(27,SVALY, GetShapeIndexPtr(IntermisShapes,SecretsShape));
+    DrawShape(71, KVALY, intermisShapes.getImage(KillShape));   // Draw the shapes 
+    DrawShape(65, IVALY, intermisShapes.getImage(ItemsShape));
+    DrawShape(27, SVALY, intermisShapes.getImage(SecretsShape));
 
-    PrintNumber(KVALX,KVALY,gKillValue, PNFLAGS_PERCENT|PNFLAGS_RIGHT);     // Print the numbers 
-    PrintNumber(IVALX,IVALY,gItemValue, PNFLAGS_PERCENT|PNFLAGS_RIGHT);
-    PrintNumber(SVALX,SVALY,gSecretValue,PNFLAGS_PERCENT|PNFLAGS_RIGHT);
-    releaseResource(rINTERMIS);
-    Video::present();                                                       // Show the screen 
+    PrintNumber(KVALX, KVALY, gKillValue, PNFLAGS_PERCENT|PNFLAGS_RIGHT);   // Print the numbers 
+    PrintNumber(IVALX, IVALY, gItemValue, PNFLAGS_PERCENT|PNFLAGS_RIGHT);
+    PrintNumber(SVALX, SVALY, gSecretValue, PNFLAGS_PERCENT|PNFLAGS_RIGHT);
+
+    CelImages::releaseImages(rINTERMIS);
+    Video::present();
 }

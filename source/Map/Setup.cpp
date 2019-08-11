@@ -3,6 +3,7 @@
 #include "Base/Endian.h"
 #include "Base/Mem.h"
 #include "Base/Random.h"
+#include "Base/Resource.h"
 #include "Game/Data.h"
 #include "Game/DoomMain.h"
 #include "Game/DoomRez.h"
@@ -132,7 +133,7 @@ static void GroupLines(void)
 //---------------------------------------------------------------------------------------------------------------------
 static void LoadThings(const uint32_t lumpResourceNum) {
     // Load the things resource
-    const Resource* const pResource = loadResource(lumpResourceNum);
+    const Resource* const pResource = Resources::load(lumpResourceNum);
     const std::byte* const pResourceData = pResource->pData;
     
     // Get the number of things first (first u32)
@@ -157,7 +158,7 @@ static void LoadThings(const uint32_t lumpResourceNum) {
     }
     
     // Done with this list
-    freeResource(lumpResourceNum);
+    Resources::free(lumpResourceNum);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -171,8 +172,8 @@ static void LoadingPlaque() {
 // Preload all the wall and flat shapes
 //---------------------------------------------------------------------------------------------------------------------
 static void PreloadWalls() {
-    const uint32_t numWallTex = getNumWallTextures();
-    const uint32_t numFlatTex = getNumFlatTextures();
+    const uint32_t numWallTex = Textures::getNumWallTextures();
+    const uint32_t numFlatTex = Textures::getNumFlatTextures();
     const uint32_t numLoadTexFlags = (numWallTex > numFlatTex) ? numWallTex : numFlatTex;
     
     // This array holds which textures (and flats, later) to load
@@ -211,7 +212,7 @@ static void PreloadWalls() {
     // Now load in the wall textures that were marked for loading
     for (uint32_t texNum = 0; texNum < numWallTex; ++texNum) {
         if (bLoadTexFlags[texNum]) {
-            loadWallTexture(texNum);
+            Textures::loadWall(texNum);
         }
     }
     
@@ -257,7 +258,7 @@ static void PreloadWalls() {
     // Now load all of the flat textures we marked for loading
     for (uint32_t texNum = 0; texNum < numFlatTex; ++texNum) {
         if (bLoadTexFlags[texNum]) {
-            loadFlatTexture(texNum);
+            Textures::loadFlat(texNum);
         }
     }
     
@@ -266,8 +267,8 @@ static void PreloadWalls() {
         uint32_t tableIdx = 0;
         
         while (PRELOAD_TABLE[tableIdx] != -1) {
-            loadResourceData(PRELOAD_TABLE[tableIdx]);
-            releaseResource(PRELOAD_TABLE[tableIdx]);
+            Resources::loadData(PRELOAD_TABLE[tableIdx]);
+            Resources::release(PRELOAD_TABLE[tableIdx]);
             ++tableIdx;
         }
     }
@@ -314,8 +315,8 @@ void SetupLevel(uint32_t map) {
 void ReleaseMapMemory() {
     mapDataShutdown();
     MEM_FREE_AND_NULL(gLineArrayBuffer);
-    texturesFreeAll();
-    spritesFreeAll();
+    Textures::freeAll();
+    Sprites::freeAll();
     InitThinkers();         // Dispose of all remaining memory
 }
 

@@ -1,5 +1,7 @@
 #include "Tables.h"
 
+#include "FMath.h"
+
 Fixed gFineTangent[4096] = {
 -170892070,-56963832,-34178252,-24413002,-18987858,-15535488,-13145381,-11392632,
 -10052290,-8994122,-8137507,-7429866,-6835444,-6329082,-5892562,-5512364,
@@ -2064,20 +2066,31 @@ angle_t gTanToAngle[2049] = {
 
 int32_t     gViewAngleToX[FINEANGLES/4];
 angle_t     gXToViewAngle[MAXSCREENWIDTH+1];
-uint32_t    gYSlope[MAXSCREENHEIGHT];
-uint32_t    gDistScale[MAXSCREENWIDTH];
 uint32_t    gIDivTable[8192];
 uint32_t    gCenterX;
 uint32_t    gCenterY;
 uint32_t    gScreenWidth;
 uint32_t    gScreenHeight;
-Fixed       gStretch;
-Fixed       gStretchWidth;
 uint32_t    gScreenXOffset;
 uint32_t    gScreenYOffset;
-uint32_t    gGunXScale;
-uint32_t    gGunYScale;
-Fixed       gLightMins[256];
-Fixed       gLightSubs[256];
-Fixed       gLightCoefs[256];
-Fixed       gPlaneLightCoef[256];
+float       gGunXScale;
+float       gGunYScale;
+float       gLightMins[256];
+float       gLightSubs[256];
+float       gLightCoefs[256];
+
+float getViewAngleForX(const int32_t x) noexcept {
+    const float screenWHalf = (float)(gScreenWidth - 1) * 0.5f;
+    const float xf = (float) x - screenWHalf;
+    const float xNorm = xf / screenWHalf;
+
+    if (xNorm <= -1.0f) {
+        return -FMath::ANGLE_45<float>;
+    }
+    else if (xNorm >= 1.0f) {
+        return FMath::ANGLE_45<float>;
+    }
+
+    const float angle = std::atan(xNorm);
+    return angle;
+}

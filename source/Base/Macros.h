@@ -70,3 +70,11 @@
 // Begin and end a namespace
 #define BEGIN_NAMESPACE(Name) namespace Name {
 #define END_NAMESPACE(Name) }
+
+// Macro to get the number of elements in a C Array whose size is known at compile time
+#define C_ARRAY_SIZE(arrayPtr)\
+    (sizeof(arrayPtr) / sizeof(*arrayPtr))
+
+// Mark a variable as unused to avoid warnings
+#define MARK_UNUSED(variable)\
+    (void) variable

@@ -1,55 +1,110 @@
 #include "Renderer_Internal.h"
 
-#include "Base/Endian.h"
 #include "Base/Tables.h"
+#include "Blit.h"
 #include "Burger.h"
+#include "CelImages.h"
 #include "Game/Data.h"
 #include "Game/DoomRez.h"
-#include "Game/Resources.h"
+#include "Map/MapData.h"
 #include "Things/Info.h"
 #include "Things/MapObj.h"
+#include "Video.h"
 
 BEGIN_NAMESPACE(Renderer)
 
-static constexpr int32_t SCREENGUNY = -40;  // Y offset to center the player's weapon properly
+static constexpr int32_t SCREEN_GUN_Y = -40;  // Y offset to center the player's weapon properly
 
 //----------------------------------------------------------------------------------------------------------------------
 // Draw a single weapon or muzzle flash on the screen
 //----------------------------------------------------------------------------------------------------------------------
 static void DrawAWeapon(const pspdef_t& psp, const bool bShadow) noexcept {
-    // FIXME: DC: clean this up
-    const state_t* const StatePtr = psp.StatePtr;                                               // Get the state struct pointer
-    const uint32_t rezNum = StatePtr->SpriteFrame >> FF_SPRITESHIFT;                            // Get the file
-    const uint16_t* input = (uint16_t*) loadResourceData(rezNum);                               // Get the main pointer
-    input = (const uint16_t*) GetShapeIndexPtr(input, StatePtr->SpriteFrame & FF_FRAMEMASK);    // Pointer to the xy offset'd shape
-    
-    // FIXME: DC: Reimplement/replace
-    #if 0
-        ((LongWord *)Input)[7] = GunXScale;     // Set the scale factor
-        ((LongWord *)Input)[10] = GunYScale;
-        if (Shadow) {
-            ((LongWord *)Input)[13] = 0x9C81;   // Set the shadow bits
-        } else {
-            ((LongWord *)Input)[13] = 0x1F00;   // Normal PMode
-            #if 0
-            if (StatePtr->SpriteFrame & FF_FULLBRIGHT) {
-                Color = 255;            // Full bright
-            } else {                    // Ambient light
-                Color = players.mo->subsector->sector->lightlevel;
-            }
-            #endif
-        }
-    #endif
+    // Get the image to draw for this weapon
+    const state_t& playerSpriteState = *psp.StatePtr;
+    const uint32_t resourceNum = playerSpriteState.SpriteFrame >> FF_SPRITESHIFT;
+    const CelImageArray& weaponImgs = CelImages::loadImages(
+        resourceNum,
+        CelImages::LoadFlagBits::MASKED | CelImages::LoadFlagBits::HAS_OFFSETS
+    );
+    const CelImage& img = weaponImgs.getImage(playerSpriteState.SpriteFrame & FF_FRAMEMASK);
 
-    // TODO: DC: Find a better place for these endian conversions
-    int32_t x = byteSwappedI16(input[0]);
-    int32_t y = byteSwappedI16(input[1]);
-    x = ((psp.WeaponX + x ) * (int32_t) gGunXScale) >> 20;
-    y = ((psp.WeaponY + SCREENGUNY + y) * (int32_t) gGunYScale) >> 16;
-    x += gScreenXOffset;
-    y += gScreenYOffset + 2;                                    // Add 2 pixels to cover up the hole in the bottom
-    DrawMShape(x, y, (const CelControlBlock*) &input[2]);       // Draw the weapon's shape
-    releaseResource(rezNum);
+    // Figure out what light level to draw the gun at
+    float lightMul;
+
+    if ((playerSpriteState.SpriteFrame & FF_FULLBRIGHT) != 0) {
+        lightMul = 1.0f;
+    } else {
+        const LightParams& lightParams = getLightParams(gPlayers.mo->subsector->sector->lightlevel + gExtraLight);
+        lightMul = lightParams.getLightMulForDist(0.0f);
+    }
+
+    // Decide where to draw the gun sprite part
+    float gunX = (float)(img.offsetX + psp.WeaponX);
+    float gunY = (float)(img.offsetY + psp.WeaponY + SCREEN_GUN_Y);
+    gunX *= gGunXScale;
+    gunY *= gGunYScale;
+    
+    // Draw the gun sprite part.
+    // If the player has invisibility then draw using alpha blending:
+    if (bShadow) {
+        Blit::blitSprite<
+            Blit::BCF_ALPHA_TEST |
+            Blit::BCF_ALPHA_BLEND |
+            Blit::BCF_COLOR_MULT_RGB |
+            Blit::BCF_COLOR_MULT_A |
+            Blit::BCF_H_CLIP |
+            Blit::BCF_V_CLIP
+        >(
+            img.pPixels,
+            img.width,
+            img.height,
+            0.0f,
+            0.0f,
+            (float) img.width,
+            (float) img.height,
+            Video::gFrameBuffer + (gScreenYOffset * Video::SCREEN_WIDTH) + gScreenXOffset,
+            gScreenWidth,
+            gScreenHeight,
+            Video::SCREEN_WIDTH,
+            (float) gunX,
+            (float) gunY,
+            (float) img.width * gGunXScale,
+            (float) img.height * gGunYScale,
+            MF_SHADOW_COLOR_MULT,
+            MF_SHADOW_COLOR_MULT,
+            MF_SHADOW_COLOR_MULT,
+            MF_SHADOW_ALPHA
+        );
+    }
+    else {
+        Blit::blitSprite<
+            Blit::BCF_ALPHA_TEST |
+            Blit::BCF_COLOR_MULT_RGB |
+            Blit::BCF_H_CLIP |
+            Blit::BCF_V_CLIP
+        >(
+            img.pPixels,
+            img.width,
+            img.height,
+            0.0f,
+            0.0f,
+            (float) img.width,
+            (float) img.height,
+            Video::gFrameBuffer + (gScreenYOffset * Video::SCREEN_WIDTH) + gScreenXOffset,
+            gScreenWidth,
+            gScreenHeight,
+            Video::SCREEN_WIDTH,
+            (float) gunX,
+            (float) gunY,
+            (float) img.width * gGunXScale,
+            (float) img.height * gGunYScale,
+            lightMul,
+            lightMul,
+            lightMul
+        );
+    }
+
+    CelImages::releaseImages(resourceNum);
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -83,8 +138,8 @@ void drawWeapons() noexcept {
     // Draw the border
     {
         const uint32_t borderRezNum = gScreenSize + rBACKGROUNDMASK;
-        DrawMShape(0,0, (const CelControlBlock*) loadResourceData(borderRezNum));      
-        releaseResource(borderRezNum);
+        DrawShape(0, 0, CelImages::loadImage(borderRezNum, CelImages::LoadFlagBits::MASKED));      
+        CelImages::releaseImages(borderRezNum);
     }
 }
 

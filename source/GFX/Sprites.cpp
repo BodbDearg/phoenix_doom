@@ -10,6 +10,8 @@
 #include <map>
 #include <vector>
 
+BEGIN_NAMESPACE(Sprites)
+
 static std::vector<Sprite>  gSprites;
 static std::vector<void*>   gTmpPtrList;
 
@@ -115,39 +117,40 @@ static SpriteImageHeader readSpriteFrameHeader(const std::byte* const pData) noe
     return header;
 }
 
-void spritesInit() {
+void init() noexcept {
+    ASSERT(gSprites.empty());
     gSprites.resize(getNumSprites());
 }
 
-void spritesShutdown() {
-    spritesFreeAll();
+void shutdown() noexcept {
+    freeAll();
     gSprites.clear();
 }
 
-void spritesFreeAll() {
+void freeAll() noexcept {
     for (Sprite& sprite : gSprites) {
         freeSprite(sprite);
     }
 }
 
-uint32_t getNumSprites() {
+uint32_t getNumSprites() noexcept {
     return uint32_t(rLASTSPRITE - rFIRSTSPRITE);
 }
 
-uint32_t getFirstSpriteResourceNum() {
+uint32_t getFirstSpriteResourceNum() noexcept {
     return uint32_t(rFIRSTSPRITE);
 }
 
-uint32_t getEndSpriteResourceNum() {
+uint32_t getEndSpriteResourceNum() noexcept {
     return uint32_t(rLASTSPRITE);
 }
 
-const Sprite* getSprite(const uint32_t resourceNum) {
+const Sprite* get(const uint32_t resourceNum) noexcept {
     Sprite& sprite = getSpriteForResourceNum(resourceNum);
     return &sprite;
 }
 
-const Sprite* loadSprite(const uint32_t resourceNum) {
+const Sprite* load(const uint32_t resourceNum) noexcept {
     // Just give back the sprite if it is already loaded
     Sprite& sprite = getSpriteForResourceNum(resourceNum);
     const bool bIsSpriteLoaded = (sprite.pFrames != nullptr);
@@ -159,7 +162,7 @@ const Sprite* loadSprite(const uint32_t resourceNum) {
     // Otherwise load the raw sprite data and then determine the number of sprite frames defined for this resource by
     // reading the offset to the data for the first sprite frame. This offset tells us the size of the 'uint32_t' frame
     // offsets array at the start of the data, and thus the number of frames:
-    const std::byte* const pSpriteData = (const std::byte*) loadResourceData(resourceNum);
+    const std::byte* const pSpriteData = (const std::byte*) Resources::loadData(resourceNum);
     const uint32_t* const pFrameOffsets = (const uint32_t*) pSpriteData;
 
     const uint32_t firstFrameOffset = byteSwappedU32(pFrameOffsets[0]);
@@ -252,7 +255,7 @@ const Sprite* loadSprite(const uint32_t resourceNum) {
         const uint32_t imageDataOffset = iter->first;
         DecodedImage& decodedImage = iter->second;
 
-        decodeDoomCelSprite(
+        CelUtils::decodeDoomCelSprite(
             (const CelControlBlock*)(pSpriteData + imageDataOffset),
             &decodedImage.pPixels,
             &decodedImage.width,
@@ -266,7 +269,10 @@ const Sprite* loadSprite(const uint32_t resourceNum) {
 
         for (SpriteFrameAngle& angle : frame.angles) {
             const uint32_t requestedImageOffset = (uint32_t)(uintptr_t) angle.pTexture;
+
             const DecodedImage& decodedImage = decodedImages.at(requestedImageOffset);
+            ASSERT(decodedImage.width > 0);
+            ASSERT(decodedImage.height > 0);
 
             // Note: Doom sprites are stored in COLUMN MAJOR format, so the width is actually the height and visa versa...
             // Swap them here to account for this!
@@ -280,7 +286,9 @@ const Sprite* loadSprite(const uint32_t resourceNum) {
     return &sprite;
 }
 
-void freeSprite(const uint32_t resourceNum) {
+void free(const uint32_t resourceNum) noexcept {
     Sprite& sprite = getSpriteForResourceNum(resourceNum);
     freeSprite(sprite);
 }
+
+END_NAMESPACE(Sprites)
