@@ -92,7 +92,9 @@ static void drawClippedWallColumn(
         Blit::BCF_V_WRAP_WRAP |
         Blit::BCF_COLOR_MULT_RGB
     >(
-        texData,
+        texData.pPixels,
+        texData.width,
+        texData.height,
         (float) texX,
         texYClipped,
         0.0f,
@@ -120,9 +122,10 @@ static void drawSkyColumn(const uint32_t viewX, const uint32_t maxColHeight) noe
     const uint32_t texX = (((gXToViewAngle[viewX] + gViewAngleBAM) >> ANGLETOSKYSHIFT) & 0xFF);
 
     // Figure out the sky column height and texel step (y)
-    const Texture* const pTexture = (const Texture*) Textures::getWall(Textures::getCurrentSkyTexNum());    // FIXME: don't keep doing this for each column
-    const uint32_t skyTexH = pTexture->data.height;
+    const Texture* const pTex = (const Texture*) Textures::getWall(Textures::getCurrentSkyTexNum());    // FIXME: don't keep doing this for each column
+    const ImageData& texImg = pTex->data;
 
+    const uint32_t skyTexH = texImg.height;
     const Fixed skyScale = fixedDiv(intToFixed(gScreenHeight), intToFixed(Renderer::REFERENCE_3D_VIEW_HEIGHT));
     const Fixed scaledColHeight = fixedMul(intToFixed(skyTexH), skyScale);
     const uint32_t roundColHeight = ((scaledColHeight & FRACMASK) != 0) ? 1 : 0;
@@ -135,7 +138,9 @@ static void drawSkyColumn(const uint32_t viewX, const uint32_t maxColHeight) noe
     Blit::blitColumn<
         Blit::BCF_STEP_Y
     >(
-        pTexture->data,
+        texImg.pPixels,
+        texImg.width,
+        texImg.height,
         (float) texX,
         0.0f,
         0.0f,
@@ -559,13 +564,17 @@ void drawAllLineSegs() noexcept {
 
 void drawAllWallFragments() noexcept {
     for (const WallFragment& wallFrag : gWallFragments) {
+        const ImageData& wallImage = *wallFrag.pImageData;
+
         Blit::blitColumn<
             Blit::BCF_STEP_Y |
             Blit::BCF_H_WRAP_WRAP |
             Blit::BCF_V_WRAP_WRAP |
             Blit::BCF_COLOR_MULT_RGB
         >(
-            *wallFrag.pImageData,
+            wallImage.pPixels,
+            wallImage.width,
+            wallImage.height,
             (float) wallFrag.texcoordX,
             wallFrag.texcoordY,
             0.0f,

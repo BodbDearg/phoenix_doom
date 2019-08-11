@@ -2,7 +2,6 @@
 
 #include "Base/Fixed.h"
 #include "Base/Macros.h"
-#include "ImageData.h"
 #include <algorithm>
 
 // Set to '1' to enable heavy duty bounds checking on blitting.
@@ -465,54 +464,5 @@ namespace Blit {
                 pDstPixel += dstPixelPitch;
             }
         }
-    }
-
-    //------------------------------------------------------------------------------------------------------------------
-    // Convenience overload that takes an image data object.
-    // See the main function for documentation.
-    //------------------------------------------------------------------------------------------------------------------
-    template <uint32_t BC_FLAGS>
-    inline void blitColumn(
-        const ImageData& srcImg,
-        const float srcX,
-        const float srcY,
-        const float srcXSubPixelAdjustment,
-        const float srcYSubPixelAdjustment,
-        uint32_t* const pDstPixels,
-        const uint32_t dstW,
-        const uint32_t dstH,
-        const uint32_t dstPixelPitch,
-        const int32_t dstX,
-        const int32_t dstY,
-        const uint32_t dstCount,
-        const float srcXStep,
-        const float srcYStep,
-        const float rMul = 1.0f,
-        const float gMul = 1.0f,
-        const float bMul = 1.0f,
-        const float aMul = 1.0f
-    ) noexcept {
-        blitColumn<BC_FLAGS>(
-            srcImg.pPixels,
-            srcImg.width,
-            srcImg.height,
-            srcX,
-            srcY,
-            srcXSubPixelAdjustment,
-            srcYSubPixelAdjustment,
-            pDstPixels,
-            dstW,
-            dstH,
-            dstPixelPitch,
-            dstX,
-            dstY,
-            dstCount,
-            srcXStep,
-            srcYStep,
-            rMul,
-            gMul,
-            bMul,
-            aMul
-        );
     }
 }
