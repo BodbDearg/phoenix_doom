@@ -546,9 +546,12 @@ namespace Blit {
         const uint32_t dstXCount = (dstXiend - dstXi) + 1;
         const uint32_t dstYCount = (dstYiend - dstYi) + 1;
 
-        // Figure out the x and y step
-        const float srcXStep = (dstXCount > 0) ? srcW / (float) dstW : 0.0f;
-        const float srcYStep = (dstYCount > 0) ? srcH / (float) dstH : 0.0f;
+        // Figure out the x and y step.
+        //
+        // Note: adding a small amount to source width and height here as a hack to combat imprecision
+        // and missing pixels for certain UI scalings from the base resolution of 320x200.
+        const float srcXStep = (dstXCount > 0) ? (srcW + 0.01f) / (float) dstW : 0.0f;  
+        const float srcYStep = (dstYCount > 0) ? (srcH + 0.01f) / (float) dstH : 0.0f;
 
         // Blit each row of the image
         for (uint32_t rowNum = 0; rowNum < dstYCount; ++rowNum) {

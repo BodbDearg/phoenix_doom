@@ -29,7 +29,7 @@ void Video::init() noexcept {
     uint32_t PRESENT_MAGNIFY;
 
     #if HACK_TEST_HIGH_RES_RENDERING
-        PRESENT_MAGNIFY = std::max(6u / HACK_TEST_HIGH_RENDER_SCALE, 1u);
+        PRESENT_MAGNIFY = std::max(1440u / (200u * HACK_TEST_HIGH_RENDER_SCALE), 1u);
     #else
         PRESENT_MAGNIFY = 6;
     #endif
