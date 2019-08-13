@@ -361,8 +361,8 @@ void AM_Control(player_t& player) noexcept {
 
     // If follow mode if off, then I intercept the joypad motion to move the map anywhere on the screen.
     if (!gFollowMode) {
-        Fixed step = STEPVALUE * gElapsedTime;      // Multiplier for joypad motion: mul by integer
-        step = fixedDiv(step, gMapScale);           // Adjust for scale factor
+        Fixed step = STEPVALUE;                 // Multiplier for joypad motion: mul by integer
+        step = fixedDiv(step, gMapScale);       // Adjust for scale factor
 
         if (buttons & PadRight) {
             player.automapx += step;    // Step to the right
@@ -390,7 +390,7 @@ void AM_Control(player_t& player) noexcept {
                     gMapScale = MINSCALES;                      // Set to smallest allowable
                     break;                                      // Leave now!
                 }
-            } while (++NewButtons < gElapsedTime);              // All done?
+            } while (++NewButtons < 1);                         // All done?
         }
 
         if (buttons & PadLeftShift) {
@@ -401,7 +401,7 @@ void AM_Control(player_t& player) noexcept {
                     gMapScale = MAXSCALES;                      // Set to maximum
                     break;
                 }
-            } while (++NewButtons < gElapsedTime);              // All done?
+            } while (++NewButtons < 1);                         // All done?
         }
 
         // Eat the direction keys if not in follow mode

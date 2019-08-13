@@ -25,7 +25,6 @@ uint32_t                gPadUse = PadB;
 uint32_t                gPadSpeed = PadC;
 uint32_t                gControlType;
 uint32_t                gTotalGameTicks;
-uint32_t                gElapsedTime;
 uint32_t                gMaxLevel;
 uint32_t*               gDemoDataPtr;
 uint32_t*               gDemoBuffer;

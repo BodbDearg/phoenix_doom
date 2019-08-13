@@ -50,12 +50,10 @@ uint32_t gSwitchList[] = {
 
 **********************************/
 
-static void T_Button(button_t *button)
-{
-    // Do buttons 
-
-    if (button->btimer>gElapsedTime) {   // Time up? 
-        button->btimer-=gElapsedTime;    // Adjust timer 
+static void T_Button(button_t *button) noexcept {
+    // Do buttons
+    if (button->btimer > 1) {       // Time up? 
+        --button->btimer;           // Adjust timer 
     } else {
         line_t *line;
         side_t *MySide;

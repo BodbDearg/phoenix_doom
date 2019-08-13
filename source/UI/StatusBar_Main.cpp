@@ -111,17 +111,17 @@ static uint32_t                 gGibDelay;                  // Delay for gibbing
 
 static void CycleFlash(sbflash_t *FlashPtr)
 {
-    if (FlashPtr->delay) {      // Active? 
-        if (FlashPtr->delay>gElapsedTime) {  // Still time? 
-            FlashPtr->delay-=gElapsedTime;   // Remove the time 
+    if (FlashPtr->delay) {              // Active? 
+        if (FlashPtr->delay > 1) {      // Still time? 
+            --FlashPtr->delay;          // Remove the time 
         } else {
-            if (!--FlashPtr->times) {       // Can I still go? 
+            if (!--FlashPtr->times) {           // Can I still go? 
                 FlashPtr->delay = 0;
                 FlashPtr->doDraw = false;       // Force off 
             } else {
-                FlashPtr->delay = FLASHDELAY;   // Reset the time 
-                FlashPtr->doDraw ^= true;       // Toggle the draw flag 
-                if (FlashPtr->doDraw) {     // If on, play sound 
+                FlashPtr->delay = FLASHDELAY;       // Reset the time 
+                FlashPtr->doDraw ^= true;           // Toggle the draw flag 
+                if (FlashPtr->doDraw) {             // If on, play sound 
                     S_StartSound(0,sfx_itemup);
                 }
             }
@@ -165,10 +165,10 @@ void ST_Ticker()
     sbflash_t *FlashPtr;
 
     // Animate face 
-    gFaceTics -= gElapsedTime;        // Count down 
-    if (gFaceTics & 0x8000) {        // Negative? 
-        gFaceTics = Random::nextU32(15)*4;     // New random value 
-        gNewFace = Random::nextU32(2);     // Which face 0-2 
+    --gFaceTics;                                // Count down 
+    if (gFaceTics & 0x8000) {                   // Negative? 
+        gFaceTics = Random::nextU32(15)*4;      // New random value 
+        gNewFace = Random::nextU32(2);          // Which face 0-2 
     }
 
     // Draw special face?
@@ -279,7 +279,7 @@ void ST_Drawer()
         gGibFrame = 0;
     } else if (gGibDraw) {       // Got gibbed 
         if (gGibDelay > 0) {
-            gGibDelay-=gElapsedTime;
+            --gGibDelay;
         }
         else {
             ++gGibFrame;

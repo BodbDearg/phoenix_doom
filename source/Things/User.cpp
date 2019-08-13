@@ -65,9 +65,8 @@ static constexpr Fixed FAST_ANGLE_TURN[] = {
 static void P_PlayerMove(mobj_t *mo)
 {
     Fixed momx, momy;
-
-    momx = gElapsedTime*(mo->momx>>2);       // Get the momemtum 
-    momy = gElapsedTime*(mo->momy>>2);
+    momx = mo->momx >> 2;   // Get the momemtum 
+    momy = mo->momy >> 2;
 
     // DC: added a noclip cheat
     if (mo->flags & MF_NOCLIP) {
@@ -214,17 +213,16 @@ static void P_PlayerMobjThink (mobj_t *mobj)
         P_PlayerZMovement(mobj);
     }
 
-// cycle through states, calling action functions at transitions 
-
+    // Cycle through states, calling action functions at transitions
     if (mobj->tics != -1) {
-        if (mobj->tics>gElapsedTime) {       // Time to cycle? 
-            mobj->tics-=gElapsedTime;
-            return;             // Not time to cycle yet 
+        if (mobj->tics > 1) {   // Time to cycle?
+            --mobj->tics;
+            return;             // Not time to cycle yet
         }
-        mobj->tics = 0;     // Reset the tic count 
-        st = mobj->state->nextstate;    // Get the next state index 
+        mobj->tics = 0;                 // Reset the tic count
+        st = mobj->state->nextstate;    // Get the next state index
         mobj->state = st;
-        mobj->tics = st->Time;      // Reset the timer ticks 
+        mobj->tics = st->Time;          // Reset the timer ticks
     }
 }
 
@@ -247,9 +245,8 @@ static void P_BuildMove(player_t *player)
     oldbuttons = gPrevJoyPadButtons;
     SpeedIndex = (buttons&gPadSpeed) ? 1 : 0;
     
-// Use two stage accelerative turning on the joypad 
-
-    TurnIndex = player->turnheld + gElapsedTime;
+    // Use two stage accelerative turning on the joypad 
+    TurnIndex = player->turnheld + 1;
     
     if ( !(buttons & PadLeft) || !(oldbuttons & PadLeft) ) {        // Not held? 
         if ( !(buttons & PadRight) || !(oldbuttons & PadRight) ) {
@@ -259,23 +256,24 @@ static void P_BuildMove(player_t *player)
     if (TurnIndex >= SLOWTURNTICS) {    // Detect overflow 
         TurnIndex = SLOWTURNTICS-1;
     }
-    player->turnheld = TurnIndex;       // Save it 
+    player->turnheld = TurnIndex;   // Save it 
+    Motion = 0;                     // Assume no side motion 
 
-    Motion = 0;             // Assume no side motion 
-    if (!(buttons & gPadUse)) {      // Use allows weapon change 
+    if (!(buttons & gPadUse)) {                         // Use allows weapon change 
         if (buttons & (PadRightShift|PadLeftShift)) {   // Side motion? 
-            Motion = SIDE_MOVE[SpeedIndex]*gElapsedTime;  // Sidestep to the right 
+            Motion = SIDE_MOVE[SpeedIndex];             // Sidestep to the right 
             if (buttons & PadLeftShift) {
-                Motion = -Motion;   // Sidestep to the left 
+                Motion = -Motion;                       // Sidestep to the left 
             }
         }
     }
-    player->sidemove = Motion;      // Save the result 
+    
+    player->sidemove = Motion;  // Save the result
+    Motion = 0;                 // No angle turning
 
-    Motion = 0;         // No angle turning 
     if (SpeedIndex && !(buttons&(PadUp|PadDown)) ) {
         if (buttons & (PadRight|PadLeft)) {
-            Motion = FAST_ANGLE_TURN[TurnIndex]*gElapsedTime;
+            Motion = FAST_ANGLE_TURN[TurnIndex];
             if (buttons & PadRight) {
                 Motion = -Motion;
             }
@@ -283,30 +281,26 @@ static void P_BuildMove(player_t *player)
     } else {
         if (buttons & (PadRight|PadLeft)) {
             Motion = ANGLE_TURN[TurnIndex];      // Don't time adjust, for fine tuning 
-            if (gElapsedTime<4) {
-                Motion>>=1;
-                if (gElapsedTime<2) {
-                    Motion>>=1;
-                }
-            }
+            Motion >>= 2;
             if (buttons & PadRight) {
                 Motion = -Motion;
             }
         }
     }
-    player->angleturn = Motion;     // Save the new angle 
 
+    player->angleturn = Motion;     // Save the new angle 
     Motion = 0;
+
     if (buttons & (PadUp|PadDown)) {
-        Motion = FORWARD_MOVE[SpeedIndex]*gElapsedTime;
+        Motion = FORWARD_MOVE[SpeedIndex];
         if (buttons & PadDown) {
             Motion = -Motion;
         }
     }
+
     player->forwardmove = Motion;   // Save the motion 
 
-// If slowed down to a stop, change to a standing frame 
-
+    // If slowed down to a stop, change to a standing frame
     mo = player->mo;
 
     if (!mo->momx && !mo->momy && !player->forwardmove && !player->sidemove) {
@@ -456,23 +450,25 @@ static void P_DeathThink(player_t *player)
 
     MovePSprites(player);   // Animate the weapon sprites and shoot if possible 
 
-// fall to the ground 
-
-    if (player->viewheight > 8*FRACUNIT) {      // Still above the ground 
-        player->viewheight -= (gElapsedTime<<FRACBITS);  // Fall over 
-        if (player->viewheight<(8*FRACUNIT)) {  // Too far down? 
-            player->viewheight=8*FRACUNIT;      // Set to the bottom 
+    // Fall to the ground 
+    if (player->viewheight > 8*FRACUNIT) {          // Still above the ground 
+        player->viewheight -= FRACUNIT;             // Fall over 
+        if (player->viewheight<(8*FRACUNIT)) {      // Too far down? 
+            player->viewheight=8*FRACUNIT;          // Set to the bottom 
         }
     }
-    gOnGround = (player->mo->z <= player->mo->floorz);   // Get the floor state 
-    PlayerCalcHeight(player);       // Calc the height of the player 
+    gOnGround = (player->mo->z <= player->mo->floorz);      // Get the floor state 
+    PlayerCalcHeight(player);                               // Calc the height of the player 
 
     // Only face killer if I didn't kill myself or jumped into lava 
-
     if (player->attacker && player->attacker != player->mo) {
-        angle = PointToAngle(player->mo->x,player->mo->y,
-            player->attacker->x,player->attacker->y);
-        delta = angle - player->mo->angle;      // Get differance 
+        angle = PointToAngle(
+            player->mo->x,
+            player->mo->y,
+            player->attacker->x,
+            player->attacker->y
+        );
+        delta = angle - player->mo->angle;      // Get differance
         if (delta < ANG5 || delta >= negateAngle(ANG5)) {
             // looking at killer, so fade damage flash down 
             player->mo->angle = angle;      // Set the angle 
@@ -484,10 +480,10 @@ static void P_DeathThink(player_t *player)
         }
     } else {
 DownDamage:
-        if (player->damagecount) {      // Fade down the redness on the screen 
-            player->damagecount-=gElapsedTime;   // Count down time 
+        if (player->damagecount) {              // Fade down the redness on the screen 
+            --player->damagecount;              // Count down time 
             if (player->damagecount&0x8000) {   // Negative 
-                player->damagecount=0;      // Force zero 
+                player->damagecount=0;          // Force zero 
             }
         }
     }
@@ -550,20 +546,15 @@ void P_PlayerThink(player_t *player)
         return;             // Exit now 
     }
 
-// Reactiontime is used to prevent movement for a bit after a teleport 
-
+    // Reactiontime is used to prevent movement for a bit after a teleport 
     i = player->mo->reactiontime;       // Get the reaction time 
-    if (!i) {               // Am I active? 
-        MoveThePlayer(player);      // Move the player 
+    if (i <= 0) {                       // Am I active? 
+        MoveThePlayer(player);          // Move the player 
     } else {
-        if (gElapsedTime<i) {    // Subtraction factor 
-            i-=gElapsedTime;     // Remove time base 
-        } else {
-            i = 0;              // Force zero 
-        }
-        player->mo->reactiontime=i;     // Save the new reaction time 
+        --i;
+        player->mo->reactiontime = i;   // Save the new reaction time 
     }
-    PlayerCalcHeight(player);       // Adjust the player's z coord 
+    PlayerCalcHeight(player);           // Adjust the player's z coord 
 
     {
     sector_t *sector;           // Local pointer 
@@ -596,41 +587,38 @@ void P_PlayerThink(player_t *player)
         player->usedown = false;    // Use is released 
     }
 
-// Process weapon attacks 
-
-    if (buttons & gPadAttack) {          // Am I attacking? 
-        player->attackdown+=gElapsedTime;        // Add in the timer 
-        if (player->attackdown >= (TICKSPERSEC*2)) {
+    // Process weapon attacks 
+    if (buttons & gPadAttack) {     // Am I attacking? 
+        ++player->attackdown;       // Add in the timer 
+        if (player->attackdown >= TICKSPERSEC * 2) {
             gStBar.specialFace = f_mowdown;
         }
     } else {
-        player->attackdown = false;     // Reset the timer 
+        player->attackdown = 0;     // Reset the timer 
     }
 
     MovePSprites(player);       // Process the weapon sprites and shoot 
 
-// Timed counters 
-
-    if (player->powers[pw_strength] && player->powers[pw_strength]<255) {
-        // Strength counts up to diminish fade 
-        player->powers[pw_strength]+=gElapsedTime;   // Add some time 
-        if (player->powers[pw_strength]>=256) { // Time up? 
-            player->powers[pw_strength] = 255;  // Maximum 
+    // Timed counters 
+    if (player->powers[pw_strength] && player->powers[pw_strength] < 255) {
+        // Strength counts up to diminish fade
+        ++player->powers[pw_strength];              // Add some time
+        if (player->powers[pw_strength] >= 256) {   // Time up?
+            player->powers[pw_strength] = 255;      // Maximum
         }
     }
 
-// Count down timers for powers and screen colors 
-
-    if (player->powers[pw_invulnerability]) {       // God mode 
-        player->powers[pw_invulnerability]-=gElapsedTime;
-        if (player->powers[pw_invulnerability]&0x8000) {
-            player->powers[pw_invulnerability]=0;
+    // Count down timers for powers and screen colors
+    if (player->powers[pw_invulnerability]) {   // God mode
+        --player->powers[pw_invulnerability];
+        if (player->powers[pw_invulnerability] & 0x8000) {
+            player->powers[pw_invulnerability] = 0;
         }
     }
     
-    if (player->powers[pw_invisibility]) {      // Invisible? 
-        player->powers[pw_invisibility]-=gElapsedTime;
-        if (player->powers[pw_invisibility]&0x8000) {
+    if (player->powers[pw_invisibility]) {  // Invisible?
+        --player->powers[pw_invisibility];
+        if (player->powers[pw_invisibility] & 0x8000) {
             player->powers[pw_invisibility] = 0;
         }
         if (!player->powers[pw_invisibility]) {
@@ -638,24 +626,24 @@ void P_PlayerThink(player_t *player)
         }
     }
 
-    if (player->powers[pw_ironfeet]) {      // Radiation suit 
-        player->powers[pw_ironfeet]-=gElapsedTime;
-        if (player->powers[pw_ironfeet]&0x8000) {
-            player->powers[pw_ironfeet]=0;
+    if (player->powers[pw_ironfeet]) {  // Radiation suit
+        --player->powers[pw_ironfeet];
+        if (player->powers[pw_ironfeet] & 0x8000) {
+            player->powers[pw_ironfeet] = 0;
         }
     }
 
-    if (player->damagecount) {          // Red factor 
-        player->damagecount-=gElapsedTime;
-        if (player->damagecount&0x8000) {
-            player->damagecount=0;
+    if (player->damagecount) {  // Red factor 
+        --player->damagecount;
+        if (player->damagecount & 0x8000) {
+            player->damagecount = 0;
         }
     }
 
-    if (player->bonuscount) {           // Gold factor 
-        player->bonuscount-=gElapsedTime;
-        if (player->bonuscount&0x8000) {
-            player->bonuscount=0;
+    if (player->bonuscount) {   // Gold factor 
+        --player->bonuscount;
+        if (player->bonuscount & 0x8000) {
+            player->bonuscount = 0;
         }
     }
 }

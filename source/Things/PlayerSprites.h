@@ -42,4 +42,4 @@ void A_Light2(player_t* player, pspdef_t* psp);
 void A_BFGSpray(mobj_t* mo);
 void A_BFGsound(player_t* player, pspdef_t* psp);
 void SetupPSprites(player_t* curplayer);
-void MovePSprites(player_t* curplayer);
+void MovePSprites(player_t* curplayer) noexcept;

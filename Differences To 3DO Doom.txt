@@ -30,3 +30,7 @@ In the original 3DO version the player's weapon was exempt from the invulnerabil
 
 [] Removed the maximum screen size restriction.
 No longer have to use a cheat to access this!
+
+[] Fixed some inconsistencies in the simulation between high vs low framerates.
+This could be observed on stuff like the view bob, where the bob amount would be large at low framerates but very little at high framerates.
+To fix this I removed logic that simulates a variable number of ticks per frame and instead do a fixed time step update of game logic at all times (like PC Doom).

@@ -215,9 +215,9 @@ uint32_t P_Ticker()
     gTick2 = false;
     gTick4 = false;
 
-    gTimeMark1 += gElapsedTime;     // Timer for ticks
-    gTimeMark2 += gElapsedTime;
-    gTimeMark4 += gElapsedTime;
+    ++gTimeMark1;   // Timer for ticks
+    ++gTimeMark2;
+    ++gTimeMark4;
 
     if (gTimeMark1 >= TICKSPERSEC) {    // Now see if the time has passed...
         gTimeMark1 -= TICKSPERSEC;

@@ -284,7 +284,8 @@ uint32_t IN_Ticker() {
         return ga_died;     // Exit after drawing 
     }
 
-    gINDelay+=gElapsedTime;
+    ++gINDelay;
+
     if (gINDelay>=INTERTIME) {
         Bang = false;
         gINDelay-=INTERTIME;

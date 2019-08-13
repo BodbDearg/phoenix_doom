@@ -165,26 +165,23 @@ void O_Control(player_t *player)
 
     gJoyPadButtons = buttons&PadX;   // Leave option status alone 
 
-// animate skull 
-
-    gCursorCount += gElapsedTime;
+    // animate skull 
+    ++gCursorCount;
     if (gCursorCount >= (TICKSPERSEC/4)) {   // Time up? 
         gCursorFrame ^= 1;       // Toggle the frame 
         gCursorCount = 0;        // Reset the timer 
     }
 
-// Check for movement 
-
+    // Check for movement
     if (! (buttons & (PadUp|PadDown|PadLeft|PadRight) ) ) {
         gMoveCount = TICKSPERSEC;        // move immediately on next press
     } else {
-        gMoveCount += gElapsedTime;
+        ++gMoveCount;
         if ( (gMoveCount >= (TICKSPERSEC/3)) ||      // Allow slow 
             (gCursorPos < controls && gMoveCount >= (TICKSPERSEC/5))) {   // Fast? 
             gMoveCount = 0;      // Reset timer
             
-            // Try to move the cursor up or down... 
-            
+            // Try to move the cursor up or down...            
             if (buttons & PadDown) {        
                 ++gCursorPos;
                 if (gCursorPos >= NUMMENUITEMS) {

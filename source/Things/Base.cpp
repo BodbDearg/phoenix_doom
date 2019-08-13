@@ -497,45 +497,42 @@ static uint32_t P_XYMovement(mobj_t* mo) {
 
 static void P_MobjThinker(mobj_t *mobj)
 {
-    uint32_t Time;
     uint32_t SightFlag;
 
     if (mobj->momx || mobj->momy) {     // Any horizontal momentum? 
-        if (P_XYMovement(mobj)) {   // Move it 
-            return;         // Exit if state change 
+        if (P_XYMovement(mobj)) {       // Move it 
+            return;                     // Exit if state change 
         }
     }
 
-    if ( (mobj->z != mobj->floorz) || mobj->momz) { // Any z momentum? 
-        if (P_ZMovement(mobj)) {        // Move it (Or fall) 
-            return;         // Exit if state change 
+    if ((mobj->z != mobj->floorz) || mobj->momz) {      // Any z momentum? 
+        if (P_ZMovement(mobj)) {                        // Move it (Or fall) 
+            return;                                     // Exit if state change 
         }
     }
 
-    Time = gElapsedTime;
     SightFlag = true;
-    do {
-        if (mobj->tics == -1) {     // Never time out? 
-            return;
-        }
-        if (mobj->tics>Time) {
-            mobj->tics-=Time;   // Count down 
-            return;
-        }
-        if (SightFlag && mobj->flags & MF_COUNTKILL) {  // Can it be killed? 
-            SightFlag = false;
-            mobj->flags &= ~MF_SEETARGET;   // Assume I don't see a target 
-            if (mobj->target) { // Do I have a target? 
-                if (CheckSight(mobj,mobj->target)) {
-                    mobj->flags |= MF_SEETARGET;
-                }
+
+    if (mobj->tics == -1) {     // Never time out? 
+        return;
+    }
+
+    if (mobj->tics > 1) {
+        --mobj->tics;           // Count down 
+        return;
+    }
+
+    if (SightFlag && mobj->flags & MF_COUNTKILL) {      // Can it be killed? 
+        SightFlag = false;
+        mobj->flags &= ~MF_SEETARGET;                   // Assume I don't see a target 
+        if (mobj->target) {                             // Do I have a target? 
+            if (CheckSight(mobj, mobj->target)) {
+                mobj->flags |= MF_SEETARGET;
             }
         }
-        Time-=mobj->tics;
-        if (!SetMObjState(mobj,mobj->state->nextstate)) {   // Next object state 
-            return;
-        }
-    } while (Time);
+    }
+
+    SetMObjState(mobj, mobj->state->nextstate);  // Next object state
 }
 
 

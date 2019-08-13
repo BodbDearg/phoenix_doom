@@ -34,7 +34,6 @@ extern uint32_t                 gPadUse;                    // Joypad bit for us
 extern uint32_t                 gPadSpeed;                  // Joypad bit for high speed
 extern uint32_t                 gControlType;               // Determine settings for PadAttack,Use,Speed
 extern uint32_t                 gTotalGameTicks;            // Total number of ticks since game start
-extern uint32_t                 gElapsedTime;               // Ticks elapsed between frames
 extern uint32_t                 gMaxLevel;                  // Highest level selectable in menu (1-23)
 extern uint32_t*                gDemoDataPtr;               // Running pointer to demo data
 extern uint32_t*                gDemoBuffer;                // Pointer to demo data

@@ -39,8 +39,8 @@ struct glow_t {
 // (Used to pretend you have a defective flourecent bulb)
 //----------------------------------------------------------------------------------------------------------------------
 static void T_LightFlash(lightflash_t& flash) noexcept {
-    if (flash.count > gElapsedTime) {
-        flash.count -= gElapsedTime;
+    if (flash.count > 1) {
+        --flash.count;
         return;
     }
 
@@ -73,9 +73,9 @@ void P_SpawnLightFlash(sector_t& sector) noexcept {
 // Think logic for strobe flash lights
 //----------------------------------------------------------------------------------------------------------------------
 static void T_StrobeFlash(strobe_t* const pFlash) noexcept {
-    if (pFlash->count > gElapsedTime) {     // Time up?
-        pFlash->count -= gElapsedTime;      // Count down
-        return;                             // Exit
+    if (pFlash->count > 1) {    // Time up?
+        --pFlash->count;        // Count down
+        return;                 // Exit
     }
 
     if (pFlash->sector->lightlevel == pFlash->minlight) {   // Already dim?

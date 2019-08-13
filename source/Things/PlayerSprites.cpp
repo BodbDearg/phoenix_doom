@@ -714,27 +714,22 @@ void SetupPSprites(player_t *player)
     
 **********************************/
 
-void MovePSprites(player_t *player)
-{
-    uint32_t i;
-    pspdef_t *psp;
+void MovePSprites(player_t* player) noexcept {
+    pspdef_t* psp = player->psprites;   // Index to the player's sprite records
+    uint32_t i = 0;                     // How many to process? (Must go from 0-NUMPSPRITES)
 
-    psp = player->psprites;     // Index to the player's sprite records
-    i = 0;              // How many to process? (Must go from 0-NUMPSPRITES)
     do {
-        uint32_t Remainder;
-        Remainder = gElapsedTime;    // Get the atomic count
-        while (psp->Time!=-1) { // Never change state?
-            if (psp->Time>Remainder) {  // Has enough time elapsed?
-                psp->Time-=Remainder;   // Remove time and exit
+        while (psp->Time != -1) {      // Never change state?
+            if (psp->Time > 1) {    // Has enough time elapsed?
+                --psp->Time;        // Remove time and exit
                 break;
             }
-            Remainder -= psp->Time;     // Remove residual time
-            SetPlayerSprite(player, (psprnum_e) i, psp->StatePtr->nextstate);  // Next state        
+            SetPlayerSprite(player, (psprnum_e) i, psp->StatePtr->nextstate);   // Next state
         }
         ++psp;  // Next entry
-    } while (++i<NUMPSPRITES);
+    } while (++i < NUMPSPRITES);
+
     psp = player->psprites;
-    psp[ps_flash].WeaponX = psp[ps_weapon].WeaponX; // Attach the flash to the weapon    
+    psp[ps_flash].WeaponX = psp[ps_weapon].WeaponX;     // Attach the flash to the weapon    
     psp[ps_flash].WeaponY = psp[ps_weapon].WeaponY;
 }

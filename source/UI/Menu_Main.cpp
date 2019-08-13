@@ -115,7 +115,7 @@ uint32_t M_Ticker(void)
     }
 
     // Animate skull 
-    gCursorCount += gElapsedTime;     // Add time 
+    ++gCursorCount;     // Add time 
     if (gCursorCount>=(TICKSPERSEC/4)) { // Time to toggle the shape? 
         gCursorFrame ^= 1;
         gCursorCount = 0;        // Reset the count 
@@ -126,7 +126,7 @@ uint32_t M_Ticker(void)
     if (! (buttons & (PadUp|PadDown|PadLeft|PadRight|PadA|PadB|PadC|PadD) ) ) {
         gMoveCount = TICKSPERSEC;    // Move immediately on next press 
     } else {
-        gMoveCount += gElapsedTime;   // Time unit 
+        ++gMoveCount;   // Time unit 
         if ( (gMoveCount >= (TICKSPERSEC/4)) ||      // Allow slow 
             (gCursorPos == level && gMoveCount >= (TICKSPERSEC/5))) { // Fast? 
             gMoveCount = 0;      // Reset the timer 

@@ -15,6 +15,7 @@
 #include "ThreeDO.h"
 #include "UI/Menu_Main.h"
 #include "UI/Options_Main.h"
+#include <thread>
 
 // FIXME: DC: TEMP - REMOVE
 #include <algorithm>
@@ -110,7 +111,6 @@ uint32_t MiniLoop(
     uint32_t exit = 0;              // I am running
     gGameAction = ga_nothing;       // Game is not in progress
     gTotalGameTicks = 0;            // No vbls processed during game
-    gElapsedTime = 0;               // No time has elapsed yet
 
     // Init the joypad states
     gJoyPadButtons = gPrevJoyPadButtons = gNewJoyPadButtons = 0;
@@ -119,7 +119,9 @@ uint32_t MiniLoop(
         // FIXME: DC: Put this somewhere better
         SDL_PumpEvents();
 
-        // FIXME: DC: TEMP
+        // FIXME: DC: TEMP - Move into a proper timing class
+        uint32_t ticksLeftToSimulate;
+
         {
             static clock_t lastClock;
             const clock_t curClock = clock();            
@@ -128,21 +130,24 @@ uint32_t MiniLoop(
 
             double ticksElapsed = secondsElapsed * (double) TICKSPERSEC;
             ticksElapsed = std::max(ticksElapsed, 0.0);
-            ticksElapsed = std::min(ticksElapsed, 8.0);     // 7.5 FPS minimum framerate!
+            ticksElapsed = std::min(ticksElapsed, 8.0);     // 7.5 FPS minimum framerate! (game physically slows down otherwise)
 
-            gElapsedTime = (uint32_t) ticksElapsed;
+            ticksLeftToSimulate = (uint32_t) ticksElapsed;
 
-            if (gElapsedTime <= 0) {
+            if (ticksLeftToSimulate <= 0) {
+                std::this_thread::yield();
                 continue;
-            }
-            else {
+            } else {
                 lastClock = curClock;
             }
         }
         
-        // Run the tic immediately
-        gTotalGameTicks += gElapsedTime;    // Add to the VBL count
-        exit = ticker();                    // Process the keypad commands
+        // Simulate the required number of ticks
+        while ((ticksLeftToSimulate > 0) && (exit == 0)) {
+            ++gTotalGameTicks;          // Add to the VBL count
+            --ticksLeftToSimulate;
+            exit = ticker();            // Process the keypad commands
+        }
 
         // Get buttons for next tic
         gPrevJoyPadButtons = gJoyPadButtons;        // Pass through the latest keypad info
@@ -179,7 +184,7 @@ uint32_t MiniLoop(
         // Sync up with the refresh - draw the screen
         drawer();
 
-    } while (!exit);    // Is the loop finished?
+    } while (exit == 0);    // Is the loop finished?
 
     stop();             // Release resources
     S_Clear();          // Kill sounds

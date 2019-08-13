@@ -63,19 +63,17 @@ void G_PlayerFinishLevel()
 
 void G_PlayerReborn()
 {
-    player_t *p;        // Local 
-    uint32_t i;
+    player_t*p = &gPlayers;     // Get local pointer 
+    memset(p,0,sizeof(*p));     // Zap the player
 
-    p = &gPlayers;   // Get local pointer 
-    memset(p,0,sizeof(*p)); // Zap the player 
-    p->usedown = p->attackdown = true;  // don't do anything immediately 
-    p->playerstate = PST_LIVE;  // I live again! 
-    p->health = MAXHEALTH;      // Restore health 
-    p->readyweapon = p->pendingweapon = wp_pistol;  // Reset weapon 
-    p->weaponowned[wp_fist] = true;     // I have a fist 
-    p->weaponowned[wp_pistol] = true;   // And a pistol 
-    p->ammo[am_clip] = 50;          // Award 50 bullets 
-    i = 0;
+    p->usedown = p->attackdown = 0;                     // don't do anything immediately 
+    p->playerstate = PST_LIVE;                          // I live again! 
+    p->health = MAXHEALTH;                              // Restore health 
+    p->readyweapon = p->pendingweapon = wp_pistol;      // Reset weapon 
+    p->weaponowned[wp_fist] = true;                     // I have a fist 
+    p->weaponowned[wp_pistol] = true;                   // And a pistol 
+    p->ammo[am_clip] = 50;                              // Award 50 bullets 
+    uint32_t i = 0;
     do {
         p->maxammo[i] = gMaxAmmo[i]; // Reset ammo counts (No backpack) 
     } while (++i<NUMAMMO);

@@ -165,10 +165,9 @@ uint32_t F_Ticker(void)
         }
     }
 
-// Advance state 
-
-    if (gCastTics>gElapsedTime) {
-        gCastTics-=gElapsedTime;
+    // Advance state 
+    if (gCastTics > 1) {
+        --gCastTics;
         return ga_nothing;      // Not time to change state yet 
     }
 
@@ -273,11 +272,12 @@ void F_Drawer() {
     
     if (gStatus==fin_endtext) {
         uint32_t Temp;
-        Temp = gEndTextString[gTextIndex];        // Get the final char 
-        gEndTextString[gTextIndex] = 0;           // End the string here 
-        F_PrintString(STARTX,STARTY,gEndTextString); // Print the string 
-        gEndTextString[gTextIndex] = Temp;    // Restore the string 
-        gTextDelay+=gElapsedTime;     // How much time has gone by? 
+        Temp = gEndTextString[gTextIndex];              // Get the final char 
+        gEndTextString[gTextIndex] = 0;                 // End the string here 
+        F_PrintString(STARTX,STARTY,gEndTextString);    // Print the string 
+        gEndTextString[gTextIndex] = Temp;              // Restore the string 
+        ++gTextDelay;                                   // How much time has gone by? 
+
         if (gTextDelay>=TEXTTIME) {
             gTextDelay -= TEXTTIME;      // Adjust the time 
             if (Temp) {     // Already at the end? 

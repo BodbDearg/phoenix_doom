@@ -109,8 +109,8 @@ struct player_t {
     playerstate_e   playerstate;                // Alive/dead...
     bool            cards[NUMCARDS];            // Keycards held
     bool            backpack;                   // Got the backpack?
-    bool            attackdown;                 // Held the attack key if true
-    bool            usedown;                    // Held the use button down if true
+    uint32_t        attackdown;                 // Held the attack key if > 0
+    uint32_t        usedown;                    // Held the use button down if > 0
     bool            weaponowned[NUMWEAPONS];    // Do I own these weapons?
     bool            refire;                     // refired shots are less accurate
 };
