@@ -25,7 +25,7 @@ namespace FMath {
     // Convert a Doom binary angle to a float angle (in radians) and back again
     //------------------------------------------------------------------------------------------------------------------
     template <class T>
-    inline T doomAngleToRadians(const angle_t angle) noexcept {
+    inline constexpr T doomAngleToRadians(const angle_t angle) noexcept {
         const double normalized = (double) angle / (double(UINT32_MAX) + 1.0);
         const double twoPiRange = normalized * ANGLE_360<double>;
         return T(twoPiRange);
@@ -43,12 +43,12 @@ namespace FMath {
     // Convert a Doom 16.16 fixed point number to float and back again
     //------------------------------------------------------------------------------------------------------------------
     template <class T>
-    inline T doomFixed16ToFloat(const Fixed fixed) noexcept {
+    inline constexpr T doomFixed16ToFloat(const Fixed fixed) noexcept {
         return T((double) fixed * (1.0 / 65536.0));
     }
     
     template <class T>
-    inline Fixed floatToDoomFixed16(const T value) noexcept {
+    inline constexpr Fixed floatToDoomFixed16(const T value) noexcept {
         return Fixed((double) value * 65536.0);
     }
 
@@ -56,12 +56,12 @@ namespace FMath {
     // Convert a Doom 26.6 fixed point number (used for sector height values) to float and back again
     //------------------------------------------------------------------------------------------------------------------
     template <class T>
-    inline T doomFixed6ToFloat(const Fixed fixed) noexcept {
+    inline constexpr T doomFixed6ToFloat(const Fixed fixed) noexcept {
         return T((double) fixed * (1.0 / 64.0));
     }
     
     template <class T>
-    inline Fixed floatToDoomFixed6(const T value) noexcept {
+    inline constexpr Fixed floatToDoomFixed6(const T value) noexcept {
         return Fixed((double) value * 64.0);
     }
     
@@ -79,7 +79,7 @@ namespace FMath {
     // Linearly interpolate between two floats
     //------------------------------------------------------------------------------------------------------------------
     template <class T>
-    static inline T lerp(const T a, const T b, const T t) noexcept {
+    static constexpr inline T lerp(const T a, const T b, const T t) noexcept {
         return a + (b - a) * t;
     }
 

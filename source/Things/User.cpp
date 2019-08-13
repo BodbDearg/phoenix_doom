@@ -2,6 +2,7 @@
 
 #include "Audio/Sound.h"
 #include "Audio/Sounds.h"
+#include "Base/FMath.h"
 #include "Base/Tables.h"
 #include "Burger.h"
 #include "Game/Data.h"
@@ -304,13 +305,15 @@ static void P_BuildMove(player_t *player)
     mo = player->mo;
 
     if (!mo->momx && !mo->momy && !player->forwardmove && !player->sidemove) {
-    // if in a walking frame, stop moving 
+        // If in a walking frame, stop moving 
         const state_t *StatePtr;
         StatePtr = mo->state;
+
         if (StatePtr == &gStates[S_PLAY_RUN1] ||
             StatePtr == &gStates[S_PLAY_RUN2] ||
             StatePtr == &gStates[S_PLAY_RUN3] ||
-            StatePtr == &gStates[S_PLAY_RUN4]) {
+            StatePtr == &gStates[S_PLAY_RUN4]
+        ) {
             SetMObjState(mo,&gStates[S_PLAY]);       // Standing frame 
         }
     }
@@ -332,84 +335,76 @@ static void PlayerThrust(mobj_t *MObjPtr,angle_t angle,Fixed move)
     }
 }
 
-/**********************************
+//----------------------------------------------------------------------------------------------------------------------
+// Calculate the walking / running height adjustment; this will bob the camera up and down.
+// Note : I MUST calculate the bob value or the gun will not be locked onto the player's view properly!!
+//----------------------------------------------------------------------------------------------------------------------
+static void PlayerCalcHeight(player_t& player) noexcept {
+    // Regular movement bobbing (needs to be calculated for gun swing even if not on ground)
+    const Fixed momX = player.mo->momx;
+    const Fixed momY = player.mo->momy;
 
-    Calculate the walking / running height adjustment
-    (This will bob the camera up and down)
-    Note : I MUST calculate the bob value or the gun will
-    not be locked onto the player's view properly!!
+    constexpr Fixed BOB_SCALE = FMath::floatToDoomFixed16(0.25f * (60.0f / 35.0f));     // Note: 60/35 adjustment to account for different frame rate from PC
+    Fixed bob = fixedMul(momX, momX) + fixedMul(momY, momY);
+    bob = fixedMul(bob, BOB_SCALE);
 
-**********************************/
+    if (bob > MAXBOB) {
+        bob = MAXBOB;
+    } 
 
-static void PlayerCalcHeight(player_t *player)
-{
-    Fixed bob;      // Bobbing offset 
-    Fixed top;
+    player.bob = bob;   // Save the new vertical adjustment
 
-// Regular movement bobbing (needs to be calculated for gun swing even 
-// if not on ground) 
-
-    bob = player->mo->momx;     // Get the momentum constant 
-    top = player->mo->momy;
-    bob = (fixedMul(bob, bob) + fixedMul(top, top)) >> 4;
-
-    if (bob>MAXBOB) {
-        bob = MAXBOB;       // Use the maximum 
-    }
-
-    player->bob = bob;      // Save the new vertical adjustment 
-
-    if (!gOnGround) {       // Don't bob the view if in the air! 
-        bob = 0;            // Zap the bob factor 
+    if (!gOnGround) {
+        // Don't bob the view if in the air: zap the bob factor 
+        bob = 0;
     } else {
+        // Calculate the viewing angle offset since the camera is now bobbing up and down. The multiply constant is based
+        // on a movement of a complete cycle bob every 0.666 seconds or 2/3 * TICKSPERSEC or 40 ticks (60 ticks a sec).
+        // This is translated to 8192/40 or 204.8 angles per tick. Neat eh?
+        constexpr uint32_t TICK_FREQ = (2 * TICKSPERSEC) / 3;
+        const uint32_t angle = ((FINEANGLES / TICK_FREQ) * gTotalGameTicks) & FINEMASK;
+        bob = fixedMul(bob / 2, gFineSine[angle]);
 
-// Calculate the viewing angle offset since the camera is now 
-// bobbing up and down 
-// The multiply constant is based on a movement of a complete cycle bob 
-// every 0.666 seconds or 2/3 * TICKSPERSEC) or 40 ticks (60 ticks a sec) 
-// This is translated to 8192/40 or 204.8 angles per tick. 
-// Neat eh? 
+        if (player.playerstate == PST_LIVE) {                   // If the player is alive... 
+            Fixed deltaViewHeight = player.deltaviewheight;     // Get gravity 
+            player.viewheight += deltaViewHeight;               // Adjust to delta 
 
-        bob = (bob>>(FRACBITS+1)) * gFineSine[       // What a mouthful!! 
-            ((FINEANGLES/((2*TICKSPERSEC)/3))*gTotalGameTicks)&FINEMASK];
-
-        if (player->playerstate == PST_LIVE) {      // If the player is alive... 
-            top = player->deltaviewheight;      // Get gravity 
-            player->viewheight += top;  // Adjust to delta 
-            if (player->viewheight > VIEWHEIGHT) {
-                player->viewheight = VIEWHEIGHT;    // Too high! 
-                top = 0;        // Kill delta 
+            if (player.viewheight > VIEWHEIGHT) {
+                player.viewheight = VIEWHEIGHT;     // Too high! 
+                deltaViewHeight = 0;                // Kill delta 
             }
-            if (player->viewheight < VIEWHEIGHT/2) {    // Too low? 
-                player->viewheight = VIEWHEIGHT/2;  // Set the lowest 
-                if (top <= 0) { // Minimum squat is 1 
-                    top = 1;
+
+            if (player.viewheight < VIEWHEIGHT / 2) {   // Too low? 
+                player.viewheight = VIEWHEIGHT / 2;     // Set the lowest 
+                if (deltaViewHeight <= 0) {             // Minimum squat is 1 
+                    deltaViewHeight = 1;
                 }
             }
-            if (top) {  // Going down? 
-                top += FRACUNIT/2;  // Increase the drop speed 
-                if (!top) {     // Zero is special case 
-                    top = 1;    // Make sure it's not zero! 
+
+            if (deltaViewHeight != 0) {             // Going down? 
+                deltaViewHeight += FRACUNIT / 2;    // Increase the drop speed 
+                if (deltaViewHeight == 0) {         // Zero is special case 
+                    deltaViewHeight = 1;            // Make sure it's not zero! 
                 }
             }
-            player->deltaviewheight = top;      // Save delta 
+
+            player.deltaviewheight = deltaViewHeight;
         }
     }
-    bob += player->mo->z + player->viewheight;  // Set the view z 
-    top = player->mo->ceilingz-(4*FRACUNIT);    // Adjust for ceiling height 
-    if (bob > top) {    // Did I hit my head on the ceiling? 
-        bob = top;      // Peg at the ceiling 
+
+    Fixed viewZ = player.mo->z + player.viewheight + bob;       // Set the view z 
+    const Fixed top = player.mo->ceilingz - (4 * FRACUNIT);     // Adjust for ceiling height 
+
+    if (viewZ > top) {       // Did I hit my head on the ceiling? 
+        viewZ = top;         // Peg at the ceiling 
     }
-    player->viewz = bob;        // Set the new z coord 
+
+    player.viewz = viewZ;   // Set the new z coord 
 }
 
-/**********************************
-
-    Take all the motion constants and apply it
-    to the player. Allow clipping and bumping.
-
-**********************************/
-
+//----------------------------------------------------------------------------------------------------------------------
+// Take all the motion constants and apply it to the player. Allow clipping and bumping.
+//----------------------------------------------------------------------------------------------------------------------
 static void MoveThePlayer(player_t *player)
 {
     angle_t newangle;
@@ -458,7 +453,7 @@ static void P_DeathThink(player_t *player)
         }
     }
     gOnGround = (player->mo->z <= player->mo->floorz);      // Get the floor state 
-    PlayerCalcHeight(player);                               // Calc the height of the player 
+    PlayerCalcHeight(*player);                              // Calc the height of the player 
 
     // Only face killer if I didn't kill myself or jumped into lava 
     if (player->attacker && player->attacker != player->mo) {
@@ -554,18 +549,18 @@ void P_PlayerThink(player_t *player)
         --i;
         player->mo->reactiontime = i;   // Save the new reaction time 
     }
-    PlayerCalcHeight(player);           // Adjust the player's z coord 
+
+    PlayerCalcHeight(*player);      // Adjust the player's z coord 
 
     {
-    sector_t *sector;           // Local pointer 
-    sector = player->mo->subsector->sector;     // Get sector I'm standing on 
-    if (sector->special) {  // Am I standing on a special? 
-        PlayerInSpecialSector(player,sector);       // Process special event 
-    }
+        sector_t *sector;           // Local pointer 
+        sector = player->mo->subsector->sector;     // Get sector I'm standing on 
+        if (sector->special) {  // Am I standing on a special? 
+            PlayerInSpecialSector(player,sector);       // Process special event 
+        }
     }
 
-// Process use actions 
-
+    // Process use actions
     if (buttons & gPadUse) {
         if (player->pendingweapon == wp_nochange) {
             i = (buttons^gPrevJoyPadButtons)&buttons;    // Get button downs 

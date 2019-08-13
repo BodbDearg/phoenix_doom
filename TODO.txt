@@ -10,11 +10,11 @@ TODO
 - Cleanup and optimize render code
 - Intro logos
 - Intro videos? (maybe)
-- Fix view bob not working.
 - Fix weird chainsaw sound
 - Higher resolution + fullscreen support
 - WASD + Mouse support
 - Gamepad support
+- Fix misalignment between guns and muzzle flash.
 - Remove temp function key cheats
 - Config .ini file with basic settings
 - Reading the game files from an IMG (+ reading 3D0 Opera Filesystem)
