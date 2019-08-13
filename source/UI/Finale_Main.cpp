@@ -268,7 +268,7 @@ stopattack:
 **********************************/
 void F_Drawer() {
     Video::debugClear();
-    DrawRezShape(0,0,rBACKGRNDBROWN);       // Draw the background 
+    Renderer::drawUISprite(0, 0, rBACKGRNDBROWN);       // Draw the background 
     
     if (gStatus==fin_endtext) {
         uint32_t Temp;

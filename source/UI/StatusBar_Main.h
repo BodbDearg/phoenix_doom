@@ -24,5 +24,5 @@ extern stbar_t gStBar;   // Pass messages to the status bar
 
 void ST_Start() noexcept;
 void ST_Stop() noexcept;
-void ST_Ticker();
-void ST_Drawer();
+void ST_Ticker() noexcept;
+void ST_Drawer() noexcept;

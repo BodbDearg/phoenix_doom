@@ -233,7 +233,7 @@ static void STOP_Title() {
 //----------------------------------------------------------------------------------------------------------------------
 static void DRAW_Title() {
     Video::debugClear();
-    DrawRezShape(0, 0, rTITLE);     // Draw the doom logo
+    Renderer::drawUISprite(0, 0, rTITLE);   // Draw the doom logo
     Video::present();
 }
 
@@ -288,8 +288,8 @@ static void DRAW_Credits() {
             }
     }
 
-    DrawRezShape(0, 0, gCreditRezNum);  // Draw the credits
-    Video::present();                   // Page flip
+    Renderer::drawUISprite(0, 0, gCreditRezNum);    // Draw the credits
+    Video::present();                               // Page flip
 }
 
 //----------------------------------------------------------------------------------------------------------------------

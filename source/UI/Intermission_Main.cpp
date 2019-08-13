@@ -77,17 +77,18 @@ static uint32_t gBangCount;          // Delay for gunshot sound
     I only load the large ASCII font if it is needed.
 
 **********************************/
-
-void PrintBigFont(uint32_t x, uint32_t y, const char* string) {
+void PrintBigFont(int32_t x, int32_t y, const char* string) noexcept {
     uint32_t y2,c;
     const CelImageArray* gpUCharx;
     const CelImageArray* gpCurrent;
 
     c = string[0];      // Get the first char 
-   if (!c) {            // No string to print? 
+    if (!c) {           // No string to print? 
         return;         // Exit now 
     }
-    gpUCharx = nullptr; // Assume ASCII font is NOT loaded 
+
+    gpUCharx = nullptr;     // Assume ASCII font is NOT loaded 
+
     do {
         ++string;       // Place here so "continue" will work 
         y2 = y;         // Assume normal y coord 
@@ -103,16 +104,16 @@ void PrintBigFont(uint32_t x, uint32_t y, const char* string) {
             if (c >= 'A' && c <= 'Z') { // Upper case? 
                 c-='A';
             } else if (c >= 'a' && c <= 'z') {
-                c -= ('a'-26);      // Index to lower case text 
-                y2+=3;
+                c -= ('a'- 26);     // Index to lower case text 
+                y2 += 3;
             } else if (c=='.') {        // Period 
                 c = 52;
-                y2+=3;
+                y2 += 3;
             } else if (c=='!') {    // Exclaimation point 
                 c = 53;
-                y2+=3;
+                y2 += 3;
             } else {        // Hmmm, not supported! 
-                x+=6;       // Fake space 
+                x += 6;       // Fake space 
                 continue;
             }
         }
@@ -124,7 +125,7 @@ void PrintBigFont(uint32_t x, uint32_t y, const char* string) {
         }
 
         const CelImage& shape = gpCurrent->getImage(c);     // Get the shape pointer
-        DrawShape(x, y2, shape);                            // Draw the char
+        Renderer::drawUISprite(x, y2, shape);               // Draw the char
         x += shape.width + 1;                               // Get the width to tab
     } while ((c = string[0])!=0);                           // Next index
     
@@ -140,7 +141,7 @@ void PrintBigFont(uint32_t x, uint32_t y, const char* string) {
 
 **********************************/
 
-uint32_t GetBigStringWidth(const char* string) {
+uint32_t GetBigStringWidth(const char* string) noexcept {
     uint32_t c,Width;
     const CelImageArray* gpUCharx;
     const CelImageArray* gpCurrent;
@@ -193,15 +194,11 @@ uint32_t GetBigStringWidth(const char* string) {
     return Width;
 }
 
-/**********************************
-
-    Draws a number, this number may be appended with
-    a percent sign and or centered upon the x coord.
-    I use flags PNPercent and PNCenter.
-
-**********************************/
-
-void PrintNumber(uint32_t x, uint32_t y, uint32_t value, uint32_t Flags) {
+//----------------------------------------------------------------------------------------------------------------------
+// Draws a number, this number may be appended with a percent sign and or centered upon the x coord.
+// I use flags PNPercent and PNCenter.
+//----------------------------------------------------------------------------------------------------------------------
+void PrintNumber(int32_t x, int32_t y, uint32_t value, uint32_t Flags) noexcept {
     char v[16];                                     // Buffer for text string 
     LongWordToAscii(value, v);                      // Convert to string 
     value = (uint32_t) std::strlen((char*) v);      // Get the length in chars 
@@ -221,17 +218,15 @@ void PrintNumber(uint32_t x, uint32_t y, uint32_t value, uint32_t Flags) {
         x -= GetBigStringWidth(v);
     }
 
-    PrintBigFont(x,y,v);    // Print the string 
+    PrintBigFont(x, y, v);  // Print the string 
 }
 
-/**********************************
-    
-    Print an ascii string centered on the x coord
-
-**********************************/
-void PrintBigFontCenter(uint32_t x, uint32_t y, const char* String) {
-    x-=(GetBigStringWidth(String)/2);
-    PrintBigFont(x,y,String);
+//---------------------------------------------------------------------------------------------------------------------- 
+// Print an ascii string centered on the x coord
+//----------------------------------------------------------------------------------------------------------------------
+void PrintBigFontCenter(const int32_t x, const int32_t y, const char* const str) noexcept {
+    const int32_t w = (GetBigStringWidth(str) / 2);
+    PrintBigFont(x - w, y, str);
 }
 
 /**********************************
@@ -318,7 +313,7 @@ uint32_t IN_Ticker() {
 **********************************/
 void IN_Drawer() {
     Video::debugClear();
-    DrawRezShape(0, 0, rBACKGRNDBROWN);     // Load and draw the skulls 
+    Renderer::drawUISprite(0, 0, rBACKGRNDBROWN);   // Load and draw the skulls 
     
     const CelImageArray& intermisShapes = CelImages::loadImages(rINTERMIS, CelImages::LoadFlagBits::MASKED);
 
@@ -330,9 +325,9 @@ void IN_Drawer() {
         PrintBigFontCenter(160,182, MAP_NAMES[gNextMap-1]);
     }
     
-    DrawShape(71, KVALY, intermisShapes.getImage(KillShape));   // Draw the shapes 
-    DrawShape(65, IVALY, intermisShapes.getImage(ItemsShape));
-    DrawShape(27, SVALY, intermisShapes.getImage(SecretsShape));
+    Renderer::drawUISprite(71, KVALY, intermisShapes.getImage(KillShape));   // Draw the shapes 
+    Renderer::drawUISprite(65, IVALY, intermisShapes.getImage(ItemsShape));
+    Renderer::drawUISprite(27, SVALY, intermisShapes.getImage(SecretsShape));
 
     PrintNumber(KVALX, KVALY, gKillValue, PNFLAGS_PERCENT|PNFLAGS_RIGHT);   // Print the numbers 
     PrintNumber(IVALX, IVALY, gItemValue, PNFLAGS_PERCENT|PNFLAGS_RIGHT);

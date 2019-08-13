@@ -232,7 +232,7 @@ void DrawPlaque(uint32_t RezNum)
     #endif
 
     const CelImage& img = CelImages::loadImage(RezNum);
-    DrawShape(160 - img.width / 2, 80, img);
+    Renderer::drawUISprite(160 - img.width / 2, 80, img);
     CelImages::releaseImages(RezNum);
 
     // FIXME: DC: Required for screen wipe?

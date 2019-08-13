@@ -53,50 +53,6 @@ uint32_t gLastTick;      // Time last waited at
 static volatile uint32_t gTickValue;
 static bool gTimerInited;
 
-// TODO: REMOVE THIS
-void DrawShape(
-    const uint32_t x1,
-    const uint32_t y1,
-    const CelImage& image
-) noexcept {
-    for (uint32_t y = 0; y < image.height; ++y) {
-        Blit::blitColumn<
-            Blit::BCF_HORZ_COLUMN |
-            Blit::BCF_ROW_MAJOR_IMG |
-            Blit::BCF_STEP_X |
-            Blit::BCF_ALPHA_TEST |
-            Blit::BCF_H_CLIP |
-            Blit::BCF_V_CLIP
-        >(
-            image.pPixels, 
-            image.width,
-            image.height,
-            0.0f,
-            (float) y,
-            0.0f,
-            0.0f,
-            Video::gFrameBuffer,
-            Video::SCREEN_WIDTH,
-            Video::SCREEN_HEIGHT,
-            Video::SCREEN_WIDTH,
-            x1,
-            y1 + y,
-            image.width,
-            1.0f,
-            0.0f
-        );
-    }
-}
-
-//---------------------------------------------------------------------------------------------------------------------
-// Draw a shape using a resource number
-//---------------------------------------------------------------------------------------------------------------------
-void DrawRezShape(uint32_t x, uint32_t y, uint32_t RezNum) noexcept {
-    const CelImage& img = CelImages::loadImage(RezNum, CelImages::LoadFlagBits::NONE);
-    DrawShape(x, y, img);
-    CelImages::releaseImages(RezNum);
-}
-
 /**********************************
 
     Read the bits from the joystick

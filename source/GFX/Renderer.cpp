@@ -2,10 +2,13 @@
 
 #include "Base/FMath.h"
 #include "Base/Tables.h"
+#include "Blit.h"
+#include "CelImages.h"
 #include "Game/Data.h"
 #include "Sprites.h"
 #include "Textures.h"
 #include "Things/MapObj.h"
+#include "Video.h"
 #include <algorithm>
 
 static constexpr uint32_t SCREEN_WIDTHS[6] = {
@@ -45,7 +48,8 @@ BEGIN_NAMESPACE(Renderer)
 //----------------------------------------------------------------------------------------------------------------------
 // Internal renderer cross module globals
 //----------------------------------------------------------------------------------------------------------------------
-std::vector<DrawSeg>            gDrawSegs;
+float                           gScaleFactor;
+float                           gInvScaleFactor;
 Fixed                           gViewXFrac;
 Fixed                           gViewYFrac;
 Fixed                           gViewZFrac;
@@ -79,7 +83,7 @@ ProjectionMatrix                gProjMatrix;
 uint32_t                        gExtraLight;
 angle_t                         gClipAngleBAM;
 angle_t                         gDoubleClipAngleBAM;
-uint32_t                        gSprOpening[MAXSCREENWIDTH];
+std::vector<DrawSeg>            gDrawSegs;
 std::vector<SegClip>            gSegClip;
 std::vector<OccludingColumns>   gOccludingCols;
 uint32_t                        gNumFullSegCols;
@@ -267,6 +271,8 @@ void init() noexcept {
 }
 
 void initMathTables() noexcept {
+    gScaleFactor = (float) Video::SCREEN_WIDTH / (float) REFERENCE_SCREEN_WIDTH;
+    gInvScaleFactor = 1.0f / gScaleFactor;
     gScreenWidth = SCREEN_WIDTHS[gScreenSize];
     gScreenHeight = SCREEN_HEIGHTS[gScreenSize];
     gCenterX = gScreenWidth / 2;
@@ -392,6 +398,47 @@ LightParams getLightParams(const uint32_t sectorLightLevel) noexcept {
     out.lightCoef = gLightCoefs[lightMax];
 
     return out;
+}
+
+void drawUISprite(const int32_t x, const int32_t y, const CelImage& image) noexcept {
+    const float xScaled = (float) x * gScaleFactor;
+    const float yScaled = (float) y * gScaleFactor;
+    const float wScaled = (float) image.width * gScaleFactor;
+    const float hScaled = (float) image.height * gScaleFactor;
+
+    Blit::blitSprite<
+        Blit::BCF_ALPHA_TEST |
+        Blit::BCF_H_CLIP |
+        Blit::BCF_V_CLIP
+    >(
+        image.pPixels,
+        image.width,
+        image.height,
+        0.0f,
+        0.0f,
+        (float) image.width,
+        (float) image.height,
+        Video::gFrameBuffer,
+        Video::SCREEN_WIDTH,
+        Video::SCREEN_HEIGHT,
+        Video::SCREEN_WIDTH,
+        xScaled,
+        yScaled,
+        wScaled,
+        hScaled
+    );
+}
+
+void drawUISprite(const int32_t x, const int32_t y, const uint32_t resourceNum) noexcept {
+    const CelImage& img = CelImages::loadImage(resourceNum, CelImages::LoadFlagBits::NONE);
+    drawUISprite(0, 0, img);
+    CelImages::releaseImages(resourceNum);
+}
+
+void drawMaskedUISprite(const int32_t x, const int32_t y, const uint32_t resourceNum) noexcept {
+    const CelImage& img = CelImages::loadImage(resourceNum, CelImages::LoadFlagBits::MASKED);
+    drawUISprite(0, 0, img);
+    CelImages::releaseImages(resourceNum);
 }
 
 END_NAMESPACE(Renderer)

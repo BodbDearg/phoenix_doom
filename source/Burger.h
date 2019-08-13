@@ -19,15 +19,8 @@ extern uint8_t* gVideoPointer;
 extern uint32_t gFramebufferWidth;
 extern uint32_t gFramebufferHeight;
 
-// TODO: TEMP
-void DrawShape(
-    const uint32_t x1,
-    const uint32_t y1,
-    const CelImage& image
-) noexcept;
-
+// TODO: move elsewhere
 extern void DrawARect(const uint32_t x, const uint32_t y, const uint32_t width, const uint32_t height, const uint16_t color) noexcept;
-extern void DrawRezShape(uint32_t x, uint32_t y, uint32_t RezNum) noexcept;
 
 // Input handlers 
 #define PadDown         0x80000000

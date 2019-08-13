@@ -181,9 +181,9 @@ uint32_t M_Ticker(void)
 //--------------------------------------------------------------------------------------------------
 // Draw the main menu
 //--------------------------------------------------------------------------------------------------
-void M_Drawer() {    
+void M_Drawer() {
     Video::debugClear();
-    DrawRezShape(0, 0, rMAINDOOM);
+    Renderer::drawUISprite(0, 0, rMAINDOOM);
     
     if (gOptionActive) {
         O_Drawer();
@@ -193,7 +193,7 @@ void M_Drawer() {
 
         // Draw new skull
         const CelImageArray& skullImgs = CelImages::loadImages(rSKULLS, CelImages::LoadFlagBits::MASKED);
-        DrawShape(CURSORX, gCursorYs[gCursorPos], skullImgs.getImage(gCursorFrame));
+        Renderer::drawUISprite(CURSORX, gCursorYs[gCursorPos], skullImgs.getImage(gCursorFrame));
         CelImages::releaseImages(rSKULLS);
 
         // Draw start level information
@@ -201,8 +201,8 @@ void M_Drawer() {
         PrintNumber(CURSORX + 40, AREAY + 20, gPlayerMap, 0);
 
         // Draw difficulty information
-        DrawShape(CURSORX + 24, DIFFICULTYY, shapes.getImage(DIFFSHAPE));
-        DrawShape(CURSORX + 40, DIFFICULTYY + 20, shapes.getImage(gPlayerSkill));
+        Renderer::drawUISprite(CURSORX + 24, DIFFICULTYY, shapes.getImage(DIFFSHAPE));
+        Renderer::drawUISprite(CURSORX + 40, DIFFICULTYY + 20, shapes.getImage(gPlayerSkill));
 
         // Draw the options screen
         PrintBigFont(CURSORX + 24, OPTIONSY, "Options Menu");

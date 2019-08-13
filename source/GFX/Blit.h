@@ -476,7 +476,7 @@ namespace Blit {
     //
     // Notes:
     //  (1) See the 'blitColumn' documentation for most of the details on how blitting works.
-    //  (2) The wrapping mode used for this operation is always CLAMP; wrapping or discard is NOT allowed.
+    //  (2) The wrapping mode used for this operation is always DISCARD; wrapping or clamp is NOT allowed.
     //  (3) The input image is assummed ROW MAJOR, you CANNOT use column major images.
     //  (4) For sprite blitting the following blit column flags are NOT allowed, since they are controlled
     //      by the sprite blit routine:
@@ -538,13 +538,13 @@ namespace Blit {
         }
 
         // Figure out the start and end pixel in the destination and number of rows and columns
-        const uint32_t dstX1 = (uint32_t) dstX;
-        const uint32_t dstX2 = (uint32_t)(dstX + dstW);
-        const uint32_t dstY1 = (uint32_t) dstY;
-        const uint32_t dstY2 = (uint32_t)(dstY + dstH);
+        const uint32_t dstXi = (uint32_t) dstX;
+        const uint32_t dstXiend = (uint32_t)(dstX + std::ceil(dstW));
+        const uint32_t dstYi = (uint32_t) dstY;
+        const uint32_t dstYiend = (uint32_t)(dstY + std::ceil(dstH));
 
-        const uint32_t dstXCount = (dstX2 - dstX1) + 1;
-        const uint32_t dstYCount = (dstY2 - dstY1) + 1;
+        const uint32_t dstXCount = (dstXiend - dstXi) + 1;
+        const uint32_t dstYCount = (dstYiend - dstYi) + 1;
 
         // Figure out the x and y step
         const float srcXStep = (dstXCount > 0) ? srcW / (float) dstW : 0.0f;
@@ -557,8 +557,8 @@ namespace Blit {
                 BCF_HORZ_COLUMN |
                 BCF_ROW_MAJOR_IMG |
                 BCF_STEP_X |
-                BCF_H_WRAP_CLAMP |
-                BCF_V_WRAP_CLAMP
+                BCF_H_WRAP_DISCARD |
+                BCF_V_WRAP_DISCARD
             >(
                 pSrcPixels,
                 srcPixelsW,
@@ -571,8 +571,8 @@ namespace Blit {
                 dstPixelsW,
                 dstPixelsH,
                 dstPixelsPitch,
-                dstX1,
-                dstY1 + rowNum,
+                dstXi,
+                dstYi + rowNum,
                 dstXCount,
                 srcXStep,
                 0.0f,

@@ -10,8 +10,10 @@
 
 // TODO: REMOVE EVENTUALLY, once high resolution support is properly implemented.
 // Define to enable a quick hack to test higher resolution rendering.
-#define HACK_TEST_HIGH_RES_RENDERING 0
+#define HACK_TEST_HIGH_RES_RENDERING 1
 #define HACK_TEST_HIGH_RENDER_SCALE 3
+
+struct CelImage;
 
 BEGIN_NAMESPACE(Renderer)
 
@@ -21,12 +23,18 @@ BEGIN_NAMESPACE(Renderer)
 
 // Used to compute scale factors
 static constexpr uint32_t REFERENCE_SCREEN_WIDTH = 320;
-static constexpr uint32_t REFERENCE_SCREEN_HEIGHT = 240;
+static constexpr uint32_t REFERENCE_SCREEN_HEIGHT = 200;
 static constexpr uint32_t REFERENCE_3D_VIEW_WIDTH = 280;
 static constexpr uint32_t REFERENCE_3D_VIEW_HEIGHT = 160;
 
 void init() noexcept;               // Initialize the renderer (done once)
 void initMathTables() noexcept;     // Re-initialize the renderer math tables; must be done if screen size changes!
-void drawPlayerView() noexcept;     // Render the player's view
+void drawPlayerView() noexcept;     // Render the 3d view for the player
+
+// Utility function: draws a sprite which is scaled in accordance with the scale factor for the renderer.
+// The coordinates are given in terms of the original 320x200 resolution.
+void drawUISprite(const int32_t x, const int32_t y, const CelImage& image) noexcept;
+void drawUISprite(const int32_t x, const int32_t y, const uint32_t resourceNum) noexcept;
+void drawMaskedUISprite(const int32_t x, const int32_t y, const uint32_t resourceNum) noexcept;
 
 END_NAMESPACE(Renderer)

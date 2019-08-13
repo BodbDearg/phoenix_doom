@@ -272,7 +272,9 @@ namespace Renderer {
     //==================================================================================================================
     // Globals shared throughout the renderer - defined in Renderer.cpp
     //==================================================================================================================
-    extern std::vector<DrawSeg>             gDrawSegs;
+   
+    extern float                            gScaleFactor;                       // Ratio of current resolution over original 320x200 resolution
+    extern float                            gInvScaleFactor;                    // Reciprocal ratio of current resolution over original 320x200 resolution
     extern Fixed                            gViewXFrac;                         // Camera x,y,z
     extern Fixed                            gViewYFrac;
     extern Fixed                            gViewZFrac;
@@ -306,7 +308,7 @@ namespace Renderer {
     extern uint32_t                         gExtraLight;                        // Bumped light from gun blasts
     extern angle_t                          gClipAngleBAM;                      // Leftmost clipping angle
     extern angle_t                          gDoubleClipAngleBAM;                // Doubled leftmost clipping angle
-    extern uint32_t                         gSprOpening[MAXSCREENWIDTH];        // clipped range
+    extern std::vector<DrawSeg>             gDrawSegs;
     extern std::vector<SegClip>             gSegClip;                           // Used to clip seg columns (walls + floors) vertically as segs are being submitted. One entry per screen column.
     extern std::vector<OccludingColumns>    gOccludingCols;                     // Used to clip sprite columns. One entry per screen column.
     extern uint32_t                         gNumFullSegCols;                    // The number of columns that will accept no more seg pixels. Used to stop emitting segs when we have filled the screen.

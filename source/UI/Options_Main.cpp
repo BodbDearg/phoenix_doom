@@ -279,7 +279,7 @@ void O_Control(player_t *player)
 void O_Drawer() {
     // Erase old and Draw new cursor frame
     const CelImageArray& skullImgs = CelImages::loadImages(rSKULLS, CelImages::LoadFlagBits::MASKED);
-    DrawShape(CURSORX, CURSOR_Y_POS[gCursorPos], skullImgs.getImage(gCursorFrame));
+    Renderer::drawUISprite(CURSORX, CURSOR_Y_POS[gCursorPos], skullImgs.getImage(gCursorFrame));
     CelImages::releaseImages(rSKULLS);
 
     // Draw menu text
@@ -291,17 +291,17 @@ void O_Drawer() {
         PrintBigFontCenter(160, MUSICVOLY, "Music Volume");
 
         // Draw scroll bars
-        DrawShape(SLIDERX, SFXVOLY + 20, sliderImgs.getImage(BAR));
-        DrawShape(SLIDERX, MUSICVOLY + 20, sliderImgs.getImage(BAR));
+        Renderer::drawUISprite(SLIDERX, SFXVOLY + 20, sliderImgs.getImage(BAR));
+        Renderer::drawUISprite(SLIDERX, MUSICVOLY + 20, sliderImgs.getImage(BAR));
         
         {
             const uint32_t offset = audioGetSoundVolume() * SLIDESTEP;
-            DrawShape(SLIDERX + 5 + offset, SFXVOLY + 20, sliderImgs.getImage(HANDLE));
+            Renderer::drawUISprite(SLIDERX + 5 + offset, SFXVOLY + 20, sliderImgs.getImage(HANDLE));
         }
 
         {
             const uint32_t offset = audioGetMusicVolume() * SLIDESTEP;
-            DrawShape(SLIDERX + 5 + offset, MUSICVOLY + 20, sliderImgs.getImage(HANDLE));
+            Renderer::drawUISprite(SLIDERX + 5 + offset, MUSICVOLY + 20, sliderImgs.getImage(HANDLE));
         }
 
     } else {
@@ -314,10 +314,10 @@ void O_Drawer() {
         PrintBigFont(JOYPADX + 40, JOYPADY + 40, BUTTON_B[gControlType]);
         PrintBigFont(JOYPADX + 40, JOYPADY + 60, BUTTON_C[gControlType]);
         PrintBigFontCenter(160, SIZEY, "Screen Size");
-        DrawShape(SLIDERX, SIZEY + 20, sliderImgs.getImage(BAR));
+        Renderer::drawUISprite(SLIDERX, SIZEY + 20, sliderImgs.getImage(BAR));
         
         const uint32_t offset = (5 - gScreenSize) * 18;
-        DrawShape(SLIDERX + 5 + offset, SIZEY + 20, sliderImgs.getImage(HANDLE));
+        Renderer::drawUISprite(SLIDERX + 5 + offset, SIZEY + 20, sliderImgs.getImage(HANDLE));
     }
 
     CelImages::releaseImages(rSLIDER);

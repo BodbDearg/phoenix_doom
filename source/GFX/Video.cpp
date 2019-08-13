@@ -5,6 +5,7 @@
 #include <SDL.h>
 
 // TODO: REMOVE
+#include <algorithm>
 #include "Renderer.h"
 
 static SDL_Window*     gWindow;
@@ -24,18 +25,21 @@ void Video::init() noexcept {
         windowCreateFlags |= SDL_WINDOW_OPENGL;
     #endif
 
+    // TODO: TEMP
+    uint32_t PRESENT_MAGNIFY;
+
+    #if HACK_TEST_HIGH_RES_RENDERING
+        PRESENT_MAGNIFY = std::max(6u / HACK_TEST_HIGH_RENDER_SCALE, 1u);
+    #else
+        PRESENT_MAGNIFY = 6;
+    #endif
+
     gWindow = SDL_CreateWindow(
         "PhoenixDoom",
         SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED,
-        // TODO: REMOVE
-        #if HACK_TEST_HIGH_RES_RENDERING
-            (SCREEN_WIDTH * 6) / HACK_TEST_HIGH_RENDER_SCALE,
-            (SCREEN_HEIGHT * 6) / HACK_TEST_HIGH_RENDER_SCALE,
-        #else
-            SCREEN_WIDTH * 6,
-            SCREEN_HEIGHT * 6,
-        #endif
+        SCREEN_WIDTH * PRESENT_MAGNIFY,
+        SCREEN_HEIGHT * PRESENT_MAGNIFY,
         windowCreateFlags
     );
     

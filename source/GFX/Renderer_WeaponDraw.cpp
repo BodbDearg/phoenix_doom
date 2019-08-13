@@ -136,11 +136,8 @@ void drawWeapons() noexcept {
     }
 
     // Draw the border
-    {
-        const uint32_t borderRezNum = gScreenSize + rBACKGROUNDMASK;
-        DrawShape(0, 0, CelImages::loadImage(borderRezNum, CelImages::LoadFlagBits::MASKED));      
-        CelImages::releaseImages(borderRezNum);
-    }
+    const uint32_t borderRezNum = gScreenSize + rBACKGROUNDMASK;
+    drawMaskedUISprite(0, 0, borderRezNum);
 }
 
 END_NAMESPACE(Renderer)

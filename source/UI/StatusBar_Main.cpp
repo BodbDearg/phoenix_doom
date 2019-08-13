@@ -9,43 +9,33 @@
 #include "Game/DoomRez.h"
 #include "Game/Resources.h"
 #include "GFX/CelImages.h"
+#include "GFX/Renderer.h"
 #include "Intermission_Main.h"
 #include <cstring>
 
-/**********************************
+static constexpr uint32_t FLASHDELAY = TICKSPERSEC / 4;     // # of tics delay (1/60 sec) 
+static constexpr uint32_t FLASHTIMES = 6;                   // # of times to flash new frag amount 
 
-    Local enums and data
+static constexpr int32_t AMMOX    = 60;     // (42 Center) X,Y coord of the ammo 
+static constexpr int32_t AMMOY    = 174;
+static constexpr int32_t HEALTHX  = 122;    // (93 Center) X,Y coord of health 
+static constexpr int32_t HEALTHY  = 174;
+static constexpr int32_t KEYX     = 124;    // X coord of the key cards
+static constexpr int32_t REDKEYY  = 163;    // Y coords of the key cards 
+static constexpr int32_t BLUKEYY  = 175;    
+static constexpr int32_t YELKEYY  = 187;
+static constexpr int32_t FACEX    = 144;    // X,Y of the face 
+static constexpr int32_t FACEY    = 165;
+static constexpr int32_t ARMORX   = 233;    // (204 Center) X,Y of the armor 
+static constexpr int32_t ARMORY   = 174;
+static constexpr int32_t MAPX     = 290;    // X,Y Area level 
+static constexpr int32_t MAPY     = 174;
 
-**********************************/
-
-#define FLASHDELAY (TICKSPERSEC/4)  // # of tics delay (1/60 sec) 
-#define FLASHTIMES 6    // # of times to flash new frag amount 
-
-#define AMMOX 60        // (42 Center) X,Y coord of the ammo 
-#define AMMOY 174
-
-#define HEALTHX 122     // (93 Center) X,Y coord of health 
-#define HEALTHY 174
-
-#define KEYX 124        // X coord of the key cards 
-#define REDKEYY 163     // Y coords of the key cards 
-#define BLUKEYY 175
-#define YELKEYY 187
-
-#define FACEX 144       // X,Y of the face 
-#define FACEY 165
-
-#define ARMORX 233      // (204 Center) X,Y of the armor 
-#define ARMORY 174
-
-#define MAPX 290    // X,Y Area level 
-#define MAPY 174
-
-#define NUMMICROS 6         // Amount of micro-sized #'s (weapon armed) 
-#define GODFACE 40          // God mode face 
-#define DEADFACE 41         // Dead face 
-#define FIRSTSPLAT 42       // First gibbed face 
-#define GIBTIME (TICKSPERSEC/6)         // Time for gibbed animation 
+static constexpr uint32_t NUMMICROS     = 6;                    // Amount of micro-sized #'s (weapon armed) 
+static constexpr uint32_t GODFACE       = 40;                   // God mode face 
+static constexpr uint32_t DEADFACE      = 41;                   // Dead face 
+static constexpr uint32_t FIRSTSPLAT    = 42;                   // First gibbed face 
+static constexpr uint32_t GIBTIME       = (TICKSPERSEC/6);      // Time for gibbed animation 
 
 // Shape group rSBARSHP
 enum {
@@ -80,16 +70,16 @@ static constexpr uint32_t SPECIAL_FACE_SPRITE[NUMSPCLFACES] = {
     sbf_mowdown
 };
 
-static constexpr uint32_t CARD_X[NUMCARDS] = { KEYX, KEYX, KEYX, KEYX + 3, KEYX + 3, KEYX + 3 };
-static constexpr uint32_t CARD_Y[NUMCARDS] = { BLUKEYY, YELKEYY, REDKEYY, BLUKEYY, YELKEYY, REDKEYY };
-static constexpr uint32_t MICRO_NUMS_X[NUMMICROS] = { 237, 249, 261, 237, 249, 261 };
-static constexpr uint32_t MICRO_NUMS_Y[NUMMICROS] = { 175, 175, 175, 185, 185, 185 };
+static constexpr int32_t CARD_X[NUMCARDS] = { KEYX, KEYX, KEYX, KEYX + 3, KEYX + 3, KEYX + 3 };
+static constexpr int32_t CARD_Y[NUMCARDS] = { BLUKEYY, YELKEYY, REDKEYY, BLUKEYY, YELKEYY, REDKEYY };
+static constexpr int32_t MICRO_NUMS_X[NUMMICROS] = { 237, 249, 261, 237, 249, 261 };
+static constexpr int32_t MICRO_NUMS_Y[NUMMICROS] = { 175, 175, 175, 185, 185, 185 };
 
-typedef struct {
+struct sbflash_t {
     uint32_t    delay;     // Time delay 
     uint32_t    times;     // Number of times to flash 
     bool        doDraw;    // True if I draw now 
-} sbflash_t;
+};
 
 stbar_t gStBar;      // Current state of the status bar 
 
@@ -158,9 +148,7 @@ void ST_Stop() noexcept {
     to draw the status bar.
 
 **********************************/
-
-void ST_Ticker()
-{
+void ST_Ticker() noexcept {
     uint32_t ind;
     sbflash_t *FlashPtr;
 
@@ -201,12 +189,8 @@ void ST_Ticker()
     } while (++ind<NUMCARDS);       // All scanned? 
 }
 
-/**********************************
 
-    Draw the status bar
-
-**********************************/
-
+// TODO: REIMPLEMENT FPS COUNT
 #define VBLTIMER 0
 
 #if VBLTIMER
@@ -215,63 +199,70 @@ static Word Frames;
 static Word CountVBL[TIMERSIZE];
 #endif
 
-void ST_Drawer()
-{
+
+/**********************************
+
+    Draw the status bar
+
+**********************************/
+void ST_Drawer() noexcept {
     uint32_t i;
     uint32_t ind;
     player_t *p;
     sbflash_t *FlashPtr;
 
-    DrawShape(0, 160, *gpStatusBarShape);   // Draw the status bar 
+    Renderer::drawUISprite(0, 160, *gpStatusBarShape);
 
-#if VBLTIMER
-    ++Frames;
-    if (Frames>=TIMERSIZE) {
-        Frames=0;
-    }
-    CountVBL[Frames]=ElapsedTime;
-    ind = 0;
-    i = 0;
-    do {
-        ind+=CountVBL[i];
-    } while (++i<TIMERSIZE);
-    ind = (60*TIMERSIZE)/ind;
+    // TODO: REIMPLEMENT FPS COUNT
+    #if VBLTIMER
+        ++Frames;
+        if (Frames>=TIMERSIZE) {
+            Frames=0;
+        }
+        CountVBL[Frames]=ElapsedTime;
+        ind = 0;
+        i = 0;
+        do {
+            ind+=CountVBL[i];
+        } while (++i<TIMERSIZE);
+        ind = (60*TIMERSIZE)/ind;
 
-    PrintNumber(100,80,ind,0);
-#endif
+        PrintNumber(100,80,ind,0);
+    #endif
     
     p = &gPlayers;
 
     // Ammo 
-
-    if (p->readyweapon != wp_nochange) {        // No weapon? 
+    if (p->readyweapon != wp_nochange) {                // No weapon? 
         ind = gWeaponAmmos[p->readyweapon];
-        if (ind != am_noammo) {     // No ammo needed? 
+        if (ind != am_noammo) {                         // No ammo needed? 
             i = p->ammo[ind];
-            PrintNumber(AMMOX,AMMOY,i,PNFLAGS_RIGHT);     // Draw ammo 
+            PrintNumber(AMMOX,AMMOY,i,PNFLAGS_RIGHT);   // Draw ammo 
         }
     }
-    PrintNumber(HEALTHX,HEALTHY,p->health,PNFLAGS_RIGHT|PNFLAGS_PERCENT);   // Draw the health 
-    PrintNumber(ARMORX,ARMORY,p->armorpoints,PNFLAGS_RIGHT|PNFLAGS_PERCENT);    // Draw armor 
-    PrintNumber(MAPX,MAPY,gGameMap,PNFLAGS_CENTER);        // Draw AREA 
+
+    PrintNumber(HEALTHX, HEALTHY, p->health, PNFLAGS_RIGHT|PNFLAGS_PERCENT);        // Draw the health 
+    PrintNumber(ARMORX, ARMORY, p->armorpoints, PNFLAGS_RIGHT|PNFLAGS_PERCENT);     // Draw armor 
+    PrintNumber(MAPX, MAPY, gGameMap, PNFLAGS_CENTER);                              // Draw AREA 
 
     // Cards & skulls
     ind = 0;
     FlashPtr = gFlashCards;
     do {
-        if (p->cards[ind] || FlashPtr->doDraw) {    // Flashing? 
-            DrawShape(CARD_X[ind], CARD_Y[ind], gpSBObj->getImage(sb_card_b + ind));
+        // Flashing?
+        if (p->cards[ind] || FlashPtr->doDraw) {
+            Renderer::drawUISprite(CARD_X[ind], CARD_Y[ind], gpSBObj->getImage(sb_card_b + ind));
         }
         ++FlashPtr;
-    } while (++ind<NUMCARDS);
+    } while (++ind < NUMCARDS);
 
     // Weapons
     ind = 0;
     do {
         if (p->weaponowned[ind+1]) {
-            DrawShape(MICRO_NUMS_X[ind], MICRO_NUMS_Y[ind], gpSBObj->getImage(sb_micro+ind));
+            Renderer::drawUISprite(MICRO_NUMS_X[ind], MICRO_NUMS_Y[ind], gpSBObj->getImage(sb_micro+ind));
         }
-    } while (++ind<NUMMICROS);
+    } while (++ind < NUMMICROS);
     
     // Face change
     if ((p->AutomapFlags & AF_GODMODE) || p->powers[pw_invulnerability]) {      // In god mode? 
@@ -306,8 +297,8 @@ void ST_Drawer()
         } else {
             i = 32; // Bad shape... 
         }
-        i = i+gNewFace;  // Get shape requested 
+        i = i + gNewFace;  // Get shape requested 
     }
     
-    DrawShape(FACEX, FACEY, gpFaces->getImage(i));  // Dead man 
+    Renderer::drawUISprite(FACEX, FACEY, gpFaces->getImage(i));     // Dead man 
 }
