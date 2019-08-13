@@ -376,16 +376,16 @@ void drawPlayerView() noexcept {
 }
 
 float LightParams::getLightMulForDist(const float dist) const noexcept {
-    const float distFactorLinear = std::fmax(dist - lightSub, 0.0f);
+    const float distFactorLinear = std::max(dist - lightSub, 0.0f);
     const float distFactorQuad = std::sqrtf(distFactorLinear);
     const float lightDiminish = distFactorQuad * lightCoef;
     
     float lightValue = 255.0f - lightDiminish;
-    lightValue = std::fmax(lightValue, lightMin);
-    lightValue = std::fmin(lightValue, lightMax);
+    lightValue = std::max(lightValue, lightMin);
+    lightValue = std::min(lightValue, lightMax);
 
     const float lightMul = lightValue * (1.0f / MAX_LIGHT_VALUE);
-    return std::fmax(lightMul, MIN_LIGHT_MUL);
+    return std::max(lightMul, MIN_LIGHT_MUL);
 }
 
 LightParams getLightParams(const uint32_t sectorLightLevel) noexcept {

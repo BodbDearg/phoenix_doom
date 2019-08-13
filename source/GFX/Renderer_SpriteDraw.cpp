@@ -389,7 +389,7 @@ static void emitFragmentsForSprite(const DrawSprite& sprite) noexcept {
             if constexpr (FLIP_MODE == SpriteFlipMode::FLIPPED) {
                 texXf = texW - std::max(texXStep * (float) curColNum + texSubPixelXAdjust, 0.5f);
             } else {
-                texXf = std::fmax(texXStep * (float) curColNum + texSubPixelXAdjust, 0.0f);
+                texXf = std::max(texXStep * (float) curColNum + texSubPixelXAdjust, 0.0f);
             }
         }
     }

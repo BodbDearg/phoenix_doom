@@ -115,10 +115,7 @@ uint32_t MiniLoop(
     // Init the joypad states
     gJoyPadButtons = gPrevJoyPadButtons = gNewJoyPadButtons = 0;
 
-    do {        
-        // FIXME: DC: Put this somewhere better
-        SDL_PumpEvents();
-
+    do {
         // FIXME: DC: TEMP - Move into a proper timing class
         uint32_t ticksLeftToSimulate;
 
@@ -142,6 +139,9 @@ uint32_t MiniLoop(
             }
         }
         
+        // FIXME: DC: Put this somewhere better
+        SDL_PumpEvents();
+
         // Simulate the required number of ticks
         while ((ticksLeftToSimulate > 0) && (exit == 0)) {
             ++gTotalGameTicks;          // Add to the VBL count

@@ -332,7 +332,7 @@ static void addClipSpaceZValuesForSeg(DrawSeg& drawSeg, const seg_t& seg) noexce
         drawSeg.p2bz_back = backFloorViewZ * gProjMatrix.r1c1;        
 
         // Whether to emit upper and lower wall occluders
-        const float clipFloorZ = std::fmax(frontFloorZ, backFloorZ);
+        const float clipFloorZ = std::max(frontFloorZ, backFloorZ);
 
         if (clipFloorZ < backCeilZ) {
             // Not a closed door, crusher etc.
