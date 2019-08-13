@@ -10,8 +10,8 @@
 
 // TODO: REMOVE EVENTUALLY, once high resolution support is properly implemented.
 // Define to enable a quick hack to test higher resolution rendering.
-#define HACK_TEST_HIGH_RES_RENDERING 1
-#define HACK_TEST_HIGH_RENDER_SCALE 3
+#define HACK_TEST_HIGH_RES_RENDERING 0
+#define HACK_TEST_HIGH_RENDER_SCALE 2
 
 struct CelImage;
 
