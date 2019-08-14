@@ -14,16 +14,22 @@ static SDL_Texture*    gFramebufferTexture;
 
 uint32_t* Video::gFrameBuffer;
 
+static void lockFramebufferTexture() noexcept {    
+    int pitch = 0;
+    if (SDL_LockTexture(gFramebufferTexture, nullptr, reinterpret_cast<void**>(&Video::gFrameBuffer), &pitch) != 0) {
+        FATAL_ERROR("Failed to lock the framebuffer texture for writing!");
+    }
+}
+
+static void unlockFramebufferTexture() noexcept {
+    SDL_UnlockTexture(gFramebufferTexture);
+}
+
 void Video::init() noexcept {
+    // Initialize SDL subsystems
     if (SDL_InitSubSystem(SDL_INIT_VIDEO) != 0) {
         FATAL_ERROR("Unable to initialize SDL!");
-    }
-    
-    Uint32 windowCreateFlags = 0;
-    
-    #ifndef __MACOSX__
-        windowCreateFlags |= SDL_WINDOW_OPENGL;
-    #endif
+    }  
 
     // TODO: TEMP
     uint32_t PRESENT_MAGNIFY;
@@ -32,6 +38,13 @@ void Video::init() noexcept {
         PRESENT_MAGNIFY = std::max(1440u / (200u * HACK_TEST_HIGH_RENDER_SCALE), 1u);
     #else
         PRESENT_MAGNIFY = 6;
+    #endif
+
+    // Create the window
+    Uint32 windowCreateFlags = 0;
+    
+    #ifndef __MACOSX__
+        windowCreateFlags |= SDL_WINDOW_OPENGL;
     #endif
 
     gWindow = SDL_CreateWindow(
@@ -47,25 +60,17 @@ void Video::init() noexcept {
         FATAL_ERROR("Unable to create a window!");
     }
 
+    // Create the renderer and framebuffer texture
     gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-    const uint32_t framebufferSize = SCREEN_WIDTH * SCREEN_WIDTH * sizeof(uint32_t);
-    gFrameBuffer = (uint32_t*) MemAlloc(framebufferSize);
     
     if (!gRenderer) {
         FATAL_ERROR("Failed to create renderer!");
     }
-    
-    int textureAccessMode = SDL_TEXTUREACCESS_STREAMING;
-    
-    #ifdef __MACOSX__
-        // Streaming doesn't work for the Metal backend currently!
-        textureAccessMode = SDL_TEXTUREACCESS_STATIC;
-    #endif
 
     gFramebufferTexture = SDL_CreateTexture(
         gRenderer,
-        SDL_PIXELFORMAT_RGBA8888,
-        textureAccessMode,
+        SDL_PIXELFORMAT_ARGB8888,
+        SDL_TEXTUREACCESS_STREAMING,
         SCREEN_WIDTH,
         SCREEN_HEIGHT
     );
@@ -73,6 +78,9 @@ void Video::init() noexcept {
     if (!gFramebufferTexture) {
         FATAL_ERROR("Failed to create a framebuffer texture!");
     }
+
+    // Immediately lock the framebuffer texture for updating
+    lockFramebufferTexture();
 }
 
 void Video::shutdown() noexcept {
@@ -88,7 +96,7 @@ void Video::shutdown() noexcept {
 void Video::debugClear() noexcept {
     // Clear the framebuffer to pink to spot rendering gaps
     #if ASSERTS_ENABLED
-        const uint32_t pinkU32 = 0xFF00FFFF;
+        const uint32_t pinkU32 = 0x00FF00FF;
         uint32_t* pPixel = gFrameBuffer;
         uint32_t* const pEndPixel = gFrameBuffer + (SCREEN_WIDTH * SCREEN_HEIGHT);
 
@@ -100,7 +108,8 @@ void Video::debugClear() noexcept {
 }
 
 void Video::present() noexcept {
-    SDL_UpdateTexture(gFramebufferTexture, NULL, gFrameBuffer, SCREEN_WIDTH * sizeof(uint32_t));    
+    unlockFramebufferTexture();
     SDL_RenderCopy(gRenderer, gFramebufferTexture, NULL, NULL);
     SDL_RenderPresent(gRenderer);
+    lockFramebufferTexture();
 }

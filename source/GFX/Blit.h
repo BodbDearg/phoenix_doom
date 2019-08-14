@@ -112,7 +112,7 @@ namespace Blit {
     }
 
     //------------------------------------------------------------------------------------------------------------------
-    // Blits a column of pixels from the given source image in ARGB1555 format to the destination in RGBA8888 format.
+    // Blits a column of pixels from the given source image in ARGB1555 format to the destination in ARGB8888 format.
     // Optionally, alpha testing and blending can be applied.
     //
     // Notes:
@@ -428,9 +428,9 @@ namespace Blit {
                 if constexpr (DO_ALPHA_BLEND) {
                     // Read the destination pixel RGBA and convert to 0-255 float
                     const uint32_t dstPixelRGBA8888 = *pDstPixel;
-                    const float dstR = (float)((uint8_t)(dstPixelRGBA8888 >> 24));
-                    const float dstG = (float)((uint8_t)(dstPixelRGBA8888 >> 16));
-                    const float dstB = (float)((uint8_t)(dstPixelRGBA8888 >> 8));
+                    const float dstR = (float)((uint8_t)(dstPixelRGBA8888 >> 16));
+                    const float dstG = (float)((uint8_t)(dstPixelRGBA8888 >> 8));
+                    const float dstB = (float)((uint8_t)(dstPixelRGBA8888));
 
                     // Source and destination blend factors
                     const float srcFactor = a;
@@ -444,9 +444,9 @@ namespace Blit {
 
                 // Write out the pixel value
                 *pDstPixel = (
-                    (uint32_t(r) << 24) |
-                    (uint32_t(g) << 16) |
-                    (uint32_t(b) << 8)
+                    (uint32_t(r) << 16) |
+                    (uint32_t(g) << 8) |
+                    (uint32_t(b))
                 );
             } while (false);    // Dummy loop to allow break out due to alpha test cull, or wrap discard cull!
 

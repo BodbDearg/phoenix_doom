@@ -179,9 +179,9 @@ static inline void drawFlatColumn(const FlatFragment flatFrag) noexcept {
 
         // Write out the pixel value
         *pDstPixel = (
-            (uint32_t(r) << 24) |
-            (uint32_t(g) << 16) |
-            (uint32_t(b) << 8)
+            (uint32_t(r) << 16) |
+            (uint32_t(g) << 8) |
+            (uint32_t(b))
         );
 
         // Move onto the next pixel

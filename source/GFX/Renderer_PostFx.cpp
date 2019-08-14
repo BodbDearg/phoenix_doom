@@ -19,7 +19,7 @@ static void doInvulnerabilityEffect() noexcept {
 
         while (pPixel < pEndPixel) {
             const uint32_t color = *pPixel;
-            *pPixel = (~color) | 0x000000FF;
+            *pPixel = (~color) & 0x00FFFFFFu;
             ++pPixel;
         }
     }
@@ -50,9 +50,9 @@ static void doTintEffect(const uint32_t r5, const uint32_t g5, const uint32_t b5
         while (pPixel < pEndPixel) {
             // Get the old colors from 0-1
             const uint32_t color = *pPixel;
-            const Fixed oldRFrac = intToFixed(color >> 24);
-            const Fixed oldGFrac = intToFixed((color >> 16) & 0xFFu);
-            const Fixed oldBFrac = intToFixed((color >> 8) & 0xFFu);
+            const Fixed oldRFrac = intToFixed((color >> 16) & 0xFFu);
+            const Fixed oldGFrac = intToFixed((color >> 8) & 0xFFu);
+            const Fixed oldBFrac = intToFixed(color & 0xFFu);
 
             // Modulate and clamp
             const Fixed rFrac = std::min(fixedMul(oldRFrac, rMul), 255 * FRACUNIT);
@@ -61,10 +61,9 @@ static void doTintEffect(const uint32_t r5, const uint32_t g5, const uint32_t b5
 
             // Make a framebuffer color
             const uint32_t finalColor = (
-                ((uint32_t) fixedToInt(rFrac) << 24) |
-                ((uint32_t) fixedToInt(gFrac) << 16) |
-                ((uint32_t) fixedToInt(bFrac) << 8) |
-                0x000000FFu
+                ((uint32_t) fixedToInt(rFrac) << 16) |
+                ((uint32_t) fixedToInt(gFrac) << 8) |
+                ((uint32_t) fixedToInt(bFrac))
             );
 
             *pPixel = finalColor;

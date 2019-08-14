@@ -47,14 +47,14 @@ namespace Video {
 
     //------------------------------------------------------------------------------------------------------------------
     // Makes a framebuffer color from the given RGBA5551 color value.
+    // Note: the alpha component is ignored.
     //------------------------------------------------------------------------------------------------------------------
     inline uint32_t rgba5551ToScreenCol(const uint16_t color) noexcept {
         const uint32_t r5 = (color & 0b0111110000000000) >> 10;
         const uint32_t g5 = (color & 0b0000001111100000) >> 5;
         const uint32_t b5 = (color & 0b0000000000011111) >> 0;
-        const uint32_t a8 = (color & 1) ? uint32_t(0xFF) : uint32_t(0x00);
 
-        const uint32_t fbCol = ((r5 << 27) | (g5 << 19) | (b5 << 11) | a8);
+        const uint32_t fbCol = (r5 << 19) | (g5 << 11) | (b5 << 3);
         return fbCol;
     }
 }
