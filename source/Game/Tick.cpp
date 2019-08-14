@@ -24,6 +24,10 @@
 #include "UI/Options_Main.h"
 #include "UI/StatusBar_Main.h"
 #include <cstring>
+#include <SDL.h>
+
+// Define to profile rendering (outputs to console)
+#define PROFILE_RENDER 1
 
 struct thinker_t {
     thinker_t* next;
@@ -267,6 +271,11 @@ uint32_t P_Ticker()
 // Draw current display
 //--------------------------------------------------------------------------------------------------
 void P_Drawer() {
+    #if PROFILE_RENDER
+        const uint64_t clocksPerSecond = SDL_GetPerformanceFrequency();
+        const uint64_t drawStartClock = SDL_GetPerformanceCounter();
+    #endif
+
     if (gGamePaused && gRefreshDrawn) {
         DrawPlaque(rPAUSED);            // Draw 'Paused' plaque
         Video::present();
@@ -289,6 +298,13 @@ void P_Drawer() {
         Video::present();               // Only allow debug clear if we are not going into pause mode
         gRefreshDrawn = true;
     }
+
+    #if PROFILE_RENDER
+        const uint64_t drawEndClock = SDL_GetPerformanceCounter();
+        const uint64_t drawClockCount = drawEndClock - drawStartClock;
+        const double drawTime = (double) drawClockCount / (double) clocksPerSecond;
+        std::printf("Draw time: %f seconds, %zu clock ticks\n", drawTime, (size_t) drawClockCount);
+    #endif
 }
 
 //--------------------------------------------------------------------------------------------------
