@@ -11,6 +11,11 @@ struct pspdef_t;
 typedef void (*PspActionFunc)(player_t*, pspdef_t*);
 typedef void (*MObjActionFunc)(mobj_t*);
 
+// Constants relating to the sprite frame field in a state structure
+static constexpr uint32_t FF_FULLBRIGHT     = 0x00000100u;      // If set on then the sprite should be rendered at full brightness
+static constexpr uint32_t FF_FRAMEMASK      = 0x000000FFu;      // Mask to extract the actual frame number (upper 16-bits is resource num)
+static constexpr uint32_t FF_SPRITESHIFT    = 16;               // Bits to shift to get the actual sprite resource number
+
 // An actor's state
 struct state_t {    
     uint32_t SpriteFrame;   // Which sprite to display?
@@ -51,12 +56,19 @@ struct state_t {
         , nextstate(nextstate)
     {
     }
-};
 
-// Constants relating to the sprite frame field in a state structure
-static constexpr uint32_t FF_FULLBRIGHT     = 0x00000100u;      // If set on then the sprite should be rendered at full brightness
-static constexpr uint32_t FF_FRAMEMASK      = 0x000000FFu;      // Mask to extract the actual frame number (upper 16-bits is resource num)
-static constexpr uint32_t FF_SPRITESHIFT    = 16;               // Bits to shift to get the actual sprite resource number
+    // Helper to extract the various bits of info in a 'sprite frame' field on an state struct
+    static void decomposeSpriteFrameFieldComponents(
+        const uint32_t spriteFrame,
+        uint32_t& resourceNum,
+        uint32_t& frameNum,
+        bool& isFullBright
+    ) noexcept {
+        resourceNum = spriteFrame >> FF_SPRITESHIFT;
+        frameNum = spriteFrame & FF_FRAMEMASK;
+        isFullBright = ((spriteFrame & FF_FULLBRIGHT) != 0);
+    }
+};
 
 // Describe an actor's basic variables
 struct mobjinfo_t {

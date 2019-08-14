@@ -24,6 +24,8 @@ extern uint32_t     gScreenWidth;                       // Width of the view scr
 extern uint32_t     gScreenHeight;                      // Height of the view screen
 extern uint32_t     gScreenXOffset;                     // True X coord for projected screen
 extern uint32_t     gScreenYOffset;                     // True Y coord for projected screen
+extern float        gScaleFactor;                       // Ratio of current resolution over original 320x200 resolution
+extern float        gInvScaleFactor;                    // Reciprocal ratio of current resolution over original 320x200 resolution
 extern float        gGunXScale;                         // Scale factor for player's weapon for X
 extern float        gGunYScale;                         // Scale factor for player's weapon for Y
 extern float        gLightMins[256];                    // Minimum light factors

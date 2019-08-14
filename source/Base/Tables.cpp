@@ -2073,6 +2073,8 @@ uint32_t    gScreenWidth;
 uint32_t    gScreenHeight;
 uint32_t    gScreenXOffset;
 uint32_t    gScreenYOffset;
+float       gScaleFactor;
+float       gInvScaleFactor;
 float       gGunXScale;
 float       gGunYScale;
 float       gLightMins[256];

@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-void F_Start();
-void F_Stop();
-uint32_t F_Ticker();
-void F_Drawer();
+void F_Start() noexcept;
+void F_Stop() noexcept;
+uint32_t F_Ticker() noexcept;
+void F_Drawer() noexcept;

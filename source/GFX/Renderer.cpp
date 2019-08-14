@@ -48,8 +48,6 @@ BEGIN_NAMESPACE(Renderer)
 //----------------------------------------------------------------------------------------------------------------------
 // Internal renderer cross module globals
 //----------------------------------------------------------------------------------------------------------------------
-float                           gScaleFactor;
-float                           gInvScaleFactor;
 Fixed                           gViewXFrac;
 Fixed                           gViewYFrac;
 Fixed                           gViewZFrac;

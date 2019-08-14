@@ -7,7 +7,6 @@ TODO
 - Fix BSP check BBOX for high res rendering
 - Only mark a seg as seen if one column of it draws
 - Screen wipes
-- Finale drawing
 - Cleanup and optimize render code
 - Intro logos
 - Intro videos? (maybe)
@@ -33,18 +32,10 @@ TODO
 - Fix lost souls jumping UP suddenly when starting to fly
 - Crash sometimes on reading textures
 - Crash sometimes on thing 'check height' (seems to happen sometimes on level 2, at lift to viewing room opposite chainsaw)
-
-------------------------------------------------------------------------------------------------------------------------
-Possible original 3DO or PC Doom bugs:
-------------------------------------------------------------------------------------------------------------------------
-
-- Wall sliding sometimes 'sticking' (may be original Doom behavior - investigate)
-Bug happens in courtyard area beyond the yellow door (courtyard with red key).
-- Investigate sprites poking through walls bug (visible on level 7 shotgun at start)
+- Allow exit out of finale back to main menu
 
 ------------------------------------------------------------------------------------------------------------------------
 Known issues: document
 ------------------------------------------------------------------------------------------------------------------------
 
-- Bug with bottom of sprites rendering past walls (1 or 2px more than we should have?) (found on PC version also, seems to be just a Doom Engine thing)
 - Issue on level 10 with small crate textures (found this in 3DO version - data problem?)

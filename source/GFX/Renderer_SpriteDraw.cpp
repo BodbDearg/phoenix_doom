@@ -90,8 +90,16 @@ void getSpriteDetailsForMapObj(
 ) noexcept {
     // Figure out the sprite that we want
     const state_t* const pStatePtr = thing.state;
-    const uint32_t spriteResourceNum = pStatePtr->SpriteFrame >> FF_SPRITESHIFT;
-    const uint32_t spriteFrameNum = pStatePtr->SpriteFrame & FF_FRAMEMASK;
+
+    uint32_t spriteResourceNum;
+    uint32_t spriteFrameNum;
+    state_t::decomposeSpriteFrameFieldComponents(
+        pStatePtr->SpriteFrame,
+        spriteResourceNum,
+        spriteFrameNum,
+        bIsSpriteFullBright
+    );
+
     const uint8_t spriteAngle = getThingSpriteAngleForViewpoint(thing, viewXFrac, viewYFrac);
     
     // Load the current sprite for the thing and then the frame angle we want
@@ -103,7 +111,6 @@ void getSpriteDetailsForMapObj(
     pSpriteFrameAngle = &pSpriteFrame->angles[spriteAngle];
 
     // Figure out other sprite flags
-    bIsSpriteFullBright = ((pStatePtr->SpriteFrame & FF_FULLBRIGHT) != 0);
     bIsSpriteTransparent = ((thing.flags & MF_SHADOW) != 0);
 }
 

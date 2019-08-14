@@ -271,9 +271,7 @@ namespace Renderer {
     //==================================================================================================================
     // Globals shared throughout the renderer - defined in Renderer.cpp
     //==================================================================================================================
-   
-    extern float                            gScaleFactor;                       // Ratio of current resolution over original 320x200 resolution
-    extern float                            gInvScaleFactor;                    // Reciprocal ratio of current resolution over original 320x200 resolution
+    
     extern Fixed                            gViewXFrac;                         // Camera x,y,z
     extern Fixed                            gViewYFrac;
     extern Fixed                            gViewZFrac;
