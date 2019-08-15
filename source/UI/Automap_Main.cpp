@@ -1,5 +1,6 @@
 #include "Automap_Main.h"
 
+#include "Base/Input.h"
 #include "Base/Tables.h"
 #include "Burger.h"
 #include "Game/Data.h"
@@ -9,9 +10,6 @@
 #include "Things/MapObj.h"
 #include "ThreeDO.h"
 #include <cstring>
-
-// FIXME: TEMP!
-#include <SDL.h>
 
 static constexpr Fixed STEPVALUE    = (2 << FRACBITS);      // Speed to move around in the map (Fixed) For non-follow mode
 static constexpr Fixed MAXSCALES    = 0x10000;              // Maximum scale factor (Largest)
@@ -116,25 +114,19 @@ void AM_Start() noexcept {
 // Pass to me all the new joypad downs.
 //--------------------------------------------------------------------------------------------------
 static cheat_e AM_CheckCheat(uint32_t NewButtons) noexcept {
-    // FIXME: temp cheats - DC
-    SDL_PumpEvents();
-    static Uint8 oldKBState[SDL_NUM_SCANCODES] = {};
-    const Uint8* kbState = SDL_GetKeyboardState(NULL);
-    #define WAS_JUST_RELEASED(Key) ((kbState[(Key)] == SDL_RELEASED) && (oldKBState[(Key)] == SDL_PRESSED))
-
+    // FIXME: DC - TEMP
     cheat_e cheat = ch_maxcheats;
 
-    if (WAS_JUST_RELEASED(SDL_SCANCODE_F1)) {
+    if (Input::isKeyJustPressed(SDL_SCANCODE_F1)) {
         cheat = cheat_e::ch_godmode;
     }
-    else if (WAS_JUST_RELEASED(SDL_SCANCODE_F2)) {
+    else if (Input::isKeyJustPressed(SDL_SCANCODE_F2)) {
         cheat = cheat_e::ch_idkfa;
     }
-    else if (WAS_JUST_RELEASED(SDL_SCANCODE_F3)) {
+    else if (Input::isKeyJustPressed(SDL_SCANCODE_F3)) {
         cheat = cheat_e::ch_noclip;
     }
 
-    std::memcpy(oldKBState, kbState, sizeof(Uint8) * SDL_NUM_SCANCODES);
     return cheat;
 
     // FIMXE: DC: Replace/remove
@@ -184,7 +176,7 @@ static cheat_e AM_CheckCheat(uint32_t NewButtons) noexcept {
 static void ClipPixel(const uint32_t x, const uint32_t y, const uint16_t color) noexcept {
     if (x < 320 && y < 160) {   // On the screen?
         const uint32_t color32 = Video::rgba5551ToScreenCol(color);
-        Video::gFrameBuffer[y * Video::SCREEN_WIDTH + x] = color32;
+        Video::gpFrameBuffer[y * Video::SCREEN_WIDTH + x] = color32;
     }
 }
 

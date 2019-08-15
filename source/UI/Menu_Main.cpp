@@ -52,9 +52,7 @@ static uint32_t gOptionActive;
     Init memory needed for the main game menu
 
 **********************************/
-
-void M_Start(void)
-{
+void M_Start() noexcept {
     gCursorCount = 0;               // Init the animation timer 
     gCursorFrame = 0;               // Init the animation frame 
     gCursorPos = 0;                 // Topmost y position 
@@ -69,9 +67,7 @@ void M_Start(void)
     Release memory used by the main menu
 
 **********************************/
-
-void M_Stop(void)
-{
+void M_Stop() noexcept {
     WritePrefsFile();       // Save the current prefs 
 }
 
@@ -80,9 +76,7 @@ void M_Stop(void)
     Execute every tick
 
 **********************************/
-
-uint32_t M_Ticker(void)
-{
+gameaction_e M_Ticker() noexcept {
     uint32_t buttons;
 
     buttons = gJoyPadButtons;    // Get the joypad buttons 
@@ -181,12 +175,12 @@ uint32_t M_Ticker(void)
 //--------------------------------------------------------------------------------------------------
 // Draw the main menu
 //--------------------------------------------------------------------------------------------------
-void M_Drawer() {
+void M_Drawer(const bool bSaveFrameBuffer) noexcept {
     Video::debugClear();
     Renderer::drawUISprite(0, 0, rMAINDOOM);
     
     if (gOptionActive) {
-        O_Drawer();
+        O_Drawer(bSaveFrameBuffer);
     } 
     else {    
         const CelImageArray& shapes = CelImages::loadImages(rMAINMENU, CelImages::LoadFlagBits::MASKED);    // Load shape group
@@ -207,6 +201,6 @@ void M_Drawer() {
         // Draw the options screen
         PrintBigFont(CURSORX + 24, OPTIONSY, "Options Menu");
         CelImages::releaseImages(rMAINMENU);
-        Video::present();
+        Video::present(bSaveFrameBuffer);
     }
 }

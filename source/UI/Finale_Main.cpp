@@ -132,7 +132,7 @@ static void DrawActorCentered(const state_t& actorState) noexcept {
             0.0f,
             0.0f,
             0.0f,
-            Video::gFrameBuffer,
+            Video::gpFrameBuffer,
             Video::SCREEN_WIDTH,
             Video::SCREEN_HEIGHT,
             Video::SCREEN_WIDTH,
@@ -220,7 +220,7 @@ void F_Stop() noexcept {
 //----------------------------------------------------------------------------------------------------------------------
 // Handle joypad input etc.
 //----------------------------------------------------------------------------------------------------------------------
-uint32_t F_Ticker() noexcept {
+gameaction_e F_Ticker() noexcept {
     // Check for press a key to kill actor 
     if (gStatus == fin_endtext) {   // Am I printing text? 
         if ((gNewJoyPadButtons & (PadA|PadB|PadC)) != 0 && (gTotalGameTicks >= (3 * TICKSPERSEC))) {
@@ -327,7 +327,7 @@ uint32_t F_Ticker() noexcept {
 //----------------------------------------------------------------------------------------------------------------------
 // Draw the frame for the finale
 //----------------------------------------------------------------------------------------------------------------------
-void F_Drawer() noexcept {
+void F_Drawer(const bool bSaveFrameBuffer) noexcept {
     Video::debugClear();
     Renderer::drawUISprite(0, 0, rBACKGRNDBROWN);       // Draw the background 
     
@@ -354,5 +354,5 @@ void F_Drawer() noexcept {
         PrintBigFontCenter(160, 20, CAST_NAMES[gCastNum]);      // Print the name
     }
 
-    Video::present();   // Show the frame
+    Video::present(bSaveFrameBuffer);   // Show the frame
 }

@@ -15,7 +15,8 @@ enum gameaction_e : uint8_t {
     ga_completed,
     ga_secretexit,
     ga_warped,
-    ga_exitdemo
+    ga_exitdemo,
+    ga_quit
 };
 
 // Skill level settings

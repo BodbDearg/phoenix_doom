@@ -1,13 +1,13 @@
 #include "Burger.h"
 
 #include "Base/Endian.h"
+#include "Base/Input.h"
 #include "Game/Resources.h"
 #include "GFX/Blit.h"
 #include "GFX/CelImages.h"
 #include "GFX/Renderer.h"
 #include "GFX/Video.h"
 #include <cstddef>
-#include <SDL.h>
 
 // DC: 3DO specific headers - remove
 #if 0
@@ -65,74 +65,62 @@ uint32_t ReadJoyButtons(uint32_t PadNum) noexcept
 {
     // DC: FIXME: TEMP
     uint32_t buttons = 0;
-    const Uint8 *state = SDL_GetKeyboardState(NULL);
 
-    if (state[SDL_SCANCODE_UP]) {
+    if (Input::isKeyPressed(SDL_SCANCODE_UP)) {
         buttons |= PadUp;
     }
 
-    if (state[SDL_SCANCODE_DOWN]) {
+    if (Input::isKeyPressed(SDL_SCANCODE_DOWN)) {
         buttons |= PadDown;
     }
 
-    if (state[SDL_SCANCODE_LEFT]) {
+    if (Input::isKeyPressed(SDL_SCANCODE_LEFT)) {
         buttons |= PadLeft;
     }
 
-    if (state[SDL_SCANCODE_RIGHT]) {
+    if (Input::isKeyPressed(SDL_SCANCODE_RIGHT)) {
         buttons |= PadRight;
     }
 
-    if (state[SDL_SCANCODE_A]) {
+    if (Input::isKeyPressed(SDL_SCANCODE_A)) {
         buttons |= PadA;
     }
 
-    if (state[SDL_SCANCODE_S]) {
+    if (Input::isKeyPressed(SDL_SCANCODE_S)) {
         buttons |= PadB;
     }
 
-    if (state[SDL_SCANCODE_D]) {
+    if (Input::isKeyPressed(SDL_SCANCODE_D)) {
         buttons |= PadC;
     }
 
-    if (state[SDL_SCANCODE_Z]) {
+    if (Input::isKeyPressed(SDL_SCANCODE_Z)) {
         buttons |= PadX;
     }
 
-    if (state[SDL_SCANCODE_X]) {
+    if (Input::isKeyPressed(SDL_SCANCODE_X)) {
         buttons |= PadStart;
     }
 
-    if (state[SDL_SCANCODE_Q]) {
+    if (Input::isKeyPressed(SDL_SCANCODE_Q)) {
         buttons |= PadLeftShift;
     }
 
-    if (state[SDL_SCANCODE_E]) {
+    if (Input::isKeyPressed(SDL_SCANCODE_E)) {
         buttons |= PadRightShift;
     }
 
     #if ENABLE_DEBUG_CAMERA_Z_MOVEMENT
-        if (state[SDL_SCANCODE_PAGEUP]) {
+        if (Input::isKeyPressed(SDL_SCANCODE_PAGEUP)) {
             Renderer::gDebugCameraZOffset += 1.0f;
         }
 
-        if (state[SDL_SCANCODE_PAGEDOWN]) {
+        if (Input::isKeyPressed(SDL_SCANCODE_PAGEDOWN)) {
             Renderer::gDebugCameraZOffset -= 1.0f;
         }
     #endif
 
-    return buttons;    
-
-    // DC: FIXME: reimplement or replace
-    #if 0
-        ControlPadEventData ControlRec;
-
-        GetControlPad(PadNum+1,FALSE,&ControlRec);      // Read joypad 
-        if (PadNum<4) {
-            LastJoyButtons[PadNum] = (Word)ControlRec.cped_ButtonBits;
-        }
-        return (Word)ControlRec.cped_ButtonBits;        // Return the data 
-    #endif
+    return buttons;
 }
 
 /******************************
@@ -261,7 +249,7 @@ void DrawARect(const uint32_t x, const uint32_t y, const uint32_t width, const u
     const uint32_t yEnd = std::min(y + height, Video::SCREEN_HEIGHT);
 
     // Fill the color
-    uint32_t* pRow = Video::gFrameBuffer + x + (y * Video::SCREEN_WIDTH);
+    uint32_t* pRow = Video::gpFrameBuffer + x + (y * Video::SCREEN_WIDTH);
 
     for (uint32_t yCur = y; yCur < yEnd; ++yCur) {
         uint32_t* pPixel = pRow;

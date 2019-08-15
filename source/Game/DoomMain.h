@@ -2,13 +2,25 @@
 
 #include "Base/Fixed.h"
 
+enum gameaction_e : uint8_t;
+
+// TODO: MOVE ELSEWHERE
 void AddToBox(Fixed* box, Fixed x, Fixed y);
 
-uint32_t MiniLoop(
-    void (*start)(),
-    void (*stop)(),
-    uint32_t (*ticker)(),
-    void (*drawer)()
-);
+// Function types for the game mini loop
+typedef void (*GameLoopStartFunc)() noexcept;
+typedef void (*GameLoopStopFunc)() noexcept;
+typedef gameaction_e (*GameLoopTickFunc)() noexcept;
+typedef void (*GameLoopDrawFunc)(const bool bSaveFrameBuffer) noexcept;
+
+// Used for running one screen or section of the game.
+// Runs a game loop with start, stop, update and draw functions.
+// Certain stuff like ticking at the right rate, user inputs etc. are handled by the loop.
+gameaction_e MiniLoop(
+    const GameLoopStartFunc start,
+    const GameLoopStopFunc stop,
+    const GameLoopTickFunc ticker,
+    const GameLoopDrawFunc drawer
+) noexcept;
 
 void D_DoomMain();

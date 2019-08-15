@@ -14,7 +14,7 @@ static void doInvulnerabilityEffect() noexcept {
 
     for (uint32_t y = 0; y <= screenH; ++y) {
         // Process this row of pixels and invert RGB values
-        uint32_t* pPixel = &Video::gFrameBuffer[gScreenXOffset + (gScreenYOffset + y) * Video::SCREEN_WIDTH];
+        uint32_t* pPixel = &Video::gpFrameBuffer[gScreenXOffset + (gScreenYOffset + y) * Video::SCREEN_WIDTH];
         uint32_t* const pEndPixel = pPixel + gScreenWidth;
 
         while (pPixel < pEndPixel) {
@@ -44,7 +44,7 @@ static void doTintEffect(const uint32_t r5, const uint32_t g5, const uint32_t b5
 
     for (uint32_t y = 0; y <= screenH; ++y) {
         // Process this row of pixels
-        uint32_t* pPixel = &Video::gFrameBuffer[gScreenXOffset + (gScreenYOffset + y) * Video::SCREEN_WIDTH];
+        uint32_t* pPixel = &Video::gpFrameBuffer[gScreenXOffset + (gScreenYOffset + y) * Video::SCREEN_WIDTH];
         uint32_t* const pEndPixel = pPixel + gScreenWidth;
 
         while (pPixel < pEndPixel) {

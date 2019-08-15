@@ -206,9 +206,7 @@ static void CheckCheats()
     Code that gets executed every game frame
 
 **********************************/
-
-uint32_t P_Ticker()
-{
+gameaction_e P_Ticker() noexcept {
     player_t *pl;
 
     // wait for refresh to latch all needed data before
@@ -270,7 +268,7 @@ uint32_t P_Ticker()
 //--------------------------------------------------------------------------------------------------
 // Draw current display
 //--------------------------------------------------------------------------------------------------
-void P_Drawer() {
+void P_Drawer(const bool bSaveFrameBuffer) noexcept {
     #if PROFILE_RENDER
         const uint64_t clocksPerSecond = SDL_GetPerformanceFrequency();
         const uint64_t drawStartClock = SDL_GetPerformanceCounter();
@@ -278,24 +276,24 @@ void P_Drawer() {
 
     if (gGamePaused && gRefreshDrawn) {
         DrawPlaque(rPAUSED);            // Draw 'Paused' plaque
-        Video::present();
+        Video::present(bSaveFrameBuffer);
     } else if (gPlayers.AutomapFlags & AF_OPTIONSACTIVE) {
         Video::debugClear();
         Renderer::drawPlayerView();     // Render the 3D view
         ST_Drawer();                    // Draw the status bar
-        O_Drawer();                     // Draw the console handler
+        O_Drawer(bSaveFrameBuffer);     // Draw the console handler
         gRefreshDrawn = false;
     } else if (gPlayers.AutomapFlags & AF_ACTIVE) {
         Video::debugClear();
-        AM_Drawer();                // Draw the automap
-        ST_Drawer();                // Draw the status bar
-        Video::present();           // Update and page flip
+        AM_Drawer();                        // Draw the automap
+        ST_Drawer();                        // Draw the status bar
+        Video::present(bSaveFrameBuffer);   // Update and page flip
         gRefreshDrawn = true;
     } else {
         Video::debugClear();
-        Renderer::drawPlayerView();     // Render the 3D view
-        ST_Drawer();                    // Draw the status bar
-        Video::present();               // Only allow debug clear if we are not going into pause mode
+        Renderer::drawPlayerView();         // Render the 3D view
+        ST_Drawer();                        // Draw the status bar
+        Video::present(bSaveFrameBuffer);   // Only allow debug clear if we are not going into pause mode
         gRefreshDrawn = true;
     }
 
@@ -310,7 +308,7 @@ void P_Drawer() {
 //--------------------------------------------------------------------------------------------------
 // Start a game
 //--------------------------------------------------------------------------------------------------
-void P_Start() {
+void P_Start() noexcept {
     gTimeMark1 = 0;  // Init the static timers
     gTimeMark2 = 0;
     gTimeMark4 = 0;
@@ -327,7 +325,7 @@ void P_Start() {
 //--------------------------------------------------------------------------------------------------
 // Shut down a game
 //--------------------------------------------------------------------------------------------------
-void P_Stop() {
+void P_Stop() noexcept {
     S_StopSong();
     ST_Stop();              // Release the status bar memory
     ReleaseMapMemory();     // Release all the map's memory

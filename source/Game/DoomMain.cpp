@@ -2,6 +2,7 @@
 
 #include "Audio/Sound.h"
 #include "Audio/Sounds.h"
+#include "Base/Input.h"
 #include "Burger.h"
 #include "Data.h"
 #include "DoomDefines.h"
@@ -17,9 +18,6 @@
 #include "UI/Menu_Main.h"
 #include "UI/Options_Main.h"
 #include <thread>
-
-// FIXME: DC: TEMP - REMOVE
-#include <SDL.h>
 
 //----------------------------------------------------------------------------------------------------------------------
 // Grow a box if needed to encompass a point
@@ -97,20 +95,21 @@ static uint32_t GetDemoCmd() {
 //----------------------------------------------------------------------------------------------------------------------
 // Main loop processing for the game system
 //----------------------------------------------------------------------------------------------------------------------
-uint32_t MiniLoop(
-    void (*start)(),
-    void (*stop)(),
-    uint32_t (*ticker)(),
-    void (*drawer)()
-)
-{
+gameaction_e MiniLoop(
+    const GameLoopStartFunc start,
+    const GameLoopStopFunc stop,
+    const GameLoopTickFunc ticker,
+    const GameLoopDrawFunc drawer
+) noexcept {
+    ASSERT(start && stop && ticker && drawer);
+
     // Setup (cache graphics,etc)
     gDoWipe = true;
     TickCounter::init();
-    start();                        // Prepare the background task (Load data etc.)
-    uint32_t exit = 0;              // I am running
-    gGameAction = ga_nothing;       // Game is not in progress
-    gTotalGameTicks = 0;            // No vbls processed during game
+    start();                                    // Prepare the background task (Load data etc.)
+    gameaction_e nextGameAction = ga_nothing;   // I am running
+    gGameAction = ga_nothing;                   // Game is not in progress
+    gTotalGameTicks = 0;                        // No vbls processed during game
 
     // Init the joypad states
     gJoyPadButtons = gPrevJoyPadButtons = gNewJoyPadButtons = 0;
@@ -124,14 +123,20 @@ uint32_t MiniLoop(
             continue;
         }
         
-        // FIXME: DC: Put this somewhere better
-        SDL_PumpEvents();
+        // Update input and if a quit was requested then exit immediately
+        Input::update();
+
+        if (Input::quitRequested()) {
+            nextGameAction = ga_quit;
+            break;
+        }
 
         // Simulate the required number of ticks
-        while ((ticksLeftToSimulate > 0) && (exit == 0)) {
-            ++gTotalGameTicks;          // Add to the VBL count
+        while ((ticksLeftToSimulate > 0) && (nextGameAction == ga_nothing)) {
+            ++gTotalGameTicks;              // Add to the VBL count
             --ticksLeftToSimulate;
-            exit = ticker();            // Process the keypad commands
+            nextGameAction = ticker();      // Process the keypad commands
+            Input::consumeEvents();         // Don't allow any more keypress events if we do more than 1 tick
         }
 
         // Get buttons for next tic
@@ -141,8 +146,7 @@ uint32_t MiniLoop(
         
         if (gDemoPlayback) {                            // Playing back a demo?
             if (buttons & (PadA|PadB|PadC|PadD) ) {     // Abort?
-                exit = ga_exitdemo;                     // Exit the demo
-                break;
+                nextGameAction = ga_exitdemo;           // Exit the demo
             }
 
             // Get a joypad from demo data
@@ -158,30 +162,31 @@ uint32_t MiniLoop(
 
         // Am I recording a demo?
         if ((gDemoRecording || gDemoPlayback) && (buttons & PadStart) ) {
-            exit = ga_completed;    // End the game right now!
+            nextGameAction = ga_completed;      // End the game right now!
         }
 
-        if (gGameAction == ga_warped) {     // Did I end the level?
-            exit = ga_warped;               // Exit after drawing
-            break;                          // Exit
+        if (gGameAction == ga_warped) {         // Did I end the level?
+            nextGameAction = ga_warped;         // Exit after drawing
         }
 
-        // Sync up with the refresh - draw the screen
-        drawer();
+        // Sync up with the refresh - draw the screen.
+        // Also save the framebuffer for each game loop transition, so we can do a wipe if needed.
+        const bool bSaveFrameBuffer = (nextGameAction != ga_nothing);
+        drawer(bSaveFrameBuffer);
 
-    } while (exit == 0);    // Is the loop finished?
+    } while (nextGameAction == ga_nothing);     // Is the loop finished?
 
     stop();                     // Release resources
     S_Clear();                  // Kill sounds
     gPlayers.mo = nullptr;      // For net consistancy checks
     TickCounter::shutdown();
-    return exit;                // Return the abort code from ticker
+    return nextGameAction;      // Return the abort code from the loop
 }
 
 //----------------------------------------------------------------------------------------------------------------------
 // If key's A, B or C was pressed or 8 seconds of demo was shown then abort the demo.
 //----------------------------------------------------------------------------------------------------------------------
-static uint32_t TIC_Abortable() {
+static gameaction_e TIC_Abortable() noexcept {
     if (gTotalGameTicks >= (8 * TICKSPERSEC)) {         // Time up?
         return ga_died;                                 // Go on to next demo
     }
@@ -198,7 +203,7 @@ static uint32_t TIC_Abortable() {
 //----------------------------------------------------------------------------------------------------------------------
 static bool gOnlyOnce;
 
-static void START_Title() {
+static void START_Title() noexcept {
     if (!gOnlyOnce) {
         gOnlyOnce = true;
         gDoWipe = false;    // On power up, don't wipe the screen
@@ -210,17 +215,17 @@ static void START_Title() {
 //----------------------------------------------------------------------------------------------------------------------
 // Release the memory for the title picture
 //----------------------------------------------------------------------------------------------------------------------
-static void STOP_Title() {
+static void STOP_Title() noexcept {
     // Nothing to do...
 }
 
 //----------------------------------------------------------------------------------------------------------------------
 // Draws the title page
 //----------------------------------------------------------------------------------------------------------------------
-static void DRAW_Title() {
+static void DRAW_Title(const bool bSaveFrameBuffer) noexcept {
     Video::debugClear();
     Renderer::drawUISprite(0, 0, rTITLE);   // Draw the doom logo
-    Video::present();
+    Video::present(bSaveFrameBuffer);
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -228,20 +233,21 @@ static void DRAW_Title() {
 //----------------------------------------------------------------------------------------------------------------------
 static uint32_t gCreditRezNum;
 
-static void START_Credits() {
+static void START_Credits() noexcept {
     gCreditRezNum = rIDCREDITS;
 }
 
 //----------------------------------------------------------------------------------------------------------------------
 // Release memory for credits
 //----------------------------------------------------------------------------------------------------------------------
-static void STOP_Credits() {
+static void STOP_Credits() noexcept {
+    // Nothing to do...
 }
 
 //----------------------------------------------------------------------------------------------------------------------
 // Ticker code for the credits page
 //----------------------------------------------------------------------------------------------------------------------
-static uint32_t TIC_Credits() {
+static gameaction_e TIC_Credits() noexcept {
     if (gTotalGameTicks >= (30 * TICKSPERSEC)) {    // Time up?
         return ga_died;                             // Go on to next demo
     }
@@ -256,7 +262,7 @@ static uint32_t TIC_Credits() {
 //----------------------------------------------------------------------------------------------------------------------
 // Draw the credits page
 //----------------------------------------------------------------------------------------------------------------------
-static void DRAW_Credits() {
+static void DRAW_Credits(const bool bSaveFrameBuffer) noexcept {
     Video::debugClear();
 
     switch (gCreditRezNum) {
@@ -275,13 +281,16 @@ static void DRAW_Credits() {
     }
 
     Renderer::drawUISprite(0, 0, gCreditRezNum);    // Draw the credits
-    Video::present();                               // Page flip
+    Video::present(bSaveFrameBuffer);               // Page flip
 }
 
 //----------------------------------------------------------------------------------------------------------------------
 // Execute the main menu
 //----------------------------------------------------------------------------------------------------------------------
 static void RunMenu() {
+    if (Input::quitRequested())
+        return;
+    
     if (MiniLoop(M_Start, M_Stop, M_Ticker, M_Drawer) == ga_completed) {    // Process the menu
         S_StopSong();
         G_InitNew(gStartSkill, gStartMap);      // Init the new game
@@ -293,6 +302,9 @@ static void RunMenu() {
 // Run the title page
 //----------------------------------------------------------------------------------------------------------------------
 static void RunTitle() {
+    if (Input::quitRequested())
+        return;
+    
     if (MiniLoop(START_Title, STOP_Title, TIC_Abortable, DRAW_Title) == ga_exitdemo) {
         RunMenu();  // Process the main menu
     }
@@ -302,6 +314,9 @@ static void RunTitle() {
 // Show the game credits
 //----------------------------------------------------------------------------------------------------------------------
 static void RunCredits() {
+    if (Input::quitRequested())
+        return;
+    
     if (MiniLoop(START_Credits, STOP_Credits, TIC_Credits, DRAW_Credits) == ga_exitdemo) {  // Did you quit?
         RunMenu();  // Process the main menu
     }
@@ -311,6 +326,9 @@ static void RunCredits() {
 // Run the game demo
 //----------------------------------------------------------------------------------------------------------------------
 static void RunDemo(uint32_t demoname) {
+    if (Input::quitRequested())
+        return;
+
     // DC: This was disabled in the original 3DO source.
     // The 3DO version of the game did not ship with demos?
     #if 0
@@ -336,7 +354,7 @@ void D_DoomMain() {
     P_Init();           // Init main code
     O_Init();           // Init controls
 
-    for (;;) {
+    while (!Input::quitRequested()) {
         RunTitle();         // Show the title page
         RunDemo(rDEMO1);    // Run the first demo
         RunCredits();       // Show the credits page

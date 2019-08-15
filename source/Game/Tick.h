@@ -2,6 +2,7 @@
 
 #include <cstdint>
 
+enum gameaction_e : uint8_t;
 struct mobj_t;
 struct thinker_t;
 
@@ -18,7 +19,7 @@ void* AddThinker(ThinkerFunc FuncProc, uint32_t MemSize);
 void RemoveThinker(void* thinker);
 void ChangeThinkCode(void* thinker, ThinkerFunc FuncProc);
 void RunThinkers();
-uint32_t P_Ticker();
-void P_Drawer();
-void P_Start();
-void P_Stop();
+gameaction_e P_Ticker() noexcept;
+void P_Drawer(const bool bSaveFrameBuffer) noexcept;
+void P_Start() noexcept;
+void P_Stop() noexcept;

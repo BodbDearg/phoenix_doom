@@ -119,8 +119,7 @@ static void SetButtonsFromControltype(void)
 
 **********************************/
 
-void O_Init(void)
-{
+void O_Init() noexcept {
 // The prefs has set controltype, so set buttons from that 
 
     SetButtonsFromControltype();        // Init the joypad settings 
@@ -136,10 +135,8 @@ void O_Init(void)
     
 **********************************/
 
-void O_Control(player_t *player)
-{
+void O_Control(player_t *player) noexcept {
     uint32_t buttons;
-
     buttons = gJoyPadButtons;
 
     if (gNewJoyPadButtons & PadX) {      // Toggled the option screen? 
@@ -276,7 +273,7 @@ void O_Control(player_t *player)
     Draw the option screen
 
 **********************************/
-void O_Drawer() {
+void O_Drawer(const bool bSaveFrameBuffer) noexcept {
     // Erase old and Draw new cursor frame
     const CelImageArray& skullImgs = CelImages::loadImages(rSKULLS, CelImages::LoadFlagBits::MASKED);
     Renderer::drawUISprite(CURSORX, CURSOR_Y_POS[gCursorPos], skullImgs.getImage(gCursorFrame));
@@ -321,5 +318,5 @@ void O_Drawer() {
     }
 
     CelImages::releaseImages(rSLIDER);
-    Video::present();
+    Video::present(bSaveFrameBuffer);
 }

@@ -1,5 +1,6 @@
 #include "Game.h"
 
+#include "Base/Input.h"
 #include "Base/Mem.h"
 #include "Base/Random.h"
 #include "Data.h"
@@ -161,53 +162,55 @@ void G_InitNew(skill_e skill, uint32_t map)
 
 **********************************/
 
-void G_RunGame()
-{
-    for (;;) {
+void G_RunGame() noexcept {
+    while (!Input::quitRequested()) {
+        // Run a level until death or completion 
+        MiniLoop(P_Start, P_Stop, P_Ticker, P_Drawer);
 
-    // Run a level until death or completion 
-
-        MiniLoop(P_Start,P_Stop,P_Ticker,P_Drawer);
-
-    // Take away cards and stuff 
-
+        // Take away cards and stuff 
         G_PlayerFinishLevel();
-        if ((gGameAction == ga_died) ||  // died, so restart the level 
-            (gGameAction == ga_warped)) {    // skip intermission 
+
+        if ((gGameAction == ga_died) ||     // Died, so restart the level
+            (gGameAction == ga_warped)      // Skip intermission
+        ) {
             continue;
         }
 
-    // decide which level to go to next 
-
+        // Decide which level to go to next 
         if (gGameAction == ga_secretexit) {
              gNextMap = 24;  // Go to the secret level 
         } else {
             switch (gGameMap) {
-            case 24:        // Secret level? 
-                gNextMap = 4;
-                break;
-            case 23:        // Final level! 
-                gNextMap = 23;
-                break;      // Don't add secret level to prefs 
-            default:
-                gNextMap = gGameMap+1;
+                // Secret level?
+                case 24:
+                    gNextMap = 4;
+                    break;
+                
+                // Final level! Note: don't add secret level to prefs.
+                case 23:
+                    gNextMap = 23;
+                    break;
+
+                default:
+                    gNextMap = gGameMap + 1;
+                    break;
             }
+
             if (gNextMap > gMaxLevel) {
-                gMaxLevel = gNextMap; // Save the prefs file 
+                gMaxLevel = gNextMap;   // Save the prefs file 
                 WritePrefsFile();
             }
         }
 
-    // Run a stats intermission 
+        // Run a stats intermission 
+        MiniLoop(IN_Start, IN_Stop, IN_Ticker, IN_Drawer);
 
-        MiniLoop(IN_Start,IN_Stop,IN_Ticker,IN_Drawer);
-
-    // Run the finale if needed 
-
+        // Run the finale if needed and exit
         if (gGameMap == 23) {
-            MiniLoop(F_Start,F_Stop,F_Ticker,F_Drawer);
-            return;     // Exit 
+            MiniLoop(F_Start, F_Stop, F_Ticker, F_Drawer);
+            return;
         }
+
         gGameMap = gNextMap;
     }
 }
@@ -229,7 +232,7 @@ uint32_t G_PlayDemoPtr(uint32_t* demo)
     gDemoDataPtr = &demo[2];     // Init the pointer 
     G_InitNew((skill_e)skill,map);  // Init a game 
     gDemoPlayback = true;    // I am playing back data 
-    exit = MiniLoop(P_Start,P_Stop,P_Ticker,P_Drawer);  // Execute game 
+    exit = MiniLoop(P_Start, P_Stop, P_Ticker, P_Drawer);  // Execute game 
     gDemoPlayback = false;   // End demo 
     return exit;
 }

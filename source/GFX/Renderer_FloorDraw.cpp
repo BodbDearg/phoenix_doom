@@ -143,7 +143,7 @@ static inline void drawFlatColumn(const FlatFragment flatFrag) noexcept {
     }
 
     // Draw the column!
-    uint32_t* pDstPixel = Video::gFrameBuffer + (startScreenY * Video::SCREEN_WIDTH) + startScreenX;
+    uint32_t* pDstPixel = Video::gpFrameBuffer + (startScreenY * Video::SCREEN_WIDTH) + startScreenX;
 
     while (true) {
         // Are we done?

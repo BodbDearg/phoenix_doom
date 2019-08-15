@@ -115,46 +115,4 @@ void WipeDoom(LongWord *OldScreen,LongWord *NewScreen)
 }
 #endif
 
-/**********************************
-
-    Draw a sprite in the center of the screen.
-    This is used for the finale.
-    (Speed is NOT an issue here...)
-
-**********************************/
-
-void DrawSpriteCenter(uint32_t SpriteNum)
-{
-    // DC: FIXME: implement/replace
-    #if 0
-        Word x,y;
-        patch_t *patch;
-        LongWord Offset;
-
-        patch = (patch_t *)LoadAResource(SpriteNum>>FF_SPRITESHIFT);    // Get the sprite group 
-        Offset = ((LongWord *)patch)[SpriteNum & FF_FRAMEMASK];
-        if (Offset&PT_NOROTATE) {       // Do I rotate? 
-            patch = (patch_t *) &((Byte *)patch)[Offset & 0x3FFFFFFF];      // Get pointer to rotation list 
-            Offset = ((LongWord *)patch)[0];        // Use the rotated offset 
-        }
-        patch = (patch_t *)&((Byte *)patch)[Offset & 0x3FFFFFFF];   // Get pointer to patch 
-    
-        x = patch->leftoffset;      // Get the x and y offsets 
-        y = patch->topoffset;
-        x = 80-x;           // Center on the screen 
-        y = 90-y;
-        ((LongWord *)patch)[7] = 0;     // Compensate for sideways scaling 
-        ((LongWord *)patch)[10] = 0;
-        if (Offset&PT_FLIP) {
-            ((LongWord *)patch)[8] = -0x2<<20;  // Reverse horizontal 
-            x+=GetShapeHeight(&patch->Data);    // Adjust the x coord 
-        } else {
-            ((LongWord *)patch)[8] = 0x2<<20;   // Normal horizontal 
-        }
-        ((LongWord *)patch)[9] = 0x2<<16;       // Double vertical 
-        DrawMShape(x*2,y*2,&patch->Data);       // Scale the x and y and draw 
-        ReleaseAResource(SpriteNum>>FF_SPRITESHIFT);    // Let go of the resource 
-    #endif
-}
-
 END_NAMESPACE(Renderer)

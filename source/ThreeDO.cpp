@@ -2,6 +2,7 @@
 
 #include "Audio/Audio.h"
 #include "Base/Endian.h"
+#include "Base/Input.h"
 #include "Base/Macros.h"
 #include "Base/Mem.h"
 #include "Base/Tables.h"
@@ -9,8 +10,8 @@
 #include "Game/Data.h"
 #include "Game/DoomMain.h"
 #include "Game/Resources.h"
-#include "GFX/CelUtils.h"
 #include "GFX/CelImages.h"
+#include "GFX/CelUtils.h"
 #include "GFX/Renderer.h"
 #include "GFX/Sprites.h"
 #include "GFX/Textures.h"
@@ -59,15 +60,10 @@ static void SetMyScreen(uint32_t Page)
     #endif
 }
 
-/**********************************
-
-    Init the system tools
-
-    Start up all the tools for the 3DO system
-    Return TRUE if all systems are GO!
-
-**********************************/
-void initTools() {
+//----------------------------------------------------------------------------------------------------------------------
+// Setup various game subsystems (audio, video input etc.)
+//----------------------------------------------------------------------------------------------------------------------
+void initGameSubsystems() noexcept {
     // DC: 3DO specific - disabling
     #if 0
         #if 1
@@ -89,14 +85,21 @@ void initTools() {
         SetMyScreen(0);     // Init the video display 
     #endif
 
-    audioLoadAllSounds();
     Resources::init();
     CelImages::init();
+    Video::init();
+    Input::init();
     audioInit();
+    audioLoadAllSounds();
 }
 
-void shutdownTools() noexcept {    
+//----------------------------------------------------------------------------------------------------------------------
+// Shut down various game subsystems (audio, video input etc.)
+//----------------------------------------------------------------------------------------------------------------------
+void shutdownGameSubsystems() noexcept {
     audioShutdown();
+    Input::shutdown();
+    Video::shutdown();
     CelImages::shutdown();
     Resources::shutdown();
 }
@@ -104,15 +107,13 @@ void shutdownTools() noexcept {
 //---------------------------------------------------------------------------------------------------------------------
 // Main entry point for 3DO
 //---------------------------------------------------------------------------------------------------------------------
-void ThreeDOMain() {
-    initTools();
-    Video::init();
+void ThreeDOMain() noexcept {
+    initGameSubsystems();
     
     ReadPrefsFile();    // Load defaults
     D_DoomMain();       // Start doom
 
-    Video::shutdown();
-    shutdownTools();
+    shutdownGameSubsystems();
 }
 
 int32_t StdReadFile(const char* const fName, char* buf)
@@ -219,6 +220,7 @@ void ReadPrefsFile()
     Used for "Loading or Paused" pics
 
 **********************************/
+// TODO: MOVE ELSEWHERE
 void DrawPlaque(uint32_t RezNum)
 {
     // FIXME: DC: Required for screen wipe?

@@ -416,7 +416,7 @@ void drawUISprite(const int32_t x, const int32_t y, const CelImage& image) noexc
         0.0f,
         (float) image.width,
         (float) image.height,
-        Video::gFrameBuffer,
+        Video::gpFrameBuffer,
         Video::SCREEN_WIDTH,
         Video::SCREEN_HEIGHT,
         Video::SCREEN_WIDTH,

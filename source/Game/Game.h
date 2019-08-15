@@ -11,6 +11,6 @@ void G_DoReborn();
 void G_ExitLevel();
 void G_SecretExitLevel();
 void G_InitNew(skill_e skill, uint32_t map);
-void G_RunGame();
+void G_RunGame() noexcept;
 uint32_t G_PlayDemoPtr(uint32_t* demo);
 void G_RecordDemo();

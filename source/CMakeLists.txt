@@ -23,6 +23,8 @@ set(SOURCE_FILES
     "Base/Finally.h"
     "Base/Fixed.h"
     "Base/FMath.h"
+    "Base/Input.cpp"
+    "Base/Input.h"
     "Base/Macros.h"
     "Base/Mem.h"
     "Base/Random.cpp"

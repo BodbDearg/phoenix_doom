@@ -12,11 +12,12 @@ static SDL_Window*     gWindow;
 static SDL_Renderer*   gRenderer;
 static SDL_Texture*    gFramebufferTexture;
 
-uint32_t* Video::gFrameBuffer;
+uint32_t* Video::gpFrameBuffer;
+uint32_t* Video::gpSavedFrameBuffer;
 
 static void lockFramebufferTexture() noexcept {    
     int pitch = 0;
-    if (SDL_LockTexture(gFramebufferTexture, nullptr, reinterpret_cast<void**>(&Video::gFrameBuffer), &pitch) != 0) {
+    if (SDL_LockTexture(gFramebufferTexture, nullptr, reinterpret_cast<void**>(&Video::gpFrameBuffer), &pitch) != 0) {
         FATAL_ERROR("Failed to lock the framebuffer texture for writing!");
     }
 }
@@ -78,27 +79,33 @@ void Video::init() noexcept {
     if (!gFramebufferTexture) {
         FATAL_ERROR("Failed to create a framebuffer texture!");
     }
-
+    
     // Immediately lock the framebuffer texture for updating
     lockFramebufferTexture();
+
+    // This can be used to take a screenshot for the screen wipe effect
+    gpSavedFrameBuffer = new uint32_t[SCREEN_WIDTH * SCREEN_HEIGHT];
 }
 
 void Video::shutdown() noexcept {
-    MemFree(gFrameBuffer);
-    gFrameBuffer = 0;
+    delete[] gpSavedFrameBuffer;
+    gpSavedFrameBuffer = nullptr;
+    gpFrameBuffer = nullptr;
     SDL_DestroyRenderer(gRenderer);
-    gRenderer = 0;
+    gRenderer = nullptr;
     SDL_DestroyWindow(gWindow);
-    gWindow = 0;
+    gWindow = nullptr;
     SDL_QuitSubSystem(SDL_INIT_VIDEO);
 }
 
 void Video::debugClear() noexcept {
+    ASSERT(gpFrameBuffer);
+
     // Clear the framebuffer to pink to spot rendering gaps
     #if ASSERTS_ENABLED
         const uint32_t pinkU32 = 0x00FF00FF;
-        uint32_t* pPixel = gFrameBuffer;
-        uint32_t* const pEndPixel = gFrameBuffer + (SCREEN_WIDTH * SCREEN_HEIGHT);
+        uint32_t* pPixel = gpFrameBuffer;
+        uint32_t* const pEndPixel = gpFrameBuffer + (SCREEN_WIDTH * SCREEN_HEIGHT);
 
         while (pPixel < pEndPixel) {
             *pPixel = pinkU32;
@@ -107,7 +114,11 @@ void Video::debugClear() noexcept {
     #endif    
 }
 
-void Video::present() noexcept {
+void Video::present(const bool bSaveFramebuffer) noexcept {
+    if (bSaveFramebuffer) {
+        std::memcpy(gpSavedFrameBuffer, gpFrameBuffer, sizeof(uint32_t) * SCREEN_WIDTH * SCREEN_HEIGHT);
+    }
+
     unlockFramebufferTexture();
     SDL_RenderCopy(gRenderer, gFramebufferTexture, NULL, NULL);
     SDL_RenderPresent(gRenderer);

@@ -16,8 +16,9 @@ namespace Video {
         static constexpr uint32_t SCREEN_HEIGHT = 200;  // Note: the actual 3DO vertical res was 240 but 40 px was not drawn to (black letterbox)
     #endif
 
-    // The 32-bit framebuffer to draw to
-    extern uint32_t* gFrameBuffer;
+    // The 32-bit framebuffer to draw to and a saved old copy of it (for screen wipes)
+    extern uint32_t* gpFrameBuffer;
+    extern uint32_t* gpSavedFrameBuffer;
 
     // Create and destroy the display
     void init() noexcept;
@@ -28,7 +29,7 @@ namespace Video {
     void debugClear() noexcept;
 
     // Presents the framebuffer to the screen
-    void present() noexcept;
+    void present(const bool bSaveFramebuffer) noexcept;
 
     //------------------------------------------------------------------------------------------------------------------
     // Makes a framebuffer color from the given 16.16 fixed point RGB values.

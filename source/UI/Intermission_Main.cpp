@@ -234,8 +234,7 @@ void PrintBigFontCenter(const int32_t x, const int32_t y, const char* const str)
     Init the intermission data
 
 **********************************/
-
-void IN_Start() {
+void IN_Start() noexcept {
     gINDelay = 0;
     gBangCount = 0;
     gKillValue = gItemValue = gSecretValue = 0;    // All values shown are zero 
@@ -257,7 +256,7 @@ void IN_Start() {
     Exit the intermission
 
 **********************************/
-void IN_Stop() {
+void IN_Stop() noexcept {
     S_StopSong();       // Kill the music 
 }
 
@@ -266,7 +265,7 @@ void IN_Stop() {
     Exit the intermission
 
 **********************************/
-uint32_t IN_Ticker() {
+gameaction_e IN_Ticker() noexcept {
     uint32_t Bang;
     if (gTotalGameTicks < (TICKSPERSEC/2)) { // Initial wait before I begin 
         return ga_nothing;      // Do nothing 
@@ -311,7 +310,7 @@ uint32_t IN_Ticker() {
     Draw the intermission screen
     
 **********************************/
-void IN_Drawer() {
+void IN_Drawer(const bool bSaveFrameBuffer) noexcept {
     Video::debugClear();
     Renderer::drawUISprite(0, 0, rBACKGRNDBROWN);   // Load and draw the skulls 
     
@@ -334,5 +333,5 @@ void IN_Drawer() {
     PrintNumber(SVALX, SVALY, gSecretValue, PNFLAGS_PERCENT|PNFLAGS_RIGHT);
 
     CelImages::releaseImages(rINTERMIS);
-    Video::present();
+    Video::present(bSaveFrameBuffer);
 }
