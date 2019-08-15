@@ -33,6 +33,8 @@ TODO
 - Crash sometimes on reading textures
 - Crash sometimes on thing 'check height' (seems to happen sometimes on level 2, at lift to viewing room opposite chainsaw)
 - Allow exit out of finale back to main menu
+- Allow exit out of app from main menu
+- Allow quit out of level to main menu
 
 ------------------------------------------------------------------------------------------------------------------------
 Known issues: document

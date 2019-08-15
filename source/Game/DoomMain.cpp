@@ -13,13 +13,12 @@
 #include "Map/Setup.h"
 #include "Resources.h"
 #include "ThreeDO.h"
+#include "TickCounter.h"
 #include "UI/Menu_Main.h"
 #include "UI/Options_Main.h"
 #include <thread>
 
 // FIXME: DC: TEMP - REMOVE
-#include <algorithm>
-#include <ctime>
 #include <SDL.h>
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -107,6 +106,7 @@ uint32_t MiniLoop(
 {
     // Setup (cache graphics,etc)
     gDoWipe = true;
+    TickCounter::init();
     start();                        // Prepare the background task (Load data etc.)
     uint32_t exit = 0;              // I am running
     gGameAction = ga_nothing;       // Game is not in progress
@@ -116,27 +116,12 @@ uint32_t MiniLoop(
     gJoyPadButtons = gPrevJoyPadButtons = gNewJoyPadButtons = 0;
 
     do {
-        // FIXME: DC: TEMP - Move into a proper timing class
-        uint32_t ticksLeftToSimulate;
+        // See how many ticks are to be simulated, if none then sleep for a bit
+        uint32_t ticksLeftToSimulate = TickCounter::update();
 
-        {
-            static clock_t lastClock;
-            const clock_t curClock = clock();            
-            const clock_t clocksElapsed = curClock - lastClock;
-            const double secondsElapsed = (double) clocksElapsed / (double) CLOCKS_PER_SEC;
-
-            double ticksElapsed = secondsElapsed * (double) TICKSPERSEC;
-            ticksElapsed = std::max(ticksElapsed, 0.0);
-            ticksElapsed = std::min(ticksElapsed, 8.0);     // 7.5 FPS minimum framerate! (game physically slows down otherwise)
-
-            ticksLeftToSimulate = (uint32_t) ticksElapsed;
-
-            if (ticksLeftToSimulate <= 0) {
-                std::this_thread::yield();
-                continue;
-            } else {
-                lastClock = curClock;
-            }
+        if (ticksLeftToSimulate <= 0) {
+            std::this_thread::yield();
+            continue;
         }
         
         // FIXME: DC: Put this somewhere better
@@ -186,10 +171,11 @@ uint32_t MiniLoop(
 
     } while (exit == 0);    // Is the loop finished?
 
-    stop();             // Release resources
-    S_Clear();          // Kill sounds
-    gPlayers.mo = 0;    // For net consistancy checks
-    return exit;        // Return the abort code from ticker
+    stop();                     // Release resources
+    S_Clear();                  // Kill sounds
+    gPlayers.mo = nullptr;      // For net consistancy checks
+    TickCounter::shutdown();
+    return exit;                // Return the abort code from ticker
 }
 
 //----------------------------------------------------------------------------------------------------------------------
