@@ -28,19 +28,30 @@ static constexpr float WIPE_SPEED_CONSTANT = WIPE_SPEED_PRE_INTRO * 8.0f;
 static std::unique_ptr<float[]> generateYDeltaTable() noexcept {
     const uint32_t screenWidth = Video::SCREEN_WIDTH;
     const float scaleFactor = gScaleFactor;
+    const uint32_t numRepeatedCols = std::max((uint32_t) gScaleFactor, 1u);     // Repeat same deltas according to the scale factor multiplier, so the wipe looks more pixelated
     const float minDelta = -16.0f * scaleFactor;
     const float maxDelta = 0.0f;
 
     std::unique_ptr<float[]> deltas(new float[screenWidth]);
 
     float delta = Random::nextFloat() * -16.0f * scaleFactor;
-    deltas[0] = delta;
 
-    for (uint32_t x = 1; x < screenWidth; ++x) {
+    for (uint32_t x = 0; x < numRepeatedCols; ++x) {
+        deltas[x] = delta;
+    }
+
+    for (uint32_t x = numRepeatedCols; x < screenWidth; x += numRepeatedCols) {
         delta += (float)(Random::nextFloat() * 2.0f - 1.0f) * scaleFactor;  // Add -1, 0 or 1
         delta = std::min(delta, maxDelta);  // Too high?
         delta = std::max(delta, minDelta);  // Too low?
-        deltas[x] = delta;
+
+        uint32_t xCur = x;
+        uint32_t xEnd = std::min(x + numRepeatedCols, screenWidth);
+        
+        while (xCur < xEnd) {
+            deltas[xCur] = delta;
+            ++xCur;
+        }
     }
 
     return deltas;
@@ -207,7 +218,10 @@ void doWipe(const GameLoopDrawFunc drawFunc) noexcept {
             break;
         }
 
-        bWipeDone = tickWipe(yDeltas.get());
+        while (ticksLeftToSimulate > 0 && (!bWipeDone)) {
+            bWipeDone = tickWipe(yDeltas.get());
+            --ticksLeftToSimulate;
+        }
 
         // Draw the wipe and present
         drawWipe(oldFramebuffer.get(), Video::gpSavedFrameBuffer, yDeltas.get());
