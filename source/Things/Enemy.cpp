@@ -324,7 +324,7 @@ static bool P_LookForPlayers(mobj_t& actor, bool bAllAround) noexcept {
     // Pick another player as target if possible
     if (!(actor.flags & MF_SEETARGET)) {    // Can I see the player?
     newtarget:
-        actor.target = gPlayers.mo;         // Force player #0 tracking
+        actor.target = gPlayer.mo;          // Force player #0 tracking
         return false;                       // No one is targeted
     }
 

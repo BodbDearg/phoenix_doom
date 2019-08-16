@@ -292,7 +292,7 @@ void SetupLevel(uint32_t map) {
     
     gTotalKillsInLevel = gItemsFoundInLevel = gSecretsFoundInLevel = 0;
     
-    player_t* p = &gPlayers;
+    player_t* p = &gPlayer;
     p->killcount = 0;           // Nothing killed
     p->secretcount = 0;         // No secrets found
     p->itemcount = 0;           // No items found

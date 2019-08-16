@@ -186,7 +186,7 @@ void RunThinkers()
 
 static void CheckCheats()
 {
-    if ((gNewJoyPadButtons & PadStart) && !(gPlayers.AutomapFlags & AF_OPTIONSACTIVE)) {      // Pressed pause?
+    if ((gNewJoyPadButtons & PadStart) && !(gPlayer.AutomapFlags & AF_OPTIONSACTIVE)) {     // Pressed pause?
         if (gGamePaused || !(gJoyPadButtons&gPadUse)) {
             gGamePaused ^= 1;   // Toggle the pause flag
 
@@ -246,7 +246,7 @@ gameaction_e P_Ticker() noexcept {
 
 // Run player actions
 
-    pl = &gPlayers;
+    pl = &gPlayer;
     
     if (pl->playerstate == PST_REBORN) {    // Restart player?
         G_DoReborn();       // Poof!!
@@ -255,7 +255,7 @@ gameaction_e P_Ticker() noexcept {
     O_Control(pl);      // Handle option controls
     P_PlayerThink(pl);  // Process player in the game
         
-    if (!(gPlayers.AutomapFlags & AF_OPTIONSACTIVE)) {
+    if (!(gPlayer.AutomapFlags & AF_OPTIONSACTIVE)) {
         RunThinkers();      // Handle logic for doors, walls etc...
         P_RunMobjBase();    // Handle critter think logic
     }
@@ -277,13 +277,13 @@ void P_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
     if (gGamePaused && gRefreshDrawn) {
         DrawPlaque(rPAUSED);            // Draw 'Paused' plaque
         Video::endFrame(bPresent, bSaveFrameBuffer);
-    } else if (gPlayers.AutomapFlags & AF_OPTIONSACTIVE) {
+    } else if (gPlayer.AutomapFlags & AF_OPTIONSACTIVE) {
         Video::debugClear();
         Renderer::drawPlayerView();                     // Render the 3D view
         ST_Drawer();                                    // Draw the status bar
         O_Drawer(bPresent, bSaveFrameBuffer);           // Draw the console handler
         gRefreshDrawn = false;
-    } else if (gPlayers.AutomapFlags & AF_ACTIVE) {
+    } else if (gPlayer.AutomapFlags & AF_ACTIVE) {
         Video::debugClear();
         AM_Drawer();                                    // Draw the automap
         ST_Drawer();                                    // Draw the status bar
@@ -312,7 +312,7 @@ void P_Start() noexcept {
     gTimeMark1 = 0;  // Init the static timers
     gTimeMark2 = 0;
     gTimeMark4 = 0;
-    gPlayers.AutomapFlags &= AF_GODMODE;    // No automapping specials (but allow godmode)
+    gPlayer.AutomapFlags &= AF_GODMODE;     // No automapping specials (but allow godmode)
 
     AM_Start();         // Start the automap system
     ST_Start();         // Init the status bar this level

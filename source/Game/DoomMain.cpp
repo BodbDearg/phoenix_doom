@@ -187,7 +187,7 @@ gameaction_e MiniLoop(
 
     stop();                     // Release resources
     S_Clear();                  // Kill sounds
-    gPlayers.mo = nullptr;      // For net consistancy checks
+    gPlayer.mo = nullptr;       // For net consistancy checks
     TickCounter::shutdown();
     return nextGameAction;      // Return the abort code from the loop
 }

@@ -63,7 +63,7 @@ static constexpr Fixed FAST_ANGLE_TURN[] = {
 
 **********************************/
 
-static void P_PlayerMove(mobj_t *mo)
+static void P_PlayerMove(mobj_t *mo) noexcept
 {
     Fixed momx, momy;
     momx = mo->momx >> 2;   // Get the momemtum 
@@ -125,7 +125,7 @@ dospecial:
 #define STOPSPEED   0x1000      // Speed to stop at 
 #define FRICTION    0xD240      // 841/1024 0.821289 Friction rate 
 
-static void P_PlayerXYMovement(mobj_t *mo)
+static void P_PlayerXYMovement(mobj_t *mo) noexcept
 {
     P_PlayerMove(mo);       // Move the player 
 
@@ -156,7 +156,7 @@ static void P_PlayerXYMovement(mobj_t *mo)
 
 **********************************/
 
-static void P_PlayerZMovement(mobj_t *mo)
+static void P_PlayerZMovement(mobj_t *mo) noexcept
 {
 
 // Check for smooth step up 
@@ -200,7 +200,7 @@ static void P_PlayerZMovement(mobj_t *mo)
 
 **********************************/
 
-static void P_PlayerMobjThink (mobj_t *mobj)
+static void P_PlayerMobjThink(mobj_t *mobj) noexcept
 {
     const state_t *st;        // Pointer to current game state structure 
 
@@ -233,7 +233,7 @@ static void P_PlayerMobjThink (mobj_t *mobj)
 
 **********************************/
 
-static void P_BuildMove(player_t *player)
+static void P_BuildMove(player_t *player) noexcept
 {
     uint32_t buttons;       // Current joypad 
     uint32_t oldbuttons;    // Previous joypad 
@@ -325,7 +325,7 @@ static void P_BuildMove(player_t *player)
 
 **********************************/
 
-static void PlayerThrust(mobj_t *MObjPtr,angle_t angle,Fixed move)
+static void PlayerThrust(mobj_t *MObjPtr,angle_t angle,Fixed move) noexcept
 {
     if (move) {
         angle >>= ANGLETOFINESHIFT;     // Convert to index to table 
@@ -339,7 +339,7 @@ static void PlayerThrust(mobj_t *MObjPtr,angle_t angle,Fixed move)
 // Calculate the walking / running height adjustment; this will bob the camera up and down.
 // Note : I MUST calculate the bob value or the gun will not be locked onto the player's view properly!!
 //----------------------------------------------------------------------------------------------------------------------
-static void PlayerCalcHeight(player_t& player) noexcept {
+void PlayerCalcHeight(player_t& player) noexcept {
     // Regular movement bobbing (needs to be calculated for gun swing even if not on ground)
     const Fixed momX = player.mo->momx;
     const Fixed momY = player.mo->momy;
@@ -405,8 +405,7 @@ static void PlayerCalcHeight(player_t& player) noexcept {
 //----------------------------------------------------------------------------------------------------------------------
 // Take all the motion constants and apply it to the player. Allow clipping and bumping.
 //----------------------------------------------------------------------------------------------------------------------
-static void MoveThePlayer(player_t *player)
-{
+static void MoveThePlayer(player_t *player) noexcept {
     angle_t newangle;
     mobj_t *MObjPtr;
     
@@ -438,8 +437,7 @@ static void MoveThePlayer(player_t *player)
 
 #define ANG5 (ANG90/18)     // Move in increments of 5 degrees 
 
-static void P_DeathThink(player_t *player)
-{
+static void P_DeathThink(player_t *player) noexcept {
     angle_t angle;      // Angle to look at enemy 
     angle_t delta;      // Angle differance from current angle to enemy angle 
 
@@ -495,8 +493,7 @@ DownDamage:
 
 **********************************/
 
-static bool WeaponAllowed(player_t *player)
-{
+static bool WeaponAllowed(player_t *player) noexcept {
     if (player->pendingweapon&0x8000) {     // Handle wrap around for weapon 
         player->pendingweapon=(weapontype_e)(NUMWEAPONS-1); // Highest weapon allowed 
     }
@@ -517,8 +514,7 @@ static bool WeaponAllowed(player_t *player)
 
 **********************************/
 
-void P_PlayerThink(player_t *player)
-{
+void P_PlayerThink(player_t *player) noexcept {
     uint32_t buttons;       // Current joypad buttons 
     uint32_t i;
 

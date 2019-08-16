@@ -186,7 +186,7 @@ static void setupOccludingColumnsArrayForDraw() noexcept {
 
 static void preDrawSetup() noexcept {
     // Set the position and angle of the view from the player
-    const player_t& player = gPlayers;
+    const player_t& player = gPlayer;
     const mobj_t& mapObj = *player.mo;
 
     gViewXFrac = mapObj.x;

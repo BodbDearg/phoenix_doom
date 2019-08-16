@@ -34,7 +34,7 @@ static void DrawAWeapon(const pspdef_t& psp, const bool bShadow) noexcept {
     if ((playerSpriteState.SpriteFrame & FF_FULLBRIGHT) != 0) {
         lightMul = 1.0f;
     } else {
-        const LightParams& lightParams = getLightParams(gPlayers.mo->subsector->sector->lightlevel + gExtraLight);
+        const LightParams& lightParams = getLightParams(gPlayer.mo->subsector->sector->lightlevel + gExtraLight);
         lightMul = lightParams.getLightMulForDist(0.0f);
     }
 
@@ -113,8 +113,8 @@ static void DrawAWeapon(const pspdef_t& psp, const bool bShadow) noexcept {
 void drawWeapons() noexcept {
     // Determine whether to draw the weapon partially invisible
     bool bShadow = false;
-    if (gPlayers.mo->flags & MF_SHADOW) {
-        const uint32_t powerTicksLeft = gPlayers.powers[pw_invisibility];               // Get flash time
+    if (gPlayer.mo->flags & MF_SHADOW) {
+        const uint32_t powerTicksLeft = gPlayer.powers[pw_invisibility];    // Get flash time
         bShadow = (
             (powerTicksLeft >= (5 * TICKSPERSEC)) ||    // Is there a long time left for the power still?
             ((powerTicksLeft & 0x10) != 0)              // Allowed to show while flashing off?
@@ -123,7 +123,7 @@ void drawWeapons() noexcept {
 
     // Draw the sprites (if valid)
     {
-        const pspdef_t* pSprite = gPlayers.psprites;                // Get the first sprite in the array 
+        const pspdef_t* pSprite = gPlayer.psprites;                 // Get the first sprite in the array 
         const pspdef_t* const pEndSprite = pSprite + NUMPSPRITES;
 
         while (pSprite < pEndSprite) {

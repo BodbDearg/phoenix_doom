@@ -47,7 +47,7 @@ extern const CelImageArray*     gpBigNumFont;                // Cached pointer t
 extern uint32_t                 gTotalKillsInLevel;         // Number of monsters killed
 extern uint32_t                 gItemsFoundInLevel;         // Number of items found
 extern uint32_t                 gSecretsFoundInLevel;       // Number of secrets discovered
-extern player_t                 gPlayers;                   // Current player stats
+extern player_t                 gPlayer;                    // The game player
 extern gameaction_e             gGameAction;                // Current game state
 extern skill_e                  gGameSkill;                 // Current skill level
 extern uint32_t                 gGameMap;                   // Current game map #

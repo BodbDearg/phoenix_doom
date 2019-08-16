@@ -33,7 +33,7 @@ void S_StartSound(const Fixed* const pOriginXY, const uint32_t soundId) {
     uint32_t rightVolume = 255;
     
     if (pOriginXY) {
-        const mobj_t* const pListener = gPlayers.mo;
+        const mobj_t* const pListener = gPlayer.mo;
 
         if (pOriginXY != &pListener->x) {
             const Fixed dist = GetApproxDistance(pListener->x - pOriginXY[0], pListener->y - pOriginXY[1]);

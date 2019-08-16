@@ -240,13 +240,13 @@ void IN_Start() noexcept {
     gKillValue = gItemValue = gSecretValue = 0;    // All values shown are zero 
     gKillPercent = gItemPercent = gSecretPercent = 100;    // Init in case of divide by zero 
     if (gTotalKillsInLevel) {            // Prevent divide by zeros 
-        gKillPercent = (gPlayers.killcount * 100) / gTotalKillsInLevel;
+        gKillPercent = (gPlayer.killcount * 100) / gTotalKillsInLevel;
     }
     if (gItemsFoundInLevel) {
-        gItemPercent = (gPlayers.itemcount * 100) / gItemsFoundInLevel;
+        gItemPercent = (gPlayer.itemcount * 100) / gItemsFoundInLevel;
     }
     if (gSecretsFoundInLevel) {
-        gSecretPercent = (gPlayers.secretcount * 100) / gSecretsFoundInLevel;
+        gSecretPercent = (gPlayer.secretcount * 100) / gSecretsFoundInLevel;
     }
     S_StartSong(Song_intermission);     // Begin the music
 }

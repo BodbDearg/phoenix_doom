@@ -37,7 +37,7 @@ const CelImageArray*    gpBigNumFont;
 uint32_t                gTotalKillsInLevel;
 uint32_t                gItemsFoundInLevel;
 uint32_t                gSecretsFoundInLevel;
-player_t                gPlayers;
+player_t                gPlayer;
 gameaction_e            gGameAction;
 skill_e                 gGameSkill;
 uint32_t                gGameMap;

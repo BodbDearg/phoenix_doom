@@ -76,7 +76,7 @@ static void doTintEffect(const uint32_t r5, const uint32_t g5, const uint32_t b5
 // Does post processing fx on the entire 3D view
 //----------------------------------------------------------------------------------------------------------------------
 void doPostFx() noexcept {    
-    const player_t& player = gPlayers;
+    const player_t& player = gPlayer;
 
     // See if we are to do the invulnerability effect.
     // If this effect is in place then do that exclusively and nothing else:

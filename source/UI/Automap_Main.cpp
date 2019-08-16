@@ -103,7 +103,7 @@ void AM_Start() noexcept {
     gShowAllThings = false;                 // Turn off the cheat
     gShowAllLines = false;                  // Turn off the cheat
     gFollowMode = true;                     // Follow the player
-    gPlayers.AutomapFlags &= ~AF_ACTIVE;    // Automap off
+    gPlayer.AutomapFlags &= ~AF_ACTIVE;     // Automap off
     gTrueOldButtons = gJoyPadButtons;       // Get the current state
 
     memset((char*) CurrentCheat, 0, sizeof(CurrentCheat));
@@ -410,7 +410,7 @@ void AM_Control(player_t& player) noexcept {
 void AM_Drawer() noexcept {
     DrawARect(0, 0, 320, 160, COLOR_BLACK);     // Black out the screen
 
-    player_t* const pPlayer = &gPlayers;    // Get pointer to the player
+    player_t* const pPlayer = &gPlayer;     // Get pointer to the player
     Fixed ox = pPlayer->automapx;           // Get the x and y to draw from
     Fixed oy = pPlayer->automapy;
     line_t* pLine = gpLines;                // Init the list pointer to the line segment array
@@ -471,7 +471,7 @@ void AM_Drawer() noexcept {
     {
         // Get the size of the triangle into a cached local
         const Fixed noseScale = fixedMul(NOSELENGTH, gMapScale);
-        mobj_t* const pMapObj = gPlayers.mo;
+        mobj_t* const pMapObj = gPlayer.mo;
 
         int32_t x1 = MulByMapScale(pMapObj->x - ox);            // Get the screen
         int32_t y1 = MulByMapScale(pMapObj->y - oy);            // coords

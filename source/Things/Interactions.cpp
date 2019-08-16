@@ -549,14 +549,14 @@ static void KillMobj(mobj_t *target, uint32_t Overkill)
     target->height >>= 2;           // Reduce the height a lot 
 
     if (target->flags & MF_COUNTKILL) {
-        ++gPlayers.killcount;            // Count all monster deaths, even 
+        ++gPlayer.killcount;            // Count all monster deaths, even 
     }                                   // those caused by other monsters 
 
     if (target->player) {           // Was the dead one a player? 
         target->flags &= ~MF_SOLID;     // Walk over the body! 
         target->player->playerstate = PST_DEAD; // You are dead! 
         LowerPlayerWeapon(target->player);      // Drop current weapon on screen 
-        if (target->player == &gPlayers) {
+        if (target->player == &gPlayer) {
             gStBar.gotgibbed = true;     // Gooey! 
         }
         if (Overkill>=50) {         // Were you a real mess? 
@@ -624,7 +624,7 @@ void DamageMObj(mobj_t *target,mobj_t *inflictor,mobj_t *source, uint32_t damage
         if (gGameSkill == sk_baby) {
             damage >>= 1;               // take half damage in trainer mode 
         }
-        if ((damage >= 31) && player == &gPlayers) {
+        if ((damage >= 31) && player == &gPlayer) {
             gStBar.specialFace = f_hurtbad;      // Ouch face 
         }
     }
@@ -657,7 +657,7 @@ void DamageMObj(mobj_t *target,mobj_t *inflictor,mobj_t *source, uint32_t damage
             return;     // Don't hurt in god mode 
         }
             // Where did the attack come from? 
-        if (player == &gPlayers) {
+        if (player == &gPlayer) {
             ang -= target->angle;       // Get angle differance 
             if (ang >= 0x30000000UL && ang < 0x80000000UL) {
                 gStBar.specialFace = f_faceright;        // Face toward attacker 

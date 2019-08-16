@@ -233,7 +233,7 @@ void P_SpawnPlayer(const mapthing_t* mthing)
     if (i) {                // In the game? 
         return;             // not playing 
     }
-    p = &gPlayers;       // Get the player # 
+    p = &gPlayer;           // Get the player # 
 
     if (p->playerstate == PST_REBORN) {     // Did you die? 
         G_PlayerReborn();           // Reset the player's variables 

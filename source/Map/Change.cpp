@@ -127,7 +127,7 @@ uint32_t ChangeSector(sector_t *sector, uint32_t crunch)
 // force next sound to reflood 
 
 
-    gPlayers.lastsoundsector = 0;
+    gPlayer.lastsoundsector = 0;
 
     gNoFit = false;          // Assume that it's ok 
     gCrushChange = crunch;   // Can I crush bodies 

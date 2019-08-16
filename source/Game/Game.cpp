@@ -24,8 +24,8 @@ static void loadSkyTexture() {
 // Prepare to load a game level
 //---------------------------------------------------------------------------------------------------------------------
 void G_DoLoadLevel() {
-    if (gPlayers.playerstate == PST_DEAD) {
-        gPlayers.playerstate = PST_REBORN;   // Force rebirth
+    if (gPlayer.playerstate == PST_DEAD) {
+        gPlayer.playerstate = PST_REBORN;   // Force rebirth
     }
     
     loadSkyTexture();
@@ -43,7 +43,7 @@ void G_PlayerFinishLevel()
 {
     player_t *p;        // Local pointer 
 
-    p = &gPlayers;
+    p = &gPlayer;
     memset(p->powers,0,sizeof(p->powers));  // Remove powers 
     memset(p->cards,0,sizeof(p->cards));    // Remove keycards and skulls 
     if (p->mo) {
@@ -64,7 +64,7 @@ void G_PlayerFinishLevel()
 
 void G_PlayerReborn()
 {
-    player_t*p = &gPlayers;     // Get local pointer 
+    player_t*p = &gPlayer;      // Get local pointer 
     memset(p,0,sizeof(*p));     // Zap the player
 
     p->usedown = p->attackdown = 0;                     // don't do anything immediately 
@@ -129,8 +129,8 @@ void G_InitNew(skill_e skill, uint32_t map)
 
 // Force players to be initialized upon first level load 
 
-    gPlayers.playerstate = PST_REBORN;
-    gPlayers.mo = 0; // For net consistancy checks 
+    gPlayer.playerstate = PST_REBORN;
+    gPlayer.mo = 0; // For net consistancy checks 
     
     gDemoRecording = false;      // No demo in progress 
     gDemoPlayback = false;

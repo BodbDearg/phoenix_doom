@@ -230,7 +230,7 @@ void ST_Drawer() noexcept {
         PrintNumber(100,80,ind,0);
     #endif
     
-    p = &gPlayers;
+    p = &gPlayer;
 
     // Ammo 
     if (p->readyweapon != wp_nochange) {                // No weapon? 
