@@ -115,16 +115,16 @@ static void drawWipe(
     const uint32_t screenHeight = Video::SCREEN_HEIGHT;
     uint32_t* const pDstPixels = Video::gpFrameBuffer;
 
+    //------------------------------------------------------------------------------------------------------------------
+    // Add in the new image pixels at the top: do 8 pixel batches at a time, then the remainder pixels
+    //------------------------------------------------------------------------------------------------------------------
     for (uint32_t x = 0; x < screenWidth; ++x) {
         uint32_t* const pDstPixelsCol = pDstPixels + x;
-
-        //--------------------------------------------------------------------------------------------------------------
-        // Add in the new image pixels at the top: do 8 pixel batches at a time, then the remainder pixels
-        //--------------------------------------------------------------------------------------------------------------
-        const uint32_t yDelta = std::min((uint32_t) std::max(pYDeltas[x], 0.0f), screenHeight);
-        const uint32_t yDelta8 = (yDelta / 8) * 8;
         const uint32_t* const gpNewImgCol = gpNewImg + x;
 
+        const uint32_t yDelta = std::min((uint32_t) std::max(pYDeltas[x], 0.0f), screenHeight);
+        const uint32_t yDelta8 = (yDelta / 8) * 8;
+        
         for (uint32_t y = 0; y < yDelta8; y += 8) {
             const uint32_t idx1 = y * screenWidth;
             const uint32_t idx2 = (y + 1) * screenWidth;
@@ -149,13 +149,18 @@ static void drawWipe(
             const uint32_t idx = y * screenWidth;
             pDstPixelsCol[idx] = gpNewImgCol[idx];
         }
+    }
 
-        //--------------------------------------------------------------------------------------------------------------
-        // Add in the old image pixels: do 8 pixel batches at a time, then the remainder pixels
-        //--------------------------------------------------------------------------------------------------------------
-        const uint32_t numPixelsRemaining = screenHeight - yDelta;
-        const uint32_t screenHeight8 = yDelta + (numPixelsRemaining / 8) * 8;
+    //------------------------------------------------------------------------------------------------------------------
+    // Add in the old image pixels: do 8 pixel batches at a time, then the remainder pixels
+    //------------------------------------------------------------------------------------------------------------------
+    for (uint32_t x = 0; x < screenWidth; ++x) {
+        uint32_t* const pDstPixelsCol = pDstPixels + x;
         const uint32_t* const gpOldImgCol = gpOldImg + x;
+        
+        const uint32_t yDelta = std::min((uint32_t) std::max(pYDeltas[x], 0.0f), screenHeight);
+        const uint32_t numPixelsRemaining = screenHeight - yDelta;
+        const uint32_t screenHeight8 = yDelta + (numPixelsRemaining / 8) * 8;        
 
         for (uint32_t y = yDelta; y < screenHeight8; y += 8) {
             const uint32_t oldPixelBaseY = y - yDelta;
