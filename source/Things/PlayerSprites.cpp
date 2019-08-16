@@ -12,11 +12,11 @@
 #include "Map/MapUtil.h"
 #include "MapObj.h"
 
-static constexpr uint32_t   BFGCELLS        = 40 * TICKSPERSEC;     // Number of energy units per blast
-static constexpr int32_t    LOWERSPEED      = 18;                   // Speed to lower the player's weapon
-static constexpr int32_t    RAISESPEED      = 18;                   // Speed to raise the player's weapon
-static constexpr int32_t    WEAPONBOTTOM    = 128;                  // Bottommost Y for hiding weapon
-static constexpr int32_t    WEAPONTOP       = 32;                   // Topmost Y for showing weapon
+static constexpr uint32_t   BFGCELLS        = 40;       // Number of energy units per blast
+static constexpr int32_t    LOWERSPEED      = 18;       // Speed to lower the player's weapon
+static constexpr int32_t    RAISESPEED      = 18;       // Speed to raise the player's weapon
+static constexpr int32_t    WEAPONBOTTOM    = 128;      // Bottommost Y for hiding weapon
+static constexpr int32_t    WEAPONTOP       = 32;       // Topmost Y for showing weapon
 
 /**********************************
 
