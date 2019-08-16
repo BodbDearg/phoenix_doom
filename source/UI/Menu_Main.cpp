@@ -175,14 +175,14 @@ gameaction_e M_Ticker() noexcept {
 //--------------------------------------------------------------------------------------------------
 // Draw the main menu
 //--------------------------------------------------------------------------------------------------
-void M_Drawer(const bool bSaveFrameBuffer) noexcept {
+void M_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
     Video::debugClear();
     Renderer::drawUISprite(0, 0, rMAINDOOM);
     
     if (gOptionActive) {
-        O_Drawer(bSaveFrameBuffer);
+        O_Drawer(bPresent, bSaveFrameBuffer);
     } 
-    else {    
+    else {
         const CelImageArray& shapes = CelImages::loadImages(rMAINMENU, CelImages::LoadFlagBits::MASKED);    // Load shape group
 
         // Draw new skull
@@ -201,6 +201,6 @@ void M_Drawer(const bool bSaveFrameBuffer) noexcept {
         // Draw the options screen
         PrintBigFont(CURSORX + 24, OPTIONSY, "Options Menu");
         CelImages::releaseImages(rMAINMENU);
-        Video::present(bSaveFrameBuffer);
+        Video::endFrame(bPresent, bSaveFrameBuffer);
     }
 }

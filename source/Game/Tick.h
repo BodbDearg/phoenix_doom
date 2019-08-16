@@ -20,6 +20,6 @@ void RemoveThinker(void* thinker);
 void ChangeThinkCode(void* thinker, ThinkerFunc FuncProc);
 void RunThinkers();
 gameaction_e P_Ticker() noexcept;
-void P_Drawer(const bool bSaveFrameBuffer) noexcept;
+void P_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept;
 void P_Start() noexcept;
 void P_Stop() noexcept;

@@ -5,13 +5,13 @@
 enum gameaction_e : uint8_t;
 
 // TODO: MOVE ELSEWHERE
-void AddToBox(Fixed* box, Fixed x, Fixed y);
+void AddToBox(Fixed* box, Fixed x, Fixed y) noexcept;
 
 // Function types for the game mini loop
 typedef void (*GameLoopStartFunc)() noexcept;
 typedef void (*GameLoopStopFunc)() noexcept;
 typedef gameaction_e (*GameLoopTickFunc)() noexcept;
-typedef void (*GameLoopDrawFunc)(const bool bSaveFrameBuffer) noexcept;
+typedef void (*GameLoopDrawFunc)(const bool bPresent, const bool bSaveFrameBuffer) noexcept;
 
 // Used for running one screen or section of the game.
 // Runs a game loop with start, stop, update and draw functions.
@@ -23,4 +23,4 @@ gameaction_e MiniLoop(
     const GameLoopDrawFunc drawer
 ) noexcept;
 
-void D_DoomMain();
+void D_DoomMain() noexcept;

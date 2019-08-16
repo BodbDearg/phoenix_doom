@@ -17,4 +17,7 @@ namespace Random {
 
     uint8_t nextU8() noexcept;
     uint8_t nextU8(const uint8_t max) noexcept;
+
+    // Gives a float between 0 and 1
+    float nextFloat() noexcept;
 }

@@ -327,7 +327,7 @@ gameaction_e F_Ticker() noexcept {
 //----------------------------------------------------------------------------------------------------------------------
 // Draw the frame for the finale
 //----------------------------------------------------------------------------------------------------------------------
-void F_Drawer(const bool bSaveFrameBuffer) noexcept {
+void F_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
     Video::debugClear();
     Renderer::drawUISprite(0, 0, rBACKGRNDBROWN);       // Draw the background 
     
@@ -354,5 +354,5 @@ void F_Drawer(const bool bSaveFrameBuffer) noexcept {
         PrintBigFontCenter(160, 20, CAST_NAMES[gCastNum]);      // Print the name
     }
 
-    Video::present(bSaveFrameBuffer);   // Show the frame
+    Video::endFrame(bPresent, bSaveFrameBuffer);    // Show the frame
 }

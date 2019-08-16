@@ -41,3 +41,7 @@ uint8_t Random::nextU8() noexcept {
 uint8_t Random::nextU8(const uint8_t max) noexcept {
     return (uint8_t) std::uniform_int_distribution<uint16_t>(0, max)(gRandom);
 }
+
+float Random::nextFloat() noexcept {
+    return std::uniform_real_distribution<float>()(gRandom);
+}

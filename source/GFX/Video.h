@@ -28,8 +28,16 @@ namespace Video {
     // Used to identify issues where parts of the screen are not being drawn to.
     void debugClear() noexcept;
 
+    // Saves a copy of the current framebuffer to the 'saved' framebuffer.
+    // This should be done prior to calling 'present'.
+    void saveFrameBuffer() noexcept;
+
     // Presents the framebuffer to the screen
-    void present(const bool bSaveFramebuffer) noexcept;
+    void present() noexcept;
+
+    // Helper that combines various end of frame operations.
+    // Saves the framebuffer if required and presents if required.
+    void endFrame(const bool bPresent, const bool bSaveFrameBuffer) noexcept;
 
     //------------------------------------------------------------------------------------------------------------------
     // Makes a framebuffer color from the given 16.16 fixed point RGB values.

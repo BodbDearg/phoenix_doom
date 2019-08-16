@@ -17,6 +17,7 @@
 #include "TickCounter.h"
 #include "UI/Menu_Main.h"
 #include "UI/Options_Main.h"
+#include "WipeFx.h"
 #include <thread>
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -25,7 +26,7 @@
 // DC: TODO: Should this be elsewhere?
 // Was here in the original source, but 'dmain' does not seem appropriate.
 //----------------------------------------------------------------------------------------------------------------------
-void AddToBox(Fixed* box, Fixed x, Fixed y) {
+void AddToBox(Fixed* box, Fixed x, Fixed y) noexcept {
     if (x < box[BOXLEFT]) {             // Off the left side?
         box[BOXLEFT] = x;               // Increase the left
     } else if (x > box[BOXRIGHT]) {     // Off the right side?
@@ -43,7 +44,7 @@ void AddToBox(Fixed* box, Fixed x, Fixed y) {
 // Convert a joypad response into a network joypad record.
 // This is to compensate the fact that different computers have different hot keys for motion control.
 //----------------------------------------------------------------------------------------------------------------------
-static uint32_t LocalToNet(uint32_t cmd) {
+static uint32_t LocalToNet(uint32_t cmd) noexcept {
     uint32_t NewCmd = 0;
 
     if (cmd & gPadSpeed) {      // Was speed true?
@@ -65,7 +66,7 @@ static uint32_t LocalToNet(uint32_t cmd) {
 // Convert a network response into a local joypad record.
 // This is to compensate the fact that different computers have different hot keys for motion control.
 //----------------------------------------------------------------------------------------------------------------------
-static uint32_t NetToLocal(uint32_t cmd) {
+static uint32_t NetToLocal(uint32_t cmd) noexcept {
     uint32_t NewCmd = 0;
 
     if (cmd & PadA) {
@@ -86,7 +87,7 @@ static uint32_t NetToLocal(uint32_t cmd) {
 //----------------------------------------------------------------------------------------------------------------------
 // Read a joypad command byte from the demo data
 //----------------------------------------------------------------------------------------------------------------------
-static uint32_t GetDemoCmd() {
+static uint32_t GetDemoCmd() noexcept {
     const uint32_t cmd = gDemoDataPtr[0];       // Get a joypad byte from the demo stream
     ++gDemoDataPtr;                             // Inc the state
     return NetToLocal(cmd);                     // Convert the network command to local
@@ -105,11 +106,18 @@ gameaction_e MiniLoop(
 
     // Setup (cache graphics,etc)
     gDoWipe = true;
-    TickCounter::init();
     start();                                    // Prepare the background task (Load data etc.)
     gameaction_e nextGameAction = ga_nothing;   // I am running
     gGameAction = ga_nothing;                   // Game is not in progress
-    gTotalGameTicks = 0;                        // No vbls processed during game
+
+    // Do a wipe if one is desired (start func can abort if desired)
+    if (gDoWipe) {
+        WipeFx::doWipe(drawer);
+    }
+
+    // Initialize ticking
+    gTotalGameTicks = 0;    
+    TickCounter::init();
 
     // Init the joypad states
     gJoyPadButtons = gPrevJoyPadButtons = gNewJoyPadButtons = 0;
@@ -171,8 +179,9 @@ gameaction_e MiniLoop(
 
         // Sync up with the refresh - draw the screen.
         // Also save the framebuffer for each game loop transition, so we can do a wipe if needed.
+        const bool bPresent = true;
         const bool bSaveFrameBuffer = (nextGameAction != ga_nothing);
-        drawer(bSaveFrameBuffer);
+        drawer(bPresent, bSaveFrameBuffer);
 
     } while (nextGameAction == ga_nothing);     // Is the loop finished?
 
@@ -222,10 +231,10 @@ static void STOP_Title() noexcept {
 //----------------------------------------------------------------------------------------------------------------------
 // Draws the title page
 //----------------------------------------------------------------------------------------------------------------------
-static void DRAW_Title(const bool bSaveFrameBuffer) noexcept {
+static void DRAW_Title(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
     Video::debugClear();
-    Renderer::drawUISprite(0, 0, rTITLE);   // Draw the doom logo
-    Video::present(bSaveFrameBuffer);
+    Renderer::drawUISprite(0, 0, rTITLE);           // Draw the doom logo
+    Video::endFrame(bPresent, bSaveFrameBuffer);
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -262,7 +271,7 @@ static gameaction_e TIC_Credits() noexcept {
 //----------------------------------------------------------------------------------------------------------------------
 // Draw the credits page
 //----------------------------------------------------------------------------------------------------------------------
-static void DRAW_Credits(const bool bSaveFrameBuffer) noexcept {
+static void DRAW_Credits(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
     Video::debugClear();
 
     switch (gCreditRezNum) {
@@ -281,7 +290,7 @@ static void DRAW_Credits(const bool bSaveFrameBuffer) noexcept {
     }
 
     Renderer::drawUISprite(0, 0, gCreditRezNum);    // Draw the credits
-    Video::present(bSaveFrameBuffer);               // Page flip
+    Video::endFrame(bPresent, bSaveFrameBuffer);    // Page flip
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -301,7 +310,7 @@ static void RunMenu() {
 //----------------------------------------------------------------------------------------------------------------------
 // Run the title page
 //----------------------------------------------------------------------------------------------------------------------
-static void RunTitle() {
+static void RunTitle() noexcept {
     if (Input::quitRequested())
         return;
     
@@ -313,7 +322,7 @@ static void RunTitle() {
 //----------------------------------------------------------------------------------------------------------------------
 // Show the game credits
 //----------------------------------------------------------------------------------------------------------------------
-static void RunCredits() {
+static void RunCredits() noexcept {
     if (Input::quitRequested())
         return;
     
@@ -325,7 +334,7 @@ static void RunCredits() {
 //----------------------------------------------------------------------------------------------------------------------
 // Run the game demo
 //----------------------------------------------------------------------------------------------------------------------
-static void RunDemo(uint32_t demoname) {
+static void RunDemo(uint32_t demoname) noexcept {
     if (Input::quitRequested())
         return;
 
@@ -347,7 +356,7 @@ static void RunDemo(uint32_t demoname) {
 //----------------------------------------------------------------------------------------------------------------------
 // Main entry point for DOOM!!!!
 //----------------------------------------------------------------------------------------------------------------------
-void D_DoomMain() {
+void D_DoomMain() noexcept {
     gpBigNumFont = &CelImages::loadImages(rBIGNUMB, CelImages::LoadFlagBits::MASKED);   // Cache the large numeric font (Needed always)
 
     Renderer::init();   // Init refresh system

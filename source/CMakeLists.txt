@@ -50,6 +50,8 @@ set(SOURCE_FILES
     "Game/Tick.h"
     "Game/TickCounter.cpp"
     "Game/TickCounter.h"
+    "Game/WipeFx.cpp"
+    "Game/WipeFx.h"
     "GFX/Blit.h"
     "GFX/CelImages.cpp"
     "GFX/CelImages.h"

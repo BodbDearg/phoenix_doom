@@ -268,7 +268,7 @@ gameaction_e P_Ticker() noexcept {
 //--------------------------------------------------------------------------------------------------
 // Draw current display
 //--------------------------------------------------------------------------------------------------
-void P_Drawer(const bool bSaveFrameBuffer) noexcept {
+void P_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
     #if PROFILE_RENDER
         const uint64_t clocksPerSecond = SDL_GetPerformanceFrequency();
         const uint64_t drawStartClock = SDL_GetPerformanceCounter();
@@ -276,24 +276,24 @@ void P_Drawer(const bool bSaveFrameBuffer) noexcept {
 
     if (gGamePaused && gRefreshDrawn) {
         DrawPlaque(rPAUSED);            // Draw 'Paused' plaque
-        Video::present(bSaveFrameBuffer);
+        Video::endFrame(bPresent, bSaveFrameBuffer);
     } else if (gPlayers.AutomapFlags & AF_OPTIONSACTIVE) {
         Video::debugClear();
-        Renderer::drawPlayerView();     // Render the 3D view
-        ST_Drawer();                    // Draw the status bar
-        O_Drawer(bSaveFrameBuffer);     // Draw the console handler
+        Renderer::drawPlayerView();                     // Render the 3D view
+        ST_Drawer();                                    // Draw the status bar
+        O_Drawer(bPresent, bSaveFrameBuffer);           // Draw the console handler
         gRefreshDrawn = false;
     } else if (gPlayers.AutomapFlags & AF_ACTIVE) {
         Video::debugClear();
-        AM_Drawer();                        // Draw the automap
-        ST_Drawer();                        // Draw the status bar
-        Video::present(bSaveFrameBuffer);   // Update and page flip
+        AM_Drawer();                                    // Draw the automap
+        ST_Drawer();                                    // Draw the status bar
+        Video::endFrame(bPresent, bSaveFrameBuffer);
         gRefreshDrawn = true;
     } else {
         Video::debugClear();
-        Renderer::drawPlayerView();         // Render the 3D view
-        ST_Drawer();                        // Draw the status bar
-        Video::present(bSaveFrameBuffer);   // Only allow debug clear if we are not going into pause mode
+        Renderer::drawPlayerView();                     // Render the 3D view
+        ST_Drawer();                                    // Draw the status bar
+        Video::endFrame(bPresent, bSaveFrameBuffer);
         gRefreshDrawn = true;
     }
 

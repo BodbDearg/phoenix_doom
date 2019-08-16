@@ -273,7 +273,7 @@ void O_Control(player_t *player) noexcept {
     Draw the option screen
 
 **********************************/
-void O_Drawer(const bool bSaveFrameBuffer) noexcept {
+void O_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
     // Erase old and Draw new cursor frame
     const CelImageArray& skullImgs = CelImages::loadImages(rSKULLS, CelImages::LoadFlagBits::MASKED);
     Renderer::drawUISprite(CURSORX, CURSOR_Y_POS[gCursorPos], skullImgs.getImage(gCursorFrame));
@@ -318,5 +318,5 @@ void O_Drawer(const bool bSaveFrameBuffer) noexcept {
     }
 
     CelImages::releaseImages(rSLIDER);
-    Video::present(bSaveFrameBuffer);
+    Video::endFrame(bPresent, bSaveFrameBuffer);
 }

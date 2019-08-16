@@ -310,7 +310,7 @@ gameaction_e IN_Ticker() noexcept {
     Draw the intermission screen
     
 **********************************/
-void IN_Drawer(const bool bSaveFrameBuffer) noexcept {
+void IN_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
     Video::debugClear();
     Renderer::drawUISprite(0, 0, rBACKGRNDBROWN);   // Load and draw the skulls 
     
@@ -333,5 +333,5 @@ void IN_Drawer(const bool bSaveFrameBuffer) noexcept {
     PrintNumber(SVALX, SVALY, gSecretValue, PNFLAGS_PERCENT|PNFLAGS_RIGHT);
 
     CelImages::releaseImages(rINTERMIS);
-    Video::present(bSaveFrameBuffer);
+    Video::endFrame(bPresent, bSaveFrameBuffer);
 }

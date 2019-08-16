@@ -114,13 +114,25 @@ void Video::debugClear() noexcept {
     #endif    
 }
 
-void Video::present(const bool bSaveFramebuffer) noexcept {
-    if (bSaveFramebuffer) {
-        std::memcpy(gpSavedFrameBuffer, gpFrameBuffer, sizeof(uint32_t) * SCREEN_WIDTH * SCREEN_HEIGHT);
-    }
+void Video::saveFrameBuffer() noexcept {
+    ASSERT(gpSavedFrameBuffer);
+    ASSERT(gpFrameBuffer);
+    std::memcpy(gpSavedFrameBuffer, gpFrameBuffer, sizeof(uint32_t) * SCREEN_WIDTH * SCREEN_HEIGHT);
+}
 
+void Video::present() noexcept {
     unlockFramebufferTexture();
     SDL_RenderCopy(gRenderer, gFramebufferTexture, NULL, NULL);
     SDL_RenderPresent(gRenderer);
     lockFramebufferTexture();
+}
+
+void Video::endFrame(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
+    if (bSaveFrameBuffer) {
+        saveFrameBuffer();
+    }
+
+    if (bPresent) {
+        present();
+    }
 }

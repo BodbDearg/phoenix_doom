@@ -20,4 +20,4 @@ void PrintBigFontCenter(const int32_t x, const int32_t y, const char* const str)
 void IN_Start() noexcept;
 void IN_Stop() noexcept;
 gameaction_e IN_Ticker() noexcept;
-void IN_Drawer(const bool bSaveFrameBuffer) noexcept;
+void IN_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept;
