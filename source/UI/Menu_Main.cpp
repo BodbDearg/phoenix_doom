@@ -58,7 +58,7 @@ void M_Start() noexcept {
     gCursorPos = 0;                 // Topmost y position 
     gPlayerSkill = gStartSkill;     // Init the skill level 
     gPlayerMap = gStartMap;         // Init the starting map 
-    gSleepMark = ReadTick();
+    gSleepMark = gTotalGameTicks;
     gOptionActive = false;          // Option screen on 
 }
 
@@ -91,8 +91,8 @@ gameaction_e M_Ticker() noexcept {
         return ga_completed;        // done with menu 
     }
     
-    if (buttons) {          // If buttons are held down then reset the timer 
-        gSleepMark = ReadTick();
+    if (buttons) {  // If buttons are held down then reset the timer 
+        gSleepMark = gTotalGameTicks;
     }
     
     if (gOptionActive) {
@@ -103,9 +103,10 @@ gameaction_e M_Ticker() noexcept {
         return ga_nothing;
     }
     
-    if ((gNewJoyPadButtons&PadX) ||      // Pressed abort? 
-        ((ReadTick()-gSleepMark)>=(TICKSPERSEC*15))) {
-        return ga_died;                 // Exit now 
+    if ((gNewJoyPadButtons & PadX) ||     // Pressed abort? 
+        ((gTotalGameTicks - gSleepMark) >= (TICKSPERSEC * 15))
+    ) {
+        return ga_died;     // Exit now 
     }
 
     // Animate skull 

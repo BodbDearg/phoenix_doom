@@ -184,8 +184,7 @@ void doWipe(const GameLoopDrawFunc drawFunc) noexcept {
     // Generate the Y delta table that randomizes the wipe
     std::unique_ptr<float[]> yDeltas = generateYDeltaTable();
 
-    // Initialize ticking and continue until the wipe is done
-    TickCounter::init();
+    // Continue until the wipe is done
     bool bWipeDone = false;
 
     while (!bWipeDone) {
@@ -214,9 +213,8 @@ void doWipe(const GameLoopDrawFunc drawFunc) noexcept {
         Video::present();
     }
 
-    // Cleanup
-    Input::consumeEvents();     // No lingering keypresses
-    TickCounter::shutdown();
+    // Cleanup: leave no unhandled input events when this exits
+    Input::consumeEvents();
 }
 
 END_NAMESPACE(WipeFx)

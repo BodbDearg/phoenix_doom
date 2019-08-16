@@ -103,11 +103,16 @@ gameaction_e MiniLoop(
     const GameLoopTickFunc ticker,
     const GameLoopDrawFunc drawer
 ) noexcept {
-    // Setup (cache graphics,etc)
+    // Do a wipe by default unless the start handler cancels it
     gDoWipe = true;
 
+    // Initialize ticking
+    gTotalGameTicks = 0;
+    TickCounter::init();
+
+    // Setup (cache graphics,etc)
     if (start) {
-        start();    // Prepare the background task (Load data etc.)
+        start();
     }
 
     gameaction_e nextGameAction = ga_nothing;   // I am running
@@ -117,10 +122,6 @@ gameaction_e MiniLoop(
     if (gDoWipe) {
         WipeFx::doWipe(drawer);
     }
-
-    // Initialize ticking
-    gTotalGameTicks = 0;    
-    TickCounter::init();
 
     // Init the joypad states
     gJoyPadButtons = gPrevJoyPadButtons = gNewJoyPadButtons = 0;

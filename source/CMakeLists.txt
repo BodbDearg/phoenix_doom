@@ -65,7 +65,6 @@ set(SOURCE_FILES
     "GFX/Renderer_Internal.h"
     "GFX/Renderer_PostFx.cpp"
     "GFX/Renderer_SpriteDraw.cpp"
-    "GFX/Renderer_TODO.cpp"
     "GFX/Renderer_WallDraw.cpp"
     "GFX/Renderer_WallPrep.cpp"
     "GFX/Renderer_WeaponDraw.cpp"

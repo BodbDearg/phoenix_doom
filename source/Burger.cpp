@@ -1,68 +1,10 @@
 #include "Burger.h"
 
-#include "Base/Endian.h"
 #include "Base/Input.h"
-#include "Game/Resources.h"
 #include "GFX/Blit.h"
-#include "GFX/CelImages.h"
-#include "GFX/Renderer.h"
 #include "GFX/Video.h"
-#include <cstddef>
 
-// DC: 3DO specific headers - remove
-#if 0
-    #include <event.h>
-    #include <filefunctions.h>
-    #include <filesystem.h>
-    #include <Graphics.h>
-    #include <io.h>
-    #include <kernel.h>
-    #include <operror.h>
-    #include <task.h>
-#endif
-
-// Width of the screen in pixels 
-uint32_t gFramebufferWidth = 320;
-uint32_t gFramebufferHeight = 200;
-
-/**********************************
-
-    Pointers used by the draw routines to describe
-    the video display.
-
-**********************************/
-
-uint8_t* gVideoPointer;     // Pointer to draw buffer 
-Item gVideoItem;         // 3DO specific video Item number for hardware 
-Item gVideoScreen;       // 3DO specific screen Item number for hardware 
-
-/**********************************
-
-    Time mark for ticker
-
-**********************************/
-
-uint32_t gLastTick;      // Time last waited at 
-
-/**********************************
-
-    Read the current timer value
-
-**********************************/
-
-static volatile uint32_t gTickValue;
-static bool gTimerInited;
-
-/**********************************
-
-    Read the bits from the joystick
-
-**********************************/
-
-uint32_t gLastJoyButtons[4];     // Save the previous joypad bits 
-
-uint32_t ReadJoyButtons(uint32_t PadNum) noexcept
-{
+uint32_t ReadJoyButtons(uint32_t PadNum) noexcept {
     // DC: FIXME: TEMP
     uint32_t buttons = 0;
 
@@ -121,56 +63,6 @@ uint32_t ReadJoyButtons(uint32_t PadNum) noexcept
     #endif
 
     return buttons;
-}
-
-/******************************
-
-    This is my IRQ task executed 60 times a second
-    This is spawned as a background thread and modifies a
-    global timer variable.
-
-******************************/
-
-// DC: FIXME: reimplement/replace
-#if 0
-static void Timer60Hz(void) noexcept
-{
-    Item devItem;       // Item referance for a timer device 
-    Item IOReqItem;     // IO Request item 
-    IOInfo ioInfo;      // IO Info struct 
-    struct timeval tv;  // Timer time struct 
-
-    devItem = OpenNamedDevice("timer",0);       // Open the timer 
-    IOReqItem = CreateIOReq(0,0,devItem,0);     // Create a IO request 
-
-    for (;;) {  // Stay forever 
-        tv.tv_sec = 0;
-        tv.tv_usec = 16667;                     // 60 times per second 
-        memset(&ioInfo,0,sizeof(ioInfo));       // Init the struct 
-        ioInfo.ioi_Command = TIMERCMD_DELAY;    // Sleep for some time 
-        ioInfo.ioi_Unit = TIMER_UNIT_USEC;
-        ioInfo.ioi_Send.iob_Buffer = &tv;       // Pass the time struct 
-        ioInfo.ioi_Send.iob_Len = sizeof(tv);
-        DoIO(IOReqItem,&ioInfo);                // Perform the task sleep 
-        ++TickValue;                            // Inc at 60 hz 
-    }
-}
-#endif
-
-uint32_t ReadTick() noexcept
-{
-    if (gTimerInited) {      // Was the timer started? 
-        return gTickValue;
-    }
-    
-    gTimerInited = true;     // Mark as started 
-
-    // DC: FIXME: reimplement/replace
-    #if 0
-        CreateThread("Timer60Hz",KernelBase->kb_CurrentTask->t.n_Priority+10,Timer60Hz,512);
-    #endif
-    
-    return gTickValue;       // Return the tick value 
 }
 
 /****************************************
