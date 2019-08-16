@@ -111,81 +111,62 @@ static void drawWipe(
     const uint32_t* const gpNewImg,
     const float* const pYDeltas
 ) noexcept {
-    const uint32_t screenWidth = Video::SCREEN_WIDTH;
-    const uint32_t screenHeight = Video::SCREEN_HEIGHT;
+    const uint32_t screenW = Video::SCREEN_WIDTH;
+    const uint32_t screenH = Video::SCREEN_HEIGHT;
     uint32_t* const pDstPixels = Video::gpFrameBuffer;
 
     //------------------------------------------------------------------------------------------------------------------
     // Add in the new image pixels at the top: do 8 pixel batches at a time, then the remainder pixels
     //------------------------------------------------------------------------------------------------------------------
-    for (uint32_t x = 0; x < screenWidth; ++x) {
+    for (uint32_t x = 0; x < screenW; ++x) {
         uint32_t* const pDstPixelsCol = pDstPixels + x;
-        const uint32_t* const gpNewImgCol = gpNewImg + x;
+        const uint32_t* const gpNewImgCol = gpNewImg + x * screenH;
 
-        const uint32_t yDelta = std::min((uint32_t) std::max(pYDeltas[x], 0.0f), screenHeight);
+        const uint32_t yDelta = std::min((uint32_t) std::max(pYDeltas[x], 0.0f), screenH);
         const uint32_t yDelta8 = (yDelta / 8) * 8;
         
         for (uint32_t y = 0; y < yDelta8; y += 8) {
-            const uint32_t idx1 = y * screenWidth;
-            const uint32_t idx2 = (y + 1) * screenWidth;
-            const uint32_t idx3 = (y + 2) * screenWidth;
-            const uint32_t idx4 = (y + 3) * screenWidth;
-            const uint32_t idx5 = (y + 4) * screenWidth;
-            const uint32_t idx6 = (y + 5) * screenWidth;
-            const uint32_t idx7 = (y + 6) * screenWidth;
-            const uint32_t idx8 = (y + 7) * screenWidth;
-
-            pDstPixelsCol[idx1] = gpNewImgCol[idx1];
-            pDstPixelsCol[idx2] = gpNewImgCol[idx2];
-            pDstPixelsCol[idx3] = gpNewImgCol[idx3];
-            pDstPixelsCol[idx4] = gpNewImgCol[idx4];
-            pDstPixelsCol[idx5] = gpNewImgCol[idx5];
-            pDstPixelsCol[idx6] = gpNewImgCol[idx6];
-            pDstPixelsCol[idx7] = gpNewImgCol[idx7];
-            pDstPixelsCol[idx8] = gpNewImgCol[idx8];
+            pDstPixelsCol[(y + 0) * screenW] = gpNewImgCol[y + 0];
+            pDstPixelsCol[(y + 1) * screenW] = gpNewImgCol[y + 1];
+            pDstPixelsCol[(y + 2) * screenW] = gpNewImgCol[y + 2];
+            pDstPixelsCol[(y + 3) * screenW] = gpNewImgCol[y + 3];
+            pDstPixelsCol[(y + 4) * screenW] = gpNewImgCol[y + 4];
+            pDstPixelsCol[(y + 5) * screenW] = gpNewImgCol[y + 5];
+            pDstPixelsCol[(y + 6) * screenW] = gpNewImgCol[y + 6];
+            pDstPixelsCol[(y + 7) * screenW] = gpNewImgCol[y + 7];
         }
 
         for (uint32_t y = yDelta8; y < yDelta; ++y) {
-            const uint32_t idx = y * screenWidth;
-            pDstPixelsCol[idx] = gpNewImgCol[idx];
+            pDstPixelsCol[y * screenW] = gpNewImgCol[y];
         }
     }
 
     //------------------------------------------------------------------------------------------------------------------
     // Add in the old image pixels: do 8 pixel batches at a time, then the remainder pixels
     //------------------------------------------------------------------------------------------------------------------
-    for (uint32_t x = 0; x < screenWidth; ++x) {
+    for (uint32_t x = 0; x < screenW; ++x) {
         uint32_t* const pDstPixelsCol = pDstPixels + x;
-        const uint32_t* const gpOldImgCol = gpOldImg + x;
+        const uint32_t* const gpOldImgCol = gpOldImg + x * screenH;
         
-        const uint32_t yDelta = std::min((uint32_t) std::max(pYDeltas[x], 0.0f), screenHeight);
-        const uint32_t numPixelsRemaining = screenHeight - yDelta;
+        const uint32_t yDelta = std::min((uint32_t) std::max(pYDeltas[x], 0.0f), screenH);
+        const uint32_t numPixelsRemaining = screenH - yDelta;
         const uint32_t screenHeight8 = yDelta + (numPixelsRemaining / 8) * 8;        
 
         for (uint32_t y = yDelta; y < screenHeight8; y += 8) {
             const uint32_t oldPixelBaseY = y - yDelta;
-            const uint32_t oldPixel1 = gpOldImgCol[oldPixelBaseY * screenWidth];
-            const uint32_t oldPixel2 = gpOldImgCol[(oldPixelBaseY + 1) * screenWidth];
-            const uint32_t oldPixel3 = gpOldImgCol[(oldPixelBaseY + 2) * screenWidth];
-            const uint32_t oldPixel4 = gpOldImgCol[(oldPixelBaseY + 3) * screenWidth];
-            const uint32_t oldPixel5 = gpOldImgCol[(oldPixelBaseY + 4) * screenWidth];
-            const uint32_t oldPixel6 = gpOldImgCol[(oldPixelBaseY + 5) * screenWidth];
-            const uint32_t oldPixel7 = gpOldImgCol[(oldPixelBaseY + 6) * screenWidth];
-            const uint32_t oldPixel8 = gpOldImgCol[(oldPixelBaseY + 7) * screenWidth];
 
-            pDstPixelsCol[y * screenWidth] = oldPixel1;
-            pDstPixelsCol[(y + 1) * screenWidth] = oldPixel2;
-            pDstPixelsCol[(y + 2) * screenWidth] = oldPixel3;
-            pDstPixelsCol[(y + 3) * screenWidth] = oldPixel4;
-            pDstPixelsCol[(y + 4) * screenWidth] = oldPixel5;
-            pDstPixelsCol[(y + 5) * screenWidth] = oldPixel6;
-            pDstPixelsCol[(y + 6) * screenWidth] = oldPixel7;
-            pDstPixelsCol[(y + 7) * screenWidth] = oldPixel8;
+            pDstPixelsCol[(y + 0) * screenW] = gpOldImgCol[oldPixelBaseY + 0];
+            pDstPixelsCol[(y + 1) * screenW] = gpOldImgCol[oldPixelBaseY + 1];
+            pDstPixelsCol[(y + 2) * screenW] = gpOldImgCol[oldPixelBaseY + 2];
+            pDstPixelsCol[(y + 3) * screenW] = gpOldImgCol[oldPixelBaseY + 3];
+            pDstPixelsCol[(y + 4) * screenW] = gpOldImgCol[oldPixelBaseY + 4];
+            pDstPixelsCol[(y + 5) * screenW] = gpOldImgCol[oldPixelBaseY + 5];
+            pDstPixelsCol[(y + 6) * screenW] = gpOldImgCol[oldPixelBaseY + 6];
+            pDstPixelsCol[(y + 7) * screenW] = gpOldImgCol[oldPixelBaseY + 7];
         }
 
-        for (uint32_t y = screenHeight8; y < screenHeight; ++y) {
-            const uint32_t oldPixel = gpOldImgCol[(y - yDelta) * screenWidth];
-            pDstPixelsCol[y * screenWidth] = oldPixel;
+        for (uint32_t y = screenHeight8; y < screenH; ++y) {
+            pDstPixelsCol[y * screenW] = gpOldImgCol[y - yDelta];
         }
     }
 }

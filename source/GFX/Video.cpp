@@ -117,7 +117,52 @@ void Video::debugClear() noexcept {
 void Video::saveFrameBuffer() noexcept {
     ASSERT(gpSavedFrameBuffer);
     ASSERT(gpFrameBuffer);
-    std::memcpy(gpSavedFrameBuffer, gpFrameBuffer, sizeof(uint32_t) * SCREEN_WIDTH * SCREEN_HEIGHT);
+
+    // Note: the output framebuffer is saved in column major format.
+    // This allows us to do screen wipes more efficiently due to better cache usage.
+    const uint32_t screenWidth = SCREEN_WIDTH;
+    const uint32_t screenWidth8 = (screenWidth / 8) * 8;
+    const uint32_t screenHeight = SCREEN_HEIGHT;
+
+    for (uint32_t y = 0; y < screenHeight; ++y) {
+        const uint32_t* const pSrcRow = &gpFrameBuffer[y * screenWidth];
+        uint32_t* const pDstRow = &gpSavedFrameBuffer[y];
+
+        // Copy 8 pixels at a time, then mop up the rest
+        for (uint32_t x = 0; x < screenWidth8; x += 8) {
+            const uint32_t x1 = x + 0;
+            const uint32_t x2 = x + 1;
+            const uint32_t x3 = x + 2;
+            const uint32_t x4 = x + 3;
+            const uint32_t x5 = x + 4;
+            const uint32_t x6 = x + 5;
+            const uint32_t x7 = x + 6;
+            const uint32_t x8 = x + 7;
+
+            const uint32_t pix1 = pSrcRow[x1];
+            const uint32_t pix2 = pSrcRow[x2];
+            const uint32_t pix3 = pSrcRow[x3];
+            const uint32_t pix4 = pSrcRow[x4];
+            const uint32_t pix5 = pSrcRow[x5];
+            const uint32_t pix6 = pSrcRow[x6];
+            const uint32_t pix7 = pSrcRow[x7];
+            const uint32_t pix8 = pSrcRow[x8];
+
+            pDstRow[x1 * screenHeight] = pix1;
+            pDstRow[x2 * screenHeight] = pix2;
+            pDstRow[x3 * screenHeight] = pix3;
+            pDstRow[x4 * screenHeight] = pix4;
+            pDstRow[x5 * screenHeight] = pix5;
+            pDstRow[x6 * screenHeight] = pix6;
+            pDstRow[x7 * screenHeight] = pix7;
+            pDstRow[x8 * screenHeight] = pix8;
+        }
+
+        for (uint32_t x = screenWidth8; x < screenWidth; x++) {
+            const uint32_t pix = pSrcRow[x];
+            pDstRow[x * screenHeight] = pix;
+        }
+    }
 }
 
 void Video::present() noexcept {

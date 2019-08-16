@@ -16,7 +16,8 @@ namespace Video {
         static constexpr uint32_t SCREEN_HEIGHT = 200;  // Note: the actual 3DO vertical res was 240 but 40 px was not drawn to (black letterbox)
     #endif
 
-    // The 32-bit framebuffer to draw to and a saved old copy of it (for screen wipes)
+    // The 32-bit framebuffer to draw to and a saved old copy of it (for screen wipes).
+    // N.B: The saved framebuffer is in COLUMN MAJOR format for more efficient cache usage during wipes.
     extern uint32_t* gpFrameBuffer;
     extern uint32_t* gpSavedFrameBuffer;
 
