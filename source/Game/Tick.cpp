@@ -314,10 +314,11 @@ void P_Start() noexcept {
     gTimeMark4 = 0;
     gPlayer.AutomapFlags &= AF_GODMODE;     // No automapping specials (but allow godmode)
 
-    AM_Start();         // Start the automap system
-    ST_Start();         // Init the status bar this level
-    G_DoLoadLevel();    // Load a level into memory
-    Random::init();     // Reset the random number generator
+    AM_Start();                     // Start the automap system
+    ST_Start();                     // Init the status bar this level
+    G_DoLoadLevel();                // Load a level into memory
+    Random::init();                 // Reset the random number generator
+    PlayerCalcHeight(gPlayer);      // Required for the view to be at the right height for the screen wipe
 
     S_StartSong(Song_e1m1 - 1 + gGameMap);
 }

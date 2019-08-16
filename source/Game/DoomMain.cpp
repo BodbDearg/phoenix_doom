@@ -94,7 +94,8 @@ static uint32_t GetDemoCmd() noexcept {
 }
 
 //----------------------------------------------------------------------------------------------------------------------
-// Main loop processing for the game system
+// Main loop processing for the game system.
+// Each callback is optional, though should probably always have a ticker and drawer.
 //----------------------------------------------------------------------------------------------------------------------
 gameaction_e MiniLoop(
     const GameLoopStartFunc start,
@@ -102,11 +103,13 @@ gameaction_e MiniLoop(
     const GameLoopTickFunc ticker,
     const GameLoopDrawFunc drawer
 ) noexcept {
-    ASSERT(start && stop && ticker && drawer);
-
     // Setup (cache graphics,etc)
     gDoWipe = true;
-    start();                                    // Prepare the background task (Load data etc.)
+
+    if (start) {
+        start();    // Prepare the background task (Load data etc.)
+    }
+
     gameaction_e nextGameAction = ga_nothing;   // I am running
     gGameAction = ga_nothing;                   // Game is not in progress
 
@@ -140,11 +143,13 @@ gameaction_e MiniLoop(
         }
 
         // Simulate the required number of ticks
-        while ((ticksLeftToSimulate > 0) && (nextGameAction == ga_nothing)) {
-            ++gTotalGameTicks;              // Add to the VBL count
-            --ticksLeftToSimulate;
-            nextGameAction = ticker();      // Process the keypad commands
-            Input::consumeEvents();         // Don't allow any more keypress events if we do more than 1 tick
+        if (ticker) {
+            while ((ticksLeftToSimulate > 0) && (nextGameAction == ga_nothing)) {
+                ++gTotalGameTicks;              // Add to the VBL count
+                --ticksLeftToSimulate;
+                nextGameAction = ticker();      // Process the keypad commands
+                Input::consumeEvents();         // Don't allow any more keypress events if we do more than 1 tick
+            }
         }
 
         // Get buttons for next tic
@@ -179,13 +184,17 @@ gameaction_e MiniLoop(
 
         // Sync up with the refresh - draw the screen.
         // Also save the framebuffer for each game loop transition, so we can do a wipe if needed.
-        const bool bPresent = true;
-        const bool bSaveFrameBuffer = (nextGameAction != ga_nothing);
-        drawer(bPresent, bSaveFrameBuffer);
-
+        if (drawer) {
+            const bool bPresent = true;
+            const bool bSaveFrameBuffer = (nextGameAction != ga_nothing);
+            drawer(bPresent, bSaveFrameBuffer);
+        }
     } while (nextGameAction == ga_nothing);     // Is the loop finished?
 
-    stop();                     // Release resources
+    if (stop) {
+        stop();     // Cleanup, release resources etc.
+    }
+
     S_Clear();                  // Kill sounds
     gPlayer.mo = nullptr;       // For net consistancy checks
     TickCounter::shutdown();
@@ -238,26 +247,10 @@ static void DRAW_Title(const bool bPresent, const bool bSaveFrameBuffer) noexcep
 }
 
 //----------------------------------------------------------------------------------------------------------------------
-// Load resources for the credits page
-//----------------------------------------------------------------------------------------------------------------------
-static uint32_t gCreditRezNum;
-
-static void START_Credits() noexcept {
-    gCreditRezNum = rIDCREDITS;
-}
-
-//----------------------------------------------------------------------------------------------------------------------
-// Release memory for credits
-//----------------------------------------------------------------------------------------------------------------------
-static void STOP_Credits() noexcept {
-    // Nothing to do...
-}
-
-//----------------------------------------------------------------------------------------------------------------------
 // Ticker code for the credits page
 //----------------------------------------------------------------------------------------------------------------------
 static gameaction_e TIC_Credits() noexcept {
-    if (gTotalGameTicks >= (30 * TICKSPERSEC)) {    // Time up?
+    if (gTotalGameTicks >= (10 * TICKSPERSEC)) {    // Time up?
         return ga_died;                             // Go on to next demo
     }
 
@@ -269,28 +262,24 @@ static gameaction_e TIC_Credits() noexcept {
 }
 
 //----------------------------------------------------------------------------------------------------------------------
-// Draw the credits page
+// Draw the credits pages
 //----------------------------------------------------------------------------------------------------------------------
-static void DRAW_Credits(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
+static void DRAW_Credits(const bool bPresent, const bool bSaveFrameBuffer, const uint32_t creditsPageResourceNum) noexcept {
     Video::debugClear();
+    Renderer::drawUISprite(0, 0, creditsPageResourceNum);
+    Video::endFrame(bPresent, bSaveFrameBuffer);
+}
 
-    switch (gCreditRezNum) {
-        case rIDCREDITS:
-            if (gTotalGameTicks >= ( 10 * TICKSPERSEC)) {
-                gCreditRezNum = rCREDITS;
-                gDoWipe = true;
-            }
-            break;
-        
-        case rCREDITS:
-            if (gTotalGameTicks >= (20 * TICKSPERSEC)) {
-                gCreditRezNum = rLOGCREDITS;
-                gDoWipe = true;
-            }
-    }
+static void DRAW_IdCredits(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
+    DRAW_Credits(bPresent, bSaveFrameBuffer, rIDCREDITS);
+}
 
-    Renderer::drawUISprite(0, 0, gCreditRezNum);    // Draw the credits
-    Video::endFrame(bPresent, bSaveFrameBuffer);    // Page flip
+static void DRAW_AdiCredits(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
+    DRAW_Credits(bPresent, bSaveFrameBuffer, rCREDITS);
+}
+
+static void DRAW_LogicwareCredits(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
+    DRAW_Credits(bPresent, bSaveFrameBuffer, rLOGCREDITS);
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -300,7 +289,7 @@ static void RunMenu() {
     if (Input::quitRequested())
         return;
     
-    if (MiniLoop(M_Start, M_Stop, M_Ticker, M_Drawer) == ga_completed) {    // Process the menu
+    if (MiniLoop(M_Start, M_Stop, M_Ticker, M_Drawer) == ga_completed) {
         S_StopSong();
         G_InitNew(gStartSkill, gStartMap);      // Init the new game
         G_RunGame();                            // Play the game
@@ -314,20 +303,34 @@ static void RunTitle() noexcept {
     if (Input::quitRequested())
         return;
     
+    // Run the main menu if the user exited out of this screen
     if (MiniLoop(START_Title, STOP_Title, TIC_Abortable, DRAW_Title) == ga_exitdemo) {
-        RunMenu();  // Process the main menu
+        RunMenu();
     }
 }
 
 //----------------------------------------------------------------------------------------------------------------------
-// Show the game credits
+// Show the game credit pages
 //----------------------------------------------------------------------------------------------------------------------
 static void RunCredits() noexcept {
     if (Input::quitRequested())
         return;
     
-    if (MiniLoop(START_Credits, STOP_Credits, TIC_Credits, DRAW_Credits) == ga_exitdemo) {  // Did you quit?
-        RunMenu();  // Process the main menu
+    // Show ID credits, Art Data Interactive credits and then Logicware credits in that order.
+    // If the user requests to exit this sequence then go to the main menu.
+    if (MiniLoop(nullptr, nullptr, TIC_Credits, DRAW_IdCredits) == ga_exitdemo) {
+        RunMenu();
+        return;
+    }
+
+    if (MiniLoop(nullptr, nullptr, TIC_Credits, DRAW_AdiCredits) == ga_exitdemo) {
+        RunMenu();
+        return;
+    }
+
+    if (MiniLoop(nullptr, nullptr, TIC_Credits, DRAW_LogicwareCredits) == ga_exitdemo) {
+        RunMenu();
+        return;        
     }
 }
 
