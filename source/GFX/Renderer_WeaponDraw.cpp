@@ -13,7 +13,7 @@
 
 BEGIN_NAMESPACE(Renderer)
 
-static constexpr int32_t SCREEN_GUN_Y = -40;  // Y offset to center the player's weapon properly
+static constexpr int32_t SCREEN_GUN_Y = -38;  // Y offset to center the player's weapon properly
 
 //----------------------------------------------------------------------------------------------------------------------
 // Draw a single weapon or muzzle flash on the screen

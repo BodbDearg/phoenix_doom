@@ -2,6 +2,7 @@
 TODO
 ------------------------------------------------------------------------------------------------------------------------
 
+- Fix automap at high res.
 - Fix skybox occasional column twitching.
 - New sprite clipping method that takes into account side of seg sprite is on.
 - Fix BSP check BBOX for high res rendering
