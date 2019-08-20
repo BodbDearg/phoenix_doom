@@ -40,7 +40,7 @@ void shutdown() noexcept {
 
 uint32_t update() noexcept {
     const TimePoint now = std::chrono::high_resolution_clock::now();
-    
+
     // Note: the first update always requests to simulate 1 tick.
     // Otherwise we see how much time has elapsed between calls.
     if (gDidFirstUpdate) {
@@ -61,7 +61,7 @@ uint32_t update() noexcept {
                 }
             }
         }
-        
+
         return 0;
     }
     else {

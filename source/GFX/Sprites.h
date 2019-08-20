@@ -23,7 +23,7 @@ struct SpriteFrameAngle {
     uint16_t    height : 15;    // Height of sprite texture
     uint16_t    flipped : 1;    // If '1' then the frame is flipped horizontally when rendered
     int16_t     leftOffset;     // Where the first column of the sprite gets drawn, in pixels to the left of it's position.
-    int16_t     topOffset;      // Where the first row of the sprite gets drawn, in pixels above it's position.    
+    int16_t     topOffset;      // Where the first row of the sprite gets drawn, in pixels above it's position.
 };
 
 //----------------------------------------------------------------------------------------------------------------------

@@ -75,7 +75,7 @@ static void doTintEffect(const uint32_t r5, const uint32_t g5, const uint32_t b5
 //----------------------------------------------------------------------------------------------------------------------
 // Does post processing fx on the entire 3D view
 //----------------------------------------------------------------------------------------------------------------------
-void doPostFx() noexcept {    
+void doPostFx() noexcept {
     const player_t& player = gPlayer;
 
     // See if we are to do the invulnerability effect.
@@ -113,7 +113,7 @@ void doPostFx() noexcept {
     if (beserkTicksLeft > 0 && beserkTicksLeft < 255) {
         uint32_t color = 255 - beserkTicksLeft;
         color >>= 4;
-        redFx += color;     // Feeling good!         
+        redFx += color;     // Feeling good!
     }
 
     redFx = std::min(redFx, 31u);

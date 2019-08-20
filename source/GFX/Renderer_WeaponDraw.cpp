@@ -43,7 +43,7 @@ static void DrawAWeapon(const pspdef_t& psp, const bool bShadow) noexcept {
     float gunY = (float)(img.offsetY + psp.WeaponY + SCREEN_GUN_Y);
     gunX *= gGunXScale;
     gunY *= gGunYScale;
-    
+
     // Draw the gun sprite part.
     // If the player has invisibility then draw using alpha blending:
     if (bShadow) {
@@ -123,14 +123,14 @@ void drawWeapons() noexcept {
 
     // Draw the sprites (if valid)
     {
-        const pspdef_t* pSprite = gPlayer.psprites;                 // Get the first sprite in the array 
+        const pspdef_t* pSprite = gPlayer.psprites;                 // Get the first sprite in the array
         const pspdef_t* const pEndSprite = pSprite + NUMPSPRITES;
 
         while (pSprite < pEndSprite) {
             if (pSprite->StatePtr) {                // Valid state record?
                 DrawAWeapon(*pSprite, bShadow);     // Draw the weapon
             }
-            
+
             ++pSprite;
         }
     }

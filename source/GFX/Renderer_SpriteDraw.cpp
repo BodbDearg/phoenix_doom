@@ -54,7 +54,7 @@ static void transformSpriteXBoundsAndWToClipSpace(
 ) noexcept {
     // Notes:
     //  (1) We treat 'y' as if it were 'z' for the purposes of these calculations, since the
-    //      projection matrix has 'z' as the depth value and not y (Doom coord sys). 
+    //      projection matrix has 'z' as the depth value and not y (Doom coord sys).
     //  (2) We assume that the sprite always starts off with an implicit 'w' value of '1'.
     clipLxOut = viewLx * gProjMatrix.r0c0;
     clipRxOut = viewRx * gProjMatrix.r0c0;
@@ -101,7 +101,7 @@ void getSpriteDetailsForMapObj(
     );
 
     const uint8_t spriteAngle = getThingSpriteAngleForViewpoint(thing, viewXFrac, viewYFrac);
-    
+
     // Load the current sprite for the thing and then the frame angle we want
     const Sprite* const pSprite = Sprites::load(spriteResourceNum);
     ASSERT(spriteFrameNum < pSprite->numFrames);
@@ -172,7 +172,7 @@ static void transformSpriteCoordsToScreenSpace(
 //----------------------------------------------------------------------------------------------------------------------
 // Determine the light multiplier for the given thing
 //----------------------------------------------------------------------------------------------------------------------
-float determineLightMultiplierForThing(const mobj_t& thing, const bool bIsFullBright, const float depth) noexcept {    
+float determineLightMultiplierForThing(const mobj_t& thing, const bool bIsFullBright, const float depth) noexcept {
     uint32_t sectorLightLevel;
 
     if (bIsFullBright) {
@@ -193,12 +193,12 @@ void addSpriteToFrame(const mobj_t& thing) noexcept {
     // The player never gets added for obvious reasons
     if (thing.player)
         return;
-    
+
     // Get the world position of the thing firstly
     const float worldX = FMath::doomFixed16ToFloat<float>(thing.x);
     const float worldY = FMath::doomFixed16ToFloat<float>(thing.y);
     const float worldZ = FMath::doomFixed16ToFloat<float>(thing.z);
-    
+
     // Convert to viewspace and cull if that transform determined the sprite is behind the camera
     float viewX;
     float viewY;
@@ -208,7 +208,7 @@ void addSpriteToFrame(const mobj_t& thing) noexcept {
 
     if (bCullSprite)
         return;
-    
+
     // Figure out what sprite, frame and frame angle we want
     bool bIsSpriteFullBright;
     bool bIsSpriteTransparent;
@@ -319,7 +319,7 @@ static void emitFragmentsForSprite(const DrawSprite& sprite) noexcept {
     const float texH = texHInt;
     const float texXStep = (spriteW > 1) ? texW / spriteW : 0.0f;
     const float texYStep = (spriteH > 1) ? texH / spriteH : 0.0f;
-    
+
     // Computing a sub pixel x and y adjustment for stability. This is similar to the adjustment we do for walls.
     // We take into account the fractional part of the first pixel when computing the distance to travel to the 2nd pixel.
     const float texSubPixelXAdjust = -(sprite.lx - std::trunc(sprite.lx)) * texXStep;
@@ -347,7 +347,7 @@ static void emitFragmentsForSprite(const DrawSprite& sprite) noexcept {
     // Safety, this shouldn't be required but just in case if we are TOO MUCH off screen
     if ((int32_t) curColNum >= spriteWInt)
         return;
-    
+
     // Ensure we don't go past the right side of the screen.
     // If we do also cancel any extra columns we might have ordered:
     int32_t endScreenX;
@@ -431,7 +431,7 @@ static void emitFragmentsForSprite(const DrawSprite& sprite) noexcept {
 void drawSpriteFragment(const SpriteFragment frag) noexcept {
     BLIT_ASSERT(frag.x < gScreenWidth);
 
-    // Firstly figure out the top and bottom clip bounds for the sprite fragment    
+    // Firstly figure out the top and bottom clip bounds for the sprite fragment
     int16_t yClipT = -1;
     int16_t yClipB = gScreenHeight;
 
@@ -444,7 +444,7 @@ void drawSpriteFragment(const SpriteFragment frag) noexcept {
             // Ignore if the sprite is in front!
             if (frag.depth <= occludingCols.depths[i])
                 continue;
-            
+
             // Update the clip bounds
             const OccludingColumns::Bounds bounds = occludingCols.bounds[i];
             yClipT = std::max(yClipT, bounds.top);
@@ -467,7 +467,7 @@ void drawSpriteFragment(const SpriteFragment frag) noexcept {
 
         if (numPixelsOffscreen >= dstCount)
             return;
-        
+
         srcTexY = frag.texYStep * (float) numPixelsOffscreen + srcTexYSubPixelAdjust;
         srcTexYSubPixelAdjust = 0.0f;
         dstY += numPixelsOffscreen;
@@ -554,7 +554,7 @@ void drawSpriteFragment(const SpriteFragment frag) noexcept {
 //----------------------------------------------------------------------------------------------------------------------
 // Draw all the sprites in the 3D view from back to front
 //----------------------------------------------------------------------------------------------------------------------
-void drawAllSprites() noexcept {    
+void drawAllSprites() noexcept {
     sortAllSprites();
 
     for (const DrawSprite& sprite : gDrawSprites) {

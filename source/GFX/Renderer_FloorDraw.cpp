@@ -34,7 +34,7 @@ static inline void doRayFlatPlaneIntersection(
     // Calculate first: AXd + BYd + CZd
     // I.E - The dot product of the plane normal (0, 0, 1) or (0, 0, -1) with the ray direction:
     float divisor;
-    
+
     if constexpr (MODE == DrawFlatMode::FLOOR) {
         divisor = rayDirZ;
     } else {
@@ -45,7 +45,7 @@ static inline void doRayFlatPlaneIntersection(
     // I.E - The dot product of the ray origin with the plane normal (0, 0, 1) or (0, 0, -1) plus
     // the distance of the plane from the origin along it's normal:
     float dividend;
-            
+
     if constexpr (MODE == DrawFlatMode::FLOOR) {
         dividend = rayOriginZ - flatPlaneZ;
     } else {
@@ -58,14 +58,14 @@ static inline void doRayFlatPlaneIntersection(
     // Using the intersect time, compute the world intersect point
     intersectX = rayOriginX + rayDirX * intersectT;
     intersectY = rayOriginY + rayDirY * intersectT;
-    intersectZ = rayOriginZ + rayDirZ * intersectT;    
+    intersectZ = rayOriginZ + rayDirZ * intersectT;
 }
 
 //----------------------------------------------------------------------------------------------------------------------
 // Draw one vertical column of a flat.
-// 
+//
 // Unlike the original version of 3DO Doom (and PC Doom) I do not bother with visplanes, or converting vertical floor
-// columns into horizontal floor columns. These days it seems to make sense to lean more on the fast arithmetic 
+// columns into horizontal floor columns. These days it seems to make sense to lean more on the fast arithmetic
 // performance of the CPU instead of trawling through memory (slow) trying to match up visplanes and convert vertical
 // columns into horizontal ones.
 //----------------------------------------------------------------------------------------------------------------------
@@ -160,7 +160,7 @@ static inline void drawFlatColumn(const FlatFragment flatFrag) noexcept {
         const uint32_t curSrcXInt = (uint32_t) intersectX & 63;
         const uint32_t curSrcYInt = (uint32_t) intersectY & 63;
         const uint16_t srcPixelARGB1555 = pSrcPixels[curSrcYInt * 64 + curSrcXInt];
-        
+
         // Extract RGB components and shift such that the maximum value is 255 instead of 31.
         const uint16_t texR = (srcPixelARGB1555 & uint16_t(0b0111110000000000)) >> 7;
         const uint16_t texG = (srcPixelARGB1555 & uint16_t(0b0000001111100000)) >> 2;

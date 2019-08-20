@@ -3,7 +3,7 @@
 #include <cstdint>
 
 //----------------------------------------------------------------------------------------------------------------------
-// Engine fixed point defines: 
+// Engine fixed point defines:
 // Doom uses 16.16 signed fixed point numbers (in twos complement format) throughout a lot of the game.
 // In some places the format is different however, but generally when you see 'Fixed' it means 16.16.
 //----------------------------------------------------------------------------------------------------------------------

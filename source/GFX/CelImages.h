@@ -5,7 +5,7 @@
 
 //----------------------------------------------------------------------------------------------------------------------
 // Provides access to images and sprites loaded from the game resource file which are in the native 3DO 'Cel' format.
-// 
+//
 // 3DO Doom also makes some additional extensions (I think?) to the cel format to allow for arrays of sprites as well
 // as additional offsets to apply to the sprites when rendered. Whether or not these things are expected depends on the
 // what the code loading these assets expects, I don't think it's possible to determine just by looking data...
@@ -25,9 +25,9 @@ struct CelImage {
 //----------------------------------------------------------------------------------------------------------------------
 // Structure storing an array of Cel images
 //----------------------------------------------------------------------------------------------------------------------
-struct CelImageArray {    
+struct CelImageArray {
     uint32_t    numImages;      // Number of images in the set of images
-    uint32_t    loadFlags;      // Flags the images were loaded with    
+    uint32_t    loadFlags;      // Flags the images were loaded with
     CelImage*   pImages;        // Pointer to the CEL images
 
     inline CelImage& getImage(const uint32_t number) const noexcept {

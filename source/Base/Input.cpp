@@ -54,17 +54,17 @@ void update() noexcept {
             case SDL_QUIT:
                 gbQuitRequested = true;
                 break;
-            
+
             case SDL_KEYDOWN: {
                 const SDL_Scancode scancode = sdlEvent.key.keysym.scancode;
                 removeValueFromVector(scancode, gKeysJustReleased); // Prevent contradictions!
-                gKeysJustPressed.push_back(scancode);                 
+                gKeysJustPressed.push_back(scancode);
             }   break;
 
             case SDL_KEYUP: {
                 const SDL_Scancode scancode = sdlEvent.key.keysym.scancode;
                 removeValueFromVector(scancode, gKeysJustPressed);  // Prevent contradictions!
-                gKeysJustReleased.push_back(scancode);  
+                gKeysJustReleased.push_back(scancode);
             }   break;
         }
     }

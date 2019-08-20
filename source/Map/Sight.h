@@ -4,4 +4,4 @@
 
 struct mobj_t;
 
-uint32_t CheckSight(mobj_t* t1, mobj_t* t2);
+bool CheckSight(mobj_t& t1, mobj_t& t2) noexcept;

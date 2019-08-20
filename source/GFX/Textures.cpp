@@ -14,7 +14,7 @@ struct TextureInfoHeader {
     uint32_t    firstWallTexture;       // Resource number
     uint32_t    numFlatTextures;
     uint32_t    firstFlatTexture;       // Resource number
-    
+
     void swapEndian() noexcept {
         byteSwapU32(numWallTextures);
         byteSwapU32(firstWallTexture);
@@ -27,7 +27,7 @@ struct TextureInfoEntry {
     uint32_t    width;
     uint32_t    height;
     uint32_t    _unused;
-    
+
     void swapEndian() noexcept {
         byteSwapU32(width);
         byteSwapU32(height);
@@ -179,26 +179,26 @@ void init() noexcept {
     // Note that we do NOT byte swap the original resources the may be cached and reused multiple times.
     // If we byte swapped the originals then we might double swap back to big endian accidently...
     const std::byte* pData = (const std::byte*) Resources::loadData(rTEXTURE1);
-    
+
     TextureInfoHeader header = (const TextureInfoHeader&) *pData;
     header.swapEndian();
     pData += sizeof(TextureInfoHeader);
-    
+
     // Save global texture info and alloc memory for all the texture entries
     gFirstWallTexResourceNum = header.firstWallTexture;
     gFirstFlatTexResourceNum = header.firstFlatTexture;
     gWallTextures.resize(header.numWallTextures);
     gFlatTextures.resize(header.numFlatTextures);
-    
+
     // Read the texture info for each wall texture
     {
         const uint32_t numWallTex = (uint32_t) gWallTextures.size();
-        
+
         for (uint32_t wallTexNum = 0; wallTexNum < numWallTex; ++wallTexNum) {
             TextureInfoEntry info = (const TextureInfoEntry&) *pData;
             info.swapEndian();
             pData += sizeof(TextureInfoEntry);
-            
+
             Texture& texture = gWallTextures[wallTexNum];
             texture.data.width = info.width;
             texture.data.height = info.height;
@@ -206,15 +206,15 @@ void init() noexcept {
             texture.animTexNum = wallTexNum;    // Points to itself initallly (no anim)
         }
     }
-    
+
     // Now done with this resource
     Resources::free(rTEXTURE1);
-    
+
     // We don't have texture info for flats, all flats for 3DO are 64x64.
     // This was done orignally to help optimize the flat renderer, which was done in software on the 3DO's CPU.
     {
         const uint32_t numFlatTex = (uint32_t) gFlatTextures.size();
-        
+
         for (uint32_t flatTexNum = 0; flatTexNum < numFlatTex; ++flatTexNum) {
             Texture& texture = gFlatTextures[flatTexNum];
             texture.data.width = 64;

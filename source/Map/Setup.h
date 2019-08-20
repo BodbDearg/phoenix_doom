@@ -8,6 +8,6 @@ extern mapthing_t   gDeathmatchStarts[10];      // Deathmatch starts
 extern mapthing_t*  gpDeathmatch;
 extern mapthing_t   gPlayerStarts;              // Starting position for players
 
-void SetupLevel(uint32_t map);
-void ReleaseMapMemory();
-void P_Init();
+void SetupLevel(uint32_t map) noexcept;
+void ReleaseMapMemory() noexcept;
+void P_Init() noexcept;

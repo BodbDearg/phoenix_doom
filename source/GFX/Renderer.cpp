@@ -94,26 +94,26 @@ std::vector<SpriteFragment>     gSpriteFragments;
 
 //----------------------------------------------------------------------------------------------------------------------
 // Load in the "TextureInfo" array so that the game knows all about the wall and sky textures (Width,Height).
-// Also initialize the texture translation table for wall animations. 
+// Also initialize the texture translation table for wall animations.
 // Called on startup only.
 //----------------------------------------------------------------------------------------------------------------------
 static void initData() noexcept {
     // Initialize render asset managers
     Textures::init();
     Sprites::init();
-    
+
     // Create a recipocal mul table so that I can divide 0-8191 from 1.0.
     // This way I can fake a divide with a multiply.
     gIDivTable[0] = -1;
-    
+
     {
         uint32_t i = 1;
-        
+
         do {
             gIDivTable[i] = fixedDiv(512 << FRACBITS, i << FRACBITS);    // 512.0 / i
         } while (++i < (sizeof(gIDivTable) / sizeof(uint32_t)));
     }
-    
+
     // First time init of the math tables.
     // They may change however if the view size changes!
     initMathTables();
@@ -225,7 +225,7 @@ static void preDrawSetup() noexcept {
     gNearPlaneH = gNearPlaneW / VIEW_ASPECT_RATIO;
     gNearPlaneHalfW = gNearPlaneW * 0.5f;
     gNearPlaneHalfH = gNearPlaneH * 0.5f;
-    
+
     // Near plane left and right side x,y and top and bottom z
     gNearPlaneP1x = gViewX + gViewDirX * Z_NEAR - gNearPlaneHalfW * gViewPerpX;
     gNearPlaneP1y = gViewY + gViewDirY * Z_NEAR - gNearPlaneHalfW * gViewPerpY;
@@ -312,7 +312,7 @@ void initMathTables() noexcept {
                 gViewAngleToX[i / 2] = t;
             }
         }
-    
+
         // Using the 'view angle to x' table, create 'x to view angle' table
         for (uint32_t i = 0; i <= gScreenWidth; ++i) {
             uint32_t x = 0;
@@ -321,8 +321,8 @@ void initMathTables() noexcept {
             }
             gXToViewAngle[i] = (x << (ANGLETOFINESHIFT + 1)) - ANG90;
         }
-    
-        // Set the minimums and maximums for 'view angle to x' 
+
+        // Set the minimums and maximums for 'view angle to x'
         for (uint32_t i = 0; i < FINEANGLES / 4; ++i) {
             if (gViewAngleToX[i] == -1) {
                 gViewAngleToX[i] = 0;
@@ -338,7 +338,7 @@ void initMathTables() noexcept {
         constexpr float MAX_BRIGHT_RANGE_SCALE = 1.0f;
         constexpr float LIGHT_COEF_BASE = 16.0f;
         constexpr float LIGHT_COEF_ADJUST_FACTOR = 13.0f;
-        
+
         const float lightLevel = (float) i / 255.0f;
         const float maxBrightRange = lightLevel * MAX_BRIGHT_RANGE_SCALE;
 
@@ -363,7 +363,7 @@ void initMathTables() noexcept {
 
 void drawPlayerView() noexcept {
     preDrawSetup();                 // Init variables based on camera angle
-    doBspTraversal();               // Traverse the BSP tree and build lists of walls, floors (visplanes) and sprites to render    
+    doBspTraversal();               // Traverse the BSP tree and build lists of walls, floors (visplanes) and sprites to render
     drawAllSkyFragments();
     drawAllFloorFragments();
     drawAllCeilingFragments();
@@ -377,7 +377,7 @@ float LightParams::getLightMulForDist(const float dist) const noexcept {
     const float distFactorLinear = std::max(dist - lightSub, 0.0f);
     const float distFactorQuad = std::sqrtf(distFactorLinear);
     const float lightDiminish = distFactorQuad * lightCoef;
-    
+
     float lightValue = 255.0f - lightDiminish;
     lightValue = std::max(lightValue, lightMin);
     lightValue = std::min(lightValue, lightMax);

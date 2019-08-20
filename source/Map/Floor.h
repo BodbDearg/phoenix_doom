@@ -13,7 +13,7 @@ enum result_e {
 };
 
 // Enums for floor types
-enum floor_e {      
+enum floor_e {
     lowerFloor,                 // lower floor to highest surrounding floor
     lowerFloorToLowest,         // lower floor to lowest surrounding floor
     turboLower,                 // lower floor to highest surrounding floor VERY FAST
@@ -28,14 +28,14 @@ enum floor_e {
 };
 
 result_e T_MovePlane(
-    sector_t*sector,
-    Fixed speed,
-    Fixed dest,
-    bool crush,
-    bool Ceiling,
-    int32_t direction
-);
+    sector_t& sector,
+    const Fixed speed,
+    const Fixed dest,
+    const bool bCrush,
+    const bool bCeiling,
+    const int32_t direction
+) noexcept;
 
-bool EV_DoFloor(line_t* line, floor_e floortype);
-bool EV_BuildStairs(line_t* line);
-bool EV_DoDonut(line_t* line);
+bool EV_DoFloor(line_t& line, const floor_e floortype) noexcept;
+bool EV_BuildStairs(line_t& line) noexcept;
+bool EV_DoDonut(line_t& line) noexcept;

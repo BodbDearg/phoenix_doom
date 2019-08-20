@@ -41,8 +41,8 @@ AudioDataMgr::Handle AudioDataMgr::loadFile(const char* const file) noexcept {
 
     if (!AudioLoader::loadFromFile(file, audioData))
         return INVALID_HANDLE;
-    
-    // Otherwise try to allocate a handle for the file    
+
+    // Otherwise try to allocate a handle for the file
     uint32_t handle;
 
     if (!mFreeHandles.empty()) {

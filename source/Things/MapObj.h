@@ -2,6 +2,7 @@
 
 #include "Base/Angle.h"
 #include "Base/Fixed.h"
+#include "Base/Macros.h"
 
 struct mobjinfo_t;
 struct player_t;
@@ -25,7 +26,9 @@ static constexpr uint32_t MTF_AMBUSH        = 0x8;
 static constexpr uint32_t MTF_DEATHMATCH    = 0x10;
 
 // Struct defining a runtime map object (thing)
-struct mobj_t { 
+struct mobj_t {
+    NON_ASSIGNABLE_STRUCT(mobj_t)
+
     mobj_t*     prev;       // Linked list entries
     mobj_t*     next;
     Fixed       x;          // Location in 3Space
@@ -91,14 +94,19 @@ static constexpr uint32_t MF_SKULLFLY       = 0x1000000;    // Skull in flight
 static constexpr uint32_t MF_NOTDMATCH      = 0x2000000;    // Don't spawn in death match (key cards)
 static constexpr uint32_t MF_SEETARGET      = 0x4000000;    // Is target visible?
 
-void P_RemoveMobj(mobj_t* th);
-uint32_t SetMObjState(mobj_t* mobj, const state_t* StatePtr);
-void Sub1RandomTick(mobj_t* mobj);
-void ExplodeMissile(mobj_t* mo);
-mobj_t* SpawnMObj(Fixed x, Fixed y, Fixed z, const mobjinfo_t* InfoPtr);
-void P_SpawnPlayer(const mapthing_t* mthing);
-void SpawnMapThing(const mapthing_t* mthing);
-void P_SpawnPuff(Fixed x, Fixed y, Fixed z);
-void P_SpawnBlood(Fixed x, Fixed y, Fixed z, uint32_t damage);
-void P_SpawnMissile(mobj_t* source, mobj_t* dest, const mobjinfo_t* InfoPtr);
-void SpawnPlayerMissile(mobj_t* source, const mobjinfo_t* InfoPtr);
+void P_RemoveMobj(mobj_t& th) noexcept;
+uint32_t SetMObjState(mobj_t& mobj, const state_t* const StatePtr) noexcept;
+
+inline uint32_t SetMObjState(mobj_t& mobj, const state_t& state) noexcept {
+    return SetMObjState(mobj, &state);
+}
+
+void Sub1RandomTick(mobj_t& mobj) noexcept;
+void ExplodeMissile(mobj_t& mo) noexcept;
+mobj_t& SpawnMObj(const Fixed x, const Fixed y, const Fixed z, const mobjinfo_t& info) noexcept;
+void P_SpawnPlayer(const mapthing_t& mthing) noexcept;
+void SpawnMapThing(const mapthing_t& mthing) noexcept;
+void P_SpawnPuff(const Fixed x, const Fixed y, const Fixed z) noexcept;
+void P_SpawnBlood(const Fixed x, const Fixed y, const Fixed z, const uint32_t damage) noexcept;
+void P_SpawnMissile(mobj_t& source, mobj_t& dest, const mobjinfo_t& info) noexcept;
+void SpawnPlayerMissile(mobj_t& source, const mobjinfo_t& info) noexcept;

@@ -26,12 +26,10 @@ TODO
 - Maybe center numbers on HUD?
 - Optimize audio mixing for different channel counts and bit depths
 - Is the pistol reload speed too slow?
-- Do overbright lighting of environment due to muzzle flash?
 - Ensure last map accessible via menu (wasn't on 3DO version?)
 - Change endian macros to be 'big endian to host' (more portable)
 - Fix lost souls jumping UP suddenly when starting to fly
-- Crash sometimes on reading textures
-- Crash sometimes on thing 'check height' (seems to happen sometimes on level 2, at lift to viewing room opposite chainsaw)
+- Crash when reading loading plaque
 - Allow exit out of finale back to main menu
 - Allow exit out of app from main menu
 - Allow quit out of level to main menu

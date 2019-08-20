@@ -9,7 +9,7 @@
 struct CelImageArray;
 
 // Current game state setting
-enum gameaction_e : uint8_t {      
+enum gameaction_e : uint8_t {
     ga_nothing,
     ga_died,
     ga_completed,

@@ -22,14 +22,14 @@ static uint32_t gMusicVolume = MAX_AUDIO_VOLUME;
 static uint32_t gSoundVolume = MAX_AUDIO_VOLUME;
 static uint32_t gPlayingMusicTrackNum = UINT32_MAX;
 
-void audioInit() {   
+void audioInit() {
     if (!gAudioOutputDevice.init()) {
         FATAL_ERROR("Unable to initialize an audio output device!");
     }
 
     gSoundAudioSystem.init(gAudioOutputDevice, gAudioDataMgr, MAX_SOUND_VOICES);
     gMusicAudioSystem.init(gAudioOutputDevice, gAudioDataMgr, 1);
-    
+
     // Insure initial volume is set with the audio system
     audioSetMusicVolume(gMusicVolume);
     audioSetSoundVolume(gSoundVolume);
@@ -37,7 +37,7 @@ void audioInit() {
 
 void audioLoadAllSounds() {
     gSoundAudioDataHandles[0] = AudioDataMgr::INVALID_HANDLE;    // The 'none' sound
-    
+
     for (uint32_t soundNum = 1; soundNum < NUMSFX; ++soundNum) {
         char fileName[128];
         std::snprintf(fileName, sizeof(fileName), "Sounds/Sound%02d.aiff", int(soundNum));

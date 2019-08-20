@@ -32,7 +32,7 @@ void AudioSystem::init(AudioOutputDevice& device, AudioDataMgr& dataMgr, const u
 
     // Lock the device
     AudioDeviceLock lockAudioDevice(device);
-    
+
     // Initialize: note that we add the first voice indexes to the free list LAST so they are used FIRST
     mbIsInitialized = true;
     mpAudioOutputDevice = &device;
@@ -58,7 +58,7 @@ void AudioSystem::shutdown() noexcept {
     mFreeVoices.clear();
     mVoices.clear();
     mMasterVolume = 1.0f;
-    mpAudioDataMgr = nullptr;    
+    mpAudioDataMgr = nullptr;
     mbIsPaused = false;
     mbIsInitialized = false;
 
@@ -159,7 +159,7 @@ void AudioSystem::stopAllVoices() noexcept {
 
     const uint32_t numVoices = (uint32_t) mVoices.size();
     AudioDeviceLock lockAudioDevice(*mpAudioOutputDevice);
-    
+
     for (uint32_t voiceIdx = 0; voiceIdx < numVoices; ++voiceIdx) {
         AudioVoice& voice = mVoices[voiceIdx];
 
@@ -188,7 +188,7 @@ void AudioSystem::stopVoicesWithAudioData(const uint32_t audioDataHandle) noexce
 
     const uint32_t numVoices = (uint32_t) mVoices.size();
     AudioDeviceLock lockAudioDevice(*mpAudioOutputDevice);
-    
+
     for (uint32_t voiceIdx = 0; voiceIdx < numVoices; ++voiceIdx) {
         AudioVoice& voice = mVoices[voiceIdx];
 
@@ -263,7 +263,7 @@ void AudioSystem::mixVoiceAudio(
     const uint32_t inSampleRate = audioData.sampleRate;
     const uint32_t outSampleRate = mpAudioOutputDevice->getSampleRate();
     const uint32_t totalInSamples = audioData.numSamples;
-    
+
     // Figure out how many input samples to step per output sample in 32.16 fixed point format
     uint64_t sampleStepFrac;
 
@@ -313,7 +313,7 @@ void AudioSystem::mixVoiceAudio(
         float sample2L;
         float sample2R;
 
-        if (audioData.numChannels == 1) {            
+        if (audioData.numChannels == 1) {
             if (audioData.bitDepth == 8) {
                 const int8_t rawSample1 = ((const int8_t*) audioData.pBuffer)[curSample];
                 const int8_t rawSample2 = ((const int8_t*) audioData.pBuffer)[nextSample];

@@ -12,6 +12,6 @@ enum plattype_e {
     raiseToNearestAndChange
 };
 
-bool EV_DoPlat(line_t* line, plattype_e type, uint32_t amount);
-void EV_StopPlat(line_t* line);
-void ResetPlats();
+bool EV_DoPlat(line_t& line, const plattype_e type, const uint32_t amount) noexcept;
+void EV_StopPlat(line_t& line) noexcept;
+void ResetPlats() noexcept;

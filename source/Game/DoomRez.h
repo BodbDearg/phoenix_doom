@@ -162,7 +162,7 @@ enum {
     rDEMO1,
     rDEMO2,
 
-    rMAP01,         // Game maps 
+    rMAP01,         // Game maps
     rMAP02=rMAP01+10,
     rMAP03=rMAP02+10,
     rMAP04=rMAP03+10,
@@ -187,96 +187,96 @@ enum {
     rMAP23=rMAP22+10,
     rMAP24=rMAP23+10,
 
-    rFIRSTSPRITE=rMAP24+10, // Sprite shapes 
-    rSPR_BIGFISTS=rFIRSTSPRITE, // Player's fists 
-    rSPR_BIGPISTOL,         // Player's pistol 
-    rSPR_BIGSHOTGUN,        // Player's shotgun 
-    rSPR_BIGCHAINGUN,       // Player's chain gun 
-    rSPR_BIGROCKET,         // Player's rocket launcher 
-    rSPR_BIGPLASMA,         // Player's plasma rifle 
-    rSPR_BIGBFG,            // Player's BFG 9000 
-    rSPR_BIGCHAINSAW,       // Player's chainsaw 
-    rSPR_ZOMBIE,            // Zombiemen 
-    rSPR_ZOMBIEBODY,        // Dead zombiemen 
-    rSPR_SHOTGUY,           // Shotgun guys 
-    rSPR_IMP,               // Imps 
-    rSPR_DEMON,             // Demons 
-    rSPR_CACODEMON,         // Cacodemons 
-    rSPR_CACODIE,           // Cacodemon's dying animation 
-    rSPR_CACOBDY,           // Cacodemon's dead body 
-    rSPR_CACOBOLT,          // Cacodemon's fireball 
-    rSPR_LOSTSOUL,          // Lost souls 
-    rSPR_BARON,             // Baron of Hell 
-    rSPR_BARONATK,          // Baron of Hell attacking 
-    rSPR_BARONDIE,          // Baron of Hell dying 
-    rSPR_BARONBDY,          // Baron of Hell's dead body 
-    rSPR_BARONBLT,          // Baron of Hell's fireball 
-    rSPR_OURHERO,           // Our hero 
-    rSPR_OURHEROBDY,        // Our dead hero 
-    rSPR_BARREL,            // Exploding barrel 
-    rSPR_IFOG,              // Respawn fog 
-    rSPR_FIRECAN,           // Burning barrel 
-    rSPR_POOLBLOOD,         // Pool of blood 
-    rSPR_CANDLE,            // Candlestick 
-    rSPR_CANDLEABRA,        // Candleabra 
-    rSPR_SHOTGUN,           // Shotgun on floor 
-    rSPR_CHAINGUN,          // Chaingun on floor 
-    rSPR_ROCKETLAUNCHER,    // Rocket launcher on floor 
-    rSPR_CHAINSAW,          // Chainsaw on floor 
-    rSPR_CLIP,              // Clip of bullets 
-    rSPR_SHELLS,            // 4 shotgun shells 
-    rSPR_ROCKET,            // A single rocket 
-    rSPR_STIMPACK,          // Stimpack 
-    rSPR_MEDIKIT,           // Med-kit 
-    rSPR_GREENARMOR,        // Normal armor 
-    rSPR_BLUEARMOR,         // Mega armor 
-    rSPR_LIGHTCOLUMN,       // Light column   
-    rSPR_BACKPACK,          // Backpack 
-    rSPR_BOXROCKETS,        // Box of rockets 
-    rSPR_BOXAMMO,           // Box of bullets 
-    rSPR_BOXSHELLS,         // Box of shotgun shells 
-    rSPR_TECHPILLAR,        // Techincal pillar 
-    rSPR_BLUEKEYCARD,       // Blue key card 
-    rSPR_YELLOWKEYCARD,     // Yellow key card 
-    rSPR_REDKEYCARD,        // Red key card 
-    rSPR_RADIATIONSUIT,     // Radiation suit 
-    rSPR_IRGOGGLES,         // Night vision goggles 
-    rSPR_COMPUTERMAP,       // Computer area map 
-    rSPR_INVISIBILITY,      // Invisibility 
-    rSPR_HEALTHBONUS,       // Health bonus 
-    rSPR_SOULSPHERE,        // Soul sphere 
-    rSPR_ARMORBONUS,        // Armor bonus 
-    rSPR_BODYPOLE,          // Skewered paraplegic 
-    rSPR_FIVESKULLPOLE,     // 5 skulls on a pole 
-    rSPR_TALLSKULLPOLE,     // Skull on tall pole 
-    rSPR_SHORTGREENPILLAR,  // Short green pillar 
-    rSPR_SHORTREDPILLAR,    // Short red pillar 
-    rSPR_FLAMINGSKULLS,     // Floating skull 
-    rSPR_MEDDEADTREE,       // Medium dead tree 
-    rSPR_LARGESTAL,         // Large stalactite 
-    rSPR_SMALLSTAL,         // Small stalactite 
-    rSPR_BLUESKULLKEY,      // Blue skull key 
-    rSPR_REDSKULLKEY,       // Red skull key 
-    rSPR_YELLOWSKULLKEY,    // Yellow skull key 
-    rSPR_PLASMARIFLE,       // Plasma rifle on floor 
-    rSPR_BFG9000,           // BFG 9000 on floor 
-    rSPR_CELL,              // Small cell pack 
-    rSPR_BERZERKER,         // Berzerker pack 
-    rSPR_CELLPACK,          // Large cell pack 
-    rSPR_HANGINGRUMP,       // Rump hanging from ceiling 
-    rSPR_REDTORCH,          // Red torch 
-    rSPR_BLUETORCH,         // Blue torch 
-    rSPR_GREENTORCH,        // Green torch 
-    rSPR_INVULNERABILITY,   // Invulnerability sphere 
-    rSPR_TELEFOG,           // Teleport fog 
-    rSPR_BFS1,              // BFG shot 
-    rSPR_BFE1,              // BFG explosion 
-    rSPR_BFE2,              // BFG target hit 
-    rSPR_PLSS,              // Plasma rifle round 
-    rSPR_PLSE,              // Plasma rifle explosion 
-    rSPR_MISL,              // Rocket in flight 
-    rSPR_BLUD,              // Blood from bullet hit 
-    rSPR_PUFF,              // Gun sparks on wall 
+    rFIRSTSPRITE=rMAP24+10, // Sprite shapes
+    rSPR_BIGFISTS=rFIRSTSPRITE, // Player's fists
+    rSPR_BIGPISTOL,         // Player's pistol
+    rSPR_BIGSHOTGUN,        // Player's shotgun
+    rSPR_BIGCHAINGUN,       // Player's chain gun
+    rSPR_BIGROCKET,         // Player's rocket launcher
+    rSPR_BIGPLASMA,         // Player's plasma rifle
+    rSPR_BIGBFG,            // Player's BFG 9000
+    rSPR_BIGCHAINSAW,       // Player's chainsaw
+    rSPR_ZOMBIE,            // Zombiemen
+    rSPR_ZOMBIEBODY,        // Dead zombiemen
+    rSPR_SHOTGUY,           // Shotgun guys
+    rSPR_IMP,               // Imps
+    rSPR_DEMON,             // Demons
+    rSPR_CACODEMON,         // Cacodemons
+    rSPR_CACODIE,           // Cacodemon's dying animation
+    rSPR_CACOBDY,           // Cacodemon's dead body
+    rSPR_CACOBOLT,          // Cacodemon's fireball
+    rSPR_LOSTSOUL,          // Lost souls
+    rSPR_BARON,             // Baron of Hell
+    rSPR_BARONATK,          // Baron of Hell attacking
+    rSPR_BARONDIE,          // Baron of Hell dying
+    rSPR_BARONBDY,          // Baron of Hell's dead body
+    rSPR_BARONBLT,          // Baron of Hell's fireball
+    rSPR_OURHERO,           // Our hero
+    rSPR_OURHEROBDY,        // Our dead hero
+    rSPR_BARREL,            // Exploding barrel
+    rSPR_IFOG,              // Respawn fog
+    rSPR_FIRECAN,           // Burning barrel
+    rSPR_POOLBLOOD,         // Pool of blood
+    rSPR_CANDLE,            // Candlestick
+    rSPR_CANDLEABRA,        // Candleabra
+    rSPR_SHOTGUN,           // Shotgun on floor
+    rSPR_CHAINGUN,          // Chaingun on floor
+    rSPR_ROCKETLAUNCHER,    // Rocket launcher on floor
+    rSPR_CHAINSAW,          // Chainsaw on floor
+    rSPR_CLIP,              // Clip of bullets
+    rSPR_SHELLS,            // 4 shotgun shells
+    rSPR_ROCKET,            // A single rocket
+    rSPR_STIMPACK,          // Stimpack
+    rSPR_MEDIKIT,           // Med-kit
+    rSPR_GREENARMOR,        // Normal armor
+    rSPR_BLUEARMOR,         // Mega armor
+    rSPR_LIGHTCOLUMN,       // Light column
+    rSPR_BACKPACK,          // Backpack
+    rSPR_BOXROCKETS,        // Box of rockets
+    rSPR_BOXAMMO,           // Box of bullets
+    rSPR_BOXSHELLS,         // Box of shotgun shells
+    rSPR_TECHPILLAR,        // Techincal pillar
+    rSPR_BLUEKEYCARD,       // Blue key card
+    rSPR_YELLOWKEYCARD,     // Yellow key card
+    rSPR_REDKEYCARD,        // Red key card
+    rSPR_RADIATIONSUIT,     // Radiation suit
+    rSPR_IRGOGGLES,         // Night vision goggles
+    rSPR_COMPUTERMAP,       // Computer area map
+    rSPR_INVISIBILITY,      // Invisibility
+    rSPR_HEALTHBONUS,       // Health bonus
+    rSPR_SOULSPHERE,        // Soul sphere
+    rSPR_ARMORBONUS,        // Armor bonus
+    rSPR_BODYPOLE,          // Skewered paraplegic
+    rSPR_FIVESKULLPOLE,     // 5 skulls on a pole
+    rSPR_TALLSKULLPOLE,     // Skull on tall pole
+    rSPR_SHORTGREENPILLAR,  // Short green pillar
+    rSPR_SHORTREDPILLAR,    // Short red pillar
+    rSPR_FLAMINGSKULLS,     // Floating skull
+    rSPR_MEDDEADTREE,       // Medium dead tree
+    rSPR_LARGESTAL,         // Large stalactite
+    rSPR_SMALLSTAL,         // Small stalactite
+    rSPR_BLUESKULLKEY,      // Blue skull key
+    rSPR_REDSKULLKEY,       // Red skull key
+    rSPR_YELLOWSKULLKEY,    // Yellow skull key
+    rSPR_PLASMARIFLE,       // Plasma rifle on floor
+    rSPR_BFG9000,           // BFG 9000 on floor
+    rSPR_CELL,              // Small cell pack
+    rSPR_BERZERKER,         // Berzerker pack
+    rSPR_CELLPACK,          // Large cell pack
+    rSPR_HANGINGRUMP,       // Rump hanging from ceiling
+    rSPR_REDTORCH,          // Red torch
+    rSPR_BLUETORCH,         // Blue torch
+    rSPR_GREENTORCH,        // Green torch
+    rSPR_INVULNERABILITY,   // Invulnerability sphere
+    rSPR_TELEFOG,           // Teleport fog
+    rSPR_BFS1,              // BFG shot
+    rSPR_BFE1,              // BFG explosion
+    rSPR_BFE2,              // BFG target hit
+    rSPR_PLSS,              // Plasma rifle round
+    rSPR_PLSE,              // Plasma rifle explosion
+    rSPR_MISL,              // Rocket in flight
+    rSPR_BLUD,              // Blood from bullet hit
+    rSPR_PUFF,              // Gun sparks on wall
     rLASTSPRITE
 };
 

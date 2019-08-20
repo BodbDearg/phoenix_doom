@@ -42,21 +42,21 @@ static constexpr mobjinfo_t* const CAST_ORDER[] = {
 };
 
 static constexpr uint32_t CAST_COUNT    = C_ARRAY_SIZE(CAST_NAMES);
-static constexpr uint32_t TEXTTIME      = (TICKSPERSEC / 10);           // Tics to display letters 
-static constexpr uint32_t STARTX        = 8;                            // Starting x and y 
+static constexpr uint32_t TEXTTIME      = (TICKSPERSEC / 10);           // Tics to display letters
+static constexpr uint32_t STARTX        = 8;                            // Starting x and y
 static constexpr uint32_t STARTY        = 8;
 
-static const mobjinfo_t*    gCastInfo;          // Info for the current cast member 
-static uint32_t             gCastNum;           // Which cast member is being displayed 
-static uint32_t             gCastTics;          // Speed to animate the cast members 
-static const state_t*       gCastState;         // Pointer to current state 
-static uint32_t             gCastFrames;        // Number of frames of animation played 
-static final_e              gStatus;            // State of the display? 
-static bool                 gCastAttacking;     // Currently attacking? 
-static bool                 gCastDeath;         // Playing the death scene? 
-static bool                 gCastOnMelee;       // Type of attack to play 
-static uint32_t             gTextIndex;         // Index to the opening text 
-static uint32_t             gTextDelay;         // Delay before next char 
+static const mobjinfo_t*    gCastInfo;          // Info for the current cast member
+static uint32_t             gCastNum;           // Which cast member is being displayed
+static uint32_t             gCastTics;          // Speed to animate the cast members
+static const state_t*       gCastState;         // Pointer to current state
+static uint32_t             gCastFrames;        // Number of frames of animation played
+static final_e              gStatus;            // State of the display?
+static bool                 gCastAttacking;     // Currently attacking?
+static bool                 gCastDeath;         // Playing the death scene?
+static bool                 gCastOnMelee;       // Type of attack to play
+static uint32_t             gTextIndex;         // Index to the opening text
+static uint32_t             gTextDelay;         // Delay before next char
 
 static constexpr char* const gEndTextString =
     "     id software\n"
@@ -157,7 +157,7 @@ static void F_PrintString(
 ) noexcept {
     uint32_t curTextY = textY;
     const char* curSubStr = str;
-    const char* curSubStrEnd = str;    
+    const char* curSubStrEnd = str;
 
     auto outputSubStr = [](
         const char* const beg,
@@ -197,15 +197,15 @@ static void F_PrintString(
 void F_Start() noexcept {
     S_StartSong(Song_final);                // Play the end game music
 
-    gStatus = fin_endtext;                  // END TEXT PRINTS FIRST 
-    gTextIndex = 0;                         // At the beginning 
-    gTextDelay = 0;                         // Init the delay 
-    gCastNum = 0;                           // Start at the first monster 
+    gStatus = fin_endtext;                  // END TEXT PRINTS FIRST
+    gTextIndex = 0;                         // At the beginning
+    gTextDelay = 0;                         // Init the delay
+    gCastNum = 0;                           // Start at the first monster
     gCastInfo = CAST_ORDER[gCastNum];
     gCastState = gCastInfo->seestate;
-    gCastTics = gCastState->Time;           // Init the time 
-    gCastDeath = false;                     // Not dead 
-    gCastFrames = 0;                        // No frames shown 
+    gCastTics = gCastState->Time;           // Init the time
+    gCastDeath = false;                     // Not dead
+    gCastFrames = 0;                        // No frames shown
     gCastOnMelee = false;
     gCastAttacking = false;
 }
@@ -221,13 +221,13 @@ void F_Stop() noexcept {
 // Handle joypad input etc.
 //----------------------------------------------------------------------------------------------------------------------
 gameaction_e F_Ticker() noexcept {
-    // Check for press a key to kill actor 
-    if (gStatus == fin_endtext) {   // Am I printing text? 
+    // Check for press a key to kill actor
+    if (gStatus == fin_endtext) {   // Am I printing text?
         if ((gNewJoyPadButtons & (PadA|PadB|PadC)) != 0 && (gTotalGameTicks >= (3 * TICKSPERSEC))) {
-            gStatus = fin_charcast;                 // Continue to the second state 
+            gStatus = fin_charcast;                 // Continue to the second state
             S_StartSound(0, gCastInfo->seesound);   // Ohhh..
         }
-        return ga_nothing;  // Don't exit 
+        return ga_nothing;  // Don't exit
     }
 
     // If not dead then maybe go into death frame if the right inputs are pressed
@@ -246,22 +246,22 @@ gameaction_e F_Ticker() noexcept {
     // Advance state: if there is no transition to do then we can end here
     if (gCastTics > 1) {
         --gCastTics;
-        return ga_nothing;  // Not time to change state yet 
+        return ga_nothing;  // Not time to change state yet
     }
 
     if (gCastState->Time == -1 || (!gCastState->nextstate)) {
-        // Switch from deathstate to next monster 
+        // Switch from deathstate to next monster
         ++gCastNum;
         if (gCastNum >= CAST_COUNT) {
             gCastNum = 0;
         }
         gCastDeath = false;
-        gCastInfo = CAST_ORDER[gCastNum];        
+        gCastInfo = CAST_ORDER[gCastNum];
         S_StartSound(0, gCastInfo->seesound);
         gCastState = gCastInfo->seestate;
         gCastFrames = 0;
     } else {
-        // Just advance to next state in animation 
+        // Just advance to next state in animation
         if (gCastState == &gStates[S_PLAY_ATK1]) {
             goto stopattack;    // Oh, gross hack!
         }
@@ -269,11 +269,11 @@ gameaction_e F_Ticker() noexcept {
         gCastState = gCastState->nextstate;
         ++gCastFrames;
 
-        // Sound hacks.... 
+        // Sound hacks....
         {
             uint32_t soundToPlay = 0;
             const uint32_t stateNum = (uint32_t)(gCastState - gStates);
-            
+
             switch (stateNum) {
                 case S_POSS_ATK2:   soundToPlay = sfx_pistol;   break;
                 case S_SPOS_ATK2:   soundToPlay = sfx_shotgn;   break;
@@ -297,7 +297,7 @@ gameaction_e F_Ticker() noexcept {
         } else {
             gCastState=gCastInfo->missilestate;
         }
-        gCastOnMelee ^= true;   // Toggle the melee state 
+        gCastOnMelee ^= true;   // Toggle the melee state
         if (!gCastState) {
             if (gCastOnMelee) {
                 gCastState=gCastInfo->meleestate;
@@ -318,10 +318,10 @@ gameaction_e F_Ticker() noexcept {
 
     gCastTics = gCastState->Time;           // Get the next time
     if (gCastTics == -1) {
-        gCastTics = (TICKSPERSEC / 4);      // 1 second timer 
+        gCastTics = (TICKSPERSEC / 4);      // 1 second timer
     }
 
-    return ga_nothing;  // Finale never exits 
+    return ga_nothing;  // Finale never exits
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -329,8 +329,8 @@ gameaction_e F_Ticker() noexcept {
 //----------------------------------------------------------------------------------------------------------------------
 void F_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
     Video::debugClear();
-    Renderer::drawUISprite(0, 0, rBACKGRNDBROWN);       // Draw the background 
-    
+    Renderer::drawUISprite(0, 0, rBACKGRNDBROWN);       // Draw the background
+
     if (gStatus == fin_endtext) {
         // Print the string portion
         F_PrintString(

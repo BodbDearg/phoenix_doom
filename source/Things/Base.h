@@ -1,3 +1,3 @@
 #pragma once
 
-void P_RunMobjBase();
+void P_RunMobjBase() noexcept;

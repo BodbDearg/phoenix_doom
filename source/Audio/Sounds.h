@@ -3,7 +3,7 @@
 #include <cstdint>
 
 // All the songs in the game
-enum musicnum_e : uint8_t { 
+enum musicnum_e : uint8_t {
     Song_None,
     Song_intro,
     Song_final,

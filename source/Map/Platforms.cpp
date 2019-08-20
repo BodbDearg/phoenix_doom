@@ -9,291 +9,252 @@
 #include "MapData.h"
 #include "Specials.h"
 
-/**********************************
+static constexpr Fixed      PLATSPEED   = 2 << FRACBITS;        // Speed of platform motion
+static constexpr uint32_t   PLATWAIT    = 3 * TICKSPERSEC;      // Delay in ticks before platform motion
 
-    Local structures
-
-**********************************/
-
-#define PLATSPEED (2<<FRACBITS)     // Speed of platform motion 
-#define PLATWAIT (3*TICKSPERSEC)    // Delay in seconds before platform motion 
-
-typedef enum {      // Current action for the platform 
+// Current action for the platform
+enum plat_e {
     up,
     down,
     waiting,
     in_stasis
-} plat_e;
-
-struct plat_t {     // Structure for a moving platform 
-    sector_t *sector;   // Sector the platform will modify 
-    struct plat_t *next;    // Next entry in the linked list 
-    Fixed speed;        // Speed of motion 
-    Fixed low;          // Lowest Y point 
-    Fixed high;         // Highest Y point 
-    uint32_t wait;      // Wait in ticks before moving back (Zero = never) 
-    uint32_t count;     // Running count (If zero then wait forever!) 
-    uint32_t tag;       // Event ID tag 
-    plat_e status;      // Current status (up,down,wait,dead) 
-    plat_e oldstatus;   // Previous status 
-    plattype_e type;    // Type of platform 
-    bool crush;         // Can it crush things? 
 };
 
-static plat_t * gMainPlatPtr;     // Pointer to the first plat in list 
+// Structure for a moving platform
+struct plat_t {
+    sector_t*       sector;     // Sector the platform will modify
+    plat_t*         next;       // Next entry in the linked list
+    Fixed           speed;      // Speed of motion
+    Fixed           low;        // Lowest Y point
+    Fixed           high;       // Highest Y point
+    uint32_t        wait;       // Wait in ticks before moving back (Zero = never)
+    uint32_t        count;      // Running count (If zero then wait forever!)
+    uint32_t        tag;        // Event ID tag
+    plat_e          status;     // Current status (up,down,wait,dead)
+    plat_e          oldstatus;  // Previous status
+    plattype_e      type;       // Type of platform
+    bool            crush;      // Can it crush things?
+};
 
-/**********************************
+static plat_t* gpMainPlatPtr;   // Pointer to the first plat in list
 
-    Insert a new platform record into the linked list,
-    use a simple insert into the head to add.
-
-**********************************/
-
-static void AddActivePlat(plat_t *PlatPtr)
-{
-    PlatPtr->next = gMainPlatPtr;    // Insert into the chain 
-    gMainPlatPtr = PlatPtr;      // Set this one as the first 
+//----------------------------------------------------------------------------------------------------------------------
+// Insert a new platform record into the linked list, use a simple insert into the head to add.
+//----------------------------------------------------------------------------------------------------------------------
+static void AddActivePlat(plat_t& plat) noexcept {
+    plat.next = gpMainPlatPtr;      // Insert into the chain
+    gpMainPlatPtr = &plat;          // Set this one as the first
 }
 
-/**********************************
+//----------------------------------------------------------------------------------------------------------------------
+// Remove a platform record from the linked list.
+// I also call RemoveThinker to actually perform the memory disposal.
+//----------------------------------------------------------------------------------------------------------------------
+static void RemoveActivePlat(plat_t& platToKill) noexcept {
+    plat_t* pPrevPlat = nullptr;        // Init the previous pointer
+    plat_t* pPlat = gpMainPlatPtr;      // Get the main list entry
 
-    Remove a platform record from the linked list.
-    I also call RemoveThinker to actually perform the
-    memory disposal.
-
-**********************************/
-
-static void RemoveActivePlat(plat_t *PlatPtrKill)
-{
-    plat_t *PlatPtr;        // Temp pointer 
-    plat_t *PrevPtr;        // Previous pointer (For linked list) 
-
-    PrevPtr = 0;            // Init the previous pointer 
-    PlatPtr = gMainPlatPtr;  // Get the main list entry 
-    while (PlatPtr) {       // Failsafe! 
-        if (PlatPtr==PlatPtrKill) { // Master pointer matches? 
-            PlatPtr = PlatPtr->next;    // Get the next link 
-            if (!PrevPtr) {             // First one in chain? 
-                gMainPlatPtr = PlatPtr;  // Make the next one the new head 
+    while (pPlat) {                         // Failsafe!
+        if (pPlat == &platToKill) {         // Master pointer matches?
+            pPlat = pPlat->next;            // Get the next link
+            if (!pPrevPlat) {               // First one in chain?
+                gpMainPlatPtr = pPlat;      // Make the next one the new head
             } else {
-                PrevPtr->next = PlatPtr;    // Remove the link 
+                pPrevPlat->next = pPlat;    // Remove the link
             }
-            break;      // Get out of the loop 
+            break;                          // Get out of the loop
         }
-        PrevPtr = PlatPtr;      // Make the current pointer the previous one 
-        PlatPtr = PlatPtr->next;    // Get the next link 
+        pPrevPlat = pPlat;                  // Make the current pointer the previous one
+        pPlat = pPlat->next;                // Get the next link
     }
-    PlatPtrKill->sector->specialdata = 0;   // Unlink from the sector 
-    RemoveThinker(PlatPtrKill);     // Remove the thinker 
+
+    platToKill.sector->specialdata = nullptr;   // Unlink from the sector
+    RemoveThinker(platToKill);                  // Remove the thinker
 }
 
-/**********************************
-
-    Move a plat up and down
-    There are only 4 states a platform can be in...
-    Going up, Going down, waiting to either go up or down or finally
-    not active and needing an external event to trigger it.
-
-**********************************/
-
-static void T_PlatRaise(plat_t *plat)
-{
-    result_e res;       // ok, crushed, pastdest 
-
-    switch(plat->status) {      // State of the platform 
-        case up:        // Going up? 
-            res = T_MovePlane(plat->sector,plat->speed,plat->high,plat->crush,false,1);
-            if (plat->type == raiseAndChange ||
-                plat->type == raiseToNearestAndChange) {
-                if (gTick2) {   // Make the rumbling sound 
-                    S_StartSound(&plat->sector->SoundX,sfx_stnmov);
+//----------------------------------------------------------------------------------------------------------------------
+// Move a plat up and down; there are only 4 states a platform can be in...
+// Going up, Going down, waiting to either go up or down or finally not active and
+// needing an external event to trigger it.
+//----------------------------------------------------------------------------------------------------------------------
+static void T_PlatRaise(plat_t& plat) noexcept {
+    // Which state is the platform in?
+    switch (plat.status) {
+        // Going up?
+        case up: {
+            const result_e res = T_MovePlane(*plat.sector, plat.speed, plat.high, plat.crush, false, 1);
+            if ((plat.type == raiseAndChange) || (plat.type == raiseToNearestAndChange)) {
+                if (gbTick2) {  // Make the rumbling sound
+                    S_StartSound(&plat.sector->SoundX,sfx_stnmov);
                 }
             }
 
-            if (res == crushed && !plat->crush) {       // Crushed something? 
-                plat->count = plat->wait;   // Get the delay time 
-                plat->status = down;        // Going the opposite direction 
-                S_StartSound(&plat->sector->SoundX,sfx_pstart);
-            } else if (res == pastdest) {   // Moved too far? 
-                plat->count = plat->wait;   // Reset the timer 
-                plat->status = waiting;     // Make it wait 
-                S_StartSound(&plat->sector->SoundX,sfx_pstop);
-                
-                switch (plat->type) {           // What type of platform is it? 
-                    case downWaitUpStay:        // Shall it stay here forever? 
-                    case raiseAndChange:        // Change the texture and exit? 
-                        RemoveActivePlat(plat); // Remove it then 
+            if ((res == crushed) && (!plat.crush)) {                // Crushed something?
+                plat.count = plat.wait;                             // Get the delay time
+                plat.status = down;                                 // Going the opposite direction                
+                S_StartSound(&plat.sector->SoundX, sfx_pstart);
+            } else if (res == pastdest) {                           // Moved too far?
+                plat.count = plat.wait;                             // Reset the timer
+                plat.status = waiting;                              // Make it wait
+                S_StartSound(&plat.sector->SoundX, sfx_pstop);
+
+                switch (plat.type) {                // What type of platform is it?
+                    case downWaitUpStay:            // Shall it stay here forever?
+                    case raiseAndChange:            // Change the texture and exit?
+                        RemoveActivePlat(plat);     // Remove it then
                         break;
-                    case perpetualRaise:            // DC: Nothing to be done for these cases 
+
+                    case perpetualRaise:            // DC: Nothing to be done for these cases
                     case raiseToNearestAndChange:
                         break;
                 }
             }
-            break;
-        case down:      // Going down? 
-            res = T_MovePlane(plat->sector,plat->speed,plat->low, false, false, -1);
-            if (res == pastdest) {      // Moved too far 
-                plat->count = plat->wait;   // Set the delay count 
-                plat->status = waiting;     // Delay mode 
-                S_StartSound(&plat->sector->SoundX,sfx_pstop);
+        }   break;
+
+        // Going down?
+        case down: {
+            const result_e res = T_MovePlane(*plat.sector, plat.speed, plat.low, false, false, -1);
+            if (res == pastdest) {          // Moved too far
+                plat.count = plat.wait;     // Set the delay count
+                plat.status = waiting;      // Delay mode
+                S_StartSound(&plat.sector->SoundX, sfx_pstop);
             }
-            break;
-        case waiting:
-            if (plat->count) {              // If waiting will expire... 
-                if (plat->count > 1) {      // Time up? 
-                    --plat->count;          // Remove the time (But leave 1) 
+        }   break;
+
+        case waiting: {
+            if (plat.count) {               // If waiting will expire...
+                if (plat.count > 1) {       // Time up?
+                    --plat.count;           // Remove the time (But leave 1)
                 } else {
-                    if (plat->sector->floorheight == plat->low) {   // At the bottom? 
-                        plat->status = up;      // Move up 
+                    if (plat.sector->floorheight == plat.low) {     // At the bottom?
+                        plat.status = up;                           // Move up
                     } else {
-                        plat->status = down;    // Move down 
+                        plat.status = down;                         // Move down
                     }
-                    S_StartSound(&plat->sector->SoundX,sfx_pstart);
+                    S_StartSound(&plat.sector->SoundX, sfx_pstart);
                 }
             }
-        case in_stasis:     // DC: Nothing to be done for this case 
+        }   break;
+
+        case in_stasis:     // DC: Nothing to be done for this case
             break;
     }
 }
 
-/**********************************
-
-    Given a tag ID number, activate a platform that is currently
-    inactive.
-
-**********************************/
-
-static void ActivateInStasis(uint32_t tag)
-{
-    plat_t *PlatPtr;        // Temp pointer 
-
-    PlatPtr = gMainPlatPtr;  // Get the main list entry 
-    while (PlatPtr) {       // Scan all entries in the thinker list 
-        if (PlatPtr->tag == tag && PlatPtr->status == in_stasis) {  // Match? 
-            PlatPtr->status = PlatPtr->oldstatus;   // Restart the platform 
-            ChangeThinkCode(PlatPtr, (ThinkerFunc) T_PlatRaise);   // Reset code 
+//----------------------------------------------------------------------------------------------------------------------
+// Given a tag ID number, activate a platform that is currently inactive.
+//----------------------------------------------------------------------------------------------------------------------
+static void ActivateInStasis(const uint32_t tag) noexcept {
+    plat_t* pPlat = gpMainPlatPtr;                                  // Get the main list entry
+    while (pPlat) {                                                 // Scan all entries in the thinker list
+        if (pPlat->tag == tag && pPlat->status == in_stasis) {      // Match?
+            pPlat->status = pPlat->oldstatus;                       // Restart the platform
+            ChangeThinkCode(*pPlat, T_PlatRaise);                   // Reset code
         }
-        PlatPtr = PlatPtr->next;    // Get the next link 
+        pPlat = pPlat->next;    // Get the next link
     }
 }
 
-/**********************************
+//----------------------------------------------------------------------------------------------------------------------
+// Trigger a platform. Perform the action for all platforms "amount" is only used for SOME platforms.
+//----------------------------------------------------------------------------------------------------------------------
+bool EV_DoPlat(line_t& line, plattype_e type, uint32_t amount) noexcept {
+    // Assume false initially
+    bool rtn = false; 
 
-    Trigger a platform. Perform the action for all platforms
-    "amount" is only used for SOME platforms.
-
-**********************************/
-
-bool EV_DoPlat(line_t *line,plattype_e type, uint32_t amount)
-{
-    plat_t *plat;       // Pointer to new platform 
-    uint32_t secnum;    // Which sector am I in? 
-    bool rtn;           // True if I created a platform 
-    sector_t *sec;      // Pointer to current sector 
-
-    rtn = false;        // Assume false 
-
-    // Activate all <type> plats that are in_stasis 
-
-    if (type==perpetualRaise) {
-        ActivateInStasis(line->tag);        // Reset the platforms 
+    // Activate all <type> plats that are in_stasis
+    if (type == perpetualRaise) {
+        ActivateInStasis(line.tag);     // Reset the platforms
     }
 
-    secnum = -1;
-    while ((secnum = P_FindSectorFromLineTag(line,secnum)) != -1) {
-        sec = &gpSectors[secnum];   // Get the sector pointer 
-        if (sec->specialdata) {     // Already has a platform? 
-            continue;               // Skip 
+    uint32_t secnum = UINT32_MAX;       // Which sector am I in?
+
+    while ((secnum = P_FindSectorFromLineTag(line, secnum)) != UINT32_MAX) {
+        sector_t& sec = gpSectors[secnum];      // Get the sector pointer
+        if (sec.specialdata) {                  // Already has a platform?
+            continue;                           // Skip
         }
 
-        // Find lowest & highest floors around sector 
-        rtn = true;                                                 // I created a sector 
-        plat = (plat_t*) AddThinker((ThinkerFunc) T_PlatRaise,sizeof(plat_t));    // Add to the thinker list 
-        plat->type = type;                                          // Save the platform type 
-        plat->sector = sec;                                         // Save the sector pointer 
-        plat->sector->specialdata = plat;                           // Point back to me... 
-        plat->crush = false;                                        // Can't crush anything 
-        plat->tag = line->tag;                                      // Assume the line's ID 
-        switch(type) {                                              // Init vars based on type 
+        // Find lowest & highest floors around sector
+        rtn = true;                                 // I created a sector
+        plat_t& plat = AddThinker(T_PlatRaise);     // Add to the thinker list
+        plat.type = type;                           // Save the platform type
+        plat.sector = &sec;                         // Save the sector pointer
+        plat.sector->specialdata = &plat;           // Point back to me...
+        plat.crush = false;                         // Can't crush anything
+        plat.tag = line.tag;                        // Assume the line's ID
 
-        case raiseToNearestAndChange:   // Go up and stop 
-            sec->special = 0;           // If lava, then stop hurting the player 
-            plat->high = P_FindNextHighestFloor(sec,sec->floorheight);
-            goto RaisePart2;
-
-        case raiseAndChange:    // Raise a specific amount and stop 
-            plat->high = sec->floorheight + (amount<<FRACBITS);
-RaisePart2:
-            plat->speed = PLATSPEED/2;                      // Slow speed 
-            sec->FloorPic = line->frontsector->FloorPic;
-            plat->wait = 0;                                 // No delay before moving 
-            plat->status = up;                              // Going up! 
-            S_StartSound(&sec->SoundX,sfx_stnmov);          // Begin move 
-            break;
-        case downWaitUpStay:
-            plat->speed = PLATSPEED * 4;        // Fast speed 
-            plat->low = P_FindLowestFloorSurrounding(sec);  // Lowest floor 
-            if (plat->low > sec->floorheight) {
-                plat->low = sec->floorheight;       // Go to the lowest mark 
+        // Init vars based on type
+        switch (type) {
+            case raiseToNearestAndChange: {     // Go up and stop
+                sec.special = 0;                // If lava, then stop hurting the player
+                plat.high = P_FindNextHighestFloor(sec, sec.floorheight);
+                goto RaisePart2;
             }
-            plat->high = sec->floorheight;      // Allow to return 
-            plat->wait = PLATWAIT;              // Set the delay when it hits bottom 
-            plat->status = down;                // Go down 
-            S_StartSound(&sec->SoundX,sfx_pstart);
-            break;
-        case perpetualRaise:
-            plat->speed = PLATSPEED;        // Set normal speed 
-            plat->low = P_FindLowestFloorSurrounding(sec);
-            if (plat->low > sec->floorheight) {
-                plat->low = sec->floorheight;   // Set lower mark 
-            }
-            plat->high = P_FindHighestFloorSurrounding(sec);
-            if (plat->high < sec->floorheight) {
-                plat->high = sec->floorheight;  // Set highest mark 
-            }
-            plat->wait = PLATWAIT;                      // Delay when it hits bottom 
-            plat->status = (plat_e) Random::nextU8(1);  // Up or down 
-            S_StartSound(&sec->SoundX,sfx_pstart);      // Start 
-            break;
+
+            case raiseAndChange: {  // Raise a specific amount and stop
+                plat.high = sec.floorheight + (amount << FRACBITS);
+            RaisePart2:
+                plat.speed = PLATSPEED / 2;                     // Slow speed
+                sec.FloorPic = line.frontsector->FloorPic;
+                plat.wait = 0;                                  // No delay before moving
+                plat.status = up;                               // Going up!
+                S_StartSound(&sec.SoundX, sfx_stnmov);          // Begin move
+            }   break;
+
+            case downWaitUpStay: {
+                plat.speed = PLATSPEED * 4;                     // Fast speed
+                plat.low = P_FindLowestFloorSurrounding(sec);   // Lowest floor
+                if (plat.low > sec.floorheight) {
+                    plat.low = sec.floorheight;                 // Go to the lowest mark
+                }
+                plat.high = sec.floorheight;                    // Allow to return
+                plat.wait = PLATWAIT;                           // Set the delay when it hits bottom
+                plat.status = down;                             // Go down
+                S_StartSound(&sec.SoundX, sfx_pstart);
+            }   break;
+
+            case perpetualRaise: {
+                plat.speed = PLATSPEED; // Set normal speed
+                plat.low = P_FindLowestFloorSurrounding(sec);
+                if (plat.low > sec.floorheight) {
+                    plat.low = sec.floorheight;     // Set lower mark
+                }
+                plat.high = P_FindHighestFloorSurrounding(sec);
+                if (plat.high < sec.floorheight) {
+                    plat.high = sec.floorheight;    // Set highest mark
+                }
+                plat.wait = PLATWAIT;                       // Delay when it hits bottom
+                plat.status = (plat_e) Random::nextU8(1);   // Up or down
+                S_StartSound(&sec.SoundX, sfx_pstart);      // Start
+            }   break;
         }
-        AddActivePlat(plat);        // Add the platform to the list 
+        AddActivePlat(plat);    // Add the platform to the list
     }
-    return rtn;     // Did I create one? 
+    return rtn;     // Did I create one?
 }
 
-/**********************************
-
-    Deactivate a platform
-    Only affect platforms that have the same ID tag
-    as the line segment and also are active.
-
-**********************************/
-
-void EV_StopPlat(line_t *line)
-{
-    plat_t *PlatPtr;        // Temp pointer 
-    uint32_t tag;           // Get the ID tag 
-
-    tag = line->tag;        // Cache the tag 
-    PlatPtr = gMainPlatPtr;  // Get the main list entry 
-    while (PlatPtr) {       // Scan all entries in the thinker list 
-        if (PlatPtr->tag == tag && PlatPtr->status != in_stasis) {  // Match? 
-            PlatPtr->oldstatus = PlatPtr->status;   // Save the platform's state 
-            PlatPtr->status = in_stasis;    // Now in stasis 
-            ChangeThinkCode(PlatPtr,0); // Shut down 
+//----------------------------------------------------------------------------------------------------------------------
+// Deactivate a platform; only affect platforms that have the same ID tag
+// as the line segment and also are active.
+//----------------------------------------------------------------------------------------------------------------------
+void EV_StopPlat(line_t& line) noexcept {
+    const uint32_t tag = line.tag;                                      // Cache the id tag
+    plat_t* pPlat = gpMainPlatPtr;                                      // Get the main list entry
+    while (pPlat) {                                                     // Scan all entries in the thinker list
+        if ((pPlat->tag == tag) && (pPlat->status != in_stasis)) {      // Match?
+            pPlat->oldstatus = pPlat->status;                           // Save the platform's state
+            pPlat->status = in_stasis;                                  // Now in stasis
+            ChangeThinkCode(pPlat, nullptr);                            // Shut down
         }
-        PlatPtr = PlatPtr->next;    // Get the next link 
+        pPlat = pPlat->next;                                            // Get the next link
     }
 }
 
-/**********************************
-
-    Reset the master plat pointer
-    Called from InitThinkers
-
-**********************************/
-
-void ResetPlats() {
+//----------------------------------------------------------------------------------------------------------------------
+// Reset the master plat pointer; called from InitThinkers
+//----------------------------------------------------------------------------------------------------------------------
+void ResetPlats() noexcept {
     // FIXME: DC: Investigate if this is a leak
-    gMainPlatPtr = 0;        // Forget about the linked list 
+    gpMainPlatPtr = nullptr;    // Forget about the linked list
 }

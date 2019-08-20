@@ -13,7 +13,7 @@ class AudioOutputDevice {
 public:
     AudioOutputDevice() noexcept;
     ~AudioOutputDevice() noexcept;
-    
+
     bool init() noexcept;
     void shutdown() noexcept;
     inline bool isInitialized() const noexcept { return mbIsInitialized; }
@@ -32,7 +32,7 @@ public:
     // Lock should be done whenever we are doing anything that might affect playing audio, such as
     // modifying a voice or setting the volume or pausing a music system. Otherwise we might run
     // into data race issues with the audio callback thread...
-    // 
+    //
     // Use the RAII lock helper to assist with using these.
     //----------------------------------------------------------------------------------------------
     void lockAudioDevice() noexcept;

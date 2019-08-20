@@ -18,7 +18,7 @@ public:
 
     AudioDataMgr() noexcept;
     ~AudioDataMgr() noexcept;
-    
+
     //----------------------------------------------------------------------------------------------
     // Lookup a specified handle for a file.
     // Returns 'INVALID_HANDLE' if the file is not loaded.
@@ -38,7 +38,7 @@ public:
     // If the audio file is already loaded then the existing handle will be returned.
     //----------------------------------------------------------------------------------------------
     Handle loadFile(const char* const file) noexcept;
-    
+
     // Unload the specified handle or everything
     void unloadHandle(const Handle handle) noexcept;
     void unloadAll() noexcept;
@@ -47,7 +47,7 @@ private:
     // Note: using std::less<> to allow for hetrogenous comparison.
     // That way we don't have to construct std::string when given a C-String!
     typedef std::map<std::string, Handle, std::less<>> HandleLut;
-    
+
     // Represents a single managed piece of audio
     struct AudioEntry {
         AudioData               data;

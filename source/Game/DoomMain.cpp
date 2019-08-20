@@ -134,7 +134,7 @@ gameaction_e MiniLoop(
             std::this_thread::yield();
             continue;
         }
-        
+
         // Update input and if a quit was requested then exit immediately
         Input::update();
 
@@ -157,7 +157,7 @@ gameaction_e MiniLoop(
         gPrevJoyPadButtons = gJoyPadButtons;        // Pass through the latest keypad info
         uint32_t buttons = ReadJoyButtons(0);       // Read the controller
         gJoyPadButtons = buttons;                   // Save it
-        
+
         if (gDemoPlayback) {                            // Playing back a demo?
             if (buttons & (PadA|PadB|PadC|PadD) ) {     // Abort?
                 nextGameAction = ga_exitdemo;           // Exit the demo
@@ -289,7 +289,7 @@ static void DRAW_LogicwareCredits(const bool bPresent, const bool bSaveFrameBuff
 static void RunMenu() {
     if (Input::quitRequested())
         return;
-    
+
     if (MiniLoop(M_Start, M_Stop, M_Ticker, M_Drawer) == ga_completed) {
         S_StopSong();
         G_InitNew(gStartSkill, gStartMap);      // Init the new game
@@ -303,7 +303,7 @@ static void RunMenu() {
 static void RunTitle() noexcept {
     if (Input::quitRequested())
         return;
-    
+
     // Run the main menu if the user exited out of this screen
     if (MiniLoop(START_Title, STOP_Title, TIC_Abortable, DRAW_Title) == ga_exitdemo) {
         RunMenu();
@@ -316,7 +316,7 @@ static void RunTitle() noexcept {
 static void RunCredits() noexcept {
     if (Input::quitRequested())
         return;
-    
+
     // Show ID credits, Art Data Interactive credits and then Logicware credits in that order.
     // If the user requests to exit this sequence then go to the main menu.
     if (MiniLoop(nullptr, nullptr, TIC_Credits, DRAW_IdCredits) == ga_exitdemo) {
@@ -331,7 +331,7 @@ static void RunCredits() noexcept {
 
     if (MiniLoop(nullptr, nullptr, TIC_Credits, DRAW_LogicwareCredits) == ga_exitdemo) {
         RunMenu();
-        return;        
+        return;
     }
 }
 

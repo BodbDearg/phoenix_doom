@@ -14,7 +14,7 @@ enum spclface_e {
 };
 
 // Describe data on the status bar
-struct stbar_t {        
+struct stbar_t {
     spclface_e  specialFace;            // Which type of special face to make
     bool        gotgibbed;              // Got gibbed
     bool        tryopen[NUMCARDS];      // Tried to open a card or skull door

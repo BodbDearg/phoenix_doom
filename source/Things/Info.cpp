@@ -18,7 +18,7 @@
 // values #1 and 2. I assume a time base of 60hz.
 //
 // The third value is a procedure pointer to execute when the state is entered.
-// 
+//
 // The fourth value is the index to the next state when time runs out.
 //
 //----------------------------------------------------------------------------------------------------------------------
@@ -468,7 +468,7 @@ state_t gStates[NUMSTATES] = {
 
 //--------------------------------------------------------------------------------------------------
 // Object info, consists of the following fields:
-// 
+//
 //      (1)  spawnstate
 //      (2)  seestate
 //      (3)  painstate

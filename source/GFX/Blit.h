@@ -5,7 +5,7 @@
 #include <algorithm>
 
 // Set to '1' to enable heavy duty bounds checking on blitting.
-// This can slow down stuff a lot, but can be useful to sanity check blit code. 
+// This can slow down stuff a lot, but can be useful to sanity check blit code.
 #define BLIT_ASSERT_ENABLED 1
 
 // Blit assertion macro
@@ -20,9 +20,9 @@ namespace Blit {
     // Flags for when blitting a column.
     //------------------------------------------------------------------------------------------------------------------
     static constexpr uint32_t BCF_HORZ_COLUMN       = 0x00000001;       // Instead of blitting to a vertical column of pixels, blit to a horizontal column.
-    static constexpr uint32_t BCF_ROW_MAJOR_IMG     = 0x00000002;       // The source image is stored in row major format instead of column major (default).    
+    static constexpr uint32_t BCF_ROW_MAJOR_IMG     = 0x00000002;       // The source image is stored in row major format instead of column major (default).
     static constexpr uint32_t BCF_STEP_X            = 0x00000004;       // Step the texture coordinate in the X direction for each pixel blitted.
-    static constexpr uint32_t BCF_STEP_Y            = 0x00000008;       // Step the texture coordinate in the Y direction for each pixel blitted.    
+    static constexpr uint32_t BCF_STEP_Y            = 0x00000008;       // Step the texture coordinate in the Y direction for each pixel blitted.
     static constexpr uint32_t BCF_ALPHA_TEST        = 0x00000010;       // Check the alpha of source image pixels and do not blit if alpha '0'.
     static constexpr uint32_t BCF_COLOR_MULT_RGB    = 0x00000020;       // Multiply the RGB values of the source image by the given 16.16 fixed point color.
     static constexpr uint32_t BCF_COLOR_MULT_A      = 0x00000040;       // Multiply the alpha value of the source image by the given 16.16 fixed point color.
@@ -43,7 +43,7 @@ namespace Blit {
     inline constexpr Fixed calcTexelStep(const uint32_t textureSize, const uint32_t renderSize) noexcept {
         if (textureSize <= 1 || renderSize <= 1)
             return 0;
-        
+
         // The way the math works here helps to ensure that the last texel chosen for the given render size is pretty much
         // always the last texel according to the given texture dimension:
         const int32_t numPixelSteps = (int32_t) renderSize - 1;
@@ -168,7 +168,7 @@ namespace Blit {
         constexpr bool IS_HORZ_COLUMN       = ((BC_FLAGS & BCF_HORZ_COLUMN) != 0);
         constexpr bool IS_SRC_COL_MAJOR     = ((BC_FLAGS & BCF_ROW_MAJOR_IMG) == 0);
         constexpr bool IS_SRC_ROW_MAJOR     = ((BC_FLAGS & BCF_ROW_MAJOR_IMG) != 0);
-        
+
         constexpr bool DO_X_STEP            = ((BC_FLAGS & BCF_STEP_X) != 0);
         constexpr bool DO_Y_STEP            = ((BC_FLAGS & BCF_STEP_Y) != 0);
         constexpr bool DO_ANY_STEP          = (DO_X_STEP | DO_Y_STEP);
@@ -188,7 +188,7 @@ namespace Blit {
         constexpr bool DO_V_WRAP_CLAMP      = ((BC_FLAGS & BCF_V_WRAP_CLAMP) != 0);
         constexpr bool DO_V_WRAP_DISCARD    = ((BC_FLAGS & BCF_V_WRAP_DISCARD) != 0);
         constexpr bool DO_ANY_V_WRAP        = (DO_V_WRAP_WRAP | DO_V_WRAP_CLAMP | DO_V_WRAP_DISCARD);
-        
+
         constexpr bool DO_H_CLIP            = ((BC_FLAGS & BCF_H_CLIP) != 0);
         constexpr bool DO_V_CLIP            = ((BC_FLAGS & BCF_V_CLIP) != 0);
         constexpr bool DO_ANY_CLIP          = (DO_H_CLIP | DO_V_CLIP);
@@ -217,7 +217,7 @@ namespace Blit {
             if (numPixelsOutOfBounds > 0) {
                 if (numPixelsOutOfBounds >= (int32_t) dstCount)     // Completely offscreen?
                     return;
-                
+
                 dstY = 0;
                 srcY = srcY + srcYStep * numPixelsOutOfBounds + srcYSubPixelAdjustment;
                 srcYSubPixelAdjustment = 0;
@@ -242,7 +242,7 @@ namespace Blit {
             if (numPixelsOutOfBounds > 0) {
                 if (numPixelsOutOfBounds >= (int32_t) dstCount)     // Completely offscreen?
                     return;
-                
+
                 dstX = 0;
                 srcX = srcX + srcXStep * numPixelsOutOfBounds + srcXSubPixelAdjustment;
                 srcXSubPixelAdjustment = 0;
@@ -271,7 +271,7 @@ namespace Blit {
             if ((uint32_t) srcY >= srcH)    // Note: cheat and do a < 0 check in one operation by casting to unsigned and checking in this way!
                 return;
         }
-        
+
         // Where to start and stop outputing to and the pointer step to make on each output pixel
         BLIT_ASSERT(dstX >= 0 && dstX < (int32_t) dstW);
         BLIT_ASSERT(dstY >= 0 && dstY < (int32_t) dstH);
@@ -305,7 +305,7 @@ namespace Blit {
         #endif
 
         [[maybe_unused]] const uint16_t* pSrcRowOrCol;
-       
+
         constexpr bool USE_SRC_ROW_INDEXING = (IS_SRC_ROW_MAJOR && DO_X_STEP && (!DO_Y_STEP));
         constexpr bool USE_SRC_COL_INDEXING = (IS_SRC_COL_MAJOR && DO_Y_STEP && (!DO_X_STEP));
 
@@ -337,11 +337,11 @@ namespace Blit {
                     if (curSrcXInt >= srcW) {
                         if (bDidHWrapDiscardClamp)
                             break;
-                        
+
                         curSrcXInt = wrapXCoord<BCF_H_WRAP_CLAMP>((int32_t) curSrcXInt, srcW);
                         bDidHWrapDiscardClamp = true;
                         const uint32_t prevSrcXInt = (uint32_t)(nextSrcX - srcXStep);
-                        
+
                         if (prevSrcXInt == curSrcXInt)
                             break;
                     }
@@ -351,11 +351,11 @@ namespace Blit {
                     if (curSrcYInt >= srcH) {
                         if (bDidVWrapDiscardClamp)
                             break;
-                        
+
                         curSrcYInt = wrapYCoord<BCF_V_WRAP_CLAMP>((int32_t) curSrcYInt, srcH);
                         bDidVWrapDiscardClamp = true;
                         const uint32_t prevSrcYInt = (uint32_t)(nextSrcY - srcYStep);
-                        
+
                         if (prevSrcYInt == curSrcYInt)
                             break;
                     }
@@ -382,11 +382,11 @@ namespace Blit {
                         srcPixelARGB1555 = pSrcPixels[curSrcYInt * srcW + curSrcXInt];
                     }
                 }
-            
+
                 // Extract RGBA components.
                 // In the case of RGB, shift such that the maximum value is 255 instead of 31.
                 [[maybe_unused]] uint16_t texA;
-            
+
                 if constexpr (NEED_ALPHA_CHANNEL) {
                     texA = (srcPixelARGB1555 & uint16_t(0b1000000000000000)) >> 15;
                 }
@@ -550,7 +550,7 @@ namespace Blit {
         //
         // Note: adding a small amount to source width and height here as a hack to combat imprecision
         // and missing pixels for certain UI scalings from the base resolution of 320x200.
-        const float srcXStep = (dstXCount > 0) ? (srcW + 0.01f) / (float) dstW : 0.0f;  
+        const float srcXStep = (dstXCount > 0) ? (srcW + 0.01f) / (float) dstW : 0.0f;
         const float srcYStep = (dstYCount > 0) ? (srcH + 0.01f) / (float) dstH : 0.0f;
 
         // Blit each row of the image

@@ -14,39 +14,39 @@
 #include "Intermission_Main.h"
 #include "ThreeDO.h"
 
-#define CURSORX 45      // X coord for skulls 
-#define SLIDERX 106     // X coord for slider bars 
-#define SLIDESTEP 6     // Adjustment for volume to screen coord 
-#define JOYPADX 90      // X coord for joypad text 
+static constexpr uint32_t CURSORX       = 45;       // X coord for skulls
+static constexpr uint32_t SLIDERX       = 106;      // X coord for slider bars
+static constexpr uint32_t SLIDESTEP     = 6;        // Adjustment for volume to screen coord
+static constexpr uint32_t JOYPADX       = 90;       // X coord for joypad text
+static constexpr uint32_t SFXVOLY       = 60;       // Y coord for SFX volume control
+static constexpr uint32_t MUSICVOLY     = 120;      // Y coord for Music volume control
+static constexpr uint32_t JOYPADY       = 40;       // Y coord for joypad control
+static constexpr uint32_t SIZEY         = 140;      // Y coord for screen size control
 
-#define SFXVOLY 60      // Y coord for SFX volume control 
-#define MUSICVOLY 120   // Y coord for Music volume control 
-#define JOYPADY 40      // Y coord for joypad control 
-#define SIZEY 140       // Y coord for screen size control 
-
-// Action buttons can be set to PadA, PadB, or PadC 
-
-enum {      // Control option count 
-    SFU,SUF,FSU,FUS,USF,UFS,NUMCONTROLOPTIONS
+// Action buttons can be set to PadA, PadB, or PadC
+enum {     
+    SFU,
+    SUF,
+    FSU,
+    FUS,
+    USF,
+    UFS,
+    NUMCONTROLOPTIONS    // Control option count
 };
 
-enum {      // Menu items to select from 
-    soundvol,       // Volume 
-    musicvol,       // Music volume 
-    controls,       // Control settings 
-    size,           // Screen size settings 
+// Menu items to select from
+enum {
+    soundvol,       // Volume
+    musicvol,       // Music volume
+    controls,       // Control settings
+    size,           // Screen size settings
     NUMMENUITEMS
 };
 
 enum {
-    BAR,        // Sub shapes for scroll bar 
+    BAR,        // Sub shapes for scroll bar
     HANDLE
 };
-
-static uint32_t gCursorFrame;       // Skull animation frame 
-static uint32_t gCursorCount;       // Time mark to animate the skull 
-static uint32_t gCursorPos;         // Y position of the skull 
-static uint32_t gMoveCount;         // Time mark to move the skull 
 
 static constexpr uint32_t CURSOR_Y_POS[NUMMENUITEMS] = {
     SFXVOLY - 2,
@@ -95,184 +95,179 @@ static constexpr uint32_t CONFIGURATION[NUMCONTROLOPTIONS][3] = {
     { PadC, PadB, PadA }
 };
 
-/**********************************
+static uint32_t gCursorFrame;       // Skull animation frame
+static uint32_t gCursorCount;       // Time mark to animate the skull
+static uint32_t gCursorPos;         // Y position of the skull
+static uint32_t gMoveCount;         // Time mark to move the skull
 
-    Init the button settings from the control type
+//----------------------------------------------------------------------------------------------------------------------
+// Init the button settings from the control type
+//----------------------------------------------------------------------------------------------------------------------
+static void SetButtonsFromControltype() noexcept {
+    const uint32_t* const pTable = &CONFIGURATION[gControlType][0];  // Init table
 
-**********************************/
-
-static void SetButtonsFromControltype(void)
-{
-    const uint32_t *TablePtr;
-
-    TablePtr = &CONFIGURATION[gControlType][0];  // Init table 
-    gPadSpeed = TablePtr[0];     // Init the joypad settings 
-    gPadAttack = TablePtr[1];
-    gPadUse = TablePtr[2];
-    Renderer::initMathTables();     // Handle the math tables 
+    gPadSpeed = pTable[0];          // Init the joypad settings
+    gPadAttack = pTable[1];
+    gPadUse = pTable[2];
+    Renderer::initMathTables();     // Handle the math tables
 }
 
-/**********************************
-
-    Init the option screens
-    Called on powerup.
-
-**********************************/
-
+//----------------------------------------------------------------------------------------------------------------------
+// Init the option screens: called on powerup.
+//----------------------------------------------------------------------------------------------------------------------
 void O_Init() noexcept {
-// The prefs has set controltype, so set buttons from that 
+    // Init the joypad settings: the prefs has set controltype, so set buttons from that
+    SetButtonsFromControltype();
 
-    SetButtonsFromControltype();        // Init the joypad settings 
-    gCursorCount = 0;        // Init skull cursor state 
+    // Init skull cursor state
+    gCursorCount = 0;
     gCursorFrame = 0;
     gCursorPos = 0;
 }
 
-/**********************************
+//----------------------------------------------------------------------------------------------------------------------
+// Button bits can be eaten by clearing them in JoyPadButtons.
+// Called by player code.
+//----------------------------------------------------------------------------------------------------------------------
+void O_Control(player_t* const pPlayer) noexcept {
+    const uint32_t buttons = gJoyPadButtons;
 
-    Button bits can be eaten by clearing them in JoyPadButtons
-    Called by player code.
-    
-**********************************/
-
-void O_Control(player_t *player) noexcept {
-    uint32_t buttons;
-    buttons = gJoyPadButtons;
-
-    if (gNewJoyPadButtons & PadX) {      // Toggled the option screen? 
-        if (player) {
-            player->AutomapFlags ^= AF_OPTIONSACTIVE;   // Toggle the flag 
-            if (!(player->AutomapFlags & AF_OPTIONSACTIVE)) {   // Shut down? 
-                SetButtonsFromControltype();    // Set the memory 
-                WritePrefsFile();       // Save new settings to NVRAM 
+    if (gNewJoyPadButtons & PadX) {      // Toggled the option screen?
+        if (pPlayer) {
+            pPlayer->AutomapFlags ^= AF_OPTIONSACTIVE;                  // Toggle the flag
+            if ((pPlayer->AutomapFlags & AF_OPTIONSACTIVE) == 0) {      // Shut down?
+                SetButtonsFromControltype();                            // Set the memory
+                WritePrefsFile();                                       // Save new settings to NVRAM
             }
         } else {
-            SetButtonsFromControltype();    // Set the memory 
-            WritePrefsFile();       // Save new settings to NVRAM 
+            SetButtonsFromControltype();        // Set the memory
+            WritePrefsFile();                   // Save new settings to NVRAM
         }
     }
-    
-    if (player) {
-        if ( !(player->AutomapFlags & AF_OPTIONSACTIVE) ) { // Can I execute? 
-            return;     // Exit NOW! 
+
+    if (pPlayer) {
+        if ((pPlayer->AutomapFlags & AF_OPTIONSACTIVE) == 0) {      // Can I execute?
+            return;                                                 // Exit NOW!
         }
     }
-    
-// Clear buttons so game player isn't moving around 
 
-    gJoyPadButtons = buttons&PadX;   // Leave option status alone 
+    // Clear buttons so game player isn't moving around, but leave option status alone
+    gJoyPadButtons = buttons & PadX;
 
-    // animate skull 
+    // Animate skull
     ++gCursorCount;
-    if (gCursorCount >= (TICKSPERSEC/4)) {   // Time up? 
-        gCursorFrame ^= 1;       // Toggle the frame 
-        gCursorCount = 0;        // Reset the timer 
+    if (gCursorCount >= TICKSPERSEC / 4) {      // Time up?
+        gCursorFrame ^= 1;                      // Toggle the frame
+        gCursorCount = 0;                       // Reset the timer
     }
 
     // Check for movement
-    if (! (buttons & (PadUp|PadDown|PadLeft|PadRight) ) ) {
-        gMoveCount = TICKSPERSEC;        // move immediately on next press
+    if ((buttons & (PadUp|PadDown|PadLeft|PadRight)) == 0) {
+        gMoveCount = TICKSPERSEC;   // Move immediately on next press
     } else {
         ++gMoveCount;
-        if ( (gMoveCount >= (TICKSPERSEC/3)) ||      // Allow slow 
-            (gCursorPos < controls && gMoveCount >= (TICKSPERSEC/5))) {   // Fast? 
+        if ((gMoveCount >= TICKSPERSEC / 3) || (    // Allow slow
+                (gCursorPos < controls) && 
+                (gMoveCount >= TICKSPERSEC / 5)     // Fast?
+            )
+        ) {
             gMoveCount = 0;      // Reset timer
-            
-            // Try to move the cursor up or down...            
-            if (buttons & PadDown) {        
+
+            // Try to move the cursor up or down...
+            if ((buttons & PadDown) != 0) {
                 ++gCursorPos;
                 if (gCursorPos >= NUMMENUITEMS) {
                     gCursorPos = 0;
                 }
             }
-            if (buttons & PadUp) {
-                if (!gCursorPos) {
+
+            if ((buttons & PadUp) != 0) {
+                if (gCursorPos <= 0) {
                     gCursorPos = NUMMENUITEMS;
                 }
                 --gCursorPos;
             }
-            
-            switch (gCursorPos) {        // Adjust the control 
-            case controls:          // Joypad?    
-                if (buttons & PadRight) {
-                    if (gControlType<(NUMCONTROLOPTIONS-1)) {
-                        ++gControlType;
-                    }
-                }
-                if (buttons & PadLeft) {
-                    if (gControlType) {
-                        --gControlType;
-                    }
-                }
-                break;
-            
-            // Sound volume?
-            case soundvol: {
-                if (buttons & PadRight) {
-                    const uint32_t soundVolume = audioGetSoundVolume();
 
-                    if (soundVolume < MAX_AUDIO_VOLUME) {
-                        audioSetSoundVolume(soundVolume + 1);
-                        S_StartSound(0, sfx_pistol);
-                    }
-                }
-
-                if (buttons & PadLeft) {
-                    const uint32_t soundVolume = audioGetSoundVolume();
-
-                    if (soundVolume > 0) {
-                        audioSetSoundVolume(soundVolume - 1);
-                        S_StartSound(0, sfx_pistol);
-                    }
-                }
-            }   break;
-
-            // Music volume?
-            case musicvol: {
-                if (buttons & PadRight) {
-                    const uint32_t musicVolume = audioGetMusicVolume();
-
-                    if (musicVolume < MAX_AUDIO_VOLUME) {
-                        audioSetMusicVolume(musicVolume + 1);
-                    }
-                }
-
-                if (buttons & PadLeft) {
-                    const uint32_t musicVolume = audioGetMusicVolume();
-
-                    if (musicVolume > 0) {
-                        audioSetMusicVolume(musicVolume - 1);
-                    }
-                }
-            }   break;
-            
-            case size:          // Screen size 
-                if (buttons & PadLeft)  {
-                    if (gScreenSize<(6-1)) {
-                        ++gScreenSize;
-                        if (player) {
-                            Renderer::initMathTables();     // Handle the math tables 
+            switch (gCursorPos) {   // Adjust the control
+                // Joypad?
+                case controls: {
+                    if ((buttons & PadRight) != 0) {
+                        if (gControlType < NUMCONTROLOPTIONS - 1) {
+                            ++gControlType;
                         }
                     }
-                }
-                if (buttons & PadRight) {
-                    if (gScreenSize > 0) {       // Can it grow? 
-                        --gScreenSize;
-                        if (player) {
-                            Renderer::initMathTables();     // Handle the math tables 
+
+                    if ((buttons & PadLeft) != 0) {
+                        if (gControlType > 0) {
+                            --gControlType;
                         }
                     }
-                }
-            }   
+                }   break;
+
+                // Sound volume?
+                case soundvol: {
+                    if ((buttons & PadRight) != 0) {
+                        const uint32_t soundVolume = audioGetSoundVolume();
+                        if (soundVolume < MAX_AUDIO_VOLUME) {
+                            audioSetSoundVolume(soundVolume + 1);
+                            S_StartSound(0, sfx_pistol);
+                        }
+                    }
+
+                    if ((buttons & PadLeft) != 0) {
+                        const uint32_t soundVolume = audioGetSoundVolume();
+                        if (soundVolume > 0) {
+                            audioSetSoundVolume(soundVolume - 1);
+                            S_StartSound(0, sfx_pistol);
+                        }
+                    }
+                }   break;
+
+                // Music volume?
+                case musicvol: {
+                    if ((buttons & PadRight) != 0) {
+                        const uint32_t musicVolume = audioGetMusicVolume();
+                        if (musicVolume < MAX_AUDIO_VOLUME) {
+                            audioSetMusicVolume(musicVolume + 1);
+                        }
+                    }
+
+                    if ((buttons & PadLeft) != 0) {
+                        const uint32_t musicVolume = audioGetMusicVolume();
+                        if (musicVolume > 0) {
+                            audioSetMusicVolume(musicVolume - 1);
+                        }
+                    }
+                }   break;
+
+                // Screen size
+                case size: {
+                    if ((buttons & PadLeft) != 0)  {
+                        if (gScreenSize < 6 - 1) {
+                            ++gScreenSize;
+                            if (pPlayer) {
+                                Renderer::initMathTables();     // Handle the math tables
+                            }
+                        }
+                    }
+
+                    if ((buttons & PadRight) != 0) {
+                        if (gScreenSize > 0) {
+                            --gScreenSize;
+                            if (pPlayer) {
+                                Renderer::initMathTables();     // Handle the math tables
+                            }
+                        }
+                    }
+                }   break;
+            }
         }
     }
 }
 
-/**********************************
-
-    Draw the option screen
-
-**********************************/
+//----------------------------------------------------------------------------------------------------------------------
+// Draw the option screen
+//----------------------------------------------------------------------------------------------------------------------
 void O_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
     // Erase old and Draw new cursor frame
     const CelImageArray& skullImgs = CelImages::loadImages(rSKULLS, CelImages::LoadFlagBits::MASKED);
@@ -290,7 +285,7 @@ void O_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
         // Draw scroll bars
         Renderer::drawUISprite(SLIDERX, SFXVOLY + 20, sliderImgs.getImage(BAR));
         Renderer::drawUISprite(SLIDERX, MUSICVOLY + 20, sliderImgs.getImage(BAR));
-        
+
         {
             const uint32_t offset = audioGetSoundVolume() * SLIDESTEP;
             Renderer::drawUISprite(SLIDERX + 5 + offset, SFXVOLY + 20, sliderImgs.getImage(HANDLE));
@@ -312,7 +307,7 @@ void O_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
         PrintBigFont(JOYPADX + 40, JOYPADY + 60, BUTTON_C[gControlType]);
         PrintBigFontCenter(160, SIZEY, "Screen Size");
         Renderer::drawUISprite(SLIDERX, SIZEY + 20, sliderImgs.getImage(BAR));
-        
+
         const uint32_t offset = (5 - gScreenSize) * 18;
         Renderer::drawUISprite(SLIDERX + 5 + offset, SIZEY + 20, sliderImgs.getImage(HANDLE));
     }

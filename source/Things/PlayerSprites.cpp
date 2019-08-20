@@ -2,6 +2,7 @@
 
 #include "Audio/Sound.h"
 #include "Audio/Sounds.h"
+#include "Base/Macros.h"
 #include "Base/Random.h"
 #include "Base/Tables.h"
 #include "Game/Data.h"
@@ -18,11 +19,9 @@ static constexpr int32_t    RAISESPEED      = 18;       // Speed to raise the pl
 static constexpr int32_t    WEAPONBOTTOM    = 128;      // Bottommost Y for hiding weapon
 static constexpr int32_t    WEAPONTOP       = 32;       // Topmost Y for showing weapon
 
-/**********************************
-
-    This data will describe how each weapon is handled
-
-**********************************/
+//----------------------------------------------------------------------------------------------------------------------
+// This data will describe how each weapon is handled
+//----------------------------------------------------------------------------------------------------------------------
 
 // State to raise a weapon with
 static constexpr state_t* WEAPON_UP_STATES[NUMWEAPONS] = {
@@ -84,652 +83,524 @@ static constexpr state_t* WEAPON_FLASH_STATES[NUMWEAPONS] = {
     0                           // Chainsaw
 };
 
-/**********************************
+// Player object to track (Make global to avoid passing it)
+static mobj_t* gpSoundTarget;
 
-    Recursively scan all the sectors within earshot
-    so the monsters will begin tracking the player.
-    Called EXCLUSIVELY by NoiseAlert!
+//----------------------------------------------------------------------------------------------------------------------
+// Recursively scan all the sectors within earshot so the monsters will begin tracking the player.
+// Called EXCLUSIVELY by NoiseAlert!
+//----------------------------------------------------------------------------------------------------------------------
+static void RecursiveSound(sector_t& sec, const uint32_t soundblocks) noexcept {
+    // Wake up all monsters in this sector
+    if (sec.validcount != gValidCount || sec.soundtraversed > (soundblocks + 1)) {
+        sec.validcount = gValidCount;           // Mark for flood fill
+        sec.soundtraversed = soundblocks+1;     // distance for sound (1 or 2)
+        sec.soundtarget = gpSoundTarget;        // Set the noise maker source
+        uint32_t count = sec.linecount;         // How many lines to check?
+        line_t** ppChecker = sec.lines;
 
-**********************************/
-
-static mobj_t* gpSoundTarget;       // Player object to track (Make global to avoid passing it)
-
-static void RecursiveSound(sector_t *sec, uint32_t soundblocks)
-{
-    uint32_t Count;
-    line_t **checker;
-    line_t *check;
-    sector_t *front,*back;
-
-// wake up all monsters in this sector
-
-    if (sec->validcount != gValidCount || sec->soundtraversed > (soundblocks+1)) {
-        sec->validcount = gValidCount;       // Mark for flood fill
-        sec->soundtraversed = soundblocks+1;    // distance for sound (1 or 2)
-        sec->soundtarget = gpSoundTarget;     // Set the noise maker source
-        Count = sec->linecount;             // How many lines to check?
-        checker = sec->lines;
         do {
-            check = checker[0]; // Get the current line ptr
-            back = check->backsector;   // Get the backface sector
-            if (back) {         // Ah, it's double sided!
-                front = check->frontsector; // Get the front side
-                if (front->floorheight < back->ceilingheight && // Open door?
-                    front->ceilingheight > back->floorheight) {
-                    if (front == sec) {     // Use the front?
-                        front = back;       // Nope, use the back
+            line_t* pCheck = ppChecker[0];                  // Get the current line ptr
+            sector_t* const pBack = pCheck->backsector;     // Get the backface sector
+            if (pBack) {                                    // Ah, it's double sided!
+                sector_t* pFront = pCheck->frontsector;     // Get the front side
+
+                if ((pFront->floorheight < pBack->ceilingheight) &&   // Open door?
+                    (pFront->ceilingheight > pBack->floorheight)
+                ) {
+                    if (pFront == &sec) {   // Use the front?
+                        pFront = pBack;     // Nope, use the back
                     }
-                    if (check->flags & ML_SOUNDBLOCK) { // Is sound blocked?
-                        if (!soundblocks) {     // First level deep?
-                            RecursiveSound(front,1);    // Muffled sound...
+
+                    if ((pCheck->flags & ML_SOUNDBLOCK) != 0) {     // Is sound blocked?
+                        if (!soundblocks) {                         // First level deep?
+                            RecursiveSound(*pFront, 1);             // Muffled sound...
                         }
                     } else {
-                        RecursiveSound(front,soundblocks);      // Continue sound level 1
+                        RecursiveSound(*pFront, soundblocks);   // Continue sound level 1
                     }
                 }
             }
-            ++checker;      // Next line pointer
-        } while (--Count);      // All sectors checked?
+            ++ppChecker;        // Next line pointer
+        } while (--count);      // All sectors checked?
     }
 }
 
-/**********************************
+//----------------------------------------------------------------------------------------------------------------------
+// Begin scanning all the sectors within earshot so the monsters will begin tracking the player
+//----------------------------------------------------------------------------------------------------------------------
+static void NoiseAlert(player_t& player) noexcept {
+    ASSERT(player.mo->subsector->sector);
+    sector_t& sec = *player.mo->subsector->sector;
 
-    Begin scanning all the sectors within earshot
-    so the monsters will begin tracking the player
-
-**********************************/
-
-static void NoiseAlert(player_t *player)
-{
-    sector_t *sec;
-
-    sec = player->mo->subsector->sector;    // Get the current sector ptr
-    if (player->lastsoundsector != sec) {   // Not the same one?
-        player->lastsoundsector = sec;  // Set the new sector I made sound in
-        gpSoundTarget = player->mo;   // Set the target for the monsters
-        ++gValidCount;           // Set a unique number for sector flood fill
-        RecursiveSound(sec,0);  // Wake the monsters
+    if (player.lastsoundsector != &sec) {       // Not the same one?
+        player.lastsoundsector = &sec;          // Set the new sector I made sound in
+        gpSoundTarget = player.mo;              // Set the target for the monsters
+        ++gValidCount;                          // Set a unique number for sector flood fill
+        RecursiveSound(sec, 0);                 // Wake the monsters
     }
 }
 
-/**********************************
+//----------------------------------------------------------------------------------------------------------------------
+// Set the player sprite's state (Gun or muzzle flash)
+//----------------------------------------------------------------------------------------------------------------------
+static void SetPlayerSprite(player_t& player, const psprnum_e position, const state_t* pState) noexcept {
+    pspdef_t& psp = player.psprites[position];  // Get the sprite for the flash or weapon
 
-    Set the player sprite's state
-    (Gun or muzzle flash)
-
-**********************************/
-
-static void SetPlayerSprite(player_t* player, psprnum_e position, const state_t* state)
-{
-    pspdef_t *psp;
-
-    psp = &player->psprites[position];  // Get the sprite for the flash or weapon
-
-    for (;;) {  
-        psp->StatePtr = state;      // Save the state pointer
-        if (!state) {       // No state?
-            psp->Time = -1; // Forever (Shut down)
-            break;          // Leave now
+    for (;;) {
+        psp.StatePtr = pState;      // Save the state pointer
+        if (!pState) {              // No state?
+            psp.Time = -1;          // Forever (Shut down)
+            break;                  // Leave now
         }
-        psp->Time = state->Time;    // Set the time delay, Could be 0...
-        if (state->pspAction) {             // Is there an action procedure?
-            state->pspAction(player,psp);   // Call the think logic (May call myself)
-            state = psp->StatePtr;          // Get the new state pointer
+        psp.Time = pState->Time;    // Set the time delay, Could be 0...
 
-            if (!state) {       // No state?
+        if (pState->pspAction) {                // Is there an action procedure?
+            pState->pspAction(player,psp);      // Call the think logic (May call myself)
+            pState = psp.StatePtr;              // Get the new state pointer
+            if (!pState) {                      // No state?
                 break;
             }
         }
-        if (psp->Time) {        // Time is valid?
-            break;      // Exit now
+
+        if (psp.Time > 0) {             // Time is valid?
+            break;                      // Exit now
         }
-        state = state->nextstate;   // Cycle to the next state now
+        pState = pState->nextstate;     // Cycle to the next state now
     }
 }
 
-/**********************************
-
-    Starts bringing the pending weapon up from the bottom of the screen
-    Uses player
-
-**********************************/
-
-static void BringUpWeapon(player_t *player)
-{
-    if (player->pendingweapon == wp_nochange) {     // Is the weapon to be changed?
-        player->pendingweapon = player->readyweapon;    // Set to the new weapon
+//----------------------------------------------------------------------------------------------------------------------
+// Starts bringing the pending weapon up from the bottom of the screen
+//----------------------------------------------------------------------------------------------------------------------
+static void BringUpWeapon(player_t& player) noexcept {
+    if (player.pendingweapon == wp_nochange) {          // Is the weapon to be changed?
+        player.pendingweapon = player.readyweapon;      // Set to the new weapon
     }
-    if (player->pendingweapon == wp_chainsaw) {     // Starting the chainsaw?
-        S_StartSound(&player->mo->x,sfx_sawup);     // Play the chainsaw sound...
+
+    if (player.pendingweapon == wp_chainsaw) {      // Starting the chainsaw?
+        S_StartSound(&player.mo->x,sfx_sawup);      // Play the chainsaw sound...
     }
-    player->psprites[ps_weapon].WeaponY = WEAPONBOTTOM; // Set the screen Y to bottom
-    SetPlayerSprite(player,ps_weapon,WEAPON_UP_STATES[player->pendingweapon]);        // Set the weapon sprite
-    player->pendingweapon = wp_nochange;            // No new weapon pending
+
+    player.psprites[ps_weapon].WeaponY = WEAPONBOTTOM;                              // Set the screen Y to bottom
+    SetPlayerSprite(player, ps_weapon, WEAPON_UP_STATES[player.pendingweapon]);     // Set the weapon sprite
+    player.pendingweapon = wp_nochange;                                             // No new weapon pending
 }
 
-/**********************************
+//----------------------------------------------------------------------------------------------------------------------
+// Returns true if there is enough ammo to shoot if not, selects the next weapon to use.
+//----------------------------------------------------------------------------------------------------------------------
+static bool CheckAmmo(player_t& player) noexcept {
+    const ammotype_e ammoType = gWeaponAmmos[player.readyweapon];   // What ammo type to use?
+    uint32_t ammoRequired = 1;                                      // Minimum ammo to fire with: assume 1 round initially
 
-    Returns true if there is enough ammo to shoot
-    if not, selects the next weapon to use
-
-**********************************/
-
-static bool CheckAmmo(player_t *player)
-{
-    ammotype_e ammo;    // Ammo type
-    weapontype_e Weapon;
-    uint32_t Count;         // Minimum ammo to fire with
-
-    ammo = gWeaponAmmos[player->readyweapon];    // What ammo type to use?
-    Count = 1;              // Assume 1 round
-    if (player->readyweapon == wp_bfg) {        // BFG 9000?
-        Count = BFGCELLS;   // Get the BFG energy requirements
-    }
-    if (ammo == am_noammo || player->ammo[ammo] >= Count) { // Enough ammo?
-        return true;        // I can shoot!
+    if (player.readyweapon == wp_bfg) {     // BFG 9000?
+        ammoRequired = BFGCELLS;            // Get the BFG energy requirements
     }
 
-    // Out of ammo, pick a weapon to change to
+    // If there is enough ammo to shoot can return 'true' now
+    if (ammoType == am_noammo || player.ammo[ammoType] >= ammoRequired) {
+        return true;
+    }
 
-    if (player->weaponowned[wp_plasma] && player->ammo[am_cell]) {
-        Weapon = wp_plasma;
-    } else if (player->weaponowned[wp_chaingun] && player->ammo[am_clip]) {
-        Weapon = wp_chaingun;
-    } else if (player->weaponowned[wp_shotgun] && player->ammo[am_shell]) {
-        Weapon = wp_shotgun;
-    } else if (player->ammo[am_clip]) {     // Any bullets?
-        Weapon = wp_pistol;
-    } else if (player->weaponowned[wp_chainsaw]) {  // Have a chainsaw?
-        Weapon = wp_chainsaw;
-    } else if (player->weaponowned[wp_missile] && player->ammo[am_misl]) {
-        Weapon = wp_missile;
-    } else if (player->weaponowned[wp_bfg] && player->ammo[am_cell]>=BFGCELLS) {
-        Weapon = wp_bfg;
+    // Out of ammo, pick a weapon to change to:
+    weapontype_e nextWeapon;
+
+    if (player.weaponowned[wp_plasma] && player.ammo[am_cell] > 0) {
+        nextWeapon = wp_plasma;
+    } else if (player.weaponowned[wp_chaingun] && player.ammo[am_clip] > 0) {
+        nextWeapon = wp_chaingun;
+    } else if (player.weaponowned[wp_shotgun] && player.ammo[am_shell] > 0) {
+        nextWeapon = wp_shotgun;
+    } else if (player.ammo[am_clip] > 0) {  // Any bullets?
+        nextWeapon = wp_pistol;
+    } else if (player.weaponowned[wp_chainsaw]) {  // Have a chainsaw?
+        nextWeapon = wp_chainsaw;
+    } else if (player.weaponowned[wp_missile] && player.ammo[am_misl] > 0) {
+        nextWeapon = wp_missile;
+    } else if (player.weaponowned[wp_bfg] && player.ammo[am_cell] >= BFGCELLS) {
+        nextWeapon = wp_bfg;
     } else {
-        Weapon = wp_fist;       // Always drop down to the fists
+        nextWeapon = wp_fist;   // Always drop down to the fists
     }
-    player->pendingweapon = Weapon;     // Save the new weapon
-                    // Lower the existing weapon
-    SetPlayerSprite(player,ps_weapon,WEAPON_DOWN_STATES[player->readyweapon]);
+
+    // Save the new weapon and lower the existing weapon
+    player.pendingweapon = nextWeapon;
+    SetPlayerSprite(player, ps_weapon, WEAPON_DOWN_STATES[player.readyweapon]);
+
     return false;   // Can't shoot!
 }
 
-/**********************************
+//----------------------------------------------------------------------------------------------------------------------
+// Fire the player's current weapon
+//----------------------------------------------------------------------------------------------------------------------
+static void FireWeapon(player_t& player) noexcept {
+    ASSERT(player.mo);
 
-    Fire the player's current weapon
-
-**********************************/
-
-static void FireWeapon(player_t *player)
-{
-    if (CheckAmmo(player)) {        // Do I have ammo? (Change weapon if not)
-        SetMObjState(player->mo,&gStates[S_PLAY_ATK1]);  // Player is in attack mode
-        player->psprites[ps_weapon].WeaponX = 0;    // Reset the weapon's screen
-        player->psprites[ps_weapon].WeaponY = WEAPONTOP;    // position
-        SetPlayerSprite(player,ps_weapon,WEAPON_ATTACK_STATES[player->readyweapon]);  // Begin animation
-        NoiseAlert(player);     // Alert the monsters...
+    if (CheckAmmo(player)) {                                                                // Do I have ammo? (Change weapon if not)
+        SetMObjState(*player.mo, gStates[S_PLAY_ATK1]);                                     // Player is in attack mode
+        player.psprites[ps_weapon].WeaponX = 0;                                             // Reset the weapon's screen position
+        player.psprites[ps_weapon].WeaponY = WEAPONTOP;
+        SetPlayerSprite(player, ps_weapon, WEAPON_ATTACK_STATES[player.readyweapon]);       // Begin animation
+        NoiseAlert(player);                                                                 // Alert the monsters...
     }
 }
 
-/**********************************
-
-    Player died, so put the weapon away for good
-
-**********************************/
-
-void LowerPlayerWeapon(player_t *player)
-{
-    SetPlayerSprite(player,ps_weapon,WEAPON_DOWN_STATES[player->readyweapon]);
+//----------------------------------------------------------------------------------------------------------------------
+// Player died, so put the weapon away for good
+//----------------------------------------------------------------------------------------------------------------------
+void LowerPlayerWeapon(player_t& player) noexcept {
+    SetPlayerSprite(player, ps_weapon, WEAPON_DOWN_STATES[player.readyweapon]);
 }
 
-/**********************************
-
-    The player can fire the weapon or change to another weapon at this time
-
-**********************************/
-
-void A_WeaponReady(player_t *player,pspdef_t *psp)
-{
-    int BobValue;   // Must be signed!!
-    uint32_t angle;     // Angle for weapon bobbing
-
+//----------------------------------------------------------------------------------------------------------------------
+// The player can fire the weapon or change to another weapon at this time
+//----------------------------------------------------------------------------------------------------------------------
+void A_WeaponReady(player_t& player, pspdef_t& psp) noexcept {
     // Special case for chainsaw's idle sound
-
-    if (player->readyweapon == wp_chainsaw && psp->StatePtr == &gStates[S_SAW]) {
-        S_StartSound(&player->mo->x,sfx_sawidl);    // Play the idle sound
+    if (player.readyweapon == wp_chainsaw && psp.StatePtr == &gStates[S_SAW]) {
+        S_StartSound(&player.mo->x, sfx_sawidl);    // Play the idle sound
     }
 
-// Check for change, if player is dead, put the weapon away
-
-    if (player->pendingweapon != wp_nochange || !player->health) {  // Alive?
-        SetPlayerSprite(player,ps_weapon,WEAPON_DOWN_STATES[player->readyweapon]);
+    // Check for change, if player is dead, put the weapon away
+    if (player.pendingweapon != wp_nochange || player.health <= 0) {
+        SetPlayerSprite(player, ps_weapon, WEAPON_DOWN_STATES[player.readyweapon]);
         return;
     }
 
-// check for weapon fire
-
-    if (gJoyPadButtons & gPadAttack) {        // Attack?
-        FireWeapon(player);             // Fire the weapon...
-        return;             // Exit now
+    // Check for weapon fire
+    if ((gJoyPadButtons & gPadAttack) != 0) {       // Attack?
+        FireWeapon(player);                         // Fire the weapon...
+        return;                                     // Exit now
     }
 
-// Bob the weapon based on movement speed
-
-    BobValue = (player->bob>>FRACBITS); // Isolate the integer
-    angle = (gTotalGameTicks<<6)&FINEMASK;       // Get the angle
-    psp->WeaponX = (BobValue * gFineCosine[angle])>>FRACBITS;
-    angle &= (FINEANGLES/2)-1;      // Force semi-circle
-    psp->WeaponY = ((BobValue * gFineSine[angle])>>FRACBITS) + WEAPONTOP;
+    // Bob the weapon based on movement speed
+    int32_t bobValue = (player.bob >> FRACBITS);                                // Isolate the integer
+    angle_t angle = (gTotalGameTicks << 6) & FINEMASK;                          // Get the angle for weapon bobbing
+    psp.WeaponX = (bobValue * gFineCosine[angle]) >> FRACBITS;
+    angle &= (FINEANGLES / 2) - 1;                                              // Force semi-circle
+    psp.WeaponY = ((bobValue * gFineSine[angle]) >> FRACBITS) + WEAPONTOP;
 }
 
-/**********************************
+//----------------------------------------------------------------------------------------------------------------------
+// The player can refire the weapon without lowering it entirely
+//----------------------------------------------------------------------------------------------------------------------
+void A_ReFire(player_t& player, pspdef_t& psp) noexcept {
+    // Check for fire (if a weaponchange is pending, let it go through instead)
+    const bool bFiring = (
+        ((gJoyPadButtons & gPadAttack) != 0) &&
+        (player.pendingweapon == wp_nochange) &&
+        (player.health > 0)
+    );
 
-    The player can refire the weapon without lowering it entirely
-
-**********************************/
-
-void A_ReFire(player_t *player,pspdef_t *psp)
-{
-
-// Check for fire (if a weaponchange is pending, let it go through instead)
-
-    if ( (gJoyPadButtons & gPadAttack) && // Still firing?
-        player->pendingweapon == wp_nochange && player->health) {
-        player->refire = true;      // Count for grimacing player face
-        FireWeapon(player); // Shoot...
+    if (bFiring) {
+        player.refire = true;       // Count for grimacing player face
+        FireWeapon(player);         // Shoot...
     } else {
-        player->refire = false;     // Reset firing
-        CheckAmmo(player);  // Still have ammo?
+        player.refire = false;      // Reset firing
+        CheckAmmo(player);          // Still have ammo?
     }
 }
 
-/**********************************
-
-    Handle an animation step for lowering a weapon
-
-**********************************/
-
-void A_Lower(player_t *player,pspdef_t *psp)
-{
-    psp->WeaponY += LOWERSPEED;     // Lower the Y coord
-    if (player->playerstate == PST_DEAD) {  // Are you dead?
-        psp->WeaponY = WEAPONBOTTOM;        // Force at the bottom
-        return;             // Never allow it to go back up
+//----------------------------------------------------------------------------------------------------------------------
+// Handle an animation step for lowering a weapon
+//----------------------------------------------------------------------------------------------------------------------
+void A_Lower(player_t& player, pspdef_t& psp) noexcept {
+    psp.WeaponY += LOWERSPEED;                  // Lower the Y coord
+    if (player.playerstate == PST_DEAD) {       // Are you dead?
+        psp.WeaponY = WEAPONBOTTOM;             // Force at the bottom
+        return;                                 // Never allow it to go back up
     }
-    
-    if (psp->WeaponY >= WEAPONBOTTOM) { // Off the bottom?
 
-// The old weapon has been lowered off the screen, so change the weapon
-// and start raising it
-
-        if (!player->health) {  // player is dead, so keep the weapon off screen
-            SetPlayerSprite(player,ps_weapon,0);
+    // If the old weapon has been lowered off the screen change the weapon and start raising it
+    if (psp.WeaponY >= WEAPONBOTTOM) {
+        if (player.health <= 0) {
+            // Player is dead, so keep the weapon off screen
+            SetPlayerSprite(player, ps_weapon, nullptr);
             return;
         }
-        player->readyweapon = player->pendingweapon;    // Set the new weapon
-        BringUpWeapon(player);  // Begin raising the new weapon
+        player.readyweapon = player.pendingweapon;      // Set the new weapon
+        BringUpWeapon(player);                          // Begin raising the new weapon
     }
 }
 
-/**********************************
+//----------------------------------------------------------------------------------------------------------------------
+// Handle an animation step for raising a weapon
+//----------------------------------------------------------------------------------------------------------------------
+void A_Raise(player_t& player, pspdef_t& psp) noexcept {
+    // Raise the weapon
+    psp.WeaponY -= RAISESPEED;
 
-    Handle an animation step for raising a weapon
-
-**********************************/
-
-void A_Raise(player_t *player,pspdef_t *psp)
-{
-    psp->WeaponY -= RAISESPEED;     // Raise the weapon
-    if (psp->WeaponY <= WEAPONTOP) {    // At the top?
-        psp->WeaponY = WEAPONTOP;   // Make sure it's ok!
-// the weapon has been raised all the way, so change to the ready state
-        SetPlayerSprite(player,ps_weapon,WEAPON_READY_STATES[player->readyweapon]);
+    // If weapon has been raised all the way to the top then change to the ready state
+    if (psp.WeaponY <= WEAPONTOP) {
+        psp.WeaponY = WEAPONTOP;
+        SetPlayerSprite(player, ps_weapon, WEAPON_READY_STATES[player.readyweapon]);
     }
 }
 
-/**********************************
-
-    Handle an animation frame for the gun muzzle flash
-
-**********************************/
-
-void A_GunFlash(player_t *player,pspdef_t *psp)
-{
-    SetPlayerSprite(player,ps_flash,WEAPON_FLASH_STATES[player->readyweapon]);
+//----------------------------------------------------------------------------------------------------------------------
+// Handle an animation frame for the gun muzzle flash
+//----------------------------------------------------------------------------------------------------------------------
+void A_GunFlash(player_t& player, pspdef_t& psp) noexcept {
+    SetPlayerSprite(player, ps_flash, WEAPON_FLASH_STATES[player.readyweapon]);
 }
 
-/**********************************
-
-    Punch a monster
-
-**********************************/
-
-void A_Punch(player_t *player,pspdef_t *psp)
-{
-    angle_t angle;
-    mobj_t *mo,*target;
-    uint32_t damage;
-
-    damage = (Random::nextU32(7)+1)*3;        // 1D8 * 3
-    if (player->powers[pw_strength]) {  // Are you a berserker?
+//----------------------------------------------------------------------------------------------------------------------
+// Punch a monster
+//----------------------------------------------------------------------------------------------------------------------
+void A_Punch(player_t& player, pspdef_t& psp) noexcept {
+    uint32_t damage = (Random::nextU32(7) + 1) * 3;     // 1D8 * 3
+    if (player.powers[pw_strength]) {                   // Are you a berserker?
         damage *= 10;
     }
-    mo = player->mo;            // Get the object into a local
-    angle = mo->angle;          // Get the player's angle
-    angle += (255-Random::nextU32(511))<<18;  // Adjust for direction of attack
-    LineAttack(mo,angle,MELEERANGE,FRACMAX,damage);  // Attack!
-    target = gLineTarget;
-    if (target) {       // Did I hit someone?
-        // Point the player to the victim
-        mo->angle = PointToAngle(mo->x,mo->y,target->x,target->y);
-        S_StartSound(&mo->x, sfx_punch);    // DC: Bug fix to 3DO version - was missing the punch sound!
+
+    ASSERT(player.mo);
+    mobj_t& mo = *player.mo;                                // Get the object into a local
+    angle_t angle = mo.angle;                               // Get the player's angle
+    angle += (255 - Random::nextU32(511)) << 18;            // Adjust for direction of attack
+    LineAttack(mo, angle, MELEERANGE, FRACMAX, damage);     // Attack!
+    mobj_t* const pTarget = gpLineTarget;
+
+    if (pTarget) {                                                      // Did I hit someone?
+        mo.angle = PointToAngle(mo.x, mo.y, pTarget->x, pTarget->y);    // Point the player to the victim
+        S_StartSound(&mo.x, sfx_punch);                                 // DC: Bug fix to 3DO version - was missing the punch sound!
     }
 }
 
-/**********************************
+//----------------------------------------------------------------------------------------------------------------------
+// Chainsaw a monster!
+//----------------------------------------------------------------------------------------------------------------------
+void A_Saw(player_t& player, pspdef_t& psp) noexcept {
+    ASSERT(player.mo);
+    const uint32_t damage = (Random::nextU32(7) + 1) * 3;   // 1D8 * 3
+    mobj_t& mo = *player.mo;                                // Get the player's object
+    angle_t angle = mo.angle;                               // Get the current facing angle
+    angle += (255 - Random::nextU32(511)) << 18;            // Add a little randomness
 
-    Chainsaw a monster!
+    // Use meleerange + 1 so the puff doesn't skip the flash
+    LineAttack(mo, angle, MELEERANGE + 1, FRACMAX, damage);
+    mobj_t* const pTarget = gpLineTarget;
 
-**********************************/
-
-void A_Saw(player_t *player,pspdef_t *psp)
-{
-    angle_t angle;      // Angle of attack
-    angle_t testangle;     // Must be SIGNED!
-    uint32_t damage;
-    mobj_t *mo,*target;
-
-    damage = (Random::nextU32(7)+1)*3;        // 1D8 * 3
-    mo = player->mo;                    // Get the player's object
-    angle = mo->angle;                  // Get the current facing angle
-    angle += (255-Random::nextU32(511))<<18;  // Add a little randomness
-
-// use meleerange + 1 so the puff doesn't skip the flash
-
-    LineAttack(mo,angle,MELEERANGE+1,FRACMAX,damage);
-    target = gLineTarget;
-    if (!target) {          // Anyone hit?
-        S_StartSound(&mo->x,sfx_sawful);    // Loud saw sound effect
+    if (!pTarget) {                         // Anyone hit?
+        S_StartSound(&mo.x, sfx_sawful);    // Loud saw sound effect
         return;
     }
-    S_StartSound(&mo->x,sfx_sawhit);        // Meat grinding sound!! :) Yumm!
 
-// Turn to face target and jiggle around to make it more visually appealing
-// to those who like more gore
+    S_StartSound(&mo.x, sfx_sawhit);        // Meat grinding sound!! :) Yumm!
 
-    angle = PointToAngle(mo->x,mo->y,target->x,target->y);  // Get the angle
-    testangle = angle-mo->angle;
-    if (testangle > ANG180) {       // Handle the chainsaw jiggle
-        if (testangle < negateAngle(ANG90/20)) {
-            mo->angle = angle + (ANG90/21);
+    // Turn to face target and jiggle around to make it more visually appealing to those who like more gore
+    angle = PointToAngle(mo.x, mo.y, pTarget->x, pTarget->y);
+    const angle_t testangle = angle - mo.angle;
+
+    if (testangle > ANG180) {
+        if (testangle < negateAngle(ANG90 / 20)) {
+            mo.angle = angle + (ANG90 / 21);
         } else {
-            mo->angle -= (ANG90/20);
+            mo.angle -= (ANG90 / 20);
         }
     } else {
-        if (testangle > (ANG90/20)) {
-            mo->angle = angle - (ANG90/21);
+        if (testangle > (ANG90 / 20)) {
+            mo.angle = angle - (ANG90 / 21);
         } else {
-            mo->angle += (ANG90/20);
+            mo.angle += (ANG90 / 20);
         }
     }
-    mo->flags |= MF_JUSTATTACKED;       // I have attacked someone...
+
+    mo.flags |= MF_JUSTATTACKED;    // I have attacked someone...
 }
 
-/**********************************
-
-    Fire a rocket from the rocket launcher
-
-**********************************/
-
-void A_FireMissile(player_t *player,pspdef_t *psp)
-{
-    --player->ammo[am_misl];    // Remove a round
-    SpawnPlayerMissile(player->mo,&gMObjInfo[MT_ROCKET]);        // Create a missile object
+//----------------------------------------------------------------------------------------------------------------------
+// Fire a rocket from the rocket launcher
+//----------------------------------------------------------------------------------------------------------------------
+void A_FireMissile(player_t& player, pspdef_t& psp) noexcept {
+    --player.ammo[am_misl];                                     // Remove a round
+    SpawnPlayerMissile(*player.mo, gMObjInfo[MT_ROCKET]);       // Create a missile object
 }
 
-/**********************************
-
-    Fire a BFG shot
-
-**********************************/
-
-void A_FireBFG(player_t *player,pspdef_t *psp)
-{
-    player->ammo[am_cell] -= BFGCELLS;
-    SpawnPlayerMissile(player->mo,&gMObjInfo[MT_BFG]);
+//----------------------------------------------------------------------------------------------------------------------
+// Fire a BFG shot
+//----------------------------------------------------------------------------------------------------------------------
+void A_FireBFG(player_t& player, pspdef_t& psp) noexcept {
+    player.ammo[am_cell] -= BFGCELLS;
+    SpawnPlayerMissile(*player.mo, gMObjInfo[MT_BFG]);
 }
 
-/**********************************
+//----------------------------------------------------------------------------------------------------------------------
+// Fire a plasma rifle round
+//----------------------------------------------------------------------------------------------------------------------
+void A_FirePlasma(player_t& player, pspdef_t& psp) noexcept {
+    --player.ammo[am_cell];     // Remove a round
 
-    Fire a plasma rifle round
-
-**********************************/
-
-void A_FirePlasma(player_t *player,pspdef_t *psp)
-{
-    --player->ammo[am_cell];    // Remove a round
-    // I have two flash states, choose one randomly
-    SetPlayerSprite(player,ps_flash,WEAPON_FLASH_STATES[player->readyweapon]+Random::nextU32(1));
-    SpawnPlayerMissile(player->mo,&gMObjInfo[MT_PLASMA]);        // Spawn the missile
+    // I have two flash states, choose one randomly and then spawn the missile
+    SetPlayerSprite(player, ps_flash, WEAPON_FLASH_STATES[player.readyweapon] + Random::nextU32(1));
+    SpawnPlayerMissile(*player.mo, gMObjInfo[MT_PLASMA]);
 }
 
-/**********************************
-
-    Shoot a single bullet round
-
-**********************************/
-
-static void GunShot(mobj_t *mo, bool accurate)
-{
-    angle_t angle;      // Angle of fire
-    uint32_t damage;        // Damage done
-
-    damage = (Random::nextU32(3)+1)*4;        // 1D4 * 4
-    angle = mo->angle;              // Get the angle
-    if (!accurate) {
-        angle += (255-Random::nextU32(511))<<18;  // Make it a little random
+//----------------------------------------------------------------------------------------------------------------------
+// Shoot a single bullet round
+//----------------------------------------------------------------------------------------------------------------------
+static void GunShot(mobj_t& mo, const bool bAccurate) noexcept {
+    const uint32_t damage = (Random::nextU32(3) + 1) * 4;   // Damage done: 1D4 * 4
+    angle_t angle = mo.angle;                               // Get the angle of fire
+    if (!bAccurate) {
+        angle += (255 - Random::nextU32(511)) << 18;        // Make it a little random
     }
-    LineAttack(mo,angle,MISSILERANGE,FRACMAX,damage);    // Inflict damage
+
+    LineAttack(mo, angle, MISSILERANGE, FRACMAX, damage);   // Inflict damage
 }
 
-/**********************************
-
-    Fire a single round from the pistol
-
-**********************************/
-
-void A_FirePistol(player_t *player,pspdef_t *psp)
-{
-    S_StartSound(&player->mo->x,sfx_pistol);        // Bang!!
-
-    --player->ammo[am_clip];    // Remove a round
-    SetPlayerSprite(player,ps_flash,WEAPON_FLASH_STATES[player->readyweapon]);    // Flash weapon
-    GunShot(player->mo,!player->refire);    // Shoot a round
+//----------------------------------------------------------------------------------------------------------------------
+// Fire a single round from the pistol
+//----------------------------------------------------------------------------------------------------------------------
+void A_FirePistol(player_t& player, pspdef_t& psp) noexcept {
+    S_StartSound(&player.mo->x, sfx_pistol);                                        // Bang!!
+    --player.ammo[am_clip];                                                         // Remove a round
+    SetPlayerSprite(player, ps_flash, WEAPON_FLASH_STATES[player.readyweapon]);     // Flash weapon
+    GunShot(*player.mo, (!player.refire));                                          // Shoot a round
 }
 
-/**********************************
+//----------------------------------------------------------------------------------------------------------------------
+// Fire a standard shotgun blast
+//----------------------------------------------------------------------------------------------------------------------
+void A_FireShotgun(player_t& player, pspdef_t& psp) noexcept {
+    mobj_t& mo = *player.mo;
+    S_StartSound(&mo.x, sfx_shotgn);    // Bang!
+    --player.ammo[am_shell];            // Remove a round
 
-    Fire a standard shotgun blast
+    SetPlayerSprite(player, ps_flash, WEAPON_FLASH_STATES[player.readyweapon]);
 
-**********************************/
+    // Shotgun pellets all go at a fixed slope.
+    // There are also 7 pellets.
+    Fixed slope = AimLineAttack(mo, mo.angle, MISSILERANGE);
 
-void A_FireShotgun(player_t *player, pspdef_t *psp)
-{
-    angle_t angle;
-    uint32_t damage;
-    uint32_t i;
-    int slope;
-    mobj_t *mo;
-
-    mo = player->mo;        // Get mobj pointer for player
-    S_StartSound(&mo->x,sfx_shotgn);    // Bang!
-    --player->ammo[am_shell];   // Remove a round
-    SetPlayerSprite(player,ps_flash,WEAPON_FLASH_STATES[player->readyweapon]);
-    slope = AimLineAttack(mo,mo->angle,MISSILERANGE);
-
-// shotgun pellets all go at a fixed slope
-
-    i = 7;      // Init index
-    do {
-        damage = (Random::nextU32(3)+1)*4;        // 1D4 * 4
-        angle = mo->angle;
-        angle += (255-Random::nextU32(511))<<18;      // Get some randomness
-        LineAttack(mo,angle,MISSILERANGE,slope,damage); // Do damage
-    } while (--i);      // 7 pellets
+    for (uint32_t i = 7; i > 0; --i) {
+        uint32_t damage = (Random::nextU32(3) + 1) * 4;         // Damage done: 1D4 * 4
+        angle_t angle = mo.angle;
+        angle += (255 - Random::nextU32(511)) << 18;            // Get some randomness
+        LineAttack(mo, angle, MISSILERANGE, slope, damage);     // Do damage
+    }
 }
 
-/**********************************
-
-    Make the shotgun cocking sound...
-
-**********************************/
-
-void A_CockSgun(player_t *player,pspdef_t *psp)
-{
-    S_StartSound(&player->mo->x,sfx_sgcock);
+//----------------------------------------------------------------------------------------------------------------------
+// Make the shotgun cocking sound...
+//----------------------------------------------------------------------------------------------------------------------
+void A_CockSgun(player_t& player, pspdef_t& psp) noexcept {
+    S_StartSound(&player.mo->x, sfx_sgcock);
 }
 
-/**********************************
+//----------------------------------------------------------------------------------------------------------------------
+// Fire a round from the chain gun!
+//----------------------------------------------------------------------------------------------------------------------
+void A_FireCGun(player_t& player, pspdef_t& psp) noexcept {
+    mobj_t& mo = *player.mo;
+    S_StartSound(&mo.x,sfx_pistol);     // Bang!
 
-    Fire a round from the chain gun!
+    if (player.ammo[am_clip] > 0) {     // Any ammo left?
+        --player.ammo[am_clip];
 
-**********************************/
-
-void A_FireCGun(player_t *player,pspdef_t *psp)
-{
-    mobj_t *mo;
-    state_t *NewState;
-    
-    mo = player->mo;
-    S_StartSound(&mo->x,sfx_pistol);        // Bang!
-    if (player->ammo[am_clip]) {    // Any ammo?
-        --player->ammo[am_clip];
         // Make sure the flash matches the weapon frame state
-        NewState = WEAPON_FLASH_STATES[wp_chaingun];
-        if (psp->StatePtr==&gStates[S_CHAIN1]) {
-            ++NewState;
+        state_t* pNewState = WEAPON_FLASH_STATES[wp_chaingun];
+        if (psp.StatePtr == &gStates[S_CHAIN1]) {
+            ++pNewState;
         }
-        SetPlayerSprite(player,ps_flash,NewState);
-        GunShot(mo,!player->refire);        // Shoot a bullet
+
+        SetPlayerSprite(player, ps_flash, pNewState);
+        GunShot(mo, !player.refire);    // Shoot a bullet
     }
 }
 
-
-/**********************************
-
-    Adjust the lighting based on the weapon fired
-
-**********************************/
-
-void A_Light0(player_t *player,pspdef_t *psp)
-{
-    player->extralight = 0;     // No extra light
+//----------------------------------------------------------------------------------------------------------------------
+// Adjust the lighting based on the weapon fired
+//----------------------------------------------------------------------------------------------------------------------
+void A_Light0(player_t& player, pspdef_t& psp) noexcept {
+    player.extralight = 0;
 }
 
-void A_Light1(player_t *player,pspdef_t *psp)
-{
-    player->extralight = 1;     // 1 unit of extra light
+void A_Light1(player_t& player, pspdef_t& psp) noexcept {
+    player.extralight = 1;
 }
 
-void A_Light2(player_t *player,pspdef_t *psp)
-{
-    player->extralight = 2;     // 2 units of extra light
+void A_Light2(player_t& player, pspdef_t& psp) noexcept {
+    player.extralight = 2;
 }
 
-/**********************************
+//----------------------------------------------------------------------------------------------------------------------
+// Spawn a BFG explosion on every monster in view
+//----------------------------------------------------------------------------------------------------------------------
+void A_BFGSpray(mobj_t& mo) noexcept {
+    // Offset angles from its attack angle
+    angle_t an = (mo.angle - (ANG90 / 2));
 
-    Spawn a BFG explosion on every monster in view
-
-**********************************/
-
-void A_BFGSpray(mobj_t *mo)
-{
-    uint32_t i,j,damage;
-    angle_t an;
-    mobj_t *target;
-
-    // offset angles from its attack angle
-    i = 40;
-    an = (mo->angle - (ANG90/2));
-    do {
+    for (uint32_t i = 40; i > 0; --i) {
         // mo->target is the originator (player) of the missile
-        AimLineAttack(mo->target,an,16*64*FRACUNIT);
-        target = gLineTarget;
-        if (target) {
-            SpawnMObj(target->x,target->y,target->z + (target->height>>2),&gMObjInfo[MT_EXTRABFG]);
-            damage = 15;        // Minimum 15 points of damage
-            j = 15;
-            do {
+        AimLineAttack(*mo.target, an, 16 * 64 * FRACUNIT);
+        mobj_t* const pTarget = gpLineTarget;
+
+        if (pTarget) {
+            SpawnMObj(
+                pTarget->x,
+                pTarget->y,
+                pTarget->z + (pTarget->height >> 2),
+                gMObjInfo[MT_EXTRABFG]
+            );
+
+            uint32_t damage = 15;   // Minimum 15 points of damage
+            for (uint32_t j = 15; j > 0; --j) {
                 damage += Random::nextU32(7);
-            } while (--j);
-            DamageMObj(target,mo->target,mo->target,damage);
+            }
+
+            DamageMObj(*pTarget, mo.target, mo.target, damage);
         }
-        an += (ANG90/40);       // Step the angle for the attack
-    } while (--i);
+
+        an += (ANG90 / 40);     // Step the angle for the attack
+    }
 }
 
-/**********************************
-
-    Play the BFG sound for detonation
-
-**********************************/
-
-void A_BFGsound(player_t *player,pspdef_t *psp)
-{
-    S_StartSound(&player->mo->x,sfx_bfg);
+//----------------------------------------------------------------------------------------------------------------------
+// Play the BFG sound for detonation
+//----------------------------------------------------------------------------------------------------------------------
+void A_BFGsound(player_t& player, pspdef_t& psp) noexcept {
+    S_StartSound(&player.mo->x, sfx_bfg);
 }
 
-/**********************************
+//----------------------------------------------------------------------------------------------------------------------
+// Called at start of level for each player
+//----------------------------------------------------------------------------------------------------------------------
+void SetupPSprites(player_t& player) noexcept {
+    // Remove all psprites
+    uint32_t i = NUMPSPRITES;
+    pspdef_t *psp = player.psprites;
 
-    Called at start of level for each player
-
-**********************************/
-
-void SetupPSprites(player_t *player)
-{
-    uint32_t i;
-    pspdef_t *psp;
-
-// Remove all psprites
-
-    i = NUMPSPRITES;
-    psp = player->psprites;
-    do {
+    for (uint32_t i = 0; i < NUMPSPRITES; ++i) {
         psp->StatePtr = 0;
         psp->Time = -1;
         ++psp;
-    } while (--i);
+    }
 
-    // Set the current weapon as pending
-
-    player->pendingweapon = player->readyweapon;
-    BringUpWeapon(player);      // Show the weapon
+    // Set the current weapon as pending and begin showing it
+    player.pendingweapon = player.readyweapon;
+    BringUpWeapon(player);
 }
 
-/**********************************
+//----------------------------------------------------------------------------------------------------------------------
+// Called every by player thinking routine.
+// Count down the tick timer and execute the think routines.
+//----------------------------------------------------------------------------------------------------------------------
+void MovePSprites(player_t& player) noexcept {
+    pspdef_t* psp = player.psprites;
 
-    Called every by player thinking routine
-    Count down the tick timer and execute the think routines.
-    
-**********************************/
-
-void MovePSprites(player_t* player) noexcept {
-    pspdef_t* psp = player->psprites;   // Index to the player's sprite records
-    uint32_t i = 0;                     // How many to process? (Must go from 0-NUMPSPRITES)
-
-    do {
-        while (psp->Time != -1) {      // Never change state?
+    for (uint32_t i = 0; i < NUMPSPRITES; ++i) {
+        while (psp->Time != -1) {   // Never change state?
             if (psp->Time > 1) {    // Has enough time elapsed?
                 --psp->Time;        // Remove time and exit
                 break;
             }
             SetPlayerSprite(player, (psprnum_e) i, psp->StatePtr->nextstate);   // Next state
         }
-        ++psp;  // Next entry
-    } while (++i < NUMPSPRITES);
+        ++psp;
+    }
 
-    psp = player->psprites;
-    psp[ps_flash].WeaponX = psp[ps_weapon].WeaponX;     // Attach the flash to the weapon    
+    psp = player.psprites;
+    psp[ps_flash].WeaponX = psp[ps_weapon].WeaponX;     // Attach the flash to the weapon
     psp[ps_flash].WeaponY = psp[ps_weapon].WeaponY;
 }

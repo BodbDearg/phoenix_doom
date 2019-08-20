@@ -20,7 +20,7 @@
 #define SVALY   130
 #define INTERTIME (TICKSPERSEC/30)
 
-enum {      // Intermission shape group 
+enum {      // Intermission shape group
     KillShape,
     ItemsShape,
     SecretsShape
@@ -62,14 +62,14 @@ static constexpr const char* const MAP_NAMES[] = {
 static constexpr const char* const FINISHED = "Finished";
 static constexpr const char* const ENTERING = "Entering";
 
-static uint32_t gKillPercent;        // Percent to attain 
+static uint32_t gKillPercent;        // Percent to attain
 static uint32_t gItemPercent;
 static uint32_t gSecretPercent;
-static uint32_t gKillValue;         // Displayed percent value 
+static uint32_t gKillValue;         // Displayed percent value
 static uint32_t gItemValue;
 static uint32_t gSecretValue;
-static uint32_t gINDelay;            // Delay before next inc 
-static uint32_t gBangCount;          // Delay for gunshot sound 
+static uint32_t gINDelay;            // Delay before next inc
+static uint32_t gBangCount;          // Delay for gunshot sound
 
 /**********************************
 
@@ -82,42 +82,42 @@ void PrintBigFont(int32_t x, int32_t y, const char* string) noexcept {
     const CelImageArray* gpUCharx;
     const CelImageArray* gpCurrent;
 
-    c = string[0];      // Get the first char 
-    if (!c) {           // No string to print? 
-        return;         // Exit now 
+    c = string[0];      // Get the first char
+    if (!c) {           // No string to print?
+        return;         // Exit now
     }
 
-    gpUCharx = nullptr;     // Assume ASCII font is NOT loaded 
+    gpUCharx = nullptr;     // Assume ASCII font is NOT loaded
 
     do {
-        ++string;       // Place here so "continue" will work 
-        y2 = y;         // Assume normal y coord 
-        gpCurrent = gpBigNumFont;   // Assume numeric font 
+        ++string;       // Place here so "continue" will work
+        y2 = y;         // Assume normal y coord
+        gpCurrent = gpBigNumFont;   // Assume numeric font
         if (c >= '0' && c<='9') {
-            c-= '0';    
-        } else if (c=='%') {        // Percent 
+            c-= '0';
+        } else if (c=='%') {        // Percent
             c = 10;
-        } else if (c=='-') {        // Minus 
+        } else if (c=='-') {        // Minus
             c = 11;
         } else {
-            gpCurrent = gpUCharx;   // Assume I use the ASCII set 
-            if (c >= 'A' && c <= 'Z') { // Upper case? 
+            gpCurrent = gpUCharx;   // Assume I use the ASCII set
+            if (c >= 'A' && c <= 'Z') { // Upper case?
                 c-='A';
             } else if (c >= 'a' && c <= 'z') {
-                c -= ('a'- 26);     // Index to lower case text 
+                c -= ('a'- 26);     // Index to lower case text
                 y2 += 3;
-            } else if (c=='.') {        // Period 
+            } else if (c=='.') {        // Period
                 c = 52;
                 y2 += 3;
-            } else if (c=='!') {    // Exclaimation point 
+            } else if (c=='!') {    // Exclaimation point
                 c = 53;
                 y2 += 3;
-            } else {        // Hmmm, not supported! 
-                x += 6;       // Fake space 
+            } else {        // Hmmm, not supported!
+                x += 6;       // Fake space
                 continue;
             }
         }
-        
+
         // Do I need the ASCII set? Make sure I have the text font.
         if (!gpCurrent) {
             gpUCharx = &CelImages::loadImages(rCHARSET, CelImages::LoadFlagBits::MASKED);
@@ -128,8 +128,8 @@ void PrintBigFont(int32_t x, int32_t y, const char* string) noexcept {
         Renderer::drawUISprite(x, y2, shape);               // Draw the char
         x += shape.width + 1;                               // Get the width to tab
     } while ((c = string[0])!=0);                           // Next index
-    
-    if (gpUCharx) {                             // Did I load the ASCII font? 
+
+    if (gpUCharx) {                             // Did I load the ASCII font?
         CelImages::releaseImages(rCHARSET);     // Release the ASCII font
     }
 }
@@ -146,33 +146,33 @@ uint32_t GetBigStringWidth(const char* string) noexcept {
     const CelImageArray* gpUCharx;
     const CelImageArray* gpCurrent;
 
-    c = string[0];      // Get a char 
-    if (!c) {           // No string to print? 
+    c = string[0];      // Get a char
+    if (!c) {           // No string to print?
         return 0;
     }
-    gpUCharx = nullptr; // Only load in the ASCII set if I really need it 
+    gpUCharx = nullptr; // Only load in the ASCII set if I really need it
     Width = 0;
     do {
         ++string;
-        gpCurrent = gpBigNumFont;   // Assume numeric font 
+        gpCurrent = gpBigNumFont;   // Assume numeric font
         if (c >= '0' && c<='9') {
-            c-= '0';    
-        } else if (c=='%') {        // Percent 
+            c-= '0';
+        } else if (c=='%') {        // Percent
             c = 10;
-        } else if (c=='-') {        // Minus 
+        } else if (c=='-') {        // Minus
             c = 11;
         } else {
-            gpCurrent = gpUCharx;   // Assume I use the ASCII set 
-            if (c >= 'A' && c <= 'Z') { // Upper case? 
+            gpCurrent = gpUCharx;   // Assume I use the ASCII set
+            if (c >= 'A' && c <= 'Z') { // Upper case?
                 c-='A';
             } else if (c >= 'a' && c <= 'z') {
-                c -= ('a'-26);      // Index to lower case text 
-            } else if (c=='.') {        // Period 
+                c -= ('a'-26);      // Index to lower case text
+            } else if (c=='.') {        // Period
                 c = 52;
-            } else if (c=='!') {    // Exclaimation point 
+            } else if (c=='!') {    // Exclaimation point
                 c = 53;
-            } else {        // Hmmm, not supported! 
-                Width+=6;       // Fake space 
+            } else {        // Hmmm, not supported!
+                Width+=6;       // Fake space
                 continue;
             }
         }
@@ -184,10 +184,10 @@ uint32_t GetBigStringWidth(const char* string) noexcept {
         }
 
         const CelImage& shape = gpCurrent->getImage(c);     // Get the shape pointer
-        Width += shape.width + 1;                           // Get the width to tab 
-    } while ((c = string[0])!=0);                           // Next index 
+        Width += shape.width + 1;                           // Get the width to tab
+    } while ((c = string[0])!=0);                           // Next index
 
-    if (gpUCharx) {                             // Did I load the ASCII font? 
+    if (gpUCharx) {                             // Did I load the ASCII font?
         CelImages::releaseImages(rCHARSET);     // Release the ASCII font
     }
 
@@ -199,29 +199,29 @@ uint32_t GetBigStringWidth(const char* string) noexcept {
 // I use flags PNPercent and PNCenter.
 //----------------------------------------------------------------------------------------------------------------------
 void PrintNumber(int32_t x, int32_t y, uint32_t value, uint32_t Flags) noexcept {
-    char v[16];                                     // Buffer for text string 
-    LongWordToAscii(value, v);                      // Convert to string 
-    value = (uint32_t) std::strlen((char*) v);      // Get the length in chars 
+    char v[16];                                     // Buffer for text string
+    LongWordToAscii(value, v);                      // Convert to string
+    value = (uint32_t) std::strlen((char*) v);      // Get the length in chars
 
-    if (Flags& PNFLAGS_PERCENT) {                   // Append a percent sign? 
-        v[value] = '%';                             // Append it 
+    if (Flags& PNFLAGS_PERCENT) {                   // Append a percent sign?
+        v[value] = '%';                             // Append it
         ++value;
-        v[value] = 0;                               // Make sure it's zero terminated 
+        v[value] = 0;                               // Make sure it's zero terminated
     }
 
-    if (Flags & PNFLAGS_CENTER) {       // Center it? 
+    if (Flags & PNFLAGS_CENTER) {       // Center it?
         PrintBigFontCenter(x, y, v);
         return;
     }
 
-    if (Flags & PNFLAGS_RIGHT) {        // Right justified? 
+    if (Flags & PNFLAGS_RIGHT) {        // Right justified?
         x -= GetBigStringWidth(v);
     }
 
-    PrintBigFont(x, y, v);  // Print the string 
+    PrintBigFont(x, y, v);  // Print the string
 }
 
-//---------------------------------------------------------------------------------------------------------------------- 
+//----------------------------------------------------------------------------------------------------------------------
 // Print an ascii string centered on the x coord
 //----------------------------------------------------------------------------------------------------------------------
 void PrintBigFontCenter(const int32_t x, const int32_t y, const char* const str) noexcept {
@@ -230,16 +230,16 @@ void PrintBigFontCenter(const int32_t x, const int32_t y, const char* const str)
 }
 
 /**********************************
-    
+
     Init the intermission data
 
 **********************************/
 void IN_Start() noexcept {
     gINDelay = 0;
     gBangCount = 0;
-    gKillValue = gItemValue = gSecretValue = 0;    // All values shown are zero 
-    gKillPercent = gItemPercent = gSecretPercent = 100;    // Init in case of divide by zero 
-    if (gTotalKillsInLevel) {            // Prevent divide by zeros 
+    gKillValue = gItemValue = gSecretValue = 0;    // All values shown are zero
+    gKillPercent = gItemPercent = gSecretPercent = 100;    // Init in case of divide by zero
+    if (gTotalKillsInLevel) {            // Prevent divide by zeros
         gKillPercent = (gPlayer.killcount * 100) / gTotalKillsInLevel;
     }
     if (gItemsFoundInLevel) {
@@ -252,30 +252,30 @@ void IN_Start() noexcept {
 }
 
 /**********************************
-    
+
     Exit the intermission
 
 **********************************/
 void IN_Stop() noexcept {
-    S_StopSong();       // Kill the music 
+    S_StopSong();       // Kill the music
 }
 
 /**********************************
-    
+
     Exit the intermission
 
 **********************************/
 gameaction_e IN_Ticker() noexcept {
     uint32_t Bang;
-    if (gTotalGameTicks < (TICKSPERSEC/2)) { // Initial wait before I begin 
-        return ga_nothing;      // Do nothing 
+    if (gTotalGameTicks < (TICKSPERSEC/2)) { // Initial wait before I begin
+        return ga_nothing;      // Do nothing
     }
 
-    if (gNewJoyPadButtons & (PadA|PadB|PadC)) {  // Pressed a button? 
-        gKillValue = gKillPercent;        // Set to maximums 
+    if (gNewJoyPadButtons & (PadA|PadB|PadC)) {  // Pressed a button?
+        gKillValue = gKillPercent;        // Set to maximums
         gItemValue = gItemPercent;
         gSecretValue = gSecretPercent;
-        return ga_died;     // Exit after drawing 
+        return ga_died;     // Exit after drawing
     }
 
     ++gINDelay;
@@ -283,7 +283,7 @@ gameaction_e IN_Ticker() noexcept {
     if (gINDelay>=INTERTIME) {
         Bang = false;
         gINDelay-=INTERTIME;
-        if (gKillValue < gKillPercent) {      // Is it too high? 
+        if (gKillValue < gKillPercent) {      // Is it too high?
             ++gKillValue;
             Bang = true;
         }
@@ -302,33 +302,33 @@ gameaction_e IN_Ticker() noexcept {
             }
         }
     }
-    return ga_nothing;      // Still here! 
+    return ga_nothing;      // Still here!
 }
 
 /**********************************
-    
+
     Draw the intermission screen
-    
+
 **********************************/
 void IN_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
     Video::debugClear();
-    Renderer::drawUISprite(0, 0, rBACKGRNDBROWN);   // Load and draw the skulls 
-    
+    Renderer::drawUISprite(0, 0, rBACKGRNDBROWN);   // Load and draw the skulls
+
     const CelImageArray& intermisShapes = CelImages::loadImages(rINTERMIS, CelImages::LoadFlagBits::MASKED);
 
-    PrintBigFontCenter(160,10, MAP_NAMES[gGameMap-1]);              // Print the current map name 
-    PrintBigFontCenter(160,34, FINISHED);                           // Print "Finished" 
-    
+    PrintBigFontCenter(160,10, MAP_NAMES[gGameMap-1]);              // Print the current map name
+    PrintBigFontCenter(160,34, FINISHED);                           // Print "Finished"
+
     if (gNextMap != 23) {
         PrintBigFontCenter(160,162, ENTERING);
         PrintBigFontCenter(160,182, MAP_NAMES[gNextMap-1]);
     }
-    
-    Renderer::drawUISprite(71, KVALY, intermisShapes.getImage(KillShape));   // Draw the shapes 
+
+    Renderer::drawUISprite(71, KVALY, intermisShapes.getImage(KillShape));   // Draw the shapes
     Renderer::drawUISprite(65, IVALY, intermisShapes.getImage(ItemsShape));
     Renderer::drawUISprite(27, SVALY, intermisShapes.getImage(SecretsShape));
 
-    PrintNumber(KVALX, KVALY, gKillValue, PNFLAGS_PERCENT|PNFLAGS_RIGHT);   // Print the numbers 
+    PrintNumber(KVALX, KVALY, gKillValue, PNFLAGS_PERCENT|PNFLAGS_RIGHT);   // Print the numbers
     PrintNumber(IVALX, IVALY, gItemValue, PNFLAGS_PERCENT|PNFLAGS_RIGHT);
     PrintNumber(SVALX, SVALY, gSecretValue, PNFLAGS_PERCENT|PNFLAGS_RIGHT);
 

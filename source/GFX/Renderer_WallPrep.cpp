@@ -103,7 +103,7 @@ static bool isScreenSpaceSegBackFacing(const DrawSeg& seg) noexcept {
 static void transformSegXYWToClipSpace(DrawSeg& seg) noexcept {
     // Notes:
     //  (1) We treat 'y' as if it were 'z' for the purposes of these calculations, since the
-    //      projection matrix has 'z' as the depth value and not y (Doom coord sys). 
+    //      projection matrix has 'z' as the depth value and not y (Doom coord sys).
     //  (2) We assume that the seg always starts off with an implicit 'w' value of '1'.
     const float y1Orig = seg.p1y;
     const float y2Orig = seg.p2y;
@@ -119,14 +119,14 @@ static void transformSegXYWToClipSpace(DrawSeg& seg) noexcept {
 //----------------------------------------------------------------------------------------------------------------------
 // Clipping functions:
 //
-// These largely follow the method described at: 
+// These largely follow the method described at:
 //  https://chaosinmotion.blog/2016/05/22/3d-clipping-in-homogeneous-coordinates/
 //
 // Notes:
 //  (1) I treat Doom's 'y' coordinate as 'z' for all calculations.
 //      In most academic and code works 'z' is actually depth so interpreting 'y' as this keeps things
 //      more familiar and allows me to just plug the values into existing equations.
-//  (2) For 'xc', 'yc', and 'zc' clipspace coordinates, the point will be inside the clip cube if the 
+//  (2) For 'xc', 'yc', and 'zc' clipspace coordinates, the point will be inside the clip cube if the
 //      following comparisons against clipspace w ('wc') hold:
 //          -wc <= xc && xc >= wc
 //          -wc <= yc && yc >= wc
@@ -308,10 +308,10 @@ static void addClipSpaceZValuesForSeg(DrawSeg& drawSeg, const seg_t& seg) noexce
     const float viewZ = gViewZ;
 
     const float frontFloorZ = FMath::doomFixed16ToFloat<float>(seg.frontsector->floorheight);
-    const float frontCeilZ = FMath::doomFixed16ToFloat<float>(seg.frontsector->ceilingheight);    
+    const float frontCeilZ = FMath::doomFixed16ToFloat<float>(seg.frontsector->ceilingheight);
     const float frontFloorViewZ = frontFloorZ - viewZ;
     const float frontCeilViewZ = frontCeilZ - viewZ;
-    
+
     drawSeg.bEmitCeiling = (frontCeilViewZ > 0.0f);
     drawSeg.bEmitFloor = (frontFloorViewZ < 0.0f);
 
@@ -329,7 +329,7 @@ static void addClipSpaceZValuesForSeg(DrawSeg& drawSeg, const seg_t& seg) noexce
         drawSeg.p1tz_back = backCeilViewZ * gProjMatrix.r1c1;
         drawSeg.p1bz_back = backFloorViewZ * gProjMatrix.r1c1;
         drawSeg.p2tz_back = backCeilViewZ * gProjMatrix.r1c1;
-        drawSeg.p2bz_back = backFloorViewZ * gProjMatrix.r1c1;        
+        drawSeg.p2bz_back = backFloorViewZ * gProjMatrix.r1c1;
 
         // Whether to emit upper and lower wall occluders
         const float clipFloorZ = std::max(frontFloorZ, backFloorZ);
@@ -339,11 +339,11 @@ static void addClipSpaceZValuesForSeg(DrawSeg& drawSeg, const seg_t& seg) noexce
             if (frontFloorZ < backFloorZ) {
                 drawSeg.bEmitLowerOccluder = (viewZ <= backFloorZ);
                 drawSeg.bLowerOccluderUsesBackZ = true;
-            } 
+            }
             else if (frontFloorZ > backFloorZ) {
                 drawSeg.bEmitLowerOccluder = (viewZ >= backFloorZ);
                 drawSeg.bLowerOccluderUsesBackZ = false;
-            } 
+            }
             else {
                 drawSeg.bEmitLowerOccluder = false;
             }
@@ -351,11 +351,11 @@ static void addClipSpaceZValuesForSeg(DrawSeg& drawSeg, const seg_t& seg) noexce
             if (frontCeilZ < backCeilZ) {
                 drawSeg.bEmitUpperOccluder = (viewZ <= backCeilZ);
                 drawSeg.bUpperOccluderUsesBackZ = false;
-            } 
+            }
             else if (frontCeilZ > backCeilZ) {
                 drawSeg.bEmitUpperOccluder = (viewZ >= backCeilZ);
                 drawSeg.bUpperOccluderUsesBackZ = true;
-            } 
+            }
             else {
                 drawSeg.bEmitUpperOccluder = false;
             }
@@ -420,7 +420,7 @@ static void transformSegXZToScreenSpace(DrawSeg& seg) noexcept {
     seg.p1bz = (seg.p1bz * 0.5f + 0.5f) * screenH;
     seg.p2tz = (seg.p2tz * 0.5f + 0.5f) * screenH;
     seg.p2bz = (seg.p2bz * 0.5f + 0.5f) * screenH;
-    
+
     seg.p1tz_back = (seg.p1tz_back * 0.5f + 0.5f) * screenH;
     seg.p1bz_back = (seg.p1bz_back * 0.5f + 0.5f) * screenH;
     seg.p2tz_back = (seg.p2tz_back * 0.5f + 0.5f) * screenH;
@@ -460,12 +460,12 @@ static inline void addWallColumnPartToClipBounds(SegClip& clipBounds, const int3
     // If this column of the screen is already fully occluded then there is nothing to do
     if (clipBounds.top + 1 >= clipBounds.bottom)
         return;
-    
+
     // Decide what to do
     if constexpr (FLAGS == FragEmitFlags::MID_WALL) {
         clipBounds = SegClip{ 0, 0 };
         ++gNumFullSegCols;
-    }  
+    }
     else {
         if constexpr (FLAGS == FragEmitFlags::UPPER_WALL) {
             clipBounds.top = std::max((int16_t) zb, clipBounds.top);
@@ -492,13 +492,13 @@ static void clipAndEmitWallColumn(
     const float texTy,
     const float texBy,
     const float depth,
-    SegClip& clipBounds,    
+    SegClip& clipBounds,
     const LightParams& lightParams,
     const float segLightMul,
     const ImageData& texImage
 ) noexcept {
     ASSERT(x < gScreenWidth);
-    
+
     // This fake loop allows us to discard the column due to clipping
     do {
         // Don't emit anything if size is <= 0, except if a mid wall (occlude everything in that case)
@@ -509,7 +509,7 @@ static void clipAndEmitWallColumn(
                 return;     // No occluding if not a mid wall
             }
         }
-        
+
         // This is how much to step the texture in the Y direction for this column
         const float texYStep = (texBy - texTy) / (zb - zt);
 
@@ -527,11 +527,11 @@ static void clipAndEmitWallColumn(
             curZtInt = (int32_t) curZt;
             const float pixelsOffscreen = curZt - zt;
             curTexTy += texYStep * pixelsOffscreen;
-            
+
             // If the clipped size is now invalid then skip
             if (curZt >= curZb)
                 break;
-        
+
             // Note: no sub adjustement when we clip, it's already done implicitly as part of clipping
             texYSubPixelAdjustment = 0.0f;
         }
@@ -549,7 +549,7 @@ static void clipAndEmitWallColumn(
             curZbInt = (int32_t) curZb;
             const float pixelsOffscreen = zb - curZb;
             curTexBy -= texYStep * pixelsOffscreen;
-        
+
             // If the clipped size is now invalid then skip
             if (curZt >= curZb)
                 break;
@@ -606,7 +606,7 @@ static void clipAndEmitFlatColumn(
     // Only bother emitting wall fragments if the column height would be > 0
     if (zt >= zb)
         return;
-    
+
     // Clip the column against the top and bottom of the current seg clip bounds.
     // If the size after clipping is invalid also reject the column.
     int32_t zbInt = (int32_t) zb;
@@ -615,7 +615,7 @@ static void clipAndEmitFlatColumn(
     if (ztInt <= clipBounds.top) {
         // Offscreen at the top, clip:
         ztInt = (int32_t) clipBounds.top + 1;
-        
+
         if (ztInt > zbInt)
             return;
     }
@@ -623,7 +623,7 @@ static void clipAndEmitFlatColumn(
     if (zbInt >= clipBounds.bottom) {
         // Offscreen at the bottom, clip:
         zbInt = (int32_t) clipBounds.bottom - 1;
-        
+
         if (ztInt > zbInt)
             return;
     }
@@ -644,7 +644,7 @@ static void clipAndEmitFlatColumn(
         frag.worldZ = worldZ;
         frag.pImageData = &texture;
 
-        if constexpr (FLAGS == FragEmitFlags::FLOOR) {    
+        if constexpr (FLAGS == FragEmitFlags::FLOOR) {
             gFloorFragments.push_back(frag);
         } else {
             static_assert(FLAGS == FragEmitFlags::CEILING);
@@ -658,7 +658,7 @@ static void clipAndEmitFlatColumn(
             clipBounds = SegClip{ (int16_t) zbInt, clipBounds.bottom };
         } else {
             clipBounds = SegClip{ 0, 0 };
-            gNumFullSegCols++;                    
+            gNumFullSegCols++;
         }
     }
     else {
@@ -712,7 +712,7 @@ static void emitOccluderColumn(
 
         if (numOccludingCols >= OccludingColumns::MAX_ENTRIES)
             return;
-        
+
         ++occludingCols.count;
         occludingCols.depths[0] = depth;
         OccludingColumns::Bounds& bounds = occludingCols.bounds[0];
@@ -721,7 +721,7 @@ static void emitOccluderColumn(
             bounds.top = (int16_t) screenYCoord;
             bounds.bottom = gScreenHeight;
         } else {
-            
+
             bounds.top = -1;
             bounds.bottom = (int16_t) screenYCoord;
         }
@@ -731,7 +731,7 @@ static void emitOccluderColumn(
         // Only emit a new occluder if it would decrease the number of visible pixels.
         const OccludingColumns::Bounds prevBounds = occludingCols.bounds[curOccluderIdx];
         const int32_t numRowsVisible = std::max((int32_t) prevBounds.bottom - (int32_t) prevBounds.top - 1, 0);
-        
+
         // Figure out the new bounds and new number of rows visible.
         // Only emit the occluder which is deeper in if it occludes more:
         const int16_t newBound = (int16_t) screenYCoord;
@@ -750,7 +750,7 @@ static void emitOccluderColumn(
 
             if (numOccludingCols >= OccludingColumns::MAX_ENTRIES)
                 return;
-            
+
             ++occludingCols.count;
             occludingCols.depths[numOccludingCols] = depth;
             OccludingColumns::Bounds& bounds = occludingCols.bounds[numOccludingCols];
@@ -808,7 +808,7 @@ static void emitDrawSegColumns(const DrawSeg& drawSeg, const seg_t seg) noexcept
 
     // Sanity checks, expect p1x to be < p2x - should be ensured externally!
     ASSERT(drawSeg.p1x <= drawSeg.p2x);
-    
+
     // Get integer range of the wall
     const int32_t x1 = (int32_t) drawSeg.p1x;
     const int32_t x2 = (int32_t) drawSeg.p2x;
@@ -820,7 +820,7 @@ static void emitDrawSegColumns(const DrawSeg& drawSeg, const seg_t seg) noexcept
     ASSERT(x2 >= 0);
     ASSERT(x2 < (int32_t) gScreenWidth);
     ASSERT(x1 <= x2);
-    
+
     //-----------------------------------------------------------------------------------------------------------------
     // Figure out whether we should clamp the first pixel of each floor or ceiling column.
     // This is done to prevent flat textures from stepping past where they should be at far depths and shallow view angles.
@@ -834,7 +834,7 @@ static void emitDrawSegColumns(const DrawSeg& drawSeg, const seg_t seg) noexcept
         if (seg.backsector) {
             // Only clamp when the floor height or texture changes!
             // If adjacent subsectors use the same texture and are at the same height then we
-            // want texturing to be as contiguous as possible, so don't do clamping in those cases.            
+            // want texturing to be as contiguous as possible, so don't do clamping in those cases.
             const sector_t& backSector = *seg.backsector;
 
             if constexpr (EMIT_FLOOR) {
@@ -919,7 +919,7 @@ static void emitDrawSegColumns(const DrawSeg& drawSeg, const seg_t seg) noexcept
     [[maybe_unused]] const Texture* pCeilingTex;
 
     if constexpr (EMIT_MID_WALL) {
-        pMidTex = Textures::getWall(sideDef.midtexture);    
+        pMidTex = Textures::getWall(sideDef.midtexture);
     }
 
     if constexpr (EMIT_UPPER_WALL) {
@@ -941,7 +941,7 @@ static void emitDrawSegColumns(const DrawSeg& drawSeg, const seg_t seg) noexcept
             pCeilingTex = nullptr;
         }
     }
-    
+
     //------------------------------------------------------------------------------------------------------------------
     // Figure out the top 'Y' texture coordinate for all wall columns
     //------------------------------------------------------------------------------------------------------------------
@@ -965,24 +965,24 @@ static void emitDrawSegColumns(const DrawSeg& drawSeg, const seg_t seg) noexcept
 
         if constexpr (EMIT_ANY_WALL) {
             sideDefRowOffset = FMath::doomFixed16ToFloat<float>(sideDef.rowoffset);
-        } 
-        
+        }
+
         if constexpr (EMIT_MID_WALL) {
             frontFloorZ = FMath::doomFixed16ToFloat<float>(seg.frontsector->floorheight);
         }
-        
+
         if constexpr (EMIT_ANY_WALL) {
             frontCeilingZ = FMath::doomFixed16ToFloat<float>(seg.frontsector->ceilingheight);
         }
-        
+
         if constexpr (EMIT_LOWER_WALL) {
             backFloorZ = FMath::doomFixed16ToFloat<float>(seg.backsector->floorheight);
         }
-        
+
         if constexpr (EMIT_UPPER_WALL) {
             backCeilingZ = FMath::doomFixed16ToFloat<float>(seg.backsector->ceilingheight);
         }
-        
+
         if constexpr (EMIT_MID_WALL || EMIT_LOWER_WALL) {
             bBottomTexUnpegged = ((lineFlags & ML_DONTPEGBOTTOM) != 0);
         }
@@ -1010,7 +1010,7 @@ static void emitDrawSegColumns(const DrawSeg& drawSeg, const seg_t seg) noexcept
             if (upperTexTy < 0) {
                 upperTexTy += texH;     // DC: This is required for correct vertical alignment in some cases
             }
-        } 
+        }
 
         if constexpr (EMIT_LOWER_WALL) {
             const float texH = (float) pLowerTex->data.height;
@@ -1071,7 +1071,7 @@ static void emitDrawSegColumns(const DrawSeg& drawSeg, const seg_t seg) noexcept
         const float worldH = lowerWorldTz - lowerWorldBz;
         lowerTexBy = lowerTexTy + worldH + BOTTOM_TEX_Y_ADJUST;
     }
-    
+
     //------------------------------------------------------------------------------------------------------------------
     // Figure out how what to start at and much to step for each x pixel for various quantities.
     // Note that all quantities except for 'z' values, and '1/w' must be first divided by 'w' prior to interpolation,
@@ -1212,7 +1212,7 @@ static void emitDrawSegColumns(const DrawSeg& drawSeg, const seg_t seg) noexcept
 
         // X texture coordinate (for walls)
         [[maybe_unused]] float texX;
-        
+
         if constexpr (EMIT_ANY_WALL) {
             texX = (p1TexX + texXStep * curXStepCount) * w;
         }
@@ -1220,7 +1220,7 @@ static void emitDrawSegColumns(const DrawSeg& drawSeg, const seg_t seg) noexcept
         // World X and Y (for floors)
         [[maybe_unused]] float worldX;
         [[maybe_unused]] float worldY;
-        
+
         if constexpr (EMIT_ANY_FLAT) {
             worldX = (p1WorldX + worldXStep * curXStepCount) * w;
             worldY = (p1WorldY + worldYStep * curXStepCount) * w;
@@ -1280,7 +1280,7 @@ static void emitDrawSegColumns(const DrawSeg& drawSeg, const seg_t seg) noexcept
             }
         }
 
-        if constexpr (EMIT_CEILING) {           
+        if constexpr (EMIT_CEILING) {
             if (bEmitCeiling && pCeilingTex) {
                 const bool bClampFirstColPixel = (
                     bCanClampFirstCeilingColumnPixel &&
@@ -1394,19 +1394,19 @@ void addSegToFrame(const seg_t& seg) noexcept {
     DrawSeg drawSeg;
     populateSegVertexAttribs(seg, drawSeg);
     transformSegXYToViewSpace(seg, drawSeg);
-    
+
     // Next transform to clip space and clip against the front and left + right planes
     transformSegXYWToClipSpace(drawSeg);
-    
+
     if (!clipSegAgainstFrontPlane(drawSeg))
         return;
 
     if (!clipSegAgainstLeftPlane(drawSeg))
         return;
-    
+
     if (!clipSegAgainstRightPlane(drawSeg))
         return;
-    
+
     // Now that the seg is not rejected fill in the height values.
     // This function and also determines if we can draw the ceiling/floor and emit occluders based on those z values.
     addClipSpaceZValuesForSeg(drawSeg, seg);
@@ -1414,7 +1414,7 @@ void addSegToFrame(const seg_t& seg) noexcept {
     // Do perspective division and transform the seg to screen space
     doPerspectiveDivisionForSeg(drawSeg);
     transformSegXZToScreenSpace(drawSeg);
-    
+
     // Determine if the seg is back facing and cull if it is
     if (isScreenSpaceSegBackFacing(drawSeg))
         return;

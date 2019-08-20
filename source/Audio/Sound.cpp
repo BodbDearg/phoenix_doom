@@ -27,20 +27,20 @@ void S_Clear() {
 void S_StartSound(const Fixed* const pOriginXY, const uint32_t soundId) {
     if (soundId <= 0 || soundId >= NUMSFX)
         return;
-    
+
     // Figure out the volume of the sound to play
     uint32_t leftVolume = 255;
     uint32_t rightVolume = 255;
-    
+
     if (pOriginXY) {
         const mobj_t* const pListener = gPlayer.mo;
 
         if (pOriginXY != &pListener->x) {
             const Fixed dist = GetApproxDistance(pListener->x - pOriginXY[0], pListener->y - pOriginXY[1]);
-            
+
             if (dist > S_CLIPPING_DIST)     // Too far away?
                 return;
-            
+
             angle_t angle = PointToAngle(pListener->x, pListener->y, pOriginXY[0], pOriginXY[1]);
             angle = angle - pListener->angle;
             angle >>= ANGLETOFINESHIFT;
@@ -50,7 +50,7 @@ void S_StartSound(const Fixed* const pOriginXY, const uint32_t soundId) {
 
                 if (vol <= 0)   // Too quiet?
                     return;
-                
+
                 const int sep = 128 - (fixedMul(S_STEREO_SWING, gFineSine[angle]) >> FRACBITS);
                 rightVolume = (sep * vol) >> 8;
                 leftVolume = ((256 - sep) * vol) >> 8;
@@ -114,7 +114,7 @@ static constexpr uint8_t SONG_LOOKUP[] = {
 };
 
 void S_StartSong(const uint8_t musicId) {
-    const uint32_t trackNum = SONG_LOOKUP[musicId];    
+    const uint32_t trackNum = SONG_LOOKUP[musicId];
     audioPlayMusic(trackNum);
 }
 

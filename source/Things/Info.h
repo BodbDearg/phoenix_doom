@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Base/Fixed.h"
+#include "Base/Macros.h"
 #include "States.h"
 
 struct mobj_t;
@@ -8,8 +9,8 @@ struct player_t;
 struct pspdef_t;
 
 // Think functions for a player sprite and map object
-typedef void (*PspActionFunc)(player_t*, pspdef_t*);
-typedef void (*MObjActionFunc)(mobj_t*);
+typedef void (*PspActionFunc)(player_t&, pspdef_t&);
+typedef void (*MObjActionFunc)(mobj_t&);
 
 // Constants relating to the sprite frame field in a state structure
 static constexpr uint32_t FF_FULLBRIGHT     = 0x00000100u;      // If set on then the sprite should be rendered at full brightness
@@ -17,7 +18,9 @@ static constexpr uint32_t FF_FRAMEMASK      = 0x000000FFu;      // Mask to extra
 static constexpr uint32_t FF_SPRITESHIFT    = 16;               // Bits to shift to get the actual sprite resource number
 
 // An actor's state
-struct state_t {    
+struct state_t {
+    NON_ASSIGNABLE_STRUCT(state_t)
+
     uint32_t SpriteFrame;   // Which sprite to display?
     uint32_t Time;          // Time before next action
 
@@ -26,7 +29,7 @@ struct state_t {
         const MObjActionFunc  mobjAction;   // Used for map object actions
         const PspActionFunc   pspAction;    // Used for player sprite actions
     };
-    
+
     const state_t* nextstate;  // Index to state table for next state
 
     // Constructor for player sprite state

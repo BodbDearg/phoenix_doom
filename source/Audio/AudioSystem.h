@@ -76,7 +76,7 @@ public:
     //----------------------------------------------------------------------------------------------
     // Called by the audio output device on the audio thread.
     // Should *NEVER* be called on any other thread as it already assumes the audio device is locked!
-    // 
+    //
     // This function should mix in (add) the requested number of audio samples in 2 channel stero
     // at the sample rate that the current audio device uses. The left/right stereo data should also
     // be interleaved for each sample point.

@@ -2,7 +2,7 @@
 
 // Sprite animation states.
 // Indexs to all the sprites in DOOM!
-enum statenum_t {      
+enum statenum_t {
     S_NULL,             // None
     S_LIGHTDONE,
     S_PUNCH,

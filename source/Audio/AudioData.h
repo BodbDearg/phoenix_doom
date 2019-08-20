@@ -35,7 +35,7 @@ struct AudioData {
         pBuffer = new std::byte[size];
         bufferSize = size;
     }
-    
+
     //----------------------------------------------------------------------------------------------
     // Frees the buffer for the audio data
     //----------------------------------------------------------------------------------------------
@@ -50,7 +50,7 @@ struct AudioData {
     //----------------------------------------------------------------------------------------------
     void clear() noexcept {
         freeBuffer();
-        
+
         numSamples = 0;
         sampleRate = 0;
         numChannels = 0;

@@ -15,7 +15,7 @@ static SDL_Texture*    gFramebufferTexture;
 uint32_t* Video::gpFrameBuffer;
 uint32_t* Video::gpSavedFrameBuffer;
 
-static void lockFramebufferTexture() noexcept {    
+static void lockFramebufferTexture() noexcept {
     int pitch = 0;
     if (SDL_LockTexture(gFramebufferTexture, nullptr, reinterpret_cast<void**>(&Video::gpFrameBuffer), &pitch) != 0) {
         FATAL_ERROR("Failed to lock the framebuffer texture for writing!");
@@ -30,7 +30,7 @@ void Video::init() noexcept {
     // Initialize SDL subsystems
     if (SDL_InitSubSystem(SDL_INIT_VIDEO) != 0) {
         FATAL_ERROR("Unable to initialize SDL!");
-    }  
+    }
 
     // TODO: TEMP
     uint32_t PRESENT_MAGNIFY;
@@ -43,7 +43,7 @@ void Video::init() noexcept {
 
     // Create the window
     Uint32 windowCreateFlags = 0;
-    
+
     #ifndef __MACOSX__
         windowCreateFlags |= SDL_WINDOW_OPENGL;
     #endif
@@ -56,14 +56,14 @@ void Video::init() noexcept {
         SCREEN_HEIGHT * PRESENT_MAGNIFY,
         windowCreateFlags
     );
-    
+
     if (!gWindow) {
         FATAL_ERROR("Unable to create a window!");
     }
 
     // Create the renderer and framebuffer texture
     gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-    
+
     if (!gRenderer) {
         FATAL_ERROR("Failed to create renderer!");
     }
@@ -79,7 +79,7 @@ void Video::init() noexcept {
     if (!gFramebufferTexture) {
         FATAL_ERROR("Failed to create a framebuffer texture!");
     }
-    
+
     // Immediately lock the framebuffer texture for updating
     lockFramebufferTexture();
 
@@ -111,7 +111,7 @@ void Video::debugClear() noexcept {
             *pPixel = pinkU32;
             ++pPixel;
         }
-    #endif    
+    #endif
 }
 
 void Video::saveFrameBuffer() noexcept {

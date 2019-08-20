@@ -6,10 +6,10 @@
 //----------------------------------------------------------------------------------------------------------------------
 // Utility stuff relating to 3DO CEL files.
 // Needed because some resources in 3DO Doom are in the native 3DO 'CEL' format.
-// 
+//
 // Notes:
 //  (1) All data is ASSUMED to be in BIG ENDIAN format - these functions will NOT work otherwise.
-//      BE was the native endian format of the 3DO and it's development environment (68K Mac), 
+//      BE was the native endian format of the 3DO and it's development environment (68K Mac),
 //      hence if you are dealing with CELs or CCBs it is assumed the data is big endian.
 //  (2) Most of these functions make tons of simplifying assumptions and shortcuts surrounding CEL
 //      files that hold true for 3DO Doom, but which won't work on all 3DO CEL files in general.
@@ -60,6 +60,7 @@ extern uint16_t getCCBHeight(const CelControlBlock* const pCCB) noexcept;
 //----------------------------------------------------------------------------------------------------------------------
 void decodeDoomCelSprite(
     const CelControlBlock* const pCCB,
+    const uint32_t celDataSize,
     uint16_t** pImageOut,
     uint16_t* pImageWidthOut,
     uint16_t* pImageHeightOut

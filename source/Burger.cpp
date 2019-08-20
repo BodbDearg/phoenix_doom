@@ -73,7 +73,7 @@ uint32_t ReadJoyButtons(uint32_t PadNum) noexcept {
 ****************************************/
 
 static uint32_t gTensTable[] = {
-1,              // Table to quickly div by 10 
+1,              // Table to quickly div by 10
 10,
 100,
 1000,
@@ -87,28 +87,28 @@ static uint32_t gTensTable[] = {
 
 void LongWordToAscii(uint32_t Val, char* AsciiPtr) noexcept
 {
-    uint32_t Index;      // Index to TensTable 
-    uint32_t BigNum;    // Temp for TensTable value 
-    uint32_t Letter;        // ASCII char 
-    uint32_t Printing;      // Flag for printing 
+    uint32_t Index;      // Index to TensTable
+    uint32_t BigNum;    // Temp for TensTable value
+    uint32_t Letter;        // ASCII char
+    uint32_t Printing;      // Flag for printing
 
-    Index = 10;      // 10 digits to process 
-    Printing = false;   // Not printing yet 
+    Index = 10;      // 10 digits to process
+    Printing = false;   // Not printing yet
     do {
-        --Index;        // Dec index 
-        BigNum = gTensTable[Index];  // Get div value in local 
-        Letter = '0';            // Init ASCII value 
-        while (Val>=BigNum) {    // Can I divide? 
-            Val-=BigNum;        // Remove value 
-            ++Letter;            // Inc ASCII value 
+        --Index;        // Dec index
+        BigNum = gTensTable[Index];  // Get div value in local
+        Letter = '0';            // Init ASCII value
+        while (Val>=BigNum) {    // Can I divide?
+            Val-=BigNum;        // Remove value
+            ++Letter;            // Inc ASCII value
         }
-        if (Printing || Letter!='0' || !Index) {    // Already printing? 
-            Printing = true;        // Force future printing 
-            AsciiPtr[0] = Letter;       // Also must print on last char 
+        if (Printing || Letter!='0' || !Index) {    // Already printing?
+            Printing = true;        // Force future printing
+            AsciiPtr[0] = Letter;       // Also must print on last char
             ++AsciiPtr;
         }
-    } while (Index);        // Any more left? 
-    AsciiPtr[0] = 0;        // Terminate the string 
+    } while (Index);        // Any more left?
+    AsciiPtr[0] = 0;        // Terminate the string
 }
 
 /**********************************
@@ -136,7 +136,7 @@ void DrawARect(const uint32_t x, const uint32_t y, const uint32_t width, const u
     // Clip the rect bounds
     if (x >= Video::SCREEN_WIDTH || y >= Video::SCREEN_HEIGHT)
         return;
-    
+
     const uint32_t xEnd = std::min(x + width, Video::SCREEN_WIDTH);
     const uint32_t yEnd = std::min(y + height, Video::SCREEN_HEIGHT);
 

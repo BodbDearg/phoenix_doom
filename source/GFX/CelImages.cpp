@@ -11,7 +11,7 @@ BEGIN_NAMESPACE(CelImages)
 
 // Note: I'm using a flat vector here instead of something like a map because it offers constant time access.
 // There is one array slot here per resource in the resource manager. This might seem wasteful of memory but
-// there are not that many resources in the resource file and the 'CelImageArray' struct is small, so the 
+// there are not that many resources in the resource file and the 'CelImageArray' struct is small, so the
 // tradeoff is probably worth it.
 static std::vector<CelImageArray> gImageArrays;
 
@@ -95,10 +95,15 @@ static void transformMaskedImageToImageWithAlpha(CelImage& image) noexcept {
     }
 }
 
-static void loadImage(CelImage& image, const std::byte* const pData, const LoadFlags loadFlags) noexcept {
+static void loadImage(
+    CelImage& image,
+    const std::byte* const pData,
+    const uint32_t dataSize,
+    const LoadFlags loadFlags
+) noexcept {
     // If the image has an x and a y offset then read that here first, otherwise they are just '0,0'
     const std::byte* pCurData = pData;
-    
+
     if ((loadFlags & LoadFlagBits::HAS_OFFSETS) != 0) {
         const int16_t* const pOffsets = (const int16_t*) pCurData;
         image.offsetX = byteSwappedI16(pOffsets[0]);
@@ -110,7 +115,13 @@ static void loadImage(CelImage& image, const std::byte* const pData, const LoadF
     }
 
     // Read the actual image data and convert a masked image to an image with alpha if we have to
-    CelUtils::decodeDoomCelSprite((const CelControlBlock*) pCurData, &image.pPixels, &image.width, &image.height);
+    CelUtils::decodeDoomCelSprite(
+        (const CelControlBlock*) pCurData,
+        dataSize,
+        &image.pPixels,
+        &image.width,
+        &image.height
+    );
 
     if ((loadFlags & LoadFlagBits::MASKED) != 0) {
         transformMaskedImageToImageWithAlpha(image);
@@ -128,7 +139,7 @@ static void loadImages(
     ASSERT(!imageArray.pImages);
     const Resource* const pResource = Resources::load(resourceNum);
     const std::byte* const pResourceData = pResource->pData;
-    const std::byte* pCurResourceData = pResourceData;
+    const uint32_t resourceSize = pResource->size;
 
     // Read each individual image.
     // Note: could be dealing with an array of images or just one.
@@ -137,20 +148,22 @@ static void loadImages(
     if (bLoadImageArray) {
         // In the case of an image array we can tell the number of images from the size of the image offsets array at the start.
         // We can tell the size of the image offsets array by the offset to the first image:
-        const uint32_t numImages = byteSwappedU32(((const uint32_t*) pCurResourceData)[0]) / sizeof(uint32_t);
+        const uint32_t numImages = byteSwappedU32(((const uint32_t*) pResourceData)[0]) / sizeof(uint32_t);
         imageArray.numImages = numImages;
         imageArray.pImages = new CelImage[numImages];
 
         for (uint32_t imageIdx = 0; imageIdx < numImages; ++imageIdx) {
-            const uint32_t imageOffset = byteSwappedU32(((const uint32_t*) pCurResourceData)[imageIdx]);
-            loadImage(imageArray.pImages[imageIdx], pCurResourceData + imageOffset, loadFlags);
+            const uint32_t thisImageOffset = byteSwappedU32(((const uint32_t*) pResourceData)[imageIdx]);
+            const uint32_t nextImageOffset = (imageIdx + 1 < numImages) ? byteSwappedU32(((const uint32_t*) pResourceData)[imageIdx + 1]) : resourceSize;
+            const uint32_t thisImageDataSize = nextImageOffset - thisImageOffset;
+
+            loadImage(imageArray.pImages[imageIdx], pResourceData + thisImageOffset, thisImageDataSize, loadFlags);
         }
-    }
-    else {
+    } else {
         // Loading a single image
         imageArray.numImages = 1;
         imageArray.pImages = new CelImage[1];
-        loadImage(imageArray.pImages[0], pCurResourceData, loadFlags);
+        loadImage(imageArray.pImages[0], pResourceData, resourceSize, loadFlags);
     }
 
     // After we are done we can free the raw resource - done at this point

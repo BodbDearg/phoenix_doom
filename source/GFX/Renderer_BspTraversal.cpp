@@ -26,9 +26,9 @@ static uint32_t gCheckCoord[9][4] = {
 //----------------------------------------------------------------------------------------------------------------------
 // Given a sector pointer, and if I hadn't already rendered the sprites, make valid sprites for the sprite list.
 //----------------------------------------------------------------------------------------------------------------------
-static void addSectorSpritesToFrame(sector_t& sector) noexcept {    
+static void addSectorSpritesToFrame(sector_t& sector) noexcept {
     if (sector.validcount != gValidCount) {     // Has this been processed?
-        sector.validcount = gValidCount;        // Mark it           
+        sector.validcount = gValidCount;        // Mark it
         mobj_t* pThing = sector.thinglist;      // Init the thing list
 
         // Traverse the linked list and add each sprite
@@ -43,13 +43,13 @@ static void addSectorSpritesToFrame(sector_t& sector) noexcept {
 // Given a subsector pointer, pass all walls to the rendering engine. Also pass all the sprites.
 //----------------------------------------------------------------------------------------------------------------------
 static void addSubsectorToFrame(subsector_t& sub) noexcept {
-    sector_t& sector = *sub.sector;     // Get the front sector  
+    sector_t& sector = *sub.sector;     // Get the front sector
     addSectorSpritesToFrame(sector);    // Prepare sprites for rendering
-    
+
     // Pass all line segments in the subsector to the renderer
     seg_t* pLineSeg = sub.firstline;
     seg_t* const pEndLineSeg = pLineSeg + sub.numsublines;
-    
+
     while (pLineSeg < pEndLineSeg) {
         addSegToFrame(*pLineSeg);
         ++pLineSeg;
@@ -57,7 +57,7 @@ static void addSubsectorToFrame(subsector_t& sub) noexcept {
 }
 
 //----------------------------------------------------------------------------------------------------------------------
-// Check if any part of the BSP bounding box is touching the view arc. 
+// Check if any part of the BSP bounding box is touching the view arc.
 // Also project the width of the box to screen coords to see if it is too small to even bother with.
 // If I should process this box then return 'true'.
 //----------------------------------------------------------------------------------------------------------------------
@@ -92,7 +92,7 @@ static bool checkBBox(const Fixed bspcoord[BOXCOUNT]) noexcept {
         if (pBox[0] == -1) {    // Center node?
             return true;        // I am in the center of the box, process it!!
         }
-        
+
         // I now have in 3 Space the endpoints of the BSP box, now project it to the screen
         // and see if it is either off the screen or too small to even care about
         angle1 = PointToAngle(gViewXFrac, gViewYFrac, bspcoord[pBox[0]], bspcoord[pBox[1]]) - gViewAngleBAM;    // What is the projected angle?
@@ -105,10 +105,10 @@ static bool checkBBox(const Fixed bspcoord[BOXCOUNT]) noexcept {
         if (span >= ANG180) {                   // Whoa... I must be sitting on the line or it's in my face!
             return true;                        // Process this one...
         }
-    
+
         // angle1 must be treated as signed, so to see if it is either >-clipangle and < clipangle
         // I add clipangle to the angle to adjust the 0 center and compare to clipangle * 2
-    
+
         angle_t tspan = angle1 + gClipAngleBAM;
         if (tspan > gDoubleClipAngleBAM) {         // Possibly off the left edge
             tspan -= gDoubleClipAngleBAM;
@@ -117,7 +117,7 @@ static bool checkBBox(const Fixed bspcoord[BOXCOUNT]) noexcept {
             }
             angle1 = gClipAngleBAM;                 // Clip the left edge
         }
-    
+
         tspan = gClipAngleBAM - angle2;            // Move from a zero base of "clipangle"
         if (tspan > gDoubleClipAngleBAM) {         // Possible off the right edge
             tspan -= gDoubleClipAngleBAM;
@@ -131,7 +131,7 @@ static bool checkBBox(const Fixed bspcoord[BOXCOUNT]) noexcept {
         angle1 = (angle1 + ANG90) >> (ANGLETOFINESHIFT + 1);        // Rotate 90 degrees and make table index
         angle2 = (angle2 + ANG90) >> (ANGLETOFINESHIFT + 1);
     }
-    
+
     angle1 = gViewAngleToX[angle1];      // Get the screen coords
     angle2 = gViewAngleToX[angle2];
 
@@ -154,7 +154,7 @@ static bool checkBBox(const Fixed bspcoord[BOXCOUNT]) noexcept {
 
             if ((int32_t) angle1 >= pSolid->leftX && (int32_t) angle2 <= pSolid->rightX) {
                 return false;   // This block is behind a solid wall!
-            }    
+            }
         }
     #endif
 
@@ -178,12 +178,12 @@ static void addBspNodeToFrame(const node_t* const pNode) noexcept {
     // If we have filled the screen then exit now - don't traverse the BSP any further
     if (gNumFullSegCols >= gScreenWidth)
         return;
-    
+
     // Decide which side the view point is on
-    uint32_t side = PointOnVectorSide(gViewXFrac, gViewYFrac, &pNode->Line);    // Is this the front side?
+    uint32_t side = PointOnVectorSide(gViewXFrac, gViewYFrac, pNode->Line);     // Is this the front side?
     addBspNodeToFrame((const node_t*) pNode->Children[side]);                   // Process the side closer to me
     side ^= 1;                                                                  // Swap the side
-    
+
     if (checkBBox(pNode->bbox[side])) {                                 // Is the viewing rect on both sides?
         addBspNodeToFrame((const node_t*) pNode->Children[side]);       // Render the back side
     }

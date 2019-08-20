@@ -14,8 +14,9 @@ BEGIN_NAMESPACE(CelUtils)
 //-------------------------------------------------------------------------------------------------
 class BitStream {
 public:
-    inline BitStream(const std::byte* const pData) noexcept
+    inline BitStream(const std::byte* const pData, const uint32_t size) noexcept
         : mpData(pData)
+        , mSize(size)
         , mCurByteIdx(0)
         , mCurBitIdx(7)
     {
@@ -36,13 +37,14 @@ public:
     OutType readBitsAsUInt(const uint8_t numBits) noexcept {
         static_assert(std::is_integral_v<OutType>);
         static_assert(std::is_unsigned_v<OutType>);
-        
+
         ASSERT(numBits <= sizeof(OutType) * 8);
         OutType out = 0;
         uint8_t numBitsLeft = numBits;
 
         while (numBitsLeft > 0) {
             // Setup for reading up to 8 bits
+            ASSERT(mCurByteIdx < mSize);
             const uint8_t curByte = (uint8_t) mpData[mCurByteIdx];
             const uint8_t numByteBitsLeft = mCurBitIdx + 1;
             const uint8_t numBitsToRead = (numBitsLeft > numByteBitsLeft) ? numByteBitsLeft : numBitsLeft;
@@ -83,6 +85,7 @@ public:
 
 private:
     const std::byte* const  mpData;
+    uint32_t                mSize;
     uint32_t                mCurByteIdx;
     uint8_t                 mCurBitIdx;
 };
@@ -143,7 +146,8 @@ static uint8_t getCCBBitsPerPixel(const CelControlBlock& ccb) noexcept {
 // The pointer to the image data must point to the start data for the first row.
 //-------------------------------------------------------------------------------------------------
 static void decodeUnpackedCelImageData(
-    const std::byte* const pImageData,    
+    const std::byte* const pImageData,
+    const uint32_t imageDataSize,
     const uint16_t* const pPLUT,
     const uint16_t imageW,
     const uint16_t imageH,
@@ -152,9 +156,9 @@ static void decodeUnpackedCelImageData(
     uint16_t* const pImageOut
 ) noexcept {
     // Setup for reading
-    BitStream bitStream(pImageData);
+    BitStream bitStream(pImageData, imageDataSize);
     uint16_t* pCurOutputPixel = pImageOut;
-    
+
     // Read the entire image
     if (bColorIndexed) {
         for (uint16_t y = 0; y < imageH; ++y) {
@@ -167,8 +171,7 @@ static void decodeUnpackedCelImageData(
 
             bitStream.u64Align();
         }
-    }
-    else {
+    } else {
         ASSERT(imageBPP == 16);
 
         for (uint16_t y = 0; y < imageH; ++y) {
@@ -189,6 +192,7 @@ static void decodeUnpackedCelImageData(
 //-------------------------------------------------------------------------------------------------
 static void decodePackedCelImageData(
     const std::byte* const pImageData,
+    const uint32_t imageDataSize,
     const uint16_t* const pPLUT,
     const uint16_t imageW,
     const uint16_t imageH,
@@ -205,13 +209,14 @@ static void decodePackedCelImageData(
     for (uint16_t y = 0; y < imageH; ++y) {
         // Firstly read offset to the next row and store the pointer.
         // That is the first bit of info for each row of pixels.
-        BitStream bitStream(pCurRowData);
+        const uint32_t imageDataSizeLeft = imageDataSize - (uint32_t)(pCurRowData - pImageData);
+        BitStream bitStream(pCurRowData, imageDataSizeLeft);
         uint32_t nextRowOffset;
 
         {
             // For 8 and 16-bit CEL images the offset is encoded in 10-bits of a u16.
             // For other CEL image formats just a single byte is used.
-            if (imageBPP >= 8) {                
+            if (imageBPP >= 8) {
                 nextRowOffset = bitStream.readBitsAsUInt<uint16_t>(16) & uint16_t(0x3FF);
             }
             else {
@@ -275,7 +280,7 @@ static void decodePackedCelImageData(
                 // A repeated pixel follows
                 ASSERT(packMode == CelPackMode::REPEAT);
                 uint16_t color;
-                
+
                 if (bColorIndexed) {
                     const uint16_t colorIdx = bitStream.readBitsAsUInt<uint16_t>(imageBPP);
                     color = byteSwappedU16(pPLUT[colorIdx]) | OPAQUE_PIXEL_BITS;
@@ -304,24 +309,42 @@ static void decodePackedCelImageData(
 //-------------------------------------------------------------------------------------------------
 static uint16_t* decodeCelImageData(
     const std::byte* const pImageData,
+    const uint32_t imageDataSize,
     const uint16_t* const pPLUT,
     const uint16_t imageW,
     const uint16_t imageH,
     const uint8_t imageBPP,
     const bool bImageIsPacked,
     const bool bColorIndexed
-) noexcept {    
+) noexcept {
     uint16_t* const pImageOut = (uint16_t*) MemAlloc(imageW * imageH * sizeof(uint16_t));
 
     if (!bColorIndexed && imageBPP != 16) {
         FATAL_ERROR("Images that are not color indexed MUST be 16 bpp!");
     }
-    
+
     if (bImageIsPacked) {
-        decodePackedCelImageData(pImageData, pPLUT, imageW, imageH, imageBPP, bColorIndexed, pImageOut);
-    }
-    else {
-        decodeUnpackedCelImageData(pImageData, pPLUT, imageW, imageH, imageBPP, bColorIndexed, pImageOut);
+        decodePackedCelImageData(
+            pImageData,
+            imageDataSize,
+            pPLUT,
+            imageW,
+            imageH,
+            imageBPP,
+            bColorIndexed,
+            pImageOut
+        );
+    } else {
+        decodeUnpackedCelImageData(
+            pImageData,
+            imageDataSize,
+            pPLUT,
+            imageW,
+            imageH,
+            imageBPP,
+            bColorIndexed,
+            pImageOut
+        );
     }
 
     return pImageOut;
@@ -350,6 +373,7 @@ uint16_t getCCBHeight(const CelControlBlock* const pCCB) noexcept {
 
 void decodeDoomCelSprite(
     const CelControlBlock* const pCCB,
+    const uint32_t celDataSize,
     uint16_t** pImageOut,
     uint16_t* pImageWidthOut,
     uint16_t* pImageHeightOut
@@ -374,17 +398,20 @@ void decodeDoomCelSprite(
 
     // Grabbing various bits of CCB info and endian correcting
     const uint32_t imageCCBFlags = byteSwappedU32(pCCB->flags);
-    const uint32_t imageDataOffset = byteSwappedU32(pCCB->sourcePtr) + 12;  // For some reason 3DO Doom added '12' to this offset to get the image data?    
+    const uint32_t imageDataOffset = byteSwappedU32(pCCB->sourcePtr) + 12;  // For some reason 3DO Doom added '12' to this offset to get the image data?
     const uint8_t imageBPP = getCCBBitsPerPixel(*pCCB);
 
     if (imageBPP > 16) {
         FATAL_ERROR("Images with a bit depth greater than 16 bpp are NOT supported!");
     }
-    
+
     // Get the pointers to the PLUT and image data
     const std::byte* const pCelBytes = (const std::byte*) pCCB;
     const uint16_t* const pPLUT = (const uint16_t*)(pCelBytes + 60);        // 3DO Doom harcoded this offset?
     const std::byte* const pImageData = pCelBytes + imageDataOffset;
+
+    ASSERT(pImageData < pCelBytes + celDataSize);
+    const uint32_t imageDataSize = celDataSize - (uint32_t)(pImageData - pCelBytes);
 
     // Determining whether the CCB is color indexed or not SHOULD be a simple case of checking the 'linear' flag but
     // sometimes this lies to us for some of the Doom resources.
@@ -397,10 +424,11 @@ void decodeDoomCelSprite(
     else if (imageBPP >= 16) {
         bIsColorIndexed = false;    // MUST NOT be color indexed
     }
-        
+
     // Decode and return!
     *pImageOut = decodeCelImageData(
         pImageData,
+        imageDataSize,
         pPLUT,
         imageW,
         imageH,

@@ -76,10 +76,10 @@ namespace Renderer {
     //  (2) The matrix (M) is designed transform a single row/vector (V) using the following multiply order: MxV.
     //  (3) Except where otherwise stated, omitted elements are '0' and are not considered in calculations.
     //  (4) The omitted 'r3c3' element is '1' and IS considered in calculations.
-    // 
-    // Note that the calculations below are Loosely based on the GLM function 'perspectiveRH_ZO', 
+    //
+    // Note that the calculations below are Loosely based on the GLM function 'perspectiveRH_ZO',
     // with various adjustments to make it match how the original 3DO Doom (and probably PC Doom) computed projections.
-    // 
+    //
     // Based on input parameters for view width & height, znear & far, and field of view respectively:
     //      w, h, zn, zf, fov
     //
@@ -121,12 +121,12 @@ namespace Renderer {
         float p1y;
         float p1w;
         float p1w_inv;
-        
+
         float p2x;              // 2nd wall point: xyw and 1/w (scale)
         float p2y;
         float p2w;
         float p2w_inv;
-        
+
         float p1tz;             // 1st wall point: top and bottom z
         float p1bz;
         float p1tz_back;        // 1st wall point: top and bottom z for the back/joining sector
@@ -251,7 +251,7 @@ namespace Renderer {
         uint16_t    x;
         uint16_t    height;
     };
-    
+
     //------------------------------------------------------------------------------------------------------------------
     // Describes a column of a floor or ceiling to be drawn
     //------------------------------------------------------------------------------------------------------------------
@@ -271,7 +271,7 @@ namespace Renderer {
     //==================================================================================================================
     // Globals shared throughout the renderer - defined in Renderer.cpp
     //==================================================================================================================
-    
+
     extern Fixed                            gViewXFrac;                         // Camera x,y,z
     extern Fixed                            gViewYFrac;
     extern Fixed                            gViewZFrac;

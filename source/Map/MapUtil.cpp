@@ -6,26 +6,21 @@
 #include "MapData.h"
 #include "Things/MapObj.h"
 
-/**********************************
+//----------------------------------------------------------------------------------------------------------------------
+// Given the numerator and the denominator of a fraction for a slope, return the equivalent angle.
+// Note: I assume that denominator is greater or equal to the numerator.
+//----------------------------------------------------------------------------------------------------------------------
+angle_t SlopeAngle(uint32_t num, uint32_t den) noexcept {
+    num >>= (FRACBITS - 3);                     // Leave in 3 extra bits for just a little more precision
+    den >>= FRACBITS;                           // Must be an int
+    num = num * (gIDivTable[den] >> 9);         // Perform the divide using a recipocal mul
+    num >>= ((FRACBITS + 3) - SLOPEBITS);       // Isolate the fraction for index to the angle table
 
-    Given the numerator and the denominator of a fraction for a slope, 
-    return the equivalent angle.
-    Note : I assume that denominator is greater or equal to the numerator
+    if (num > SLOPERANGE) {     // Out of range?
+        num = SLOPERANGE;       // Fix it
+    }
 
-**********************************/
-
-angle_t SlopeAngle(uint32_t num, uint32_t den)
-{
-    num>>=(FRACBITS-3);         // Leave in 3 extra bits for just a little more precision 
-    den>>=FRACBITS;             // Must be an int 
-
-    num = num*(gIDivTable[den]>>9);  // Perform the divide using a recipocal mul 
-    num>>=((FRACBITS+3)-SLOPEBITS); // Isolate the fraction for index to the angle table 
-
-    if (num>SLOPERANGE) {           // Out of range? 
-        num = SLOPERANGE;           // Fix it 
-    }   
-    return gTanToAngle[num];         // Get the angle 
+    return gTanToAngle[num];    // Get the angle
 }
 
 /**********************************
@@ -39,37 +34,37 @@ angle_t SlopeAngle(uint32_t num, uint32_t den)
 
 angle_t PointToAngle(Fixed x1, Fixed y1, Fixed x2, Fixed y2)
 {
-    x2 -= x1;   // Convert the two points into a fractional slope 
+    x2 -= x1;   // Convert the two points into a fractional slope
     y2 -= y1;
 
-    if (x2 || y2) {             // Not 0,0? 
-        if (x2>=0) {                // Positive x? 
-            if (y2>=0) {            // Positive x, Positive y 
-                if (x2>y2) {        // Octant 0? 
-                    return SlopeAngle(y2,x2);     // Octant 0 
+    if (x2 || y2) {             // Not 0,0?
+        if (x2>=0) {                // Positive x?
+            if (y2>=0) {            // Positive x, Positive y
+                if (x2>y2) {        // Octant 0?
+                    return SlopeAngle(y2,x2);     // Octant 0
                 }
-                return (ANG90 - 1) - SlopeAngle(x2,y2);  // Octant 1 
+                return (ANG90 - 1) - SlopeAngle(x2,y2);  // Octant 1
             }
-            y2 = -y2;       // Get the absolute value of y (Was negative) 
-            if (x2>y2) {    // Octant 6 
-                return negateAngle(SlopeAngle(y2,x2));      // Octant 6 
+            y2 = -y2;       // Get the absolute value of y (Was negative)
+            if (x2>y2) {    // Octant 6
+                return negateAngle(SlopeAngle(y2,x2));      // Octant 6
             }
-            return SlopeAngle(x2,y2)+ANG270;    // Octant 7 
+            return SlopeAngle(x2,y2)+ANG270;    // Octant 7
         }
-        x2 = -x2;           // Negate x (Make it positive) 
-        if (y2>=0) {        // Positive y? 
-            if (x2>y2) {    // Octant 3? 
-                return (ANG180-1)-SlopeAngle(y2,x2);    // Octant 3 
+        x2 = -x2;           // Negate x (Make it positive)
+        if (y2>=0) {        // Positive y?
+            if (x2>y2) {    // Octant 3?
+                return (ANG180-1)-SlopeAngle(y2,x2);    // Octant 3
             }
-            return SlopeAngle(x2,y2)+ANG90;     // Octant 2 
+            return SlopeAngle(x2,y2)+ANG90;     // Octant 2
         }
-        y2 = -y2;       // Negate y (Make it positive) 
+        y2 = -y2;       // Negate y (Make it positive)
         if (x2>y2) {
-            return SlopeAngle(y2,x2)+ANG180;    // Octant 4 
+            return SlopeAngle(y2,x2)+ANG180;    // Octant 4
         }
-        return (ANG270-1)-SlopeAngle(x2,y2);    // Octant 5 
+        return (ANG270-1)-SlopeAngle(x2,y2);    // Octant 5
     }
-    return 0;       // In case of 0,0, return an angle of 0 
+    return 0;       // In case of 0,0, return an angle of 0
 }
 
 /**********************************
@@ -82,219 +77,205 @@ angle_t PointToAngle(Fixed x1, Fixed y1, Fixed x2, Fixed y2)
 Fixed GetApproxDistance(Fixed dx, Fixed dy)
 {
     if (dx<0) {
-        dx = -dx;       // Get the absolute value of the distance 
+        dx = -dx;       // Get the absolute value of the distance
     }
     if (dy<0) {
         dy = -dy;
     }
-    if (dx < dy) {      // Is the x smaller? 
-        dx>>=1;         // Use half the x 
+    if (dx < dy) {      // Is the x smaller?
+        dx>>=1;         // Use half the x
     } else {
-        dy>>=1;         // Or use half the y 
+        dy>>=1;         // Or use half the y
     }
-    dx+=dy;             // Add larger and half of the smaller for distance            
-    return dx;          // Return result 
+    dx+=dy;             // Add larger and half of the smaller for distance
+    return dx;          // Return result
 }
 
-/**********************************
+//----------------------------------------------------------------------------------------------------------------------
+// Return TRUE if the point is on the BACK side.
+// Otherwise return FALSE if on the front side.
+// This code is optimized for the simple case of vertical or horizontal lines.
+//----------------------------------------------------------------------------------------------------------------------
+bool PointOnVectorSide(Fixed x, Fixed y, const vector_t& line) noexcept {
+    // Assume I am on the back side initially
+    bool bResult = true;
 
-    Return TRUE if the point is on the BACK side.
-    Otherwise return FALSE if on the front side.
-    This code is optimized for the simple case of vertical
-    or horizontal lines.
-    
-**********************************/
+    //------------------------------------------------------------------------------------------------------------------
+    // Special case #1, vertical lines
+    //------------------------------------------------------------------------------------------------------------------
+    Fixed dx = line.dx;     // Cache the line vector's delta x and y
+    Fixed dy = line.dy;
+    x = x - line.x;         // Get the offset from the base of the line
 
-uint32_t PointOnVectorSide(Fixed x, Fixed y, const vector_t *line)
-{
-    uint32_t Result;
-    Fixed dx,dy;
-    
-    Result = true;          // Assume I am on the back side 
-
-    // Special case #1, vertical lines 
-
-    dx = line->dx;      // Cache the line vector's delta x and y 
-    dy = line->dy;
-    
-    x = x - line->x;    // Get the offset from the base of the line 
-    if (!dx) {          // Vertical line? (dy is base direction) 
-        if (x <= 0) {       // Which side of the line am I? 
+    if (dx == 0) {          // Vertical line? (dy is base direction)
+        if (x <= 0) {       // Which side of the line am I?
             dy = -dy;
         }
-        if (dy>=0) {
-            Result = false; // On the front side! 
+        if (dy >= 0) {
+            bResult = false;    // On the front side!
         }
-        return Result;
+        return bResult;
     }
 
-    // Special case #2, horizontal lines 
-    
-    y = y - line->y;    // Get the offset for y 
-    if (!dy) {          // Horizontal line? (dx is base direction) 
-        if (y <= 0) {       // Which side of the line 
+    //------------------------------------------------------------------------------------------------------------------
+    // Special case #2, horizontal lines
+    //------------------------------------------------------------------------------------------------------------------
+    y = y - line.y;         // Get the offset for y
+    if (dy == 0) {          // Horizontal line? (dx is base direction)
+        if (y <= 0) {       // Which side of the line
             dx = -dx;
-        } 
-        if (dx<=0) {
-            Result = false; // On the front side! 
         }
-        return Result;      // Return the answer 
-    }
-
-    // Special case #3, Sign compares  
-    
-    if ( (dy^dx^x^y) & 0x80000000UL ) {     // Negative compound sign? 
-        if (!((dy^x) & 0x80000000UL)) {     // Positive cross product? 
-            Result = false; // Front side is positive 
+        if (dx <= 0) {
+            bResult = false;    // On the front side!
         }
-        return Result;
+        return bResult;         // Return the answer
     }
 
-    // Case #4, do it the hard way with a cross product 
-    
-    x>>=FRACBITS;       // Get the integer 
-    y>>=FRACBITS;
-    x = (dy>>FRACBITS) * x; // Create the cross product 
-    y = (dx>>FRACBITS) * y;
-
-    if (y < x) {            // Which side? 
-        Result = false;     // Front side 
+    //------------------------------------------------------------------------------------------------------------------
+    // Special case #3, Sign compares
+    //------------------------------------------------------------------------------------------------------------------
+    if ((dy ^ dx ^ x ^ y) & 0x80000000UL) {     // Negative compound sign?
+        if (!((dy ^ x) & 0x80000000UL)) {       // Positive cross product?
+            bResult = false;                    // Front side is positive
+        }
+        return bResult;
     }
-    return Result;          // Return the side 
+
+    //------------------------------------------------------------------------------------------------------------------
+    // Case #4, do it the hard way with a cross product
+    //------------------------------------------------------------------------------------------------------------------
+    x >>= FRACBITS;             // Get the integer
+    y >>= FRACBITS;
+    x = (dy >> FRACBITS) * x;   // Create the cross product
+    y = (dx >> FRACBITS) * y;
+
+    if (y < x) {            // Which side?
+        bResult = false;    // Front side
+    }
+
+    return bResult;         // Return the side
 }
 
-//---------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 // Return the pointer to a subsector record using an input x and y.
 // Uses the BSP tree to assist.
-//---------------------------------------------------------------------------------------------------------------------
-subsector_t* PointInSubsector(const Fixed x, const Fixed y) noexcept {
+//----------------------------------------------------------------------------------------------------------------------
+subsector_t& PointInSubsector(const Fixed x, const Fixed y) noexcept {
     // Note: there is ALWAYS a BSP tree - no checks needed on loop start!
+    ASSERT(gpBSPTreeRoot);
     const node_t* pNode = gpBSPTreeRoot;
-    
+
     while (true) {
         // Goto the child on the side of the split that the point is on.
         // Stop the loop when we encounter a subsector child:
-        const uint32_t sidePointIsOn = PointOnVectorSide(x, y, &pNode->Line);
+        const uint32_t sidePointIsOn = PointOnVectorSide(x, y, pNode->Line);
         pNode = (const node_t*) pNode->Children[sidePointIsOn];
-        
+
         if (isBspNodeASubSector(pNode))
             break;
     }
-    
-    return (subsector_t*) getActualBspNodePtr(pNode);       // N.B: Pointer needs flag removed via this!
+
+    return *((subsector_t*) getActualBspNodePtr(pNode));    // N.B: Pointer needs flag removed via this!
 }
 
-/**********************************
+//----------------------------------------------------------------------------------------------------------------------
+// Convert a line record into a line vector
+//----------------------------------------------------------------------------------------------------------------------
+void MakeVector(line_t& li, vector_t& dl) noexcept {
+    Fixed temp = li.v1.x;       // Get the X of the vector
+    dl.x = temp;                // Save the x
+    dl.dx = li.v2.x - temp;     // Get the X delta
 
-    Convert a line record into a line vector
-    
-**********************************/
-
-void MakeVector(line_t* li, vector_t* dl)
-{
-    Fixed Temp;
-    Temp = li->v1.x;        // Get the X of the vector 
-    dl->x = Temp;           // Save the x 
-    dl->dx = li->v2.x-Temp; // Get the X delta 
-    
-    Temp = li->v1.y;        // Do the same for the Y 
-    dl->y = Temp;
-    dl->dy = li->v2.y-Temp;
+    // Do the same for the Y
+    temp = li.v1.y;
+    dl.y = temp;
+    dl.dy = li.v2.y - temp;
 }
 
-/**********************************
-
-    Returns the fractional intercept point along the first vector
-
-**********************************/
-
-Fixed InterceptVector(vector_t* First, vector_t* Second)
-{
-    Fixed num,den;
-    Fixed dx2,dy2;
-
-    dx2 = Second->dx>>FRACBITS; // Get the integer of the second line 
-    dy2 = Second->dy>>FRACBITS;
+//----------------------------------------------------------------------------------------------------------------------
+// Returns the fractional intercept point along the first vector
+//----------------------------------------------------------------------------------------------------------------------
+Fixed InterceptVector(const vector_t& first, const vector_t& second) noexcept {
+    const Fixed dx2 = second.dx >> FRACBITS;        // Get the integer of the second line
+    const Fixed dy2 = second.dy >> FRACBITS;
+    Fixed den = dy2 * (first.dx >> FRACBITS);       // Get the step slope of the first vector
+    den -= dx2 * (first.dy >> FRACBITS);            // Sub the step slope of the second vector
     
-    den = (dy2*(First->dx>>FRACBITS));      // Get the step slope of the first vector 
-    den -= (dx2*(First->dy>>FRACBITS));     // Sub the step slope of the second vector 
-    if (!den) {     // They are parallel vectors! 
-        return -1;      // Infinity 
+    if (den == 0) {     // They are parallel vectors!
+        return -1;      // Infinity
     }
-    num = ((Second->x-First->x)>>FRACBITS) * dy2;       // Get the slope to the start position 
-    num += ((First->y-Second->y)>>FRACBITS) * dx2;
-    num <<= FRACBITS;       // Convert to fixed point 
-    num = num / den;        // How far to the intersection? 
-    return num;     // Return the distance of intercept 
+
+    Fixed num = ((second.x - first.x) >> FRACBITS) * dy2;   // Get the slope to the start position
+    num += ((first.y - second.y) >> FRACBITS) * dx2;
+    num <<= FRACBITS;                                       // Convert to fixed point
+    num = num / den;                                        // How far to the intersection?
+    return num;                                             // Return the distance of intercept
 }
 
-/**********************************
+//----------------------------------------------------------------------------------------------------------------------
+// Return the height of the open span or zero if a single sided line.
+//----------------------------------------------------------------------------------------------------------------------
+uint32_t LineOpening(const line_t& linedef) noexcept {
+    Fixed top = 0;
+    const sector_t* const pBack = linedef.backsector;   // Get the back side
 
-     Return the height of the open span or zero if a single sided line.
-    
-**********************************/
-
-uint32_t LineOpening(line_t* linedef)
-{
-    sector_t *front;
-    sector_t *back;
-    Fixed Top,Bottom;
-
-    Top = 0;
-    back = linedef->backsector;     // Get the back side 
-    if (back) {     // Double sided line! 
-        front = linedef->frontsector;       // Get the front sector 
-        Top = front->ceilingheight;         // Assume front height 
-        if (Top > back->ceilingheight) {
-            Top = back->ceilingheight;      // Use the back height 
+    if (pBack) {                                                // Double sided line!
+        const sector_t* const pFront = linedef.frontsector;     // Get the front sector
+        top = pFront->ceilingheight;                            // Assume front height
+        if (top > pBack->ceilingheight) {
+            top = pBack->ceilingheight;                         // Use the back height
         }
-        Bottom = front->floorheight;        // Assume front height 
-        if (Bottom < back->floorheight) {   
-            Bottom = back->floorheight;     // Use back sector height 
+
+        Fixed bottom = pFront->floorheight;     // Assume front height
+        if (bottom < pBack->floorheight) {
+            bottom = pBack->floorheight;        // Use back sector height
         }
-        Top-=Bottom;            // Get the span (Zero for a closed door) 
+        
+        top -= bottom;      // Get the span (Zero for a closed door)
     }
-    return Top;     // Return the span 
+
+    return top;             // Return the span
 }
 
-//---------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 // Unlinks a thing from the block map and sectors
-//---------------------------------------------------------------------------------------------------------------------
-void UnsetThingPosition(mobj_t* thing) {
+//----------------------------------------------------------------------------------------------------------------------
+void UnsetThingPosition(mobj_t& thing) noexcept {
     // Things that have no shapes don't need to be in the sector map.
     // The sector links are used for drawing of the sprites.
-    if (!(thing->flags & MF_NOSECTOR)) {
+    if ((thing.flags & MF_NOSECTOR) == 0) {
         // Item is visible!
-        mobj_t* next = thing->snext;
-        mobj_t* prev = thing->sprev;
-        
+        mobj_t* next = thing.snext;
+        mobj_t* prev = thing.sprev;
+
         if (next) {                 // Is there a forward link?
             next->sprev = prev;     // Attach a new backward link
         }
-        
+
         if (prev) {                 // Is there a backward link?
             prev->snext = next;     // Adjust the forward link
         } else {
-            thing->subsector->sector->thinglist = next;     // New first link
+            thing.subsector->sector->thinglist = next;      // New first link
         }
     }
 
     // Inert things don't need to be in blockmap such as missiles or blood and gore.
     // Those will have this flag set:
-    if (!(thing->flags & MF_NOBLOCKMAP)) {
-        mobj_t* next = thing->bnext;
-        mobj_t* prev = thing->bprev;
-        
+    if ((thing.flags & MF_NOBLOCKMAP) == 0) {
+        mobj_t* next = thing.bnext;
+        mobj_t* prev = thing.bprev;
+
         if (next) {     // Forward link?
             next->bprev = prev;
         }
+
         if (prev) {     // Is there a previous link?
             prev->bnext = next;
         } else {
             uint32_t blockx,blocky;
-            blockx = (thing->x - gBlockMapOriginX) >> MAPBLOCKSHIFT;    // Get the tile offsets
-            blocky = (thing->y - gBlockMapOriginY) >> MAPBLOCKSHIFT;
-            
+            blockx = (thing.x - gBlockMapOriginX) >> MAPBLOCKSHIFT;     // Get the tile offsets
+            blocky = (thing.y - gBlockMapOriginY) >> MAPBLOCKSHIFT;
+
             if (blockx < gBlockMapWidth && blocky < gBlockMapHeight) {  // Failsafe...
                 blocky = blocky * gBlockMapWidth;
                 blocky += blockx;
@@ -304,48 +285,46 @@ void UnsetThingPosition(mobj_t* thing) {
     }
 }
 
-//---------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 // Links a thing into both a block and a subsector based on it's x & y.
 // Sets thing->subsector properly.
-//---------------------------------------------------------------------------------------------------------------------
-void SetThingPosition(mobj_t* thing) {
+//----------------------------------------------------------------------------------------------------------------------
+void SetThingPosition(mobj_t& thing) noexcept {
     // Get the current subsector occupied and save a link to it on the thing
-    subsector_t* ss = PointInSubsector(thing->x,thing->y);
-    thing->subsector = ss;
-    
+    subsector_t& ss = PointInSubsector(thing.x, thing.y);
+    thing.subsector = &ss;
+
     // Invisible things don't go into the sector links so they don't draw
-    if (!(thing->flags & MF_NOSECTOR)) {
-        sector_t* sec = ss->sector;         // Get the current sector
-        mobj_t* next = sec->thinglist;      // Get the first link as my next
-        thing->snext = next;                // Init the next link
-        
-        if (next) {                 // Was there a link in the first place?
-            next->sprev = thing;    // The previous is now here
+    if ((thing.flags & MF_NOSECTOR) == 0) {
+        sector_t* const pSec = ss.sector;               // Get the current sector
+        mobj_t* const pNextMObj = pSec->thinglist;      // Get the first link as my next
+        thing.snext = pNextMObj;                        // Init the next link
+
+        if (pNextMObj) {                    // Was there a link in the first place?
+            pNextMObj->sprev = &thing;      // The previous is now here
         }
-        
-        thing->sprev = 0;           // Init the previous link
-        sec->thinglist = thing;     // Set the new first link (Me!)
+
+        thing.sprev = nullptr;          // Init the previous link
+        pSec->thinglist = &thing;       // Set the new first link (Me!)
     }
 
     // Inert things don't need to be in blockmap, like blood and gore.
     // Those will have this flag set:
-    if (!(thing->flags & MF_NOBLOCKMAP)) {
-        thing->bprev = 0;   // No previous link
-        thing->bnext = 0;
-        
-        uint32_t blockx = (thing->x - gBlockMapOriginX) >> MAPBLOCKSHIFT;   // Get the tile index
-        uint32_t blocky = (thing->y - gBlockMapOriginY) >> MAPBLOCKSHIFT;
-        
-        if (blockx < gBlockMapWidth && blocky < gBlockMapHeight) {  // Failsafe
-            blocky = blocky * gBlockMapWidth;
-            blocky += blockx;
-            
-            mobj_t* next = gpBlockMapThingLists[blocky];    // Get the next link
-            gpBlockMapThingLists[blocky] = thing;           // Set the new entry
-            thing->bnext = next;                            // Save the new link
-            
-            if (next) {                 // Is there a forward link?
-                next->bprev = thing;    // Place a backward link
+    if ((thing.flags & MF_NOBLOCKMAP) == 0) {
+        thing.bprev = nullptr;      // No previous link
+        thing.bnext = nullptr;
+
+        const uint32_t blockx = (thing.x - gBlockMapOriginX) >> MAPBLOCKSHIFT;      // Get the tile index
+        const uint32_t blocky = (thing.y - gBlockMapOriginY) >> MAPBLOCKSHIFT;
+
+        if (blockx < gBlockMapWidth && blocky < gBlockMapHeight) {          // Failsafe
+            const uint32_t blockIdx = blocky * gBlockMapWidth + blockx;
+            mobj_t* const pNextMObj = gpBlockMapThingLists[blockIdx];       // Get the next link
+            gpBlockMapThingLists[blockIdx] = &thing;                        // Set the new entry
+            thing.bnext = pNextMObj;                                        // Save the new link
+
+            if (pNextMObj) {                    // Is there a forward link?
+                pNextMObj->bprev = &thing;      // Place a backward link
             }
         }
     }
@@ -355,49 +334,53 @@ void SetThingPosition(mobj_t* thing) {
 // The validcount flags are used to avoid checking lines that are marked in multiple mapblocks,
 // so increment validcount before the first call to BlockLinesIterator, then make one or more calls to it.
 //---------------------------------------------------------------------------------------------------------------------
-uint32_t BlockLinesIterator(uint32_t x, uint32_t y, uint32_t(*func)(line_t*)) {
-    if (x < gBlockMapWidth && y < gBlockMapHeight) {    // On the map?
-        y = y * gBlockMapWidth;
-        y += x;
-        line_t** list = gpBlockMapLineLists[y];     // Get the first line pointer
-        
+bool BlockLinesIterator(const uint32_t x, const uint32_t y, const BlockLinesIterCallback func) noexcept {
+    if (x < gBlockMapWidth && y < gBlockMapHeight) {            // On the map?
+        const uint32_t blockIdx = y * gBlockMapWidth + x;
+        line_t** ppLineList = gpBlockMapLineLists[blockIdx];    // Get the first line pointer
+
         for (;;) {
-            line_t* ld = list[0];   // Get the entry
-            if (!ld) {              // End of a list?
-                break;              // Get out of the loop
+            line_t* pLine = ppLineList[0];      // Get the entry
+            if (!pLine) {                       // End of a list?
+                break;                          // Get out of the loop
             }
-            
-            if (ld->validcount != gValidCount) {    // Line not checked?
-                ld->validcount = gValidCount;       // Mark it
-                if (!func(ld)) {                    // Call the line proc
-                    return false;                   // I have a match?
+
+            if (pLine->validcount != gValidCount) {     // Line not checked?
+                pLine->validcount = gValidCount;        // Mark it
+                if (!func(*pLine)) {                    // Call the line proc
+                    return false;                       // I have a match?
                 }
             }
-            
-            ++list;     // Next entry
+
+            ++ppLineList;   // Next entry
         }
     }
-    
+
     return true;    // Everything was checked
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 // Scan all objects standing on this map block.
 //---------------------------------------------------------------------------------------------------------------------
-uint32_t BlockThingsIterator(uint32_t x, uint32_t y, uint32_t(*func)(mobj_t*)) {
+bool BlockThingsIterator(const uint32_t x, const uint32_t y, const BlockThingsIterCallback func) noexcept {
     // Check if we are off the map or not
     if (x < gBlockMapWidth && y < gBlockMapHeight) {
-        y = y * gBlockMapWidth;
-        y += x;
-        mobj_t* mobj = gpBlockMapThingLists[y];     // Get the first object on the block
-        
-        while (mobj) {              // Valid object?
-            if (!func(mobj)) {      // Call function
+        const uint32_t blockIdx = y * gBlockMapWidth + x;
+        mobj_t* pMObj = gpBlockMapThingLists[blockIdx];     // Get the first object on the block
+
+        // Continue iterating through this thing list
+        while (pMObj) {
+            // DC: Crash fix to the 3DO version: cache the next pointer first
+            // as the callback might invalidate the map object!
+            mobj_t* const pNextMObj = pMObj->bnext;
+
+            if (!func(*pMObj)) {    // Call function
                 return false;       // I found it!
             }
-            mobj = mobj->bnext;     // Next object in list
+
+            pMObj = pNextMObj;  // Next object in list
         }
     }
-    
+
     return true;    // Not found
 }

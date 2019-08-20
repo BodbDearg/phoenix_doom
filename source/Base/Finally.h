@@ -13,12 +13,12 @@ public:
 
     inline Finally(const Finally& other) noexcept
         : mLambda(other.lambda)
-    {        
+    {
     }
 
     inline Finally(const Finally&& other) noexcept
         : mLambda(std::move(other.mLambda))
-    {        
+    {
     }
 
     inline ~Finally() noexcept {

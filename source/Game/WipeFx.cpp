@@ -47,7 +47,7 @@ static std::unique_ptr<float[]> generateYDeltaTable() noexcept {
 
         uint32_t xCur = x;
         uint32_t xEnd = std::min(x + numRepeatedCols, screenWidth);
-        
+
         while (xCur < xEnd) {
             deltas[xCur] = delta;
             ++xCur;
@@ -64,7 +64,7 @@ static std::unique_ptr<float[]> generateYDeltaTable() noexcept {
 static bool tickWipe(float* const pYDeltas) noexcept {
     const uint32_t screenWidth = Video::SCREEN_WIDTH;
     const uint32_t screenHeight = Video::SCREEN_HEIGHT;
-    
+
     const float screenHeightF = (float) screenHeight;
     const float scaleFactor = gScaleFactor;
 
@@ -81,7 +81,7 @@ static bool tickWipe(float* const pYDeltas) noexcept {
         // If not then the overall wipe is not done:
         if (delta < screenHeightF) {
             bWipeDone = false;
-            
+
             if (delta < 0.0f) {
                 // Slight delay
                 delta += WIPE_SPEED_PRE_INTRO * scaleFactor;
@@ -124,7 +124,7 @@ static void drawWipe(
 
         const uint32_t yDelta = std::min((uint32_t) std::max(pYDeltas[x], 0.0f), screenH);
         const uint32_t yDelta8 = (yDelta / 8) * 8;
-        
+
         for (uint32_t y = 0; y < yDelta8; y += 8) {
             pDstPixelsCol[(y + 0) * screenW] = gpNewImgCol[y + 0];
             pDstPixelsCol[(y + 1) * screenW] = gpNewImgCol[y + 1];
@@ -147,10 +147,10 @@ static void drawWipe(
     for (uint32_t x = 0; x < screenW; ++x) {
         uint32_t* const pDstPixelsCol = pDstPixels + x;
         const uint32_t* const gpOldImgCol = gpOldImg + x * screenH;
-        
+
         const uint32_t yDelta = std::min((uint32_t) std::max(pYDeltas[x], 0.0f), screenH);
         const uint32_t numPixelsRemaining = screenH - yDelta;
-        const uint32_t screenHeight8 = yDelta + (numPixelsRemaining / 8) * 8;        
+        const uint32_t screenHeight8 = yDelta + (numPixelsRemaining / 8) * 8;
 
         for (uint32_t y = yDelta; y < screenHeight8; y += 8) {
             const uint32_t oldPixelBaseY = y - yDelta;

@@ -63,7 +63,7 @@ void AudioOutputDevice::shutdown() noexcept {
 
     if (!mbIsInitialized)
         return;
-    
+
     mbIsInitialized = false;
 
     if (mAudioDeviceId != 0) {
@@ -71,7 +71,7 @@ void AudioOutputDevice::shutdown() noexcept {
         SDL_CloseAudioDevice(mAudioDeviceId);
         mAudioDeviceId = 0;
     }
-    
+
     if (mbDidInitSDL) {
         SDL_QuitSubSystem(SDL_INIT_AUDIO);
         mbDidInitSDL = false;
@@ -95,7 +95,7 @@ void AudioOutputDevice::unregisterAudioSystem(AudioSystem& system) noexcept {
     // N.B: Safe to do searching outside of the lock so long as we don't unregister from the audio thread.
     // That should never be happening!
     const auto iter = std::find(mAudioSystems.begin(), mAudioSystems.end(), &system);
-    
+
     if (iter != mAudioSystems.end()) {
         AudioDeviceLock lockAudioDev(*this);
         mAudioSystems.erase(iter);

@@ -1,13 +1,14 @@
 #pragma once
 
 #include "Base/Angle.h"
+#include "Base/Macros.h"
 #include "Game/DoomDefines.h"
 
 struct line_t;
 struct mobj_t;
 
 // Point in a map (2d coords)
-struct vertex_t {    
+struct vertex_t {
     Fixed x;
     Fixed y;
 };
@@ -15,13 +16,15 @@ struct vertex_t {
 // Vector struct
 struct vector_t {
     Fixed x;        // X,Y start of line
-    Fixed y;          
+    Fixed y;
     Fixed dx;       // Distance traveled (delta)
     Fixed dy;
 };
 
 // Describe a playfield sector (Polygon)
-struct sector_t {       
+struct sector_t {
+    NON_ASSIGNABLE_STRUCT(sector_t)
+
     Fixed       floorheight;            // Floor height
     Fixed       ceilingheight;          // Top and bottom height
     uint32_t    FloorPic;               // Floor texture #
@@ -43,6 +46,8 @@ struct sector_t {
 
 // Data for a line side
 struct side_t {
+    NON_ASSIGNABLE_STRUCT(side_t)
+
     Fixed       textureoffset;      // Column texture offset (X)
     Fixed       rowoffset;          // Row texture offset (Y)
     uint32_t    toptexture;         // Wall textures
@@ -61,6 +66,8 @@ enum slopetype_e {
 
 // Data for a line
 struct line_t {
+    NON_ASSIGNABLE_STRUCT(line_t)
+
     vertex_t        v1;                 // X,Ys for the line ends
     vertex_t        v2;
     uint32_t        flags;              // Bit flags (ML_) for states
@@ -77,7 +84,7 @@ struct line_t {
 
 // Flags that can be applied to a line
 static constexpr uint32_t ML_BLOCKING       = 0x1;      // Line blocks all movement
-static constexpr uint32_t ML_BLOCKMONSTERS  = 0x2;      // Line blocks monster movement  
+static constexpr uint32_t ML_BLOCKMONSTERS  = 0x2;      // Line blocks monster movement
 static constexpr uint32_t ML_TWOSIDED       = 0x4;      // This line has two sides
 static constexpr uint32_t ML_DONTPEGTOP     = 0x8;      // Top texture is bottom anchored
 static constexpr uint32_t ML_DONTPEGBOTTOM  = 0x10;     // Bottom texture is bottom anchored
@@ -88,6 +95,8 @@ static constexpr uint32_t ML_MAPPED         = 0x100;    // set if allready drawn
 
 // Structure for a line segment
 struct seg_t {
+    NON_ASSIGNABLE_STRUCT(seg_t)
+
     vertex_t    v1;             // Source and dest points
     vertex_t    v2;
     angle_t     angle;          // Angle of the vector
@@ -100,7 +109,9 @@ struct seg_t {
 };
 
 // Subsector structure
-struct subsector_t {    
+struct subsector_t {
+    NON_ASSIGNABLE_STRUCT(subsector_t)
+
     sector_t*   sector;         // Pointer to parent sector
     uint32_t    numsublines;    // Number of subsector lines
     seg_t*      firstline;      // Pointer to the first line
@@ -108,6 +119,8 @@ struct subsector_t {
 
 // BSP partition line
 struct node_t {
+    NON_ASSIGNABLE_STRUCT(node_t)
+
     vector_t    Line;
     Fixed       bbox[2][BOXCOUNT];      // Bounding box for each child
     void*       Children[2];            // If low bit is set then it's a subsector

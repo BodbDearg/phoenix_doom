@@ -2,7 +2,7 @@
 
 #include "Burger.h"
 
-ammotype_e gWeaponAmmos[NUMWEAPONS] = {  
+ammotype_e gWeaponAmmos[NUMWEAPONS] = {
     am_noammo,      // Fists
     am_clip,        // Pistol
     am_shell,       // Shotgun
@@ -13,7 +13,7 @@ ammotype_e gWeaponAmmos[NUMWEAPONS] = {
     am_noammo       // Chainsaw
 };
 
-uint32_t gMaxAmmo[NUMAMMO] = { 
+uint32_t gMaxAmmo[NUMAMMO] = {
     200,
     50,
     300,

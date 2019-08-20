@@ -5,7 +5,7 @@
 // TODO: move elsewhere
 extern void DrawARect(const uint32_t x, const uint32_t y, const uint32_t width, const uint32_t height, const uint16_t color) noexcept;
 
-// Input handlers 
+// Input handlers
 static constexpr uint32_t PadDown       = 0x80000000;
 static constexpr uint32_t PadUp         = 0x40000000;
 static constexpr uint32_t PadRight      = 0x20000000;
@@ -23,6 +23,6 @@ static constexpr uint32_t PadXRight     = 0x00080000;
 
 extern uint32_t ReadJoyButtons(uint32_t Which) noexcept;
 
-// Misc routines 
+// Misc routines
 extern void LongWordToAscii(uint32_t Input, char* AsciiPtr) noexcept;
 extern uint32_t SaveAFile(const char* FileName, void* data, uint32_t Length) noexcept;

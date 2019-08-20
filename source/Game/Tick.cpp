@@ -30,167 +30,134 @@
 #define PROFILE_RENDER 1
 
 struct thinker_t {
-    thinker_t* next;
-    thinker_t* prev;
-    void (*function)(thinker_t*);
+    thinker_t*      next;
+    thinker_t*      prev;
+    ThinkerFunc     function;
 };
 
 static uint32_t     gTimeMark1;         // Timer for ticks
 static uint32_t     gTimeMark2;         // Timer for ticks
 static uint32_t     gTimeMark4;         // Timer for ticks
 static thinker_t    gThinkerCap;        // Both the head and tail of the thinker list
-static bool         gRefreshDrawn;      // Used to refresh "Paused"
+static bool         gbRefreshDrawn;     // Used to refresh "Paused"
 
 mobj_t  gMObjHead;
-bool    gTick4;
-bool    gTick2;
-bool    gTick1;
-bool    gGamePaused;
+bool    gbTick4;
+bool    gbTick2;
+bool    gbTick1;
+bool    gbGamePaused;
 
-/**********************************
-
-    Remove a thinker structure from the linked list and from
-    memory.
-
-**********************************/
-
-static void RemoveMeThink(thinker_t* Current)
-{
-    thinker_t *Next;
-    thinker_t *Prev;
-    --Current;                  // Index to the REAL pointer
-    Next = Current->next;
-    Prev = Current->prev;
-    Next->prev = Prev;          // Unlink it
-    Prev->next = Next;
-    MemFree(Current);           // Release the memory
+//----------------------------------------------------------------------------------------------------------------------
+// Remove a thinker structure from the linked list and from memory.
+//----------------------------------------------------------------------------------------------------------------------
+static void RemoveMeThink(thinker_t& thinker) noexcept {
+    thinker_t* const pActualThinker = &thinker - 1;     // Index to the REAL pointer
+    thinker_t* const pNext = pActualThinker->next;
+    thinker_t* const pPrev = pActualThinker->prev;
+    ASSERT(pNext);
+    ASSERT(pPrev);
+    pNext->prev = pPrev;            // Unlink it
+    pPrev->next = pNext;
+    MemFree(pActualThinker);        // Release the memory
 }
 
-/**********************************
+//----------------------------------------------------------------------------------------------------------------------
+// Init the mobj list and the thinker list.
+// I use a circular linked list with a mobjhead and thinkercap structure used only as an anchor point.
+// These header structures are not used in actual gameplay, only for a referance point.
+// If this is the first time through (!thinkercap.next) then just init the vars, else follow the memory chain and
+// dispose of the memory.
+//----------------------------------------------------------------------------------------------------------------------
+void InitThinkers() noexcept {
+    ResetPlats();           // Reset the platforms
+    ResetCeilings();        // Reset the ceilings
 
-    Init the mobj list and the thinker list
-    I use a circular linked list with a mobjhead and thinkercap
-    structure used only as an anchor point. These header structures
-    are not used in actual gameplay, only for a referance point.
-    If this is the first time through (!thinkercap.next) then just
-    init the vars, else follow the memory chain and dispose of the
-    memory.
-
-**********************************/
-void InitThinkers()
-{
-    ResetPlats();               // Reset the platforms
-    ResetCeilings();            // Reset the ceilings
-    
-    if (gMObjHead.next) {    // Initialized before?
-        mobj_t *m,*NextM;
-        m=gMObjHead.next;
-        while (m!=&gMObjHead) {     // Any player object
-            NextM = m->next;        // Get the next record
-            MemFree(m);             // Delete the object from the list
-            m=NextM;
+    if (gMObjHead.next) {   // Initialized before?
+        mobj_t* pMObj = gMObjHead.next;
+        while (pMObj != &gMObjHead) {                   // Any player object
+            mobj_t* const pNextMObj = pMObj->next;      // Get the next record
+            MemFree(pMObj);                             // Delete the object from the list
+            pMObj = pNextMObj;
         }
     }
-    
+
     if (gThinkerCap.next) {
-        thinker_t *t,*NextT;
-        t = gThinkerCap.next;
-        while (t!=&gThinkerCap) {   // Is there a think struct here?
-            NextT = t->next;
-            MemFree(t);             // Delete it from memory
-            t = NextT;
+        thinker_t* pThinker = gThinkerCap.next;
+        while (pThinker != &gThinkerCap) {                      // Is there a think struct here?
+            thinker_t* const pNextThinker = pThinker->next;
+            MemFree(pThinker);                                  // Delete it from memory
+            pThinker = pNextThinker;
         }
     }
-    
+
     gThinkerCap.prev = gThinkerCap.next  = &gThinkerCap;    // Loop around
     gMObjHead.next = gMObjHead.prev = &gMObjHead;           // Loop around
 }
 
-/**********************************
+//----------------------------------------------------------------------------------------------------------------------
+// Adds a new thinker at the end of the list.
+// This way, I can get my code executed before the think execute routine finishes.
+//----------------------------------------------------------------------------------------------------------------------
+void* AddThinker(const ThinkerFunc funcProc, const uint32_t memSize) noexcept {
+    const uint32_t allocSize = memSize + sizeof(thinker_t);         // Add size for the thinker prestructure
+    thinker_t* const pThinker = (thinker_t*) MemAlloc(allocSize);   // Get memory
+    memset(pThinker, 0, allocSize);                                 // Blank it out
 
-    Adds a new thinker at the end of the list, this way,
-    I can get my code executed before the think execute routine
-    finishes.
+    thinker_t* const pPrevLastThinker = gThinkerCap.prev;   // Get the last thinker in the list
+    ASSERT(pPrevLastThinker);
 
-**********************************/
-void* AddThinker(ThinkerFunc FuncProc, uint32_t MemSize)
-{
-    thinker_t *Prev;
-    thinker_t *thinker;
-    
-    MemSize += sizeof(thinker_t);               // Add size for the thinker prestructure
-    thinker = (thinker_t*) MemAlloc(MemSize);   // Get memory
-    memset(thinker,0,MemSize);                  // Blank it out
-    Prev = gThinkerCap.prev;                    // Get the last thinker in the list
-    thinker->next = &gThinkerCap;               // Mark as last entry in list
-    thinker->prev = Prev;                       // Set prev link to final entry
-    thinker->function = FuncProc;
-    Prev->next = thinker;                       // Next link to the new link
-    gThinkerCap.prev = thinker;                 // Mark the reverse link
-    return thinker+1;                           // Index AFTER the thinker structure
+    pThinker->next = &gThinkerCap;                          // Mark as last entry in list
+    pThinker->prev = pPrevLastThinker;                      // Set prev link to final entry
+    pThinker->function = funcProc;
+    pPrevLastThinker->next = pThinker;                      // Next link to the new link
+
+    gThinkerCap.prev = pThinker;    // Mark the reverse link
+    return pThinker + 1;            // Index AFTER the thinker structure
 }
 
-/**********************************
-
-    Deallocation is lazy -- it will not actually be freed until its
-    thinking turn comes up
-
-**********************************/
-void RemoveThinker(void* thinker)
-{
-    thinker = ((thinker_t *)thinker)-1;                 // Index to the true structure
-    ((thinker_t*)thinker)->function = RemoveMeThink;    // Delete the structure on the next pass
+//----------------------------------------------------------------------------------------------------------------------
+// Deallocation is lazy - it will not actually be freed until its thinking turn comes up
+//----------------------------------------------------------------------------------------------------------------------
+void RemoveThinker(void* const pThinker) noexcept {
+    thinker_t* const pActualThinker = ((thinker_t*) pThinker) - 1;      // Index to the true structure
+    pActualThinker->function = RemoveMeThink;                           // Delete the structure on the next pass
 }
 
-/**********************************
-
-    Modify a thinker's code function
-    
-**********************************/
-
-void ChangeThinkCode(void* thinker, ThinkerFunc FuncProc)
-{
-    thinker = ((thinker_t *)thinker)-1;
-    ((thinker_t *)thinker)->function = FuncProc;
+//----------------------------------------------------------------------------------------------------------------------
+// Modify a thinker's code function
+//----------------------------------------------------------------------------------------------------------------------
+void ChangeThinkCode(void* const pThinker, const ThinkerFunc funcProc) noexcept {
+    thinker_t* const pActualThinker = ((thinker_t*) pThinker) - 1;
+    pActualThinker->function = funcProc;
 }
 
-/**********************************
+//----------------------------------------------------------------------------------------------------------------------
+// Execute all the think logic in the object list
+//----------------------------------------------------------------------------------------------------------------------
+void RunThinkers() noexcept {
+    thinker_t* pCurThinker = gThinkerCap.next;  // Get the first entry
 
-    Execute all the think logic in the object list
+    while (pCurThinker != &gThinkerCap) {                       // Looped back?        
+        thinker_t* const pNextThinker = pCurThinker->next;      // Get the next entry (In case of change or removal)
 
-**********************************/
-
-void RunThinkers()
-{
-    thinker_t *currentthinker;
-    thinker_t *NextThinker;
-
-    currentthinker = gThinkerCap.next;       // Get the first entry
-    while (currentthinker != &gThinkerCap) { // Looped back?
-        // Get the next entry (In case of change or removal)
-        NextThinker = currentthinker->next;
-        if (currentthinker->function) {     // Is the function ptr ok?
-            // Call the think logic
-            // Note : It may be a call to a think remove routine!
-            currentthinker->function(currentthinker+1);
+        // Call the think logic if present. Note: it may be a call to a think remove routine!
+        if (pCurThinker->function) {            
+            pCurThinker->function(pCurThinker[1]);
         }
-        currentthinker = NextThinker;   // Go to the next entry
+
+        pCurThinker = pNextThinker;     // Go to the next entry
     }
 }
 
-/**********************************
+//----------------------------------------------------------------------------------------------------------------------
+// Check the cheat keys... :)
+//----------------------------------------------------------------------------------------------------------------------
+static void CheckCheats() noexcept {
+    if (((gNewJoyPadButtons & PadStart) != 0) && ((gPlayer.AutomapFlags & AF_OPTIONSACTIVE) == 0)) {    // Pressed pause?
+        if (gbGamePaused || ((gJoyPadButtons & gPadUse) == 0)) {
+            gbGamePaused = (!gbGamePaused);
 
-    Check the cheat keys... :)
-
-**********************************/
-
-static void CheckCheats()
-{
-    if ((gNewJoyPadButtons & PadStart) && !(gPlayer.AutomapFlags & AF_OPTIONSACTIVE)) {     // Pressed pause?
-        if (gGamePaused || !(gJoyPadButtons&gPadUse)) {
-            gGamePaused ^= 1;   // Toggle the pause flag
-
-            if (gGamePaused) {
+            if (gbGamePaused) {
                 audioPauseSound();
                 audioPauseMusic();
             } else {
@@ -201,21 +168,15 @@ static void CheckCheats()
     }
 }
 
-/**********************************
-
-    Code that gets executed every game frame
-
-**********************************/
+//----------------------------------------------------------------------------------------------------------------------
+// Code that gets executed every game frame
+//----------------------------------------------------------------------------------------------------------------------
 gameaction_e P_Ticker() noexcept {
-    player_t *pl;
-
-    // wait for refresh to latch all needed data before
-    // running the next tick
-
+    // Wait for refresh to latch all needed data before running the next tick
     gGameAction = ga_nothing;   // Game in progress
-    gTick1 = false;             // Reset the flags
-    gTick2 = false;
-    gTick4 = false;
+    gbTick1 = false;            // Reset the flags
+    gbTick2 = false;
+    gbTick4 = false;
 
     ++gTimeMark1;   // Timer for ticks
     ++gTimeMark2;
@@ -223,58 +184,57 @@ gameaction_e P_Ticker() noexcept {
 
     if (gTimeMark1 >= TICKSPERSEC) {    // Now see if the time has passed...
         gTimeMark1 -= TICKSPERSEC;
-        gTick1 = true;
+        gbTick1 = true;
     }
 
     if (gTimeMark2 >= TICKSPERSEC / 2) {
         gTimeMark2 -= TICKSPERSEC / 2;
-        gTick2 = true;
+        gbTick2 = true;
     }
 
     if (gTimeMark4 >= TICKSPERSEC / 4) {
         gTimeMark4 -= TICKSPERSEC / 4;
-        gTick4 = true;
+        gbTick4 = true;
     }
 
     CheckCheats();      // Handle pause and cheats
 
-// Do option screen processing and control reading
-
-    if (gGamePaused) {       // If in pause mode, then don't do any game logic
+    // If in pause mode, then don't do any game logic
+    if (gbGamePaused) {
         return gGameAction;
     }
 
-// Run player actions
+    // Run player actions
+    player_t& player = gPlayer;
 
-    pl = &gPlayer;
-    
-    if (pl->playerstate == PST_REBORN) {    // Restart player?
-        G_DoReborn();       // Poof!!
+    if (player.playerstate == PST_REBORN) {     // Restart player?
+        G_DoReborn();                           // Poof!!
     }
-    AM_Control(*pl);    // Handle automap controls
-    O_Control(pl);      // Handle option controls
-    P_PlayerThink(pl);  // Process player in the game
-        
-    if (!(gPlayer.AutomapFlags & AF_OPTIONSACTIVE)) {
-        RunThinkers();      // Handle logic for doors, walls etc...
-        P_RunMobjBase();    // Handle critter think logic
+
+    AM_Control(player);         // Handle automap controls
+    O_Control(&player);         // Handle option controls
+    P_PlayerThink(player);      // Process player in the game
+
+    if ((gPlayer.AutomapFlags & AF_OPTIONSACTIVE) == 0) {
+        RunThinkers();          // Handle logic for doors, walls etc...
+        P_RunMobjBase();        // Handle critter think logic
     }
-    P_UpdateSpecials(); // Handle wall and floor animations
-    ST_Ticker();        // Update status bar
-    return gGameAction; // may have been set to ga_died, ga_completed,
-                        // or ga_secretexit
+
+    P_UpdateSpecials();     // Handle wall and floor animations
+    ST_Ticker();            // Update status bar
+    return gGameAction;     // May have been set to 'ga_died', 'ga_completed', or 'ga_secretexit'
 }
 
-//--------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 // Draw current display
-//--------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 void P_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
     #if PROFILE_RENDER
         const uint64_t clocksPerSecond = SDL_GetPerformanceFrequency();
         const uint64_t drawStartClock = SDL_GetPerformanceCounter();
     #endif
 
-    if (gGamePaused && gRefreshDrawn) {
+    if (gbGamePaused && gbRefreshDrawn) {
         DrawPlaque(rPAUSED);            // Draw 'Paused' plaque
         Video::endFrame(bPresent, bSaveFrameBuffer);
     } else if (gPlayer.AutomapFlags & AF_OPTIONSACTIVE) {
@@ -282,19 +242,19 @@ void P_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
         Renderer::drawPlayerView();                     // Render the 3D view
         ST_Drawer();                                    // Draw the status bar
         O_Drawer(bPresent, bSaveFrameBuffer);           // Draw the console handler
-        gRefreshDrawn = false;
+        gbRefreshDrawn = false;
     } else if (gPlayer.AutomapFlags & AF_ACTIVE) {
         Video::debugClear();
         AM_Drawer();                                    // Draw the automap
         ST_Drawer();                                    // Draw the status bar
         Video::endFrame(bPresent, bSaveFrameBuffer);
-        gRefreshDrawn = true;
+        gbRefreshDrawn = true;
     } else {
         Video::debugClear();
         Renderer::drawPlayerView();                     // Render the 3D view
         ST_Drawer();                                    // Draw the status bar
         Video::endFrame(bPresent, bSaveFrameBuffer);
-        gRefreshDrawn = true;
+        gbRefreshDrawn = true;
     }
 
     #if PROFILE_RENDER
@@ -305,9 +265,9 @@ void P_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
     #endif
 }
 
-//--------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 // Start a game
-//--------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 void P_Start() noexcept {
     gTimeMark1 = 0;  // Init the static timers
     gTimeMark2 = 0;
@@ -323,9 +283,9 @@ void P_Start() noexcept {
     S_StartSong(Song_e1m1 - 1 + gGameMap);
 }
 
-//--------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 // Shut down a game
-//--------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 void P_Stop() noexcept {
     S_StopSong();
     ST_Stop();              // Release the status bar memory

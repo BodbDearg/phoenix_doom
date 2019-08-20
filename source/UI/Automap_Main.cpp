@@ -52,7 +52,7 @@ typedef enum {      // Cheat enum
 } cheat_e;
 
 // order should mirror cheat_e
-static char CheatStrings[ch_maxcheats][10] = { 
+static char CheatStrings[ch_maxcheats][10] = {
     {"SEEALLUAC"},      // Allmap cheat
     {"SEERUBBLE"},      // Things cheat
     {"URABADASS"},      // God mode
@@ -79,7 +79,7 @@ static char CheatLetter[CHEATLETTERS + 1] = { "ABCUDLRSE" };
 static char CurrentCheat[9];    // Current cheat string
 
 //--------------------------------------------------------------------------------------------------
-// Multiply a map coord and a fixed point scale value and return the INTEGER result. 
+// Multiply a map coord and a fixed point scale value and return the INTEGER result.
 // I assume that the scale cannot exceed 1.0 and the map coord has no fractional part.
 // This way I can use a 16 by 16 mul with 32 bit result (Single mul) to speed up the code.
 //--------------------------------------------------------------------------------------------------
@@ -137,7 +137,7 @@ static cheat_e AM_CheckCheat(uint32_t NewButtons) noexcept {
     c = 0;
     do {
         if (NewButtons & codes[c]) {        // Key press?
-            
+
             // Shift the entire string over 1 char
             {
                 char*EndPtr;
@@ -181,7 +181,7 @@ static void ClipPixel(const uint32_t x, const uint32_t y, const uint16_t color) 
 }
 
 //--------------------------------------------------------------------------------------------------
-// Draw a line in the automap, I use a classic Bresanhem line algorithm and call a routine to clip 
+// Draw a line in the automap, I use a classic Bresanhem line algorithm and call a routine to clip
 // to the visible bounds. All x and y's assume a coordinate system where 0,0 is the CENTER of the
 // visible screen!
 //
@@ -202,7 +202,7 @@ static void DrawLine(
     const int32_t xEnd = x2 + 160;
     int32_t y = 80 - y1;
     const int32_t yEnd = 80 - y2;
-   
+
     // Draw the initial pixel
     ClipPixel(x, y, color);
 
@@ -257,7 +257,7 @@ static void DrawLine(
 // Called by P_PlayerThink before any other player processing.
 // Button bits can be eaten by clearing them in JoyPadButtons.
 //
-// Since I am making joypad events disappear and I want to track joypad downs, I need to cache 
+// Since I am making joypad events disappear and I want to track joypad downs, I need to cache
 // the UNFILTERED JoyPadButtons and pass through a filtered NewPadButtons and JoyPadButtons.
 //--------------------------------------------------------------------------------------------------
 void AM_Control(player_t& player) noexcept {
@@ -305,7 +305,7 @@ void AM_Control(player_t& player) noexcept {
         case ch_idkfa: {
             uint32_t i = 0;
             uint32_t j = true;
-            
+
             do {
                 if (i == 3) {               // 0-2 are keys, 3-5 are skulls
                     j = false;
@@ -337,7 +337,7 @@ void AM_Control(player_t& player) noexcept {
             break;
     }
 
-    if (gFollowMode) {                          // Test here to make SURE I get called at least once       
+    if (gFollowMode) {                          // Test here to make SURE I get called at least once
         mobj_t* const pMapObj = player.mo;
         player.automapx = pMapObj->x;           // Mark the automap position
         player.automapy = pMapObj->y;
@@ -503,7 +503,7 @@ void AM_Drawer() noexcept {
             if (pMapObj != pPlayerMapObj) {     // Not the player?
                 const int32_t x1 = MulByMapScale(pMapObj->x-ox);
                 int32_t y1 = MulByMapScale(pMapObj->y-oy);
-                
+
                 const int32_t x2 = x1 - objScale;       // Create the triangle
                 const int32_t y2 = y1 + objScale;
                 const int32_t nx3 = x1 + objScale;

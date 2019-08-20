@@ -78,3 +78,11 @@
 // Mark a variable as unused to avoid warnings
 #define MARK_UNUSED(variable)\
     (void) variable
+
+ // Macro that declares a default constructor and copy constructor of the given type and which disallows all forms of assignment.
+ // Intended to be used for map data structs that are housed in containers, which we want to allow default and copy construct
+ // operations for but which we want to disallow assignment (to prevent accidental assignment).
+ #define NON_ASSIGNABLE_STRUCT(Type)\
+    Type() noexcept = default;\
+    Type(const Type& other) noexcept = default;\
+    Type& operator = (const Type& other) noexcept = delete;

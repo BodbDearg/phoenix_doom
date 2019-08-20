@@ -28,7 +28,7 @@ enum playerstate_e {
 };
 
 // Current ammo type being used
-enum ammotype_e : uint8_t {      
+enum ammotype_e : uint8_t {
     am_clip,        // Pistol / chaingun
     am_shell,       // shotgun
     am_cell,        // BFG
@@ -73,7 +73,9 @@ enum weapontype_e : uint8_t {
 };
 
 // Player's current game state
-struct player_t {   
+struct player_t {
+    NON_ASSIGNABLE_STRUCT(player_t)
+
     mobj_t*         mo;                         // Pointer to sprite object
     uint32_t        health;                     // only used between levels, mo->health is used during levels
     uint32_t        armorpoints;                // Amount of armor

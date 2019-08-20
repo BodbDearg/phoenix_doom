@@ -3,6 +3,7 @@
 #include "Base/Endian.h"
 #include "Base/Macros.h"
 #include "Base/Mem.h"
+#include "Base/Resource.h"
 #include "CelUtils.h"
 #include "Game/DoomRez.h"
 #include "Game/Resources.h"
@@ -26,7 +27,7 @@ static std::vector<void*>   gTmpPtrList;
 //--------------------------------------------------------------------------------------------------
 struct SpriteImageHeader {
     int16_t     leftOffset;     // Where the first column of the sprite gets drawn, in pixels to the left of it's position.
-    int16_t     topOffset;      // Where the first row of the sprite gets drawn, in pixels above it's position.    
+    int16_t     topOffset;      // Where the first row of the sprite gets drawn, in pixels above it's position.
 };
 
 //--------------------------------------------------------------------------------------------------
@@ -162,7 +163,9 @@ const Sprite* load(const uint32_t resourceNum) noexcept {
     // Otherwise load the raw sprite data and then determine the number of sprite frames defined for this resource by
     // reading the offset to the data for the first sprite frame. This offset tells us the size of the 'uint32_t' frame
     // offsets array at the start of the data, and thus the number of frames:
-    const std::byte* const pSpriteData = (const std::byte*) Resources::loadData(resourceNum);
+    const Resource* const pSpriteResouce = Resources::load(resourceNum);
+    const uint32_t spriteDataSize = pSpriteResouce->size;
+    const std::byte* const pSpriteData = (const std::byte*) pSpriteResouce->pData;
     const uint32_t* const pFrameOffsets = (const uint32_t*) pSpriteData;
 
     const uint32_t firstFrameOffset = byteSwappedU32(pFrameOffsets[0]);
@@ -205,7 +208,7 @@ const Sprite* load(const uint32_t resourceNum) noexcept {
                 const uint32_t frameAngleOffsetWithFlags = frameOffset + byteSwappedU32(pFrameAngleOffsets[angle]);
                 const uint32_t frameAngleOffset = frameAngleOffsetWithFlags & REMOVE_SPR_OFFSET_FLAGS_MASK;
                 const uint32_t imageDataOffset = frameAngleOffset + sizeof(SpriteImageHeader);
-                
+
                 SpriteImageHeader header = readSpriteFrameHeader(pSpriteData + frameAngleOffset);
 
                 SpriteFrameAngle& frameAngle = frame.angles[angle];
@@ -225,7 +228,7 @@ const Sprite* load(const uint32_t resourceNum) noexcept {
             const uint32_t imageDataOffset = frameOffset + sizeof(SpriteImageHeader);
 
             SpriteImageHeader header = readSpriteFrameHeader(pSpriteData + frameOffset);
-         
+
             SpriteFrameAngle& frameAngle = frame.angles[0];
             frameAngle.pTexture = (uint16_t*)(uintptr_t) imageDataOffset;       // Hold the desired image offset for now
             frameAngle.width = 0;                                               // Unknown until we load the image
@@ -252,11 +255,26 @@ const Sprite* load(const uint32_t resourceNum) noexcept {
 
     // Now start loading the data for all images
     for (auto iter = decodedImages.begin(), endIter = decodedImages.end(); iter != endIter; ++iter) {
+        // Figure out the size of the data for the image to decode.
+        // Either use the offset of the next image to determine this or the offset of the entire sprite data's end:
         const uint32_t imageDataOffset = iter->first;
         DecodedImage& decodedImage = iter->second;
 
+        uint32_t imageDataSize;
+        auto nextIter = iter;
+        ++nextIter;
+
+        if (nextIter != endIter) {
+            const uint32_t nextImageOffset = nextIter->first;
+            imageDataSize = nextImageOffset - imageDataOffset;
+        } else {
+            imageDataSize = spriteDataSize - imageDataOffset;
+        }
+        
+        // Decode the image
         CelUtils::decodeDoomCelSprite(
             (const CelControlBlock*)(pSpriteData + imageDataOffset),
+            imageDataSize,
             &decodedImage.pPixels,
             &decodedImage.width,
             &decodedImage.height

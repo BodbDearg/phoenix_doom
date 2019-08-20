@@ -18,8 +18,8 @@
 // that blocks the midpoint of the shootdiv will be hit.
 //===================
 
-line_t*     gShootLine;
-mobj_t*     gShootMObj;
+line_t*     gpShootLine;
+mobj_t*     gpShootMObj;
 Fixed       gShootSlope;        // between aimtop and aimbottom
 Fixed       gShootX;
 Fixed       gShootY;
@@ -54,19 +54,19 @@ static bool PA_CrossBSPNode(const node_t* pNode) {
         const subsector_t* const pSubSector = reinterpret_cast<const subsector_t*>(getActualBspNodePtr(pNode));
         return PA_CrossSubsector(pSubSector);
     }
-    
+
     // Decide which side the start point is on and cross the starting side
-    const uint32_t side = PointOnVectorSide(gShootDiv.x, gShootDiv.y, &pNode->Line);
-    
+    const uint32_t side = PointOnVectorSide(gShootDiv.x, gShootDiv.y, pNode->Line);
+
     if (!PA_CrossBSPNode((const node_t*) pNode->Children[side])) {
         return false;
     }
 
     // The partition plane is crossed here
-    if (side == PointOnVectorSide(gShootX2, gShootY2, &pNode->Line)) {
+    if (side == PointOnVectorSide(gShootX2, gShootY2, pNode->Line)) {
         return true;    // The line doesn't touch the other side
     }
-    
+
     // Cross the ending side
     return PA_CrossBSPNode((const node_t*) pNode->Children[side ^ 1]);
 }
@@ -83,10 +83,10 @@ void P_Shoot2()
     mobj_t      *t1;
     unsigned    angle;
 
-    t1 = gShooter;
+    t1 = gpShooter;
 
-    gShootLine = 0;
-    gShootMObj = 0;
+    gpShootLine = nullptr;
+    gpShootMObj = nullptr;
 
     angle = gAttackAngle >> ANGLETOFINESHIFT;
 
@@ -112,17 +112,17 @@ void P_Shoot2()
     PA_CrossBSPNode(gpBSPTreeRoot);
 
     // Check the last intercept if needed
-    if (!gShootMObj) {
+    if (!gpShootMObj) {
         PA_DoIntercept(0, false, FRACUNIT);
     }
 
     // post process
-    if (gShootMObj)
+    if (gpShootMObj)
         return;
 
-    if (!gShootLine)
+    if (!gpShootLine)
         return;
-    
+
     // Calculate the intercept point for the first line hit
     //
     // position a bit closer
@@ -185,9 +185,9 @@ bool PA_ShootLine(line_t* li, Fixed interceptfrac)
 
     if ( !(li->flags & ML_TWOSIDED) )
     {
-        if (!gShootLine)
+        if (!gpShootLine)
         {
-            gShootLine = li;
+            gpShootLine = li;
             gFirstLineFrac = interceptfrac;
         }
         gOldFrac = 0;   // don't shoot anything past this
@@ -219,8 +219,8 @@ bool PA_ShootLine(line_t* li, Fixed interceptfrac)
     if (li->frontsector->floorheight != li->backsector->floorheight) {
         slope = fixedDiv(openbottom - gShootZ, dist);
 
-        if (slope >= gAimMidSlope && !gShootLine) {
-            gShootLine = li;
+        if (slope >= gAimMidSlope && !gpShootLine) {
+            gpShootLine = li;
             gFirstLineFrac = interceptfrac;
         }
 
@@ -232,8 +232,8 @@ bool PA_ShootLine(line_t* li, Fixed interceptfrac)
     if (li->frontsector->ceilingheight != li->backsector->ceilingheight) {
         slope = fixedDiv(opentop - gShootZ, dist);
 
-        if (slope <= gAimMidSlope && !gShootLine) {
-            gShootLine = li;
+        if (slope <= gAimMidSlope && !gpShootLine) {
+            gpShootLine = li;
             gFirstLineFrac = interceptfrac;
         }
 
@@ -244,7 +244,7 @@ bool PA_ShootLine(line_t* li, Fixed interceptfrac)
 
     if (gAimTopSlope <= gAimBottomSlope)
         return false;       // stop
-    
+
     return true;        // shot continues
 }
 
@@ -260,7 +260,7 @@ bool PA_ShootThing(mobj_t* th, Fixed interceptfrac) {
     Fixed       dist;
     Fixed       thingaimtopslope, thingaimbottomslope;
 
-    if (th == gShooter)
+    if (th == gpShooter)
         return true;        // can't shoot self
     if (!(th->flags&MF_SHOOTABLE))
         return true;        // corpse or something
@@ -287,7 +287,7 @@ bool PA_ShootThing(mobj_t* th, Fixed interceptfrac) {
 
     // shoot midway in the visible part of the thing
     gShootSlope = (thingaimtopslope+thingaimbottomslope)/2;
-    gShootMObj = th;
+    gpShootMObj = th;
 
     // position a bit closer
     frac = interceptfrac - fixedDiv(10 * FRACUNIT, gAttackRange);

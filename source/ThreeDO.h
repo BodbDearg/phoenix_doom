@@ -3,9 +3,9 @@
 #include <cstdint>
 
 void ThreeDOMain() noexcept;
-void WritePrefsFile();
-void ClearPrefsFile();
-void ReadPrefsFile();
+void WritePrefsFile() noexcept;
+void ClearPrefsFile() noexcept;
+void ReadPrefsFile() noexcept;
 
 // TODO: MOVE ELSEWHERE
-void DrawPlaque(uint32_t RezNum);
+void DrawPlaque(uint32_t RezNum) noexcept;

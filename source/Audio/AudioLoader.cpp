@@ -71,7 +71,7 @@ public:
     inline void ensureBytesLeft(const uint32_t numBytes) THROWS {
         if (!hasBytesLeft(numBytes)) {
             throw MemStreamException();
-        }        
+        }
     }
 
     inline void consume(const uint32_t numBytes) THROWS {
@@ -108,7 +108,7 @@ public:
     inline void align(const uint32_t numBytes) THROWS {
         if (mCurByteIdx >= mSize)
             return;
-        
+
         if (numBytes >= 2) {
             const uint32_t modulus = mCurByteIdx % numBytes;
 
@@ -177,8 +177,8 @@ static const IffChunk* findIffChunkWithId(const IffId id, const std::vector<IffC
 }
 
 static const IffChunk* findAiffFormChunk(const std::vector<IffChunk>& chunks) noexcept {
-    for (const IffChunk& chunk : chunks) {        
-        if (chunk.id == ID_FORM && chunk.dataSize >= sizeof(uint32_t)) {            
+    for (const IffChunk& chunk : chunks) {
+        if (chunk.id == ID_FORM && chunk.dataSize >= sizeof(uint32_t)) {
             const IffId formType = ((const uint32_t*) chunk.pData)[0];
 
             if (formType == ID_AIFF || formType == ID_AIFC)
@@ -215,9 +215,9 @@ static double readBigEndianExtendedFloat(MemStream& stream) THROWS {
     // Get whether there is a negative sign and read the exponent
     bool sign = ((bytes[9] & 0x80) != 0);
     const uint16_t unbiasedExponent = (
-        ((uint16_t(bytes[9]) & uint16_t(0x7F)) << 8) | uint16_t(bytes[8])) + 
+        ((uint16_t(bytes[9]) & uint16_t(0x7F)) << 8) | uint16_t(bytes[8])) +
         (integerPartSet ? 0 : -1);
-    
+
     const int16_t exponent = int16_t(unbiasedExponent) - int16_t(0x3FFFU);
 
     // Read the fractional bits (63-bits)
@@ -236,12 +236,10 @@ static double readBigEndianExtendedFloat(MemStream& stream) THROWS {
     if (exponent > 1023) {
         if (sign) {
             return std::numeric_limits<double>::infinity();
-        }
-        else {
+        } else {
             return -std::numeric_limits<double>::infinity();
         }
-    }
-    else if (exponent < -1022) {
+    } else if (exponent < -1022) {
         return 0.0;
     }
 
@@ -252,7 +250,7 @@ static double readBigEndianExtendedFloat(MemStream& stream) THROWS {
         (fraction >> 12)
     );
 
-    const double doubleVal = reinterpret_cast<const double&>(doubleBits);    
+    const double doubleVal = reinterpret_cast<const double&>(doubleBits);
     return doubleVal;
 }
 
@@ -265,7 +263,7 @@ static bool readRawSoundData(MemStream& stream, AudioData& audioData) THROWS {
 
     const uint32_t bytesPerSample = (audioData.bitDepth == 8) ? 1 : 2;
     const uint32_t soundDataSize = bytesPerSample * audioData.numSamples * audioData.numChannels;
-    
+
     audioData.allocBuffer(soundDataSize);
     stream.readBytes(audioData.pBuffer, soundDataSize);
     return true;
@@ -274,9 +272,9 @@ static bool readRawSoundData(MemStream& stream, AudioData& audioData) THROWS {
 //--------------------------------------------------------------------------------------------------
 // Reads sound data in the compressed 'SDX2' (Square-Root-Delta) format that the 3DO used.
 // This format is a little obscure and hard to find information about, however I did manage to find
-// some decoding code on the internet and could 
+// some decoding code on the internet and could
 //--------------------------------------------------------------------------------------------------
-static bool readSdx2CompressedSoundData(MemStream& stream, AudioData& audioData) THROWS {    
+static bool readSdx2CompressedSoundData(MemStream& stream, AudioData& audioData) THROWS {
     // For SDX2 the bit rate MUST be 16-bit!
     if (audioData.bitDepth != 16)
         return false;
@@ -284,7 +282,7 @@ static bool readSdx2CompressedSoundData(MemStream& stream, AudioData& audioData)
     // Only allowing up to 2 channel sound for now
     if (audioData.numChannels != 1 && audioData.numChannels != 2)
         return false;
-    
+
     // Allocate room for the buffer
     const uint32_t bufferSize = audioData.numSamples * audioData.numChannels * sizeof(uint16_t);
     audioData.allocBuffer(bufferSize);
@@ -293,7 +291,7 @@ static bool readSdx2CompressedSoundData(MemStream& stream, AudioData& audioData)
     const uint32_t numSamples = audioData.numSamples;
     const uint16_t numChannels = audioData.numChannels;
     const uint32_t numChannelSamples = numSamples * numChannels;
-    
+
     uint16_t* pOutput = reinterpret_cast<uint16_t*>(audioData.pBuffer);
     uint16_t* const pEndOutput = pOutput + numChannelSamples;
 
@@ -310,7 +308,7 @@ static bool readSdx2CompressedSoundData(MemStream& stream, AudioData& audioData)
             // Get both the left and right compressed samples (read both at the same time, then separate)
             const int8_t sampleL8 = pInput[0];
             const int8_t sampleR8 = pInput[1];
-            
+
             // Compute this sample's actual value via the SDX2 encoding mechanism
             int16_t sampleL16 = (int16_t(sampleL8) * int16_t(std::abs(sampleL8))) << int16_t(1);
             int16_t sampleR16 = (int16_t(sampleR8) * int16_t(std::abs(sampleR8))) << int16_t(1);
@@ -335,7 +333,7 @@ static bool readSdx2CompressedSoundData(MemStream& stream, AudioData& audioData)
         while (pOutput < pEndOutput) {
             // Get the compressed sample
             const int8_t sample8 = pInput[0];
-            
+
             // Compute this sample's actual value via the SDX2 encoding mechanism
             int16_t sample16 = (int16_t(sample8) * int16_t(std::abs(sample8))) << int16_t(1);
             sample16 += prevSample * int16_t(sample8 & int8_t(0x01));
@@ -363,7 +361,7 @@ static bool readFormChunk(const IffChunk& formChunk, AudioData& audioData) THROW
 
     if (formType != ID_AIFF && formType != ID_AIFC)
         return false;
-    
+
     const bool bIsAifc = (formType == ID_AIFC);
 
     // Read sub-chunks
@@ -380,7 +378,7 @@ static bool readFormChunk(const IffChunk& formChunk, AudioData& audioData) THROW
 
     if (!pCommonChunk || !pSoundChunk)
         return false;
-    
+
     // Read the file format info in the common chunk
     uint16_t numChannels;
     uint32_t numSamples;
@@ -412,7 +410,7 @@ static bool readFormChunk(const IffChunk& formChunk, AudioData& audioData) THROW
 
     if (bitDepth != 8 && bitDepth != 16)
         return false;
-    
+
     if (sampleRate <= 0)
         return false;
 
@@ -421,10 +419,10 @@ static bool readFormChunk(const IffChunk& formChunk, AudioData& audioData) THROW
     audioData.sampleRate = sampleRate;
     audioData.numChannels = numChannels;
     audioData.bitDepth = bitDepth;
-    
+
     // Read the actual sound data itself
     MemStream soundChunkStream = pSoundChunk->toStream();
-    
+
     if (compressionType == ID_NONE) {
         return readRawSoundData(soundChunkStream, audioData);
     }
@@ -441,9 +439,10 @@ bool AudioLoader::loadFromFile(const char* const filePath, AudioData& audioData)
     ASSERT(filePath);
     FILE* pFile = std::fopen(filePath, "rb");
 
-    if (!pFile)
+    if (!pFile) {
         return false;
-    
+    }
+
     auto closeFile = finally([&]() noexcept {
         std::fclose(pFile);
     });
@@ -456,7 +455,7 @@ bool AudioLoader::loadFromFile(const char* const filePath, AudioData& audioData)
 
     if (fileSize <= 0 || fileSize >= INT32_MAX)
         return false;
-    
+
     // Read the entire file
     std::unique_ptr<std::byte[]> fileBytes(new std::byte[fileSize]);
 

@@ -6,8 +6,8 @@ struct line_t;
 struct mobj_t;
 struct subsector_t;
 
-extern line_t*  gShootLine;
-extern mobj_t*  gShootMObj;
+extern line_t*  gpShootLine;
+extern mobj_t*  gpShootMObj;
 extern Fixed    gShootSlope;     // Between aimtop and aimbottom
 extern Fixed    gShootX;         // Location for puff/blood
 extern Fixed    gShootY;

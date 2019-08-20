@@ -62,6 +62,6 @@ static inline constexpr uint32_t convertPcTicks(const uint32_t ticks35Hz) noexce
 static inline constexpr uint32_t convertPcUintSpeed(const uint32_t speed35Hz) noexcept {
     // Get the tick count in 31.1 fixed point format by multiplying by 35/TICKSPERSEC (in 31.1 format).
     // When returning the integer answer round up if the fractional part is '.5':
-    const uint32_t speedFixed = ((speed35Hz * uint32_t(35)) << 2) / (uint32_t(TICKSPERSEC) << 1);    
+    const uint32_t speedFixed = ((speed35Hz * uint32_t(35)) << 2) / (uint32_t(TICKSPERSEC) << 1);
     return (speedFixed & 1) ? (speedFixed >> 1) + 1 : (speedFixed >> 1);
 }
