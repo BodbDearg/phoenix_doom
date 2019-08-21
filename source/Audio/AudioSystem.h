@@ -58,13 +58,20 @@ public:
     //----------------------------------------------------------------------------------------------
     // Try to play a particular audio piece with the given handle.
     // Returns the index of the voice allocated to the audio, or 'INVALID_VOICE_IDX' on failure.
+    // Optionally, you can specify to stop other instances of the same sound.
     //----------------------------------------------------------------------------------------------
     VoiceIdx play(
         const uint32_t audioDataHandle,
         const bool bLooped = false,
         const float lVolume = 1.0f,
-        const float rVolume = 1.0f
+        const float rVolume = 1.0f,
+        const bool bStopOtherInstances = false
     ) noexcept;
+
+    //----------------------------------------------------------------------------------------------
+    // Tell how many non stopped voices have the given audio data
+    //----------------------------------------------------------------------------------------------
+    uint32_t getNumVoicesWithAudioData(const uint32_t audioDataHandle) noexcept;
 
     //----------------------------------------------------------------------------------------------
     // Stop all voices in the system, a particular voice or voices with a particular sound

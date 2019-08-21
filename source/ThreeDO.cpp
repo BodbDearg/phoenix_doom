@@ -42,15 +42,15 @@ void initGameSubsystems() noexcept {
     CelImages::init();
     Video::init();
     Input::init();
-    audioInit();
-    audioLoadAllSounds();
+    Audio::init();
+    Audio::loadAllSounds();
 }
 
 //----------------------------------------------------------------------------------------------------------------------
 // Shut down various game subsystems (audio, video input etc.)
 //----------------------------------------------------------------------------------------------------------------------
 void shutdownGameSubsystems() noexcept {
-    audioShutdown();
+    Audio::shutdown();
     Input::shutdown();
     Video::shutdown();
     CelImages::shutdown();
@@ -90,8 +90,8 @@ void WritePrefsFile() noexcept {
     PrefFile[0] = PREFWORD;
     PrefFile[1] = gStartSkill;
     PrefFile[2] = gStartMap;
-    PrefFile[3] = audioGetSoundVolume();
-    PrefFile[4] = audioGetMusicVolume();
+    PrefFile[3] = Audio::getSoundVolume();
+    PrefFile[4] = Audio::getMusicVolume();
     PrefFile[5] = gControlType;
     PrefFile[6] = gMaxLevel;
     PrefFile[7] = gScreenSize;
@@ -112,8 +112,8 @@ void WritePrefsFile() noexcept {
 void ClearPrefsFile() noexcept {
     gStartSkill = sk_medium;                    // Init the basic skill level
     gStartMap = 1;                              // Only allow playing from map #1
-    audioSetSoundVolume(MAX_AUDIO_VOLUME);      // Init the sound effects volume
-    audioSetMusicVolume(MAX_AUDIO_VOLUME);      // Init the music volume
+    Audio::setSoundVolume(Audio::MAX_VOLUME);   // Init the sound effects volume
+    Audio::setMusicVolume(Audio::MAX_VOLUME);   // Init the music volume
     gControlType = 3;                           // Use basic joypad controls
     gMaxLevel = 24;                             // Only allow level 1 to select from
     gScreenSize = 0;                            // Default screen size
@@ -148,8 +148,8 @@ void ReadPrefsFile() noexcept {
 
     gStartSkill = (skill_e)PrefFile[1];
     gStartMap = PrefFile[2];
-    audioSetSoundVolume(PrefFile[3]);
-    audioSetMusicVolume(PrefFile[4]);
+    Audio::setSoundVolume(PrefFile[3]);
+    Audio::setMusicVolume(PrefFile[4]);
     gControlType = PrefFile[5];
     gMaxLevel = PrefFile[6];
     gScreenSize = PrefFile[7];

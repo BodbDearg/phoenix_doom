@@ -158,11 +158,11 @@ static void CheckCheats() noexcept {
             gbGamePaused = (!gbGamePaused);
 
             if (gbGamePaused) {
-                audioPauseSound();
-                audioPauseMusic();
+                Audio::pauseAllSounds();
+                Audio::pauseMusic();
             } else {
-                audioResumeSound();
-                audioResumeMusic();
+                Audio::resumeAllSounds();
+                Audio::resumeMusic();
             }
         }
     }

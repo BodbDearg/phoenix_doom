@@ -207,17 +207,17 @@ void O_Control(player_t* const pPlayer) noexcept {
                 // Sound volume?
                 case soundvol: {
                     if ((buttons & PadRight) != 0) {
-                        const uint32_t soundVolume = audioGetSoundVolume();
-                        if (soundVolume < MAX_AUDIO_VOLUME) {
-                            audioSetSoundVolume(soundVolume + 1);
+                        const uint32_t soundVolume = Audio::getSoundVolume();
+                        if (soundVolume < Audio::MAX_VOLUME) {
+                            Audio::setSoundVolume(soundVolume + 1);
                             S_StartSound(0, sfx_pistol);
                         }
                     }
 
                     if ((buttons & PadLeft) != 0) {
-                        const uint32_t soundVolume = audioGetSoundVolume();
+                        const uint32_t soundVolume = Audio::getSoundVolume();
                         if (soundVolume > 0) {
-                            audioSetSoundVolume(soundVolume - 1);
+                            Audio::setSoundVolume(soundVolume - 1);
                             S_StartSound(0, sfx_pistol);
                         }
                     }
@@ -226,16 +226,16 @@ void O_Control(player_t* const pPlayer) noexcept {
                 // Music volume?
                 case musicvol: {
                     if ((buttons & PadRight) != 0) {
-                        const uint32_t musicVolume = audioGetMusicVolume();
-                        if (musicVolume < MAX_AUDIO_VOLUME) {
-                            audioSetMusicVolume(musicVolume + 1);
+                        const uint32_t musicVolume = Audio::getMusicVolume();
+                        if (musicVolume < Audio::MAX_VOLUME) {
+                            Audio::setMusicVolume(musicVolume + 1);
                         }
                     }
 
                     if ((buttons & PadLeft) != 0) {
-                        const uint32_t musicVolume = audioGetMusicVolume();
+                        const uint32_t musicVolume = Audio::getMusicVolume();
                         if (musicVolume > 0) {
-                            audioSetMusicVolume(musicVolume - 1);
+                            Audio::setMusicVolume(musicVolume - 1);
                         }
                     }
                 }   break;
@@ -287,12 +287,12 @@ void O_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
         Renderer::drawUISprite(SLIDERX, MUSICVOLY + 20, sliderImgs.getImage(BAR));
 
         {
-            const uint32_t offset = audioGetSoundVolume() * SLIDESTEP;
+            const uint32_t offset = Audio::getSoundVolume() * SLIDESTEP;
             Renderer::drawUISprite(SLIDERX + 5 + offset, SFXVOLY + 20, sliderImgs.getImage(HANDLE));
         }
 
         {
-            const uint32_t offset = audioGetMusicVolume() * SLIDESTEP;
+            const uint32_t offset = Audio::getMusicVolume() * SLIDESTEP;
             Renderer::drawUISprite(SLIDERX + 5 + offset, MUSICVOLY + 20, sliderImgs.getImage(HANDLE));
         }
 

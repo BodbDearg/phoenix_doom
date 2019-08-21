@@ -1,8 +1,8 @@
 #include "PlayerSprites.h"
 
+#include "Audio/Audio.h"
 #include "Audio/Sound.h"
 #include "Audio/Sounds.h"
-#include "Base/Macros.h"
 #include "Base/Random.h"
 #include "Base/Tables.h"
 #include "Game/Data.h"
@@ -260,6 +260,7 @@ void A_WeaponReady(player_t& player, pspdef_t& psp) noexcept {
     // Special case for chainsaw's idle sound
     if (player.readyweapon == wp_chainsaw && psp.StatePtr == &gStates[S_SAW]) {
         S_StartSound(&player.mo->x, sfx_sawidl);    // Play the idle sound
+        Audio::stopAllInstancesOfSound(sfx_sawful);
     }
 
     // Check for change, if player is dead, put the weapon away
@@ -306,6 +307,10 @@ void A_ReFire(player_t& player, pspdef_t& psp) noexcept {
 // Handle an animation step for lowering a weapon
 //----------------------------------------------------------------------------------------------------------------------
 void A_Lower(player_t& player, pspdef_t& psp) noexcept {
+    if (player.readyweapon == wp_chainsaw) {
+        Audio::stopAllInstancesOfSound(sfx_sawful);
+    }
+
     psp.WeaponY += LOWERSPEED;                  // Lower the Y coord
     if (player.playerstate == PST_DEAD) {       // Are you dead?
         psp.WeaponY = WEAPONBOTTOM;             // Force at the bottom
@@ -381,13 +386,14 @@ void A_Saw(player_t& player, pspdef_t& psp) noexcept {
     LineAttack(mo, angle, MELEERANGE + 1, FRACMAX, damage);
     mobj_t* const pTarget = gpLineTarget;
 
-    if (!pTarget) {                         // Anyone hit?
-        S_StartSound(&mo.x, sfx_sawful);    // Loud saw sound effect
+    if (!pTarget) {
+        // If nobody is hit just do a loud saw sound every so often
+        S_StartSound(&mo.x, sfx_sawful, true);
         return;
     }
 
-    S_StartSound(&mo.x, sfx_sawhit);        // Meat grinding sound!! :) Yumm!
-
+    S_StartSound(&mo.x, sfx_sawhit, true);  // Meat grinding sound!! :) Yumm!
+    
     // Turn to face target and jiggle around to make it more visually appealing to those who like more gore
     angle = PointToAngle(mo.x, mo.y, pTarget->x, pTarget->y);
     const angle_t testangle = angle - mo.angle;

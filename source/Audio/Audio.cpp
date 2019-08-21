@@ -5,6 +5,8 @@
 #include "AudioSystem.h"
 #include "Sounds.h"
 
+BEGIN_NAMESPACE(Audio)
+
 static constexpr uint32_t MAX_SOUND_VOICES = 32;
 
 // Audio device, audio data manager & sound systems
@@ -18,11 +20,11 @@ static AudioDataMgr::Handle gSoundAudioDataHandles[NUMSFX];
 static AudioDataMgr::Handle gMusicAudioDataHandle = AudioDataMgr::INVALID_HANDLE;
 
 // Other audio state
-static uint32_t gMusicVolume = MAX_AUDIO_VOLUME;
-static uint32_t gSoundVolume = MAX_AUDIO_VOLUME;
+static uint32_t gMusicVolume = MAX_VOLUME;
+static uint32_t gSoundVolume = MAX_VOLUME;
 static uint32_t gPlayingMusicTrackNum = UINT32_MAX;
 
-void audioInit() {
+void init() noexcept {
     if (!gAudioOutputDevice.init()) {
         FATAL_ERROR("Unable to initialize an audio output device!");
     }
@@ -31,11 +33,11 @@ void audioInit() {
     gMusicAudioSystem.init(gAudioOutputDevice, gAudioDataMgr, 1);
 
     // Insure initial volume is set with the audio system
-    audioSetMusicVolume(gMusicVolume);
-    audioSetSoundVolume(gSoundVolume);
+    setMusicVolume(gMusicVolume);
+    setSoundVolume(gSoundVolume);
 }
 
-void audioLoadAllSounds() {
+void loadAllSounds() noexcept {
     gSoundAudioDataHandles[0] = AudioDataMgr::INVALID_HANDLE;    // The 'none' sound
 
     for (uint32_t soundNum = 1; soundNum < NUMSFX; ++soundNum) {
@@ -45,7 +47,7 @@ void audioLoadAllSounds() {
     }
 }
 
-void audioShutdown() {
+void shutdown() noexcept {
     gMusicAudioSystem.shutdown();
     gSoundAudioSystem.shutdown();
 
@@ -59,25 +61,48 @@ void audioShutdown() {
     gMusicAudioDataHandle = AudioDataMgr::INVALID_HANDLE;
 }
 
-void audioPlaySound(const uint32_t num, float lVolume, float rVolume) {
+uint32_t playSound(
+    const uint32_t num,
+    const float lVolume,
+    const float rVolume,
+    const bool bStopOtherInstances
+) noexcept {
     ASSERT(num < NUMSFX);
     const AudioDataMgr::Handle soundHandle = gSoundAudioDataHandles[num];
-    gSoundAudioSystem.play(soundHandle, false, lVolume, rVolume);
+    return gSoundAudioSystem.play(soundHandle, false, lVolume, rVolume, bStopOtherInstances);
 }
 
-void audioStopAllSounds() {
+bool isSoundPlaying(const uint32_t num) noexcept {
+    ASSERT(num < NUMSFX);
+    const AudioDataMgr::Handle soundHandle = gSoundAudioDataHandles[num];
+    return (gSoundAudioSystem.getNumVoicesWithAudioData(soundHandle) > 0);
+}
+
+void stopVoice(const uint32_t voiceIdx) noexcept {
+    if (voiceIdx < gSoundAudioSystem.getNumVoices()) {
+        gSoundAudioSystem.stopVoice(voiceIdx);
+    }
+}
+
+void stopAllInstancesOfSound(const uint32_t num) noexcept {
+    ASSERT(num < NUMSFX);
+    const AudioDataMgr::Handle soundHandle = gSoundAudioDataHandles[num];
+    gSoundAudioSystem.stopVoicesWithAudioData(soundHandle);
+}
+
+void stopAllSounds() noexcept {
     gSoundAudioSystem.stopAllVoices();
 }
 
-void audioPauseSound() {
+void pauseAllSounds() noexcept {
     gSoundAudioSystem.pause(true);
 }
 
-void audioResumeSound() {
+void resumeAllSounds() noexcept {
     gSoundAudioSystem.pause(false);
 }
 
-void audioPlayMusic(const uint32_t trackNum) {
+void playMusic(const uint32_t trackNum) noexcept {
     // If we are already playing this then don't need to do anything
     if (gPlayingMusicTrackNum == trackNum)
         return;
@@ -105,39 +130,41 @@ void audioPlayMusic(const uint32_t trackNum) {
     gPlayingMusicTrackNum = trackNum;
 }
 
-void audioStopMusic() {
+void stopMusic() noexcept {
     gMusicAudioSystem.stopAllVoices();
     gPlayingMusicTrackNum = UINT32_MAX;
 }
 
-void audioPauseMusic() {
+void pauseMusic() noexcept {
     gMusicAudioSystem.pause(true);
 }
 
-void audioResumeMusic() {
+void resumeMusic() noexcept {
     gMusicAudioSystem.pause(false);
 }
 
-uint32_t audioGetMusicVolume() {
+uint32_t getMusicVolume() noexcept {
     return gMusicVolume;
 }
 
-void audioSetMusicVolume(const uint32_t volume) {
-    gMusicVolume = (volume > MAX_AUDIO_VOLUME) ? MAX_AUDIO_VOLUME : volume;
+void setMusicVolume(const uint32_t volume) noexcept {
+    gMusicVolume = (volume > MAX_VOLUME) ? MAX_VOLUME : volume;
 
     if (gMusicAudioSystem.isInitialized()) {
-        gMusicAudioSystem.setMasterVolume((float) gMusicVolume / (float) MAX_AUDIO_VOLUME);
+        gMusicAudioSystem.setMasterVolume((float) gMusicVolume / (float) MAX_VOLUME);
     }
 }
 
-uint32_t audioGetSoundVolume() {
+uint32_t getSoundVolume() noexcept {
     return gSoundVolume;
 }
 
-void audioSetSoundVolume(const uint32_t volume) {
-    gSoundVolume = (volume > MAX_AUDIO_VOLUME) ? MAX_AUDIO_VOLUME : volume;
+void setSoundVolume(const uint32_t volume) noexcept {
+    gSoundVolume = (volume > MAX_VOLUME) ? MAX_VOLUME : volume;
 
     if (gSoundAudioSystem.isInitialized()) {
-        gSoundAudioSystem.setMasterVolume((float) gSoundVolume / (float) MAX_AUDIO_VOLUME);
+        gSoundAudioSystem.setMasterVolume((float) gSoundVolume / (float) MAX_VOLUME);
     }
 }
+
+END_NAMESPACE(Audio)

@@ -16,17 +16,17 @@
 //--------------------------------------------------------------------------------------------------
 // Clear the sound buffers and stop all sound
 //--------------------------------------------------------------------------------------------------
-void S_Clear() {
-    audioStopAllSounds();
+void S_Clear() noexcept {
+    Audio::stopAllSounds();
 }
 
 //--------------------------------------------------------------------------------------------------
 // Start a new sound.
 // Uses the view origin to affect the stereo panning and volume.
 //--------------------------------------------------------------------------------------------------
-void S_StartSound(const Fixed* const pOriginXY, const uint32_t soundId) {
+uint32_t S_StartSound(const Fixed* const pOriginXY, const uint32_t soundId, const bool bStopOtherInstances) noexcept {
     if (soundId <= 0 || soundId >= NUMSFX)
-        return;
+        return UINT32_MAX;
 
     // Figure out the volume of the sound to play
     uint32_t leftVolume = 255;
@@ -38,8 +38,9 @@ void S_StartSound(const Fixed* const pOriginXY, const uint32_t soundId) {
         if (pOriginXY != &pListener->x) {
             const Fixed dist = GetApproxDistance(pListener->x - pOriginXY[0], pListener->y - pOriginXY[1]);
 
-            if (dist > S_CLIPPING_DIST)     // Too far away?
-                return;
+            if (dist > S_CLIPPING_DIST) {   // Too far away?
+                return UINT32_MAX;
+            }
 
             angle_t angle = PointToAngle(pListener->x, pListener->y, pOriginXY[0], pOriginXY[1]);
             angle = angle - pListener->angle;
@@ -48,8 +49,9 @@ void S_StartSound(const Fixed* const pOriginXY, const uint32_t soundId) {
             if (dist >= S_CLOSE_DIST) {
                 const int vol = (255 * ((S_CLIPPING_DIST - dist) >> FRACBITS)) / S_ATTENUATOR;
 
-                if (vol <= 0)   // Too quiet?
-                    return;
+                if (vol <= 0) { // Too quiet?
+                    return UINT32_MAX;
+                }
 
                 const int sep = 128 - (fixedMul(S_STEREO_SWING, gFineSine[angle]) >> FRACBITS);
                 rightVolume = (sep * vol) >> 8;
@@ -62,12 +64,10 @@ void S_StartSound(const Fixed* const pOriginXY, const uint32_t soundId) {
     const float leftVolumeF = (float) leftVolume / 255.0f;
     const float rightVolumeF = (float) rightVolume / 255.0f;
 
-    // If the mysterious '0x8000U' flag is set then all previous instances of the sound are to be stopped
-    if (soundId & (uint32_t) 0x8000U) {
-        audioPlaySound(soundId & (uint32_t) 0x7FFFU, leftVolumeF, rightVolumeF);
-    }
-    else {
-        audioPlaySound(soundId, leftVolumeF, rightVolumeF);
+    if (bStopOtherInstances) {
+        return Audio::playSound(soundId, leftVolumeF, rightVolumeF, true);
+    } else {
+        return Audio::playSound(soundId, leftVolumeF, rightVolumeF, false);
     }
 }
 
@@ -113,11 +113,11 @@ static constexpr uint8_t SONG_LOOKUP[] = {
     1       // .. ?
 };
 
-void S_StartSong(const uint8_t musicId) {
+void S_StartSong(const uint8_t musicId) noexcept {
     const uint32_t trackNum = SONG_LOOKUP[musicId];
-    audioPlayMusic(trackNum);
+    Audio::playMusic(trackNum);
 }
 
-void S_StopSong() {
-    audioStopMusic();
+void S_StopSong() noexcept {
+    Audio::stopMusic();
 }
