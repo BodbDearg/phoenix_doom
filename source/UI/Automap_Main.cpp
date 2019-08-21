@@ -1,5 +1,6 @@
 #include "Automap_Main.h"
 
+#include "Base/Fixed.h"
 #include "Base/Input.h"
 #include "Base/Tables.h"
 #include "Burger.h"
@@ -31,9 +32,15 @@ static constexpr uint16_t COLOR_LIGHTGREY   = 0x6318u;
 // Used to restore the view if the screen goes blank
 static Fixed        gOldPlayerX;        // X coord of the player previously
 static Fixed        gOldPlayerY;        // Y coord of the player previously
-static Fixed        gOldScale;          // Previous scale value
-
-static Fixed        gMapScale;          // Scaling constant for the automap
+static Fixed        gUnscaledOldScale;  // Previous scale value (at original 320x200 resolution)
+static Fixed        gUnscaledMapScale;  // Scaling constant for the automap (at original 320x200 resolution)
+static Fixed        gMapScale;          // Scaling constant for the automap (for current screen resolution, i.e has scale factor applied)
+static uint32_t     gMapPixelsW;        // Width of the automap display (pixels)
+static uint32_t     gMapPixelsH;        // Height of the automap display (pixels)
+static int32_t      gMapClipLx;         // Line clip bounds: left x (inclusive)
+static int32_t      gMapClipRx;         // Line clip bounds: right x (inclusive)
+static int32_t      gMapClipTy;         // Line clip bounds: top y (inclusive)
+static int32_t      gMapClipBy;         // Line clip bounds: bottom y (inclusive)
 static uint32_t     gTrueOldButtons;    // Previous buttons for joypad downs
 static bool         gFollowMode;        // Follow mode active if true
 static bool         gShowAllThings;     // If true, show all objects
@@ -95,12 +102,26 @@ static inline int IMFixMulGetInt(const Fixed a, const Fixed b) noexcept {
     return fixedMul(a,b) >> FRACBITS;
 }
 
+static void updateMapScale() noexcept {
+    gMapScale = fixedMul(gUnscaledOldScale, floatToFixed(gScaleFactor));
+}
+
 //--------------------------------------------------------------------------------------------------
 // Init all the variables for the automap system Called during P_Start when the game is initally loaded.
 // If I need any permanent art, load it now.
 //--------------------------------------------------------------------------------------------------
 void AM_Start() noexcept {
-    gMapScale = (FRACUNIT / 16);            // Default map scale factor (0.00625)
+    gUnscaledMapScale = (FRACUNIT / 16);    // Default map scale factor (0.00625)
+    gUnscaledOldScale = gUnscaledMapScale;    
+    updateMapScale();
+
+    gMapPixelsW = std::min((uint32_t) std::ceil(320.0f * gScaleFactor), Video::SCREEN_WIDTH);
+    gMapPixelsH = std::min((uint32_t) std::ceil(160.0f * gScaleFactor), Video::SCREEN_HEIGHT);
+    gMapClipLx = (int32_t) std::floor(-160.0f * gScaleFactor);
+    gMapClipRx = (int32_t) std::ceil(160.0f * gScaleFactor);
+    gMapClipTy = (int32_t) std::floor(-80.0f * gScaleFactor);
+    gMapClipBy = (int32_t) std::ceil(80.0f * gScaleFactor);
+
     gShowAllThings = false;                 // Turn off the cheat
     gShowAllLines = false;                  // Turn off the cheat
     gFollowMode = true;                     // Follow the player
@@ -175,7 +196,7 @@ static cheat_e AM_CheckCheat(uint32_t NewButtons) noexcept {
 // I assume a coordinate system where 0,0 is at the upper left corner of the screen.
 //--------------------------------------------------------------------------------------------------
 static void ClipPixel(const uint32_t x, const uint32_t y, const uint16_t color) noexcept {
-    if (x < 320 && y < 160) {   // On the screen?
+    if (x < gMapPixelsW && y < gMapPixelsH) {   // On the screen?
         const uint32_t color32 = Video::rgba5551ToScreenCol(color);
         Video::gpFrameBuffer[y * Video::SCREEN_WIDTH + x] = color32;
     }
@@ -199,10 +220,10 @@ static void DrawLine(
     // Coord adjustment:
     // (1) Move the x coords to the CENTER of the screen
     // (2) Vertically flip and then CENTER the y
-    int32_t x = x1 + 160;
-    const int32_t xEnd = x2 + 160;
-    int32_t y = 80 - y1;
-    const int32_t yEnd = 80 - y2;
+    int32_t x = x1 + gMapClipRx;
+    const int32_t xEnd = x2 + gMapClipRx;
+    int32_t y = gMapClipBy - y1;
+    const int32_t yEnd = gMapClipBy - y2;
 
     // Draw the initial pixel
     ClipPixel(x, y, color);
@@ -346,7 +367,7 @@ void AM_Control(player_t& player) noexcept {
 
     gOldPlayerX = player.automapx;      // Mark the previous position
     gOldPlayerY = player.automapy;
-    gOldScale = gMapScale;               // And scale value
+    gUnscaledOldScale = gUnscaledMapScale;               // And scale value
 
     if (NewButtons & PadX) {    // Enable/disable follow mode
         gFollowMode ^= true;    // Toggle the mode
@@ -354,8 +375,8 @@ void AM_Control(player_t& player) noexcept {
 
     // If follow mode if off, then I intercept the joypad motion to move the map anywhere on the screen.
     if (!gFollowMode) {
-        Fixed step = STEPVALUE;                 // Multiplier for joypad motion: mul by integer
-        step = fixedDiv(step, gMapScale);       // Adjust for scale factor
+        Fixed step = STEPVALUE;                         // Multiplier for joypad motion: mul by integer
+        step = fixedDiv(step, gUnscaledMapScale);       // Adjust for scale factor
 
         if (buttons & PadRight) {
             player.automapx += step;    // Step to the right
@@ -376,25 +397,31 @@ void AM_Control(player_t& player) noexcept {
         // Scaling is tricky, I cannot use a simple multiply to adjust the scale factor to the
         // timebase since the formula is ZOOM to the ElapsedTime power times scale.
         if (buttons & PadRightShift) {
-            NewButtons = 0;                                     // Init the count
+            NewButtons = 0; // Init the count
             do {
-                gMapScale = fixedMul(gMapScale, ZOOMOUT);       // Perform the scale
-                if (gMapScale < MINSCALES) {                    // Too small?
-                    gMapScale = MINSCALES;                      // Set to smallest allowable
-                    break;                                      // Leave now!
+                gUnscaledMapScale = fixedMul(gUnscaledMapScale, ZOOMOUT);   // Perform the scale
+                if (gUnscaledMapScale < MINSCALES) {                        // Too small?
+                    gUnscaledMapScale = MINSCALES;                          // Set to smallest allowable
+                    updateMapScale();
+                    break;
+                } else {
+                    updateMapScale();
                 }
-            } while (++NewButtons < 1);                         // All done?
+            } while (++NewButtons < 1); // All done?
         }
 
         if (buttons & PadLeftShift) {
-            NewButtons = 0;         // Init the count
+            NewButtons = 0; // Init the count
             do {
-                gMapScale = fixedMul(gMapScale, ZOOMIN);        // Perform the scale
-                if (gMapScale >= MAXSCALES) {                   // Too large?
-                    gMapScale = MAXSCALES;                      // Set to maximum
+                gUnscaledMapScale = fixedMul(gUnscaledMapScale, ZOOMIN);    // Perform the scale
+                if (gUnscaledMapScale >= MAXSCALES) {                       // Too large?
+                    gUnscaledMapScale = MAXSCALES;                          // Set to maximum
+                    updateMapScale();
                     break;
+                } else {
+                    updateMapScale();
                 }
-            } while (++NewButtons < 1);                         // All done?
+            } while (++NewButtons < 1); // All done?
         }
 
         // Eat the direction keys if not in follow mode
@@ -445,10 +472,10 @@ void AM_Drawer() noexcept {
             const int32_t y2 = MulByMapScale(pLine->v2.y - oy);
 
             // Is the line clipped?
-            if ((y1 > 80 && y2 > 80) ||
-                (y1 < -80 && y2 < -80) ||
-                (x1 > 160 && x2 > 160) ||
-                (x1 < -160 && x2 < -160)
+            if ((y1 > gMapClipBy && y2 > gMapClipBy) ||
+                (y1 < gMapClipTy && y2 < gMapClipTy) ||
+                (x1 > gMapClipRx && x2 > gMapClipRx) ||
+                (x1 < gMapClipLx && x2 < gMapClipLx)
             ) {
                 ++pLine;
                 continue;
@@ -462,18 +489,18 @@ void AM_Drawer() noexcept {
                 (!(pLine->flags & ML_MAPPED))
             ) {
                 color = COLOR_LIGHTGREY;
-            } else if (!(pLine->flags & ML_TWOSIDED)) {     // One-sided line
-                color = COLOR_RED;
-            } else if (pLine->special == 97 || pLine->special == 39) {  // Teleport line
-                color = COLOR_GREEN;
-            } else if (pLine->flags & ML_SECRET) {      // Secret room?
-                color = COLOR_RED;
-            } else if (pLine->special) {    // Special line
-                color = COLOR_BLUE;
-            } else if (pLine->frontsector->floorheight != pLine->backsector->floorheight) {     // Floor height change
-                color = COLOR_YELLOW;
+            } else if (!(pLine->flags & ML_TWOSIDED)) {
+                color = COLOR_RED;      // One-sided line
+            } else if (pLine->special == 97 || pLine->special == 39) {
+                color = COLOR_GREEN;    // Teleport line
+            } else if (pLine->flags & ML_SECRET) {
+                color = COLOR_RED;      // Secret room?
+            } else if (pLine->special) {
+                color = COLOR_BLUE;     // Special line
+            } else if (pLine->frontsector->floorheight != pLine->backsector->floorheight) {
+                color = COLOR_YELLOW;   // Floor height change
             } else {
-                color = COLOR_BROWN;
+                color = COLOR_BROWN;    // Other two sided line
             }
 
             DrawLine(x1, y1, x2, y2, color);    // Draw the line
@@ -535,8 +562,9 @@ void AM_Drawer() noexcept {
 
     // If less than 5 lines drawn, move to last position!
     if (drawn < 5) {
-        pPlayer->automapx = gOldPlayerX;      // Restore the x,y
+        pPlayer->automapx = gOldPlayerX;            // Restore the x,y
         pPlayer->automapy = gOldPlayerY;
-        gMapScale = gOldScale;          // Restore scale factor as well...
+        gUnscaledMapScale = gUnscaledOldScale;      // Restore scale factor as well...
+        updateMapScale();
     }
 }
