@@ -5,6 +5,7 @@
 #include "Burger.h"
 #include "Game/Data.h"
 #include "Game/Tick.h"
+#include "GFX/Blit.h"
 #include "GFX/Video.h"
 #include "Map/MapData.h"
 #include "Things/MapObj.h"
@@ -408,7 +409,21 @@ void AM_Control(player_t& player) noexcept {
 // Draws the current frame to workingscreen
 //--------------------------------------------------------------------------------------------------
 void AM_Drawer() noexcept {
-    DrawARect(0, 0, 320, 160, COLOR_BLACK);     // Black out the screen
+    // Clear the screen black
+    Blit::blitRect(
+        Video::gpFrameBuffer,
+        Video::SCREEN_WIDTH,
+        Video::SCREEN_HEIGHT,
+        Video::SCREEN_WIDTH,
+        0.0f,
+        0.0f,
+        320 * gScaleFactor,
+        160 * gScaleFactor,
+        0.0f,
+        0.0f,
+        0.0f,
+        1.0f
+    );
 
     player_t* const pPlayer = &gPlayer;     // Get pointer to the player
     Fixed ox = pPlayer->automapx;           // Get the x and y to draw from
@@ -424,10 +439,10 @@ void AM_Drawer() noexcept {
                 !(pLine->flags & ML_DONTDRAW)
             )
          ) {
-            const int32_t x1 = MulByMapScale(pLine->v1.x-ox);       // Source line coords: scale it
-            const int32_t y1 = MulByMapScale(pLine->v1.y-oy);
-            const int32_t x2 = MulByMapScale(pLine->v2.x-ox);       // Dest line coords: scale it
-            const int32_t y2 = MulByMapScale(pLine->v2.y-oy);
+            const int32_t x1 = MulByMapScale(pLine->v1.x - ox);       // Source line coords: scale it
+            const int32_t y1 = MulByMapScale(pLine->v1.y - oy);
+            const int32_t x2 = MulByMapScale(pLine->v2.x - ox);       // Dest line coords: scale it
+            const int32_t y2 = MulByMapScale(pLine->v2.y - oy);
 
             // Is the line clipped?
             if ((y1 > 80 && y2 > 80) ||

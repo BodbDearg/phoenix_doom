@@ -2,9 +2,6 @@
 
 #include <cstdint>
 
-// TODO: move elsewhere
-extern void DrawARect(const uint32_t x, const uint32_t y, const uint32_t width, const uint32_t height, const uint16_t color) noexcept;
-
 // Input handlers
 static constexpr uint32_t PadDown       = 0x80000000;
 static constexpr uint32_t PadUp         = 0x40000000;

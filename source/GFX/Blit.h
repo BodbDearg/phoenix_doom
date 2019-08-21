@@ -3,6 +3,7 @@
 #include "Base/Fixed.h"
 #include "Base/Macros.h"
 #include <algorithm>
+#include <cmath>
 
 // Set to '1' to enable heavy duty bounds checking on blitting.
 // This can slow down stuff a lot, but can be useful to sanity check blit code.
@@ -112,7 +113,7 @@ namespace Blit {
     }
 
     //------------------------------------------------------------------------------------------------------------------
-    // Blits a column of pixels from the given source image in ARGB1555 format to the destination in ARGB8888 format.
+    // Blits a column of pixels from the given source image in ARGB1555 format to the destination in XRGB8888 format.
     // Optionally, alpha testing and blending can be applied.
     //
     // Notes:
@@ -427,10 +428,10 @@ namespace Blit {
                 // Do alpha blending with the destination pixel if enabled
                 if constexpr (DO_ALPHA_BLEND) {
                     // Read the destination pixel RGBA and convert to 0-255 float
-                    const uint32_t dstPixelRGBA8888 = *pDstPixel;
-                    const float dstR = (float)((uint8_t)(dstPixelRGBA8888 >> 16));
-                    const float dstG = (float)((uint8_t)(dstPixelRGBA8888 >> 8));
-                    const float dstB = (float)((uint8_t)(dstPixelRGBA8888));
+                    const uint32_t dstPixelXRGB8888 = *pDstPixel;
+                    const float dstR = (float)((uint8_t)(dstPixelXRGB8888 >> 16));
+                    const float dstG = (float)((uint8_t)(dstPixelXRGB8888 >> 8));
+                    const float dstB = (float)((uint8_t)(dstPixelXRGB8888));
 
                     // Source and destination blend factors
                     const float srcFactor = a;
@@ -471,7 +472,7 @@ namespace Blit {
     }
 
     //------------------------------------------------------------------------------------------------------------------
-    // Blits a portion of a sprite in ARGB1555 format to the destination in RGBA8888 format.
+    // Blits a portion of a sprite in ARGB1555 format to the destination in XRGB8888 format.
     // Optionally, alpha testing and blending can be applied.
     //
     // Notes:
@@ -490,18 +491,18 @@ namespace Blit {
         const uint16_t* const pSrcPixels,               // Pixel data for source image
         const uint32_t srcPixelsW,                      // Width of source image
         const uint32_t srcPixelsH,                      // Height of source image
-        float srcX,                                     // Where to start blitting from in the input texture: x & y
-        float srcY,
-        float srcW,                                     // Size of the area to blit from the input texture: width & height
-        float srcH,
+        const float srcX,                               // Where to start blitting from in the input texture: x & y
+        const float srcY,
+        const float srcW,                               // Size of the area to blit from the input texture: width & height
+        const float srcH,
         uint32_t* const pDstPixels,                     // Output image pixels, this must point to the the TOP LEFT pixel of the output image
         const uint32_t dstPixelsW,                      // Output image width
         const uint32_t dstPixelsH,                      // Output image height
         const uint32_t dstPixelsPitch,                  // The number of pixels that must be skipped to go onto a new row in the output image
-        float dstX,                                     // Where to start blitting to in output image: x & y
-        float dstY,
-        float dstW,                                     // Size of the area to blit to in the output texture: width & height
-        float dstH,
+        const float dstX,                               // Where to start blitting to in output image: x & y
+        const float dstY,
+        const float dstW,                               // Size of the area to blit to in the output texture: width & height
+        const float dstH,
         [[maybe_unused]] const float rMul = 1.0f,       // Color multiply value: red
         [[maybe_unused]] const float gMul = 1.0f,       // Color multiply value: green
         [[maybe_unused]] const float bMul = 1.0f,       // Color multiply value: blue
@@ -584,6 +585,120 @@ namespace Blit {
                 bMul,
                 aMul
             );
+        }
+    }
+
+    //------------------------------------------------------------------------------------------------------------------
+    // Blits a single color to the destination in XRGB8888 format.
+    // Alpha blending is also applied if alpha is < 1.
+    // Intended to be used for clearing a portion of the screen, or for screen tints.
+    //
+    // Notes:
+    //  (1) Clipping to the specified output area size is also automatically done.
+    //------------------------------------------------------------------------------------------------------------------
+    inline void blitRect(
+        uint32_t* const pDstPixels,         // Output image pixels, this must point to the the TOP LEFT pixel of the output image
+        const uint32_t dstPixelsW,          // Output image width
+        const uint32_t dstPixelsH,          // Output image height
+        const uint32_t dstPixelsPitch,      // The number of pixels that must be skipped to go onto a new row in the output image
+        float dstX,                         // Where to start blitting to in output image: x & y
+        float dstY,
+        float dstW,                         // Size of the area to blit to in the output texture: width & height
+        float dstH,
+        const float r,                      // Color: red
+        const float g,                      // Color: green
+        const float b,                      // Color: blue
+        const float a                       // Color: alpha
+    ) noexcept {
+        // Sanity checks
+        BLIT_ASSERT(pDstPixels);
+        BLIT_ASSERT(dstPixelsW > 0);
+        BLIT_ASSERT(dstPixelsH > 0);
+        BLIT_ASSERT(dstPixelsPitch > 0);
+
+        // Early out if completely invisible
+        if (a <= 0.0f) {
+            return;
+        }
+
+        // Ignore if blitting to a zero sized area
+        if (dstW <= 0.0f || dstH <= 0.0f) {
+            BLIT_ASSERT(dstW == 0.0f);
+            BLIT_ASSERT(dstH == 0.0f);
+            return;
+        }
+
+        // Figure out the start and end pixel in the destination
+        int32_t dstXi = (int32_t) dstX;
+        int32_t dstXiend = (int32_t) std::ceil(dstX + dstW);
+        int32_t dstYi = (int32_t) dstY;
+        int32_t dstYiend = (int32_t) std::ceil(dstY + dstH);
+
+        // Do clipping against the specified region and reject if out of bounds
+        dstXi = std::max(dstXi, 0);
+        dstYi = std::max(dstYi, 0);
+        dstXiend = std::min(dstXiend, (int32_t) dstPixelsW - 1);
+        dstYiend = std::min(dstYiend, (int32_t) dstPixelsH - 1);
+
+        if ((dstXi > dstXiend) || (dstYi > dstYiend)) {
+            return;
+        }
+
+        // Do either a straight color fill or blend with the destination
+        if (a >= 1.0f) {
+            // No alpha blending, just fill with the color
+            const uint32_t colorXRGB8888 = (
+                (((uint32_t) std::min(std::max(r * 255.0f, 0.0f), 255.0f)) << 16) |
+                (((uint32_t) std::min(std::max(g * 255.0f, 0.0f), 255.0f)) << 8) |
+                ((uint32_t) std::min(std::max(b * 255.0f, 0.0f), 255.0f))
+            );
+
+            for (int32_t y = dstYi; y <= dstYiend; ++y) {
+                uint32_t* const pDstRow = pDstPixels + y * dstPixelsPitch;
+
+                for (int32_t x = dstXi; x <= dstXiend; ++x) {
+                    uint32_t& dstPixel = pDstRow[x];
+                    dstPixel = colorXRGB8888;
+                }
+            }
+        } else {
+            // Alpha blending, have to blend with the destination color.
+            // Pre-multiply the given color to convert to a 0-255 range:
+            const float srcR = r * 255.0f;
+            const float srcG = g * 255.0f;
+            const float srcB = b * 255.0f;
+
+            for (int32_t y = dstYi; y <= dstYiend; ++y) {
+                uint32_t* const pDstRow = pDstPixels + y * dstPixelsPitch;
+
+                for (int32_t x = dstXi; x <= dstXiend; ++x) {
+                    uint32_t& dstPixel = pDstRow[x];
+                    
+                    // Read the destination pixel RGBA and convert to 0-255 float
+                    const uint32_t dstPixelXRGB8888 = dstPixel;
+                    const float dstR = (float)((uint8_t)(dstPixelXRGB8888 >> 16));
+                    const float dstG = (float)((uint8_t)(dstPixelXRGB8888 >> 8));
+                    const float dstB = (float)((uint8_t)(dstPixelXRGB8888));
+
+                    // Source and destination blend factors
+                    const float srcFactor = a;
+                    const float dstFactor = 1.0f - a;
+
+                    // Do the blend
+                    const float rt = srcR * srcFactor + dstR * dstFactor;
+                    const float gt = srcG * srcFactor + dstG * dstFactor;
+                    const float bt = srcB * srcFactor + dstB * dstFactor;
+
+                    // Convert back to XRGB8888 and save
+                    const uint32_t colorXRGB8888 = (
+                        (((uint32_t) std::min(std::max(rt, 0.0f), 255.0f)) << 16) |
+                        (((uint32_t) std::min(std::max(gt, 0.0f), 255.0f)) << 8) |
+                        ((uint32_t) std::min(std::max(bt, 0.0f), 255.0f))
+                    );
+
+                    dstPixel = colorXRGB8888;
+                }
+            }            
         }
     }
 }

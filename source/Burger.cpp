@@ -122,35 +122,3 @@ uint32_t SaveAFile(const char* FileName, void *data, uint32_t dataSize) noexcept
     // DC: FIXME: reimplement/replace
     return -1;
 }
-
-/**********************************
-
-    This code is functionally equivalent to the Burgerlib
-    version except that it is using the cached CCB system.
-
-**********************************/
-void DrawARect(const uint32_t x, const uint32_t y, const uint32_t width, const uint32_t height, const uint16_t color) noexcept {
-
-    const uint32_t color32 = Video::rgba5551ToScreenCol(color);
-
-    // Clip the rect bounds
-    if (x >= Video::SCREEN_WIDTH || y >= Video::SCREEN_HEIGHT)
-        return;
-
-    const uint32_t xEnd = std::min(x + width, Video::SCREEN_WIDTH);
-    const uint32_t yEnd = std::min(y + height, Video::SCREEN_HEIGHT);
-
-    // Fill the color
-    uint32_t* pRow = Video::gpFrameBuffer + x + (y * Video::SCREEN_WIDTH);
-
-    for (uint32_t yCur = y; yCur < yEnd; ++yCur) {
-        uint32_t* pPixel = pRow;
-
-        for (uint32_t xCur = x; xCur < xEnd; ++xCur) {
-            *pPixel = color32;
-            ++pPixel;
-        }
-
-        pRow += Video::SCREEN_WIDTH;
-    }
-}
