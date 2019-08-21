@@ -504,10 +504,13 @@ void A_FireCGun(player_t& player, pspdef_t& psp) noexcept {
     if (player.ammo[am_clip] > 0) {     // Any ammo left?
         --player.ammo[am_clip];
 
-        // Make sure the flash matches the weapon frame state
+        // Make sure the flash matches the weapon frame state.
+        // DC: I fixed this from the 3DO version - this logic wasn't quite correct previously for the chaingun.
         state_t* pNewState = WEAPON_FLASH_STATES[wp_chaingun];
-        if (psp.StatePtr == &gStates[S_CHAIN1]) {
-            ++pNewState;
+        if (psp.StatePtr == &gStates[S_CHAIN2]) {
+            pNewState += 1;
+        } else if (psp.StatePtr == &gStates[S_CHAIN3]) {
+            pNewState += 2;
         }
 
         SetPlayerSprite(player, ps_flash, pNewState);

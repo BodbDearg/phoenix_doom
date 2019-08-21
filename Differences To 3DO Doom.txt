@@ -1,5 +1,8 @@
 Below is a list of some of the main changes from the original 3DO version:
 
+[] Improved texture mapping and renderer temporal stability.
+Textures, walls and sprites are now much more temporally coherent and 'wiggle' around less. Texture mapping on the walls in particular is much improved and gets rid of the 'fuzzing' from the 3DO version where the y pixel values continously jump up and down on every wall column.
+
 [] Framebuffer is now 32-bit instead of 16-bit.
 This allows for smoother light gradients and less color banding.
 
@@ -22,6 +25,9 @@ Similar in concept to the original PC Doom fake contrast but works with walls of
 
 [] Fixed a bug where punching things made no punch sound.
 Not sure why this happened, there was no code to play the sound in the 3DO version but the sound existed. Now fixed.
+
+[] Fixed a bug where the chaingun muzzle flash was out of sync with the main chaingun sprite.
+Muzzle flash now works correctly like the PC version.
 
 [] Post processing FX is applied to the player's weapon in addition to the 3D environment.
 In the original 3DO version the player's weapon was exempt from the invulnerability effect and screen tints. I added this change to help improve the immersiveness of the effect; looked odd that the weapon was excluded!
