@@ -81,6 +81,7 @@ ProjectionMatrix                gProjMatrix;
 uint32_t                        gExtraLight;
 angle_t                         gClipAngleBAM;
 angle_t                         gDoubleClipAngleBAM;
+std::vector<angle_t>            gScreenXToAngleBAM;
 std::vector<DrawSeg>            gDrawSegs;
 std::vector<SegClip>            gSegClip;
 std::vector<OccludingColumns>   gOccludingCols;
@@ -220,12 +221,6 @@ static void preDrawSetup() noexcept {
     gViewPerpX = gViewDirY;
     gViewPerpY = -gViewDirX;
 
-    // Near plane width and height
-    gNearPlaneW = Z_NEAR * std::tan(FOV * 0.5f) * 2.0f;
-    gNearPlaneH = gNearPlaneW / VIEW_ASPECT_RATIO;
-    gNearPlaneHalfW = gNearPlaneW * 0.5f;
-    gNearPlaneHalfH = gNearPlaneH * 0.5f;
-
     // Near plane left and right side x,y and top and bottom z
     gNearPlaneP1x = gViewX + gViewDirX * Z_NEAR - gNearPlaneHalfW * gViewPerpX;
     gNearPlaneP1y = gViewY + gViewDirY * Z_NEAR - gNearPlaneHalfW * gViewPerpY;
@@ -269,6 +264,7 @@ void init() noexcept {
 }
 
 void initMathTables() noexcept {
+    // Compute stuff based on screen size
     gScaleFactor = (float) Video::SCREEN_WIDTH / (float) REFERENCE_SCREEN_WIDTH;
     gInvScaleFactor = 1.0f / gScaleFactor;
     gScreenWidth = SCREEN_WIDTHS[gScreenSize];
@@ -287,6 +283,12 @@ void initMathTables() noexcept {
 
     gGunXScale = (float) gScreenWidth / 320.0f;     // Get the 3DO scale factor for the gun shape and the y scale
     gGunYScale = (float) gScreenHeight / 160.0f;
+
+    // Near plane width and height
+    gNearPlaneW = Z_NEAR * std::tan(FOV * 0.5f) * 2.0f;
+    gNearPlaneH = gNearPlaneW / VIEW_ASPECT_RATIO;
+    gNearPlaneHalfW = gNearPlaneW * 0.5f;
+    gNearPlaneHalfH = gNearPlaneH * 0.5f;
 
     // TODO: REMOVE
     #if !HACK_TEST_HIGH_RES_RENDERING
@@ -332,6 +334,34 @@ void initMathTables() noexcept {
         }
     #endif  // #if !HACK_TEST_HIGH_RES_RENDERING
 
+    // Compute the partial projection matrix
+    {
+        // This is largely based on GLM's 'perspectiveRH_ZO' - see definition of 'ProjectionMatrix'
+        // for more details about these calculations:
+        const float f = std::tan(FOV * 0.5f);
+        const float a = VIEW_ASPECT_RATIO;
+
+        gProjMatrix.r0c0 = 1.0f / f;
+        gProjMatrix.r1c1 = -a / f;
+        gProjMatrix.r2c2 = -Z_FAR / (Z_NEAR - Z_FAR);
+        gProjMatrix.r2c3 = -(Z_NEAR * Z_FAR) / (Z_FAR - Z_NEAR);
+    }
+
+    // Compute the screen pixel to view angle table
+    gScreenXToAngleBAM.resize(gScreenWidth);
+
+    {
+        float screenXToT = 1.0f / ((float) gScreenWidth - 1.0f);
+
+        for (uint32_t x = 0; x < gScreenWidth; ++x) {
+            const float t = ((float) x + 0.5f) * screenXToT;
+            const float nearPlaneX = t * gNearPlaneW - gNearPlaneHalfW;
+            const float angleRad = std::atan2(Z_NEAR, nearPlaneX);
+            const angle_t angleBAM = FMath::radiansToDoomAngle(angleRad);
+            gScreenXToAngleBAM[x] = angleBAM;
+        }
+    }
+
     // Create the lighting tables
     for (uint32_t i = 0; i < 256; ++i) {
         constexpr float LIGHT_MIN_PERCENT = 1.0f / 5.0f;
@@ -345,19 +375,6 @@ void initMathTables() noexcept {
         gLightMins[i] = (float) i * LIGHT_MIN_PERCENT;
         gLightSubs[i] = maxBrightRange;
         gLightCoefs[i] = LIGHT_COEF_BASE - lightLevel * LIGHT_COEF_ADJUST_FACTOR;
-    }
-
-    // Compute the partial projection matrix
-    {
-        // This is largely based on GLM's 'perspectiveRH_ZO' - see definition of 'ProjectionMatrix'
-        // for more details about these calculations:
-        const float f = std::tan(FOV * 0.5f);
-        const float a = VIEW_ASPECT_RATIO;
-
-        gProjMatrix.r0c0 = 1.0f / f;
-        gProjMatrix.r1c1 = -a / f;
-        gProjMatrix.r2c2 = -Z_FAR / (Z_NEAR - Z_FAR);
-        gProjMatrix.r2c3 = -(Z_NEAR * Z_FAR) / (Z_FAR - Z_NEAR);
     }
 }
 

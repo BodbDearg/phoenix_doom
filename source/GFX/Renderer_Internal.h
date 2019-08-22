@@ -305,6 +305,7 @@ namespace Renderer {
     extern uint32_t                         gExtraLight;                        // Bumped light from gun blasts
     extern angle_t                          gClipAngleBAM;                      // Leftmost clipping angle
     extern angle_t                          gDoubleClipAngleBAM;                // Doubled leftmost clipping angle
+    extern std::vector<angle_t>             gScreenXToAngleBAM;                 // Convert from a screen X coordinate to a Doom format (BAM) angle
     extern std::vector<DrawSeg>             gDrawSegs;
     extern std::vector<SegClip>             gSegClip;                           // Used to clip seg columns (walls + floors) vertically as segs are being submitted. One entry per screen column.
     extern std::vector<OccludingColumns>    gOccludingCols;                     // Used to clip sprite columns. One entry per screen column.

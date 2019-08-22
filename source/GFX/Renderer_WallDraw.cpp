@@ -19,16 +19,10 @@ BEGIN_NAMESPACE(Renderer)
 // Draws a single column of the sky
 //----------------------------------------------------------------------------------------------------------------------
 static void drawSkyColumn(const uint32_t viewX, const uint32_t maxColHeight) noexcept {
-    // Figure out the angle this sky column is at
-    const float colX = gNearPlaneP1x + viewX * gNearPlaneXStepPerViewCol;
-    const float colY = gNearPlaneP1y + viewX * gNearPlaneYStepPerViewCol;
-    const float fromVpX = colX - gViewX;
-    const float fromVpY = colY - gViewY;
-    const float angle = std::fmodf(FMath::ANGLE_360<float> + std::atan2f(fromVpY, fromVpX), FMath::ANGLE_360<float>);
-
-    // Figure out the texture coordinate from the angle and wrap it.
-    // Sky textures are always 256 pixels wide:
-    const uint32_t texX = ((uint32_t)((angle / FMath::ANGLE_90<float>) * 256.0f)) & 255;
+    // Figure out the angle this sky column is at.
+    // From that figure out the texture coordinate: the sky texture is 256 pixels wide and repeats 4 times over a circle.
+    const angle_t angle = gViewAngleBAM + gScreenXToAngleBAM[viewX];
+    const uint32_t texX = (angle >> 22) & 0xFFu;
 
     // Figure out the sky column height and texel step (y)
     const Texture* const pTex = (const Texture*) Textures::getWall(Textures::getCurrentSkyTexNum());    // FIXME: don't keep doing this for each column
