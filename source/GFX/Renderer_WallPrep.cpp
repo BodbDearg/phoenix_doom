@@ -481,10 +481,11 @@ static inline void addWallColumnPartToClipBounds(SegClip& clipBounds, const int3
 }
 
 //----------------------------------------------------------------------------------------------------------------------
-// Clips and emits a wall column
+// Clips and emits a wall column.
+// Returns 1 if a column was actually emitted, 0 otherwise.
 //----------------------------------------------------------------------------------------------------------------------
 template <FragEmitFlagsT FLAGS>
-static void clipAndEmitWallColumn(
+static uint32_t clipAndEmitWallColumn(
     const uint32_t x,
     const float zt,
     const float zb,
@@ -500,13 +501,15 @@ static void clipAndEmitWallColumn(
     ASSERT(x < gScreenWidth);
 
     // This fake loop allows us to discard the column due to clipping
+    uint32_t numColumnsEmitted = 0;
+
     do {
         // Don't emit anything if size is <= 0, except if a mid wall (occlude everything in that case)
         if (zt >= zb || zb < 0.0f || zt >= (float) gScreenHeight) {
             if constexpr (FLAGS == FragEmitFlags::MID_WALL) {
                 break;
             } else {
-                return;     // No occluding if not a mid wall
+                return numColumnsEmitted;   // No occluding if not a mid wall
             }
         }
 
@@ -576,18 +579,21 @@ static void clipAndEmitWallColumn(
         frag.pImageData = &texImage;
 
         gWallFragments.push_back(frag);
+        numColumnsEmitted = 1;
 
     } while (false);
 
     // Add this column to the clip bounds for this screen column
     addWallColumnPartToClipBounds<FLAGS>(clipBounds, (int32_t) zt, (int32_t) std::floor(zb));
+    return numColumnsEmitted;
 }
 
 //----------------------------------------------------------------------------------------------------------------------
-// Clips and emits a floor or ceiling column
+// Clips and emits a floor or ceiling column.
+// Returns 1 if a column was actually emitted, 0 otherwise.
 //----------------------------------------------------------------------------------------------------------------------
 template <FragEmitFlagsT FLAGS>
-static void clipAndEmitFlatColumn(
+static uint32_t clipAndEmitFlatColumn(
     const uint32_t x,
     const float zt,
     const float zb,
@@ -605,7 +611,7 @@ static void clipAndEmitFlatColumn(
 
     // Only bother emitting wall fragments if the column height would be > 0
     if (zt >= zb)
-        return;
+        return 0;
 
     // Clip the column against the top and bottom of the current seg clip bounds.
     // If the size after clipping is invalid also reject the column.
@@ -617,7 +623,7 @@ static void clipAndEmitFlatColumn(
         ztInt = (int32_t) clipBounds.top + 1;
 
         if (ztInt > zbInt)
-            return;
+            return 0;
     }
 
     if (zbInt >= clipBounds.bottom) {
@@ -625,7 +631,7 @@ static void clipAndEmitFlatColumn(
         zbInt = (int32_t) clipBounds.bottom - 1;
 
         if (ztInt > zbInt)
-            return;
+            return 0;
     }
 
     // Emit the floor or ceiling fragment
@@ -669,6 +675,8 @@ static void clipAndEmitFlatColumn(
             gNumFullSegCols++;
         }
     }
+
+    return 1;   // Emitted a floor column!
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -721,7 +729,6 @@ static void emitOccluderColumn(
             bounds.top = (int16_t) screenYCoord;
             bounds.bottom = gScreenHeight;
         } else {
-
             bounds.top = -1;
             bounds.bottom = (int16_t) screenYCoord;
         }
@@ -786,9 +793,10 @@ static void emitOccluderColumn(
 //----------------------------------------------------------------------------------------------------------------------
 // Emits wall and potentially floor/ceiling fragments for each column of the draw seg (for later rendering).
 // Also potentially emits occluders if specified.
+// Returns the number of wall and floor columns emitted, for the purposes of marking automap lines as visible.
 //----------------------------------------------------------------------------------------------------------------------
 template <FragEmitFlagsT FLAGS>
-static void emitDrawSegColumns(const DrawSeg& drawSeg, const seg_t seg) noexcept {
+static uint32_t emitDrawSegColumns(const DrawSeg& drawSeg, const seg_t seg) noexcept {
     //------------------------------------------------------------------------------------------------------------------
     // Some setup logic
     //------------------------------------------------------------------------------------------------------------------
@@ -976,10 +984,12 @@ static void emitDrawSegColumns(const DrawSeg& drawSeg, const seg_t seg) noexcept
         }
 
         if constexpr (EMIT_LOWER_WALL) {
+            ASSERT(seg.backsector);
             backFloorZ = FMath::doomFixed16ToFloat<float>(seg.backsector->floorheight);
         }
 
         if constexpr (EMIT_UPPER_WALL) {
+            ASSERT(seg.backsector);
             backCeilingZ = FMath::doomFixed16ToFloat<float>(seg.backsector->ceilingheight);
         }
 
@@ -1187,6 +1197,8 @@ static void emitDrawSegColumns(const DrawSeg& drawSeg, const seg_t seg) noexcept
     //------------------------------------------------------------------------------------------------------------------
     // Emit each column
     //------------------------------------------------------------------------------------------------------------------
+    uint32_t numWallAndFlatCols = 0;
+
     for (int32_t x = x1; x <= x2; ++x) {
         //--------------------------------------------------------------------------------------------------------------
         // Grab the clip bounds for this column.
@@ -1264,7 +1276,7 @@ static void emitDrawSegColumns(const DrawSeg& drawSeg, const seg_t seg) noexcept
                     (depth >= MIN_DEPTH_FOR_FLAT_PIXEL_CLAMP)
                 );
 
-                clipAndEmitFlatColumn<FragEmitFlags::FLOOR>(
+                numWallAndFlatCols += clipAndEmitFlatColumn<FragEmitFlags::FLOOR>(
                     x,
                     lowerBz,
                     viewH,
@@ -1287,7 +1299,7 @@ static void emitDrawSegColumns(const DrawSeg& drawSeg, const seg_t seg) noexcept
                     (depth >= MIN_DEPTH_FOR_FLAT_PIXEL_CLAMP)
                 );
 
-                clipAndEmitFlatColumn<FragEmitFlags::CEILING>(
+                numWallAndFlatCols += clipAndEmitFlatColumn<FragEmitFlags::CEILING>(
                     x,
                     0.0f,
                     upperTz,
@@ -1314,7 +1326,7 @@ static void emitDrawSegColumns(const DrawSeg& drawSeg, const seg_t seg) noexcept
         }
 
         if constexpr (EMIT_MID_WALL) {
-            clipAndEmitWallColumn<FragEmitFlags::MID_WALL>(
+            numWallAndFlatCols += clipAndEmitWallColumn<FragEmitFlags::MID_WALL>(
                 x,
                 upperTz,
                 lowerBz,
@@ -1330,7 +1342,7 @@ static void emitDrawSegColumns(const DrawSeg& drawSeg, const seg_t seg) noexcept
         }
 
         if constexpr (EMIT_LOWER_WALL) {
-            clipAndEmitWallColumn<FragEmitFlags::LOWER_WALL>(
+            numWallAndFlatCols += clipAndEmitWallColumn<FragEmitFlags::LOWER_WALL>(
                 x,
                 lowerTz,
                 lowerBz,
@@ -1346,7 +1358,7 @@ static void emitDrawSegColumns(const DrawSeg& drawSeg, const seg_t seg) noexcept
         }
 
         if constexpr (EMIT_UPPER_WALL) {
-            clipAndEmitWallColumn<FragEmitFlags::UPPER_WALL>(
+            numWallAndFlatCols += clipAndEmitWallColumn<FragEmitFlags::UPPER_WALL>(
                 x,
                 upperTz,
                 upperBz,
@@ -1387,6 +1399,8 @@ static void emitDrawSegColumns(const DrawSeg& drawSeg, const seg_t seg) noexcept
             }
         }
     }
+
+    return numWallAndFlatCols;
 }
 
 void addSegToFrame(const seg_t& seg) noexcept {
@@ -1418,11 +1432,13 @@ void addSegToFrame(const seg_t& seg) noexcept {
     // Determine if the seg is back facing and cull if it is
     if (isScreenSpaceSegBackFacing(drawSeg))
         return;
-
+    
     // Emit all wall and floor fragments for the seg
+    uint32_t numWallAndFloorColumnsEmitted;
+
     if (!seg.backsector) {
         // Fully solid wall with no lower or upper parts
-        emitDrawSegColumns<
+        numWallAndFloorColumnsEmitted = emitDrawSegColumns<
             FragEmitFlags::MID_WALL |
             FragEmitFlags::MID_WALL_OCCLUDER |
             FragEmitFlags::FLOOR |
@@ -1433,7 +1449,7 @@ void addSegToFrame(const seg_t& seg) noexcept {
         // Two sided seg that may have upper and lower parts to draw.
         // Note: need to ignore upper walls if back sector has a sky ceiling
         if (seg.backsector->CeilingPic != SKY_CEILING_PIC) {
-            emitDrawSegColumns<
+            numWallAndFloorColumnsEmitted = emitDrawSegColumns<
                 FragEmitFlags::LOWER_WALL |
                 FragEmitFlags::UPPER_WALL |
                 FragEmitFlags::LOWER_WALL_OCCLUDER |
@@ -1443,7 +1459,7 @@ void addSegToFrame(const seg_t& seg) noexcept {
                 FragEmitFlags::SKY
             >(drawSeg, seg);
         } else {
-            emitDrawSegColumns<
+            numWallAndFloorColumnsEmitted = emitDrawSegColumns<
                 FragEmitFlags::LOWER_WALL |
                 FragEmitFlags::LOWER_WALL_OCCLUDER |
                 FragEmitFlags::UPPER_WALL_OCCLUDER |
@@ -1453,9 +1469,11 @@ void addSegToFrame(const seg_t& seg) noexcept {
         }
     }
 
-    // Grab the flags for the seg's linedef and mark it as seen (since it's visible)
-    line_t& lineDef = *seg.linedef;
-    lineDef.flags |= ML_MAPPED;
+    // Grab the flags for the seg's linedef and mark it as seen if we emitted any wall or floor columns (since it's visible)
+    if (numWallAndFloorColumnsEmitted > 0) {
+        line_t& lineDef = *seg.linedef;
+        lineDef.flags |= ML_MAPPED;
+    }
 }
 
 END_NAMESPACE(Renderer)

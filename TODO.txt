@@ -4,7 +4,6 @@ TODO
 
 - New sprite clipping method that takes into account side of seg sprite is on.
 - Fix BSP check BBOX for high res rendering
-- Only mark a seg as seen if one column of it draws
 - Cleanup and optimize render code
 - Intro logos
 - Intro videos? (maybe)
