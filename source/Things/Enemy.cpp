@@ -628,14 +628,12 @@ void A_SkullAttack(mobj_t& actor) noexcept {
         const angle_t angle = actor.angle >> ANGLETOFINESHIFT;
         actor.momx = fixedMul(SKULLSPEED, gFineCosine[angle]);
         actor.momy = fixedMul(SKULLSPEED, gFineSine[angle]);
-
-        uint32_t dist = GetApproxDistance(pDest->x - actor.x, pDest->y - actor.y);
-        dist = dist / SKULLSPEED;       // Speed to hit target
-        if (dist == 0) {                // Prevent divide by 0
-            dist = 1;
-        }
-
-        actor.momz = (pDest->z + (pDest->height >> 1) - actor.z) / dist;
+        
+        // Z speed - reach target cetner y by the the time we hit it
+        const Fixed distToTarget = GetApproxDistance(pDest->x - actor.x, pDest->y - actor.y);
+        const Fixed timeToHit = fixedDiv(distToTarget, SKULLSPEED);
+        const Fixed zAdjustmentRequired = pDest->z + (pDest->height >> 1) - actor.z;
+        actor.momz = (timeToHit > 0) ? fixedDiv(zAdjustmentRequired, timeToHit) : 0;
     }
 }
 
