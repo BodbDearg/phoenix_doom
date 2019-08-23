@@ -27,6 +27,7 @@ set(SOURCE_FILES
     "Base/Input.h"
     "Base/Macros.h"
     "Base/Mem.h"
+    "Base/MemStream.h"
     "Base/Random.cpp"
     "Base/Random.h"
     "Base/Resource.h"
