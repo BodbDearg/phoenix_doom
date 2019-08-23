@@ -10,7 +10,7 @@ namespace AudioLoader {
     // Loads an audio file from the specified file path and saves the loaded data to the given object.
     // Supported sound file formats are:
     //      (1) AIFF
-    //      (2) AIFF-C
+    //      (2) AIFF-C (Uncompressed, and SDX2 compressed)
     //----------------------------------------------------------------------------------------------
     bool loadFromFile(const char* const filePath, AudioData& audioData) noexcept;
 
