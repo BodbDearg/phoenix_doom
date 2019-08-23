@@ -42,7 +42,7 @@ public:
         return (getNumBytesLeft() >= numBytes);
     }
 
-    inline void ensureBytesLeft(const uint32_t numBytes) THROWS {
+    inline void ensureBytesLeft(const uint32_t numBytes = 1) THROWS {
         if (!hasBytesLeft(numBytes)) {
             throw ByteStreamException();
         }
@@ -77,8 +77,10 @@ public:
         mCurByteIdx += numBytes;
     }
 
+    //------------------------------------------------------------------------------------------------------------------
     // Aligns the memory stream to the given byte boundary (2, 4, 8 etc.)
     // Note: call is ignored if at the end of the stream!
+    //------------------------------------------------------------------------------------------------------------------
     inline void align(const uint32_t numBytes) THROWS {
         if (mCurByteIdx >= mSize)
             return;

@@ -19,6 +19,7 @@ set(SOURCE_FILES
     "Audio/Sound.h"
     "Audio/Sounds.h"
     "Base/Angle.h"
+    "Base/BitStream.h"
     "Base/ByteStream.h"
     "Base/Endian.h"
     "Base/Finally.h"

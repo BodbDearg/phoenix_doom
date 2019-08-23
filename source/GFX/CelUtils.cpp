@@ -1,5 +1,6 @@
 #include "CelUtils.h"
 
+#include "Base/BitStream.h"
 #include "Base/Endian.h"
 #include "Base/Macros.h"
 #include "Base/Mem.h"
@@ -7,88 +8,6 @@
 #include <type_traits>
 
 BEGIN_NAMESPACE(CelUtils)
-
-//-------------------------------------------------------------------------------------------------
-// Utility class that allows for N bits (up to 64) to be read from a stream of unknown size.
-// The most significant bits are read first.
-//-------------------------------------------------------------------------------------------------
-class BitStream {
-public:
-    inline BitStream(const std::byte* const pData, const uint32_t size) noexcept
-        : mpData(pData)
-        , mSize(size)
-        , mCurByteIdx(0)
-        , mCurBitIdx(7)
-    {
-    }
-
-    inline void seekToByteIndex(const uint32_t byteIndex) noexcept {
-        mCurByteIdx = byteIndex;
-        mCurBitIdx = 7;
-    }
-
-    inline uint32_t getCurByteIndex() const noexcept {
-        return mCurByteIdx;
-    }
-
-    // Does the actual reading of the bits.
-    // Note: only unsigned integer types are supported at present!
-    template <class OutType>
-    OutType readBitsAsUInt(const uint8_t numBits) noexcept {
-        static_assert(std::is_integral_v<OutType>);
-        static_assert(std::is_unsigned_v<OutType>);
-
-        ASSERT(numBits <= sizeof(OutType) * 8);
-        OutType out = 0;
-        uint8_t numBitsLeft = numBits;
-
-        while (numBitsLeft > 0) {
-            // Setup for reading up to 8 bits
-            ASSERT(mCurByteIdx < mSize);
-            const uint8_t curByte = (uint8_t) mpData[mCurByteIdx];
-            const uint8_t numByteBitsLeft = mCurBitIdx + 1;
-            const uint8_t numBitsToRead = (numBitsLeft > numByteBitsLeft) ? numByteBitsLeft : numBitsLeft;
-
-            // Make room in the output for the new bits
-            out <<= numBitsToRead;
-
-            // Extract the required bits and add to the output
-            const uint8_t shiftBitsToLSB = (mCurBitIdx + uint8_t(1) - numBitsToRead);
-            const uint8_t readMask = ~(uint8_t(0xFF) << numBitsToRead);
-            const uint8_t readBits = (curByte >> shiftBitsToLSB) & readMask;
-            out |= readBits;
-
-            // Move onto the next byte if appropriate and count the bits read
-            if (numBitsToRead >= numByteBitsLeft) {
-                ++mCurByteIdx;
-                mCurBitIdx = 7;
-            }
-            else {
-                mCurBitIdx -= numBitsToRead;
-            }
-
-            numBitsLeft -= numBitsToRead;
-        }
-
-        return out;
-    }
-
-    // Aligns the current stream pointer to the start of the next uint64_t
-    void u64Align() noexcept {
-        if (mCurBitIdx < 7) {
-            mCurBitIdx = 7;
-            ++mCurByteIdx;
-        }
-
-        mCurByteIdx = (mCurByteIdx + uint32_t(7)) & ~uint32_t(7);
-    }
-
-private:
-    const std::byte* const  mpData;
-    uint32_t                mSize;
-    uint32_t                mCurByteIdx;
-    uint8_t                 mCurBitIdx;
-};
 
 //-------------------------------------------------------------------------------------------------
 // Pack modes for rows of packed CEL image data
@@ -154,7 +73,7 @@ static void decodeUnpackedCelImageData(
     const uint8_t imageBPP,
     const bool bColorIndexed,
     uint16_t* const pImageOut
-) noexcept {
+) THROWS {
     // Setup for reading
     BitStream bitStream(pImageData, imageDataSize);
     uint16_t* pCurOutputPixel = pImageOut;
@@ -169,7 +88,7 @@ static void decodeUnpackedCelImageData(
                 ++pCurOutputPixel;
             }
 
-            bitStream.u64Align();
+            bitStream.align64();
         }
     } else {
         ASSERT(imageBPP == 16);
@@ -181,7 +100,7 @@ static void decodeUnpackedCelImageData(
                 ++pCurOutputPixel;
             }
 
-            bitStream.u64Align();
+            bitStream.align64();
         }
     }
 }
@@ -199,7 +118,7 @@ static void decodePackedCelImageData(
     const uint8_t imageBPP,
     const bool bColorIndexed,
     uint16_t* const pImageOut
-) noexcept {
+) THROWS {
     ASSERT(bColorIndexed || imageBPP == 16);
 
     // Alloc output image and start decoding each row
@@ -323,28 +242,32 @@ static uint16_t* decodeCelImageData(
         FATAL_ERROR("Images that are not color indexed MUST be 16 bpp!");
     }
 
-    if (bImageIsPacked) {
-        decodePackedCelImageData(
-            pImageData,
-            imageDataSize,
-            pPLUT,
-            imageW,
-            imageH,
-            imageBPP,
-            bColorIndexed,
-            pImageOut
-        );
-    } else {
-        decodeUnpackedCelImageData(
-            pImageData,
-            imageDataSize,
-            pPLUT,
-            imageW,
-            imageH,
-            imageBPP,
-            bColorIndexed,
-            pImageOut
-        );
+    try {
+        if (bImageIsPacked) {
+            decodePackedCelImageData(
+                pImageData,
+                imageDataSize,
+                pPLUT,
+                imageW,
+                imageH,
+                imageBPP,
+                bColorIndexed,
+                pImageOut
+            );
+        } else {
+            decodeUnpackedCelImageData(
+                pImageData,
+                imageDataSize,
+                pPLUT,
+                imageW,
+                imageH,
+                imageBPP,
+                bColorIndexed,
+                pImageOut
+            );
+        }
+    } catch (...) {
+        FATAL_ERROR("Fatal error while reading image!");
     }
 
     return pImageOut;
