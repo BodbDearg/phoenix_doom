@@ -12,9 +12,9 @@ struct ResourceFileHeader {
     uint32_t    numResourceGroups;
     uint32_t    resourceGroupHeadersSize;
 
-    void swapEndian() noexcept {
-        byteSwapU32(numResourceGroups);
-        byteSwapU32(resourceGroupHeadersSize);
+    void convertBigToHostEndian() noexcept {
+        Endian::convertBigToHost(numResourceGroups);
+        Endian::convertBigToHost(resourceGroupHeadersSize);
     }
 };
 
@@ -23,10 +23,10 @@ struct ResourceGroupHeader {
     uint32_t    resourcesStartNum;
     uint32_t    numResources;
 
-    void swapEndian() noexcept {
-        byteSwapU32(resourceType);
-        byteSwapU32(resourcesStartNum);
-        byteSwapU32(numResources);
+    void convertBigToHostEndian() noexcept {
+        Endian::convertBigToHost(resourceType);
+        Endian::convertBigToHost(resourcesStartNum);
+        Endian::convertBigToHost(numResources);
     }
 };
 
@@ -35,9 +35,9 @@ struct ResourceHeader {
     uint32_t    size;
     uint32_t    _unused;
 
-    void swapEndian() noexcept {
-        byteSwapU32(offset);
-        byteSwapU32(size);
+    void convertBigToHostEndian() noexcept {
+        Endian::convertBigToHost(offset);
+        Endian::convertBigToHost(size);
     }
 };
 
@@ -71,7 +71,7 @@ void ResourceMgr::init(const char* const fileName) noexcept {
         FATAL_ERROR_F("ERROR: Failed to read game resource file '%s' header!", fileName);
     }
 
-    fileHeader.swapEndian();
+    fileHeader.convertBigToHostEndian();
 
     const bool bHeaderOk = (
         (fileHeader.magic[0] == std::byte('B')) &&
@@ -101,7 +101,7 @@ void ResourceMgr::init(const char* const fileName) noexcept {
 
         while (pCurBytes + sizeof(ResourceGroupHeader) <= pEndBytes) {
             ResourceGroupHeader* const pGroupHeader = (ResourceGroupHeader*) pCurBytes;
-            pGroupHeader->swapEndian();
+            pGroupHeader->convertBigToHostEndian();
             pCurBytes += sizeof(ResourceGroupHeader);
 
             // Figure out the end resource number for this group and contribute to the max for the manager
@@ -116,7 +116,7 @@ void ResourceMgr::init(const char* const fileName) noexcept {
                 }
 
                 ResourceHeader* const pResourceHeader = (ResourceHeader*) pCurBytes;
-                pResourceHeader->swapEndian();
+                pResourceHeader->convertBigToHostEndian();
                 pCurBytes += sizeof(ResourceHeader);
 
                 // Burgerlib used '0x80000000' to encode a 'fixed handle' (never unloaded) flag in the offset.

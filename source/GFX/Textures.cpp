@@ -15,11 +15,11 @@ struct TextureInfoHeader {
     uint32_t    numFlatTextures;
     uint32_t    firstFlatTexture;       // Resource number
 
-    void swapEndian() noexcept {
-        byteSwapU32(numWallTextures);
-        byteSwapU32(firstWallTexture);
-        byteSwapU32(numFlatTextures);
-        byteSwapU32(firstFlatTexture);
+    void convertBigToHostEndian() noexcept {
+        Endian::convertBigToHost(numWallTextures);
+        Endian::convertBigToHost(firstWallTexture);
+        Endian::convertBigToHost(numFlatTextures);
+        Endian::convertBigToHost(firstFlatTexture);
     }
 };
 
@@ -28,9 +28,9 @@ struct TextureInfoEntry {
     uint32_t    height;
     uint32_t    _unused;
 
-    void swapEndian() noexcept {
-        byteSwapU32(width);
-        byteSwapU32(height);
+    void convertBigToHostEndian() noexcept {
+        Endian::convertBigToHost(width);
+        Endian::convertBigToHost(height);
     }
 };
 
@@ -72,8 +72,8 @@ static void decodeWallTextureImage(Texture& tex, const std::byte* const pBytes) 
             ++pCurSrcPixels;
 
             // Read and save the ARGB1555 pixels (note: need to correct endian too)
-            const uint16_t color1ARGB = byteSwappedU16(pPLUT[color1Idx]);
-            const uint16_t color2ARGB = byteSwappedU16(pPLUT[color2Idx]);
+            const uint16_t color1ARGB = Endian::bigToHost(pPLUT[color1Idx]);
+            const uint16_t color2ARGB = Endian::bigToHost(pPLUT[color2Idx]);
 
             pCurDstPixels[0] = color1ARGB;
             pCurDstPixels[1] = color2ARGB;
@@ -119,14 +119,14 @@ static void decodeFlatTextureImage(Texture& tex, const std::byte* const pBytes) 
             pCurSrcPixels += 8;
 
             // Read and save the ARGB1555 pixels (note: need to correct endian too)
-            const uint16_t color1ARGB = byteSwappedU16(pPLUT[color1Idx]);
-            const uint16_t color2ARGB = byteSwappedU16(pPLUT[color2Idx]);
-            const uint16_t color3ARGB = byteSwappedU16(pPLUT[color3Idx]);
-            const uint16_t color4ARGB = byteSwappedU16(pPLUT[color4Idx]);
-            const uint16_t color5ARGB = byteSwappedU16(pPLUT[color5Idx]);
-            const uint16_t color6ARGB = byteSwappedU16(pPLUT[color6Idx]);
-            const uint16_t color7ARGB = byteSwappedU16(pPLUT[color7Idx]);
-            const uint16_t color8ARGB = byteSwappedU16(pPLUT[color8Idx]);
+            const uint16_t color1ARGB = Endian::bigToHost(pPLUT[color1Idx]);
+            const uint16_t color2ARGB = Endian::bigToHost(pPLUT[color2Idx]);
+            const uint16_t color3ARGB = Endian::bigToHost(pPLUT[color3Idx]);
+            const uint16_t color4ARGB = Endian::bigToHost(pPLUT[color4Idx]);
+            const uint16_t color5ARGB = Endian::bigToHost(pPLUT[color5Idx]);
+            const uint16_t color6ARGB = Endian::bigToHost(pPLUT[color6Idx]);
+            const uint16_t color7ARGB = Endian::bigToHost(pPLUT[color7Idx]);
+            const uint16_t color8ARGB = Endian::bigToHost(pPLUT[color8Idx]);
 
             pCurDstPixels[0] = color1ARGB;
             pCurDstPixels[1] = color2ARGB;
@@ -181,7 +181,7 @@ void init() noexcept {
     const std::byte* pData = (const std::byte*) Resources::loadData(rTEXTURE1);
 
     TextureInfoHeader header = (const TextureInfoHeader&) *pData;
-    header.swapEndian();
+    header.convertBigToHostEndian();
     pData += sizeof(TextureInfoHeader);
 
     // Save global texture info and alloc memory for all the texture entries
@@ -196,7 +196,7 @@ void init() noexcept {
 
         for (uint32_t wallTexNum = 0; wallTexNum < numWallTex; ++wallTexNum) {
             TextureInfoEntry info = (const TextureInfoEntry&) *pData;
-            info.swapEndian();
+            info.convertBigToHostEndian();
             pData += sizeof(TextureInfoEntry);
 
             Texture& texture = gWallTextures[wallTexNum];

@@ -125,7 +125,7 @@ static void LoadThings(const uint32_t lumpResourceNum) {
     const std::byte* const pResourceData = pResource->pData;
 
     // Get the number of things first (first u32)
-    const uint32_t numThings = byteSwappedU32(((const uint32_t*) pResourceData)[0]);
+    const uint32_t numThings = Endian::bigToHost(((const uint32_t*) pResourceData)[0]);
 
     // Get the range of things and spawn each one
     const mapthing_t* pSrcThing = (const mapthing_t*)(pResourceData + sizeof(uint32_t));
@@ -134,11 +134,11 @@ static void LoadThings(const uint32_t lumpResourceNum) {
     while (pSrcThing < pEndSrcThing) {
         // N.B: we must correct endianess before spawning due to big endian source data!
         mapthing_t thing;
-        thing.x = byteSwappedI32(pSrcThing->x);
-        thing.y = byteSwappedI32(pSrcThing->y);
-        thing.angle = byteSwappedU32(pSrcThing->angle);
-        thing.type = byteSwappedU32(pSrcThing->type);
-        thing.ThingFlags = byteSwappedU32(pSrcThing->ThingFlags);
+        thing.x = Endian::bigToHost(pSrcThing->x);
+        thing.y = Endian::bigToHost(pSrcThing->y);
+        thing.angle = Endian::bigToHost(pSrcThing->angle);
+        thing.type = Endian::bigToHost(pSrcThing->type);
+        thing.ThingFlags = Endian::bigToHost(pSrcThing->ThingFlags);
 
         // Spawn and move on
         SpawnMapThing(thing);

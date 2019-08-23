@@ -39,8 +39,8 @@ struct IffChunkHeader {
     IffId       id;
     uint32_t    dataSize;
 
-    inline void correctEndian() noexcept {
-        byteSwapU32(dataSize);
+    inline void convertBigToHostEndian() noexcept {
+        Endian::convertBigToHost(dataSize);
     }
 };
 
@@ -61,7 +61,7 @@ static void readIffChunk(IffChunk& chunk, ByteStream& stream) THROWS {
     // Read the header first
     IffChunkHeader header;
     stream.read(header);
-    header.correctEndian();
+    header.convertBigToHostEndian();
 
     // Fill in the chunk details and consume the bytes
     chunk.id = header.id;
@@ -295,9 +295,9 @@ static bool readFormChunk(const IffChunk& formChunk, AudioData& audioData) THROW
     {
         ByteStream commonStream = pCommonChunk->toStream();
 
-        numChannels = byteSwappedU16(commonStream.read<uint16_t>());
-        numSamples = byteSwappedU32(commonStream.read<uint32_t>());
-        bitDepth = byteSwappedU16(commonStream.read<uint16_t>());
+        numChannels = Endian::bigToHost(commonStream.read<uint16_t>());
+        numSamples = Endian::bigToHost(commonStream.read<uint32_t>());
+        bitDepth = Endian::bigToHost(commonStream.read<uint16_t>());
         sampleRate = (uint32_t) readBigEndianExtendedFloat(commonStream);
 
         // Note: if the format is AIFF-C then the common chunk is extended to include compression info.

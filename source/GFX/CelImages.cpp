@@ -106,8 +106,8 @@ static void loadImage(
 
     if ((loadFlags & LoadFlagBits::HAS_OFFSETS) != 0) {
         const int16_t* const pOffsets = (const int16_t*) pCurData;
-        image.offsetX = byteSwappedI16(pOffsets[0]);
-        image.offsetY = byteSwappedI16(pOffsets[1]);
+        image.offsetX = Endian::bigToHost(pOffsets[0]);
+        image.offsetY = Endian::bigToHost(pOffsets[1]);
         pCurData += sizeof(int16_t) * 2;
     } else {
         image.offsetX = 0;
@@ -148,13 +148,13 @@ static void loadImages(
     if (bLoadImageArray) {
         // In the case of an image array we can tell the number of images from the size of the image offsets array at the start.
         // We can tell the size of the image offsets array by the offset to the first image:
-        const uint32_t numImages = byteSwappedU32(((const uint32_t*) pResourceData)[0]) / sizeof(uint32_t);
+        const uint32_t numImages = Endian::bigToHost(((const uint32_t*) pResourceData)[0]) / sizeof(uint32_t);
         imageArray.numImages = numImages;
         imageArray.pImages = new CelImage[numImages];
 
         for (uint32_t imageIdx = 0; imageIdx < numImages; ++imageIdx) {
-            const uint32_t thisImageOffset = byteSwappedU32(((const uint32_t*) pResourceData)[imageIdx]);
-            const uint32_t nextImageOffset = (imageIdx + 1 < numImages) ? byteSwappedU32(((const uint32_t*) pResourceData)[imageIdx + 1]) : resourceSize;
+            const uint32_t thisImageOffset = Endian::bigToHost(((const uint32_t*) pResourceData)[imageIdx]);
+            const uint32_t nextImageOffset = (imageIdx + 1 < numImages) ? Endian::bigToHost(((const uint32_t*) pResourceData)[imageIdx + 1]) : resourceSize;
             const uint32_t thisImageDataSize = nextImageOffset - thisImageOffset;
 
             loadImage(imageArray.pImages[imageIdx], pResourceData + thisImageOffset, thisImageDataSize, loadFlags);

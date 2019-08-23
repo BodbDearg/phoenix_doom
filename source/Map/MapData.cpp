@@ -90,8 +90,8 @@ static void loadVertexes(const uint32_t lumpResourceNum) noexcept {
     vertex_t* pDstVert = gVertexes.data();
 
     while (pSrcVert < pEndSrcVerts) {
-        pDstVert->x = byteSwappedI32(pSrcVert->x);
-        pDstVert->y = byteSwappedI32(pSrcVert->y);
+        pDstVert->x = Endian::bigToHost(pSrcVert->x);
+        pDstVert->y = Endian::bigToHost(pSrcVert->y);
         ++pSrcVert;
         ++pDstVert;
     }
@@ -105,7 +105,7 @@ static void loadSectors(const uint32_t lumpResourceNum) noexcept {
     const std::byte* const pResourceData = (const std::byte*) pResource->pData;
 
     // Get the number of sectors first (first u32)
-    const uint32_t numSectors = byteSwappedU32(((const uint32_t*) pResourceData)[0]);
+    const uint32_t numSectors = Endian::bigToHost(((const uint32_t*) pResourceData)[0]);
     gNumSectors = numSectors;
 
     // Get the source sector data and alloc room for the runtime sectors
@@ -120,13 +120,13 @@ static void loadSectors(const uint32_t lumpResourceNum) noexcept {
     sector_t* pDstSector = gSectors.data();
 
     while (pSrcSector < pEndSrcSector) {
-        pDstSector->floorheight = byteSwappedI32(pSrcSector->floorHeight);
-        pDstSector->ceilingheight = byteSwappedI32(pSrcSector->ceilingHeight);
-        pDstSector->FloorPic = byteSwappedU32(pSrcSector->floorPic);
-        pDstSector->CeilingPic = byteSwappedU32(pSrcSector->ceilingPic);
-        pDstSector->lightlevel = byteSwappedU32(pSrcSector->lightLevel);
-        pDstSector->special = byteSwappedU32(pSrcSector->special);
-        pDstSector->tag  = byteSwappedU32(pSrcSector->tag);
+        pDstSector->floorheight = Endian::bigToHost(pSrcSector->floorHeight);
+        pDstSector->ceilingheight = Endian::bigToHost(pSrcSector->ceilingHeight);
+        pDstSector->FloorPic = Endian::bigToHost(pSrcSector->floorPic);
+        pDstSector->CeilingPic = Endian::bigToHost(pSrcSector->ceilingPic);
+        pDstSector->lightlevel = Endian::bigToHost(pSrcSector->lightLevel);
+        pDstSector->special = Endian::bigToHost(pSrcSector->special);
+        pDstSector->tag  = Endian::bigToHost(pSrcSector->tag);
 
         ++pSrcSector;
         ++pDstSector;
@@ -143,7 +143,7 @@ static void loadSides(const uint32_t lumpResourceNum) noexcept {
     const std::byte* const pResourceData = (const std::byte*) pResource->pData;
 
     // Get the number of side defs first (first u32)
-    const uint32_t numSides = byteSwappedU32(((const uint32_t*) pResourceData)[0]);
+    const uint32_t numSides = Endian::bigToHost(((const uint32_t*) pResourceData)[0]);
     gNumSides = numSides;
 
     // Get the source side def data and alloc room for the runtime equivalent
@@ -158,13 +158,13 @@ static void loadSides(const uint32_t lumpResourceNum) noexcept {
     side_t* pDstSide = gSides.data();
 
     while (pSrcSide < pEndSrcSide) {
-        pDstSide->textureoffset = byteSwappedI32(pSrcSide->textureOffset);
-        pDstSide->rowoffset = byteSwappedI32(pSrcSide->rowOffset);
-        pDstSide->toptexture = byteSwappedU32(pSrcSide->topTexture);
-        pDstSide->bottomtexture = byteSwappedU32(pSrcSide->bottomTexture);
-        pDstSide->midtexture = byteSwappedU32(pSrcSide->midTexture);
+        pDstSide->textureoffset = Endian::bigToHost(pSrcSide->textureOffset);
+        pDstSide->rowoffset = Endian::bigToHost(pSrcSide->rowOffset);
+        pDstSide->toptexture = Endian::bigToHost(pSrcSide->topTexture);
+        pDstSide->bottomtexture = Endian::bigToHost(pSrcSide->bottomTexture);
+        pDstSide->midtexture = Endian::bigToHost(pSrcSide->midTexture);
 
-        const uint32_t sectorNum = byteSwappedU32(pSrcSide->sector);
+        const uint32_t sectorNum = Endian::bigToHost(pSrcSide->sector);
         pDstSide->sector = &gSectors[sectorNum];
 
         ++pSrcSide;
@@ -182,7 +182,7 @@ static void loadLines(const uint32_t lumpResourceNum) noexcept {
     const std::byte* const pResourceData = (const std::byte*) pResource->pData;
 
     // Get the number of line defs first (first u32)
-    const uint32_t numLines = byteSwappedU32(((const uint32_t*) pResourceData)[0]);
+    const uint32_t numLines = Endian::bigToHost(((const uint32_t*) pResourceData)[0]);
     gNumLines = numLines;
 
     // Get the source line def data and alloc room for the runtime lines
@@ -197,13 +197,13 @@ static void loadLines(const uint32_t lumpResourceNum) noexcept {
     line_t* pDstLine = gLines.data();
 
     while (pSrcLine < pEndSrcLine) {
-        pDstLine->flags = byteSwappedU32(pSrcLine->flags);
-        pDstLine->special = byteSwappedU32(pSrcLine->special);
-        pDstLine->tag = byteSwappedU32(pSrcLine->tag);
+        pDstLine->flags = Endian::bigToHost(pSrcLine->flags);
+        pDstLine->special = Endian::bigToHost(pSrcLine->special);
+        pDstLine->tag = Endian::bigToHost(pSrcLine->tag);
 
         // Copy the end points to the line
-        const uint32_t v1Idx = byteSwappedU32(pSrcLine->v1);
-        const uint32_t v2Idx = byteSwappedU32(pSrcLine->v2);
+        const uint32_t v1Idx = Endian::bigToHost(pSrcLine->v1);
+        const uint32_t v2Idx = Endian::bigToHost(pSrcLine->v2);
         pDstLine->v1 = gVertexes[v1Idx];
         pDstLine->v2 = gVertexes[v2Idx];
 
@@ -243,8 +243,8 @@ static void loadLines(const uint32_t lumpResourceNum) noexcept {
 
         // Copy the side numbers and sector pointers.
         // Note: all lines have a front side, but not necessarily a back side!
-        const uint32_t sideNum1 = byteSwappedU32(pSrcLine->sideNum[0]);
-        const uint32_t sideNum2 = byteSwappedU32(pSrcLine->sideNum[1]);
+        const uint32_t sideNum1 = Endian::bigToHost(pSrcLine->sideNum[0]);
+        const uint32_t sideNum2 = Endian::bigToHost(pSrcLine->sideNum[1]);
 
         pDstLine->SidePtr[0] = &gSides[sideNum1];
         pDstLine->frontsector = pDstLine->SidePtr[0]->sector;
@@ -271,7 +271,7 @@ static void loadLineSegs(const uint32_t lumpResourceNum) noexcept {
     const std::byte* const pResourceData = (const std::byte*) pResource->pData;
 
     // Get the number of line segments first (first u32)
-    const uint32_t numLineSegs = byteSwappedU32(((const uint32_t*) pResourceData)[0]);
+    const uint32_t numLineSegs = Endian::bigToHost(((const uint32_t*) pResourceData)[0]);
     gNumLineSegs = numLineSegs;
 
     // Get the source line seg data and alloc room for the runtime equivalent
@@ -287,15 +287,15 @@ static void loadLineSegs(const uint32_t lumpResourceNum) noexcept {
     while (pSrcLineSeg < pEndSrcLineSeg) {
         // Note: deliberately NOT initializing the seg light multiplier here.
         // That is done at a later stage.
-        pDstLineSeg->v1 = gVertexes[byteSwappedU32(pSrcLineSeg->v1)];
-        pDstLineSeg->v2 = gVertexes[byteSwappedU32(pSrcLineSeg->v2)];
-        pDstLineSeg->angle = byteSwappedU32(pSrcLineSeg->angle);
-        pDstLineSeg->offset = byteSwappedI32(pSrcLineSeg->offset);
+        pDstLineSeg->v1 = gVertexes[Endian::bigToHost(pSrcLineSeg->v1)];
+        pDstLineSeg->v2 = gVertexes[Endian::bigToHost(pSrcLineSeg->v2)];
+        pDstLineSeg->angle = Endian::bigToHost(pSrcLineSeg->angle);
+        pDstLineSeg->offset = Endian::bigToHost(pSrcLineSeg->offset);
 
-        line_t* const pLine = &gLines[byteSwappedU32(pSrcLineSeg->lineDef)];
+        line_t* const pLine = &gLines[Endian::bigToHost(pSrcLineSeg->lineDef)];
         pDstLineSeg->linedef = pLine;
 
-        const uint32_t side = byteSwappedU32(pSrcLineSeg->side);
+        const uint32_t side = Endian::bigToHost(pSrcLineSeg->side);
         pDstLineSeg->sidedef = pLine->SidePtr[side];
         pDstLineSeg->frontsector = pDstLineSeg->sidedef->sector;
 
@@ -324,7 +324,7 @@ static void loadSubSectors(const uint32_t lumpResourceNum) noexcept {
     const std::byte* const pResourceData = (const std::byte*) pResource->pData;
 
     // Get the number of sub sectors first (first u32)
-    const uint32_t numSubSectors = byteSwappedU32(((const uint32_t*) pResourceData)[0]);
+    const uint32_t numSubSectors = Endian::bigToHost(((const uint32_t*) pResourceData)[0]);
     gNumSubSectors = numSubSectors;
 
     // Get the source sub sector data and alloc room for the runtime equivalent
@@ -338,9 +338,9 @@ static void loadSubSectors(const uint32_t lumpResourceNum) noexcept {
     subsector_t* pDstSubSector = gSubSectors.data();
 
     while (pSrcSubSector < pEndSrcSubSector) {
-        pDstSubSector->numsublines = byteSwappedU32(pSrcSubSector->numLines);
+        pDstSubSector->numsublines = Endian::bigToHost(pSrcSubSector->numLines);
 
-        seg_t* const pLineSeg = &gLineSegs[byteSwappedU32(pSrcSubSector->firstLine)];
+        seg_t* const pLineSeg = &gLineSegs[Endian::bigToHost(pSrcSubSector->firstLine)];
         pDstSubSector->firstline = pLineSeg;
         pDstSubSector->sector = pLineSeg->sidedef->sector;
 
@@ -359,7 +359,7 @@ static void loadNodes(const uint32_t lumpResourceNum) noexcept {
     const std::byte* const pResourceData = (const std::byte*) pResource->pData;
 
     // Get the number of nodes first (first u32)
-    const uint32_t numNodes = byteSwappedU32(((const uint32_t*) pResourceData)[0]);
+    const uint32_t numNodes = Endian::bigToHost(((const uint32_t*) pResourceData)[0]);
 
     // Get the source node data and alloc room for the runtime equivalent
     const MapNode* pSrcNode = (const MapNode*)(pResourceData + sizeof(uint32_t));
@@ -371,20 +371,20 @@ static void loadNodes(const uint32_t lumpResourceNum) noexcept {
     node_t* pDstNode = gNodes.data();
 
     while (pSrcNode < pEndSrcNode) {
-        pDstNode->Line.x = byteSwappedI32(pSrcNode->x);
-        pDstNode->Line.y = byteSwappedI32(pSrcNode->y);
-        pDstNode->Line.dx = byteSwappedI32(pSrcNode->dx);
-        pDstNode->Line.dy = byteSwappedI32(pSrcNode->dy);
+        pDstNode->Line.x = Endian::bigToHost(pSrcNode->x);
+        pDstNode->Line.y = Endian::bigToHost(pSrcNode->y);
+        pDstNode->Line.dx = Endian::bigToHost(pSrcNode->dx);
+        pDstNode->Line.dy = Endian::bigToHost(pSrcNode->dy);
 
         for (uint32_t childNum = 0; childNum < 2; ++childNum) {
-            pDstNode->bbox[childNum][0] = byteSwappedI32(pSrcNode->bbox[childNum][0]);
-            pDstNode->bbox[childNum][1] = byteSwappedI32(pSrcNode->bbox[childNum][1]);
-            pDstNode->bbox[childNum][2] = byteSwappedI32(pSrcNode->bbox[childNum][2]);
-            pDstNode->bbox[childNum][3] = byteSwappedI32(pSrcNode->bbox[childNum][3]);
+            pDstNode->bbox[childNum][0] = Endian::bigToHost(pSrcNode->bbox[childNum][0]);
+            pDstNode->bbox[childNum][1] = Endian::bigToHost(pSrcNode->bbox[childNum][1]);
+            pDstNode->bbox[childNum][2] = Endian::bigToHost(pSrcNode->bbox[childNum][2]);
+            pDstNode->bbox[childNum][3] = Endian::bigToHost(pSrcNode->bbox[childNum][3]);
 
             // See if this child is a leaf node (subsector) or another node.
             // Unclear what happens here if node index is > 0x8000 - engine limitation on subsector count?
-            const uint32_t childNodeOrSubSecIdx = byteSwappedU32(pSrcNode->children[childNum]);
+            const uint32_t childNodeOrSubSecIdx = Endian::bigToHost(pSrcNode->children[childNum]);
 
             if (childNodeOrSubSecIdx & NF_SUBSECTOR) {
                 // Child is a subsector (node is a leaf)
@@ -427,10 +427,10 @@ static void loadBlockMap(const uint32_t lumpResourceNum) noexcept {
     const std::byte* const pResourceData = (const std::byte*) pResource->pData;
 
     // Read the header info for the blockmap (first 4 32-bit integers)
-    gBlockMapOriginX = byteSwappedI32(((const Fixed*) pResourceData)[0]);
-    gBlockMapOriginY = byteSwappedI32(((const Fixed*) pResourceData)[1]);
-    gBlockMapWidth = byteSwappedU32(((const uint32_t*) pResourceData)[2]);
-    gBlockMapHeight = byteSwappedU32(((const uint32_t*) pResourceData)[3]);
+    gBlockMapOriginX = Endian::bigToHost(((const Fixed*) pResourceData)[0]);
+    gBlockMapOriginY = Endian::bigToHost(((const Fixed*) pResourceData)[1]);
+    gBlockMapWidth = Endian::bigToHost(((const uint32_t*) pResourceData)[2]);
+    gBlockMapHeight = Endian::bigToHost(((const uint32_t*) pResourceData)[3]);
 
     // The number of entries in the blockmap
     const uint32_t numBlockMapEntries = gBlockMapWidth * gBlockMapHeight;
@@ -455,7 +455,7 @@ static void loadBlockMap(const uint32_t lumpResourceNum) noexcept {
         line_t** pDstLinePtr = gBlockMapLines.data();
 
         while (pCurLineListEntry < pEndLineListEntry) {
-            const uint32_t lineNum = byteSwappedU32(*pCurLineListEntry);
+            const uint32_t lineNum = Endian::bigToHost(*pCurLineListEntry);
 
             if (lineNum != UINT32_MAX) {
                 ASSERT(lineNum < gNumLines);
@@ -483,7 +483,7 @@ static void loadBlockMap(const uint32_t lumpResourceNum) noexcept {
         line_t*** pDstLineList = gBlockMapLineLists.data();
 
         while (pCurLineListOffset < pEndLineListOffset) {
-            const uint32_t lineListByteOffset = byteSwappedU32(*pCurLineListOffset);
+            const uint32_t lineListByteOffset = Endian::bigToHost(*pCurLineListOffset);
             const uint32_t lineListIdx = (lineListByteOffset / sizeof(uint32_t)) - lineListEntriesStartU32Idx;
 
             ASSERT(lineListIdx < gBlockMapLines.size());

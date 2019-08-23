@@ -8,6 +8,8 @@ TODO
 - Intro logos
 - Intro videos? (maybe)
 - Higher resolution + fullscreen support
+- Screen sizes need to scale with resolution
+- Preserve noclip cheat across levels
 - WASD + Mouse support
 - Gamepad support
 - Remove temp function key cheats
@@ -21,7 +23,6 @@ TODO
 - Optimize audio mixing for different channel counts and bit depths
 - Is the pistol reload speed too slow?
 - Ensure last map accessible via menu (wasn't on 3DO version?)
-- Change endian macros to be 'big endian to host' (more portable)
 - Crash when reading loading plaque
 - Allow exit out of finale back to main menu
 - Allow exit out of app from main menu

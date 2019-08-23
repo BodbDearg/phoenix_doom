@@ -126,7 +126,7 @@ static constexpr uint16_t OPAQUE_PIXEL_BITS = 0x8000;
 // Determines how many bits per pixel a CEL is
 //-------------------------------------------------------------------------------------------------
 static uint8_t getCCBBitsPerPixel(const CelControlBlock& ccb) noexcept {
-    const uint32_t ccbPre0 = byteSwappedU32(ccb.pre0);
+    const uint32_t ccbPre0 = Endian::bigToHost(ccb.pre0);
     const uint8_t mode = ccbPre0 & 0x07;                    // The first 3-bits define the format
 
     switch (mode) {
@@ -164,7 +164,7 @@ static void decodeUnpackedCelImageData(
         for (uint16_t y = 0; y < imageH; ++y) {
             for (uint16_t x = 0; x < imageW; ++x) {
                 const uint8_t colorIdx = bitStream.readBitsAsUInt<uint8_t>(imageBPP);
-                const uint16_t color = byteSwappedU16(pPLUT[colorIdx]) | OPAQUE_PIXEL_BITS;     // Note: making 'always opaque' only works assuming the image is used as a 'masked' image...
+                const uint16_t color = Endian::bigToHost(pPLUT[colorIdx]) | OPAQUE_PIXEL_BITS;  // Note: making 'always opaque' only works assuming the image is used as a 'masked' image...
                 *pCurOutputPixel = color;
                 ++pCurOutputPixel;
             }
@@ -261,7 +261,7 @@ static void decodePackedCelImageData(
 
                     if (bColorIndexed) {
                         const uint16_t colorIdx = bitStream.readBitsAsUInt<uint16_t>(imageBPP);
-                        color = byteSwappedU16(pPLUT[colorIdx]) | OPAQUE_PIXEL_BITS;
+                        color = Endian::bigToHost(pPLUT[colorIdx]) | OPAQUE_PIXEL_BITS;
                     }
                     else {
                         color = bitStream.readBitsAsUInt<uint16_t>(16) | OPAQUE_PIXEL_BITS;
@@ -283,7 +283,7 @@ static void decodePackedCelImageData(
 
                 if (bColorIndexed) {
                     const uint16_t colorIdx = bitStream.readBitsAsUInt<uint16_t>(imageBPP);
-                    color = byteSwappedU16(pPLUT[colorIdx]) | OPAQUE_PIXEL_BITS;
+                    color = Endian::bigToHost(pPLUT[colorIdx]) | OPAQUE_PIXEL_BITS;
                 }
                 else {
                     color = bitStream.readBitsAsUInt<uint16_t>(16) | OPAQUE_PIXEL_BITS;
@@ -355,7 +355,7 @@ uint16_t getCCBWidth(const CelControlBlock* const pCCB) noexcept {
 
     // DC: this logic comes from the original 3DO Doom source.
     // It can be found in the burgerlib function 'GetShapeWidth()':
-    uint32_t width = byteSwappedU32(pCCB->pre1) & 0x7FF;                // Get the HCount bits
+    uint32_t width = Endian::bigToHost(pCCB->pre1) & 0x7FF;             // Get the HCount bits
     width += 1;                                                         // Needed to get the TRUE result
     return width;
 }
@@ -365,7 +365,7 @@ uint16_t getCCBHeight(const CelControlBlock* const pCCB) noexcept {
 
     // DC: this logic comes from the original 3DO Doom source.
     // It be found in the burgerlib function 'GetShapeHeight()':
-    uint32_t height = byteSwappedU32(pCCB->pre0) >> 6;                  // Get the VCount bits
+    uint32_t height = Endian::bigToHost(pCCB->pre0) >> 6;               // Get the VCount bits
     height &= 0x3FF;                                                    // Mask off unused bits
     height += 1;                                                        // Needed to get the TRUE result
     return height;
@@ -397,8 +397,8 @@ void decodeDoomCelSprite(
     ASSERT(imageH > 0);
 
     // Grabbing various bits of CCB info and endian correcting
-    const uint32_t imageCCBFlags = byteSwappedU32(pCCB->flags);
-    const uint32_t imageDataOffset = byteSwappedU32(pCCB->sourcePtr) + 12;  // For some reason 3DO Doom added '12' to this offset to get the image data?
+    const uint32_t imageCCBFlags = Endian::bigToHost(pCCB->flags);
+    const uint32_t imageDataOffset = Endian::bigToHost(pCCB->sourcePtr) + 12;   // For some reason 3DO Doom added '12' to this offset to get the image data?
     const uint8_t imageBPP = getCCBBitsPerPixel(*pCCB);
 
     if (imageBPP > 16) {
@@ -407,7 +407,7 @@ void decodeDoomCelSprite(
 
     // Get the pointers to the PLUT and image data
     const std::byte* const pCelBytes = (const std::byte*) pCCB;
-    const uint16_t* const pPLUT = (const uint16_t*)(pCelBytes + 60);        // 3DO Doom harcoded this offset?
+    const uint16_t* const pPLUT = (const uint16_t*)(pCelBytes + 60);    // 3DO Doom harcoded this offset?
     const std::byte* const pImageData = pCelBytes + imageDataOffset;
 
     ASSERT(pImageData < pCelBytes + celDataSize);

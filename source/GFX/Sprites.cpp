@@ -113,8 +113,8 @@ static void freeSprite(Sprite& sprite) noexcept {
 //--------------------------------------------------------------------------------------------------
 static SpriteImageHeader readSpriteFrameHeader(const std::byte* const pData) noexcept {
     SpriteImageHeader header = *((const SpriteImageHeader*)pData);
-    byteSwapI16(header.leftOffset);
-    byteSwapI16(header.topOffset);
+    Endian::convertBigToHost(header.leftOffset);
+    Endian::convertBigToHost(header.topOffset);
     return header;
 }
 
@@ -168,7 +168,7 @@ const Sprite* load(const uint32_t resourceNum) noexcept {
     const std::byte* const pSpriteData = (const std::byte*) pSpriteResouce->pData;
     const uint32_t* const pFrameOffsets = (const uint32_t*) pSpriteData;
 
-    const uint32_t firstFrameOffset = byteSwappedU32(pFrameOffsets[0]);
+    const uint32_t firstFrameOffset = Endian::bigToHost(pFrameOffsets[0]);
     ASSERT_LOG(firstFrameOffset % sizeof(uint32_t) == 0, "Expect offset to be in multiples of 'uint32_t'!");
     const uint32_t numFrames = (firstFrameOffset & REMOVE_SPR_OFFSET_FLAGS_MASK) / sizeof(uint32_t);
 
@@ -196,7 +196,7 @@ const Sprite* load(const uint32_t resourceNum) noexcept {
     for (uint32_t frameIdx = 0; frameIdx < numFrames; ++frameIdx) {
         SpriteFrame& frame = sprite.pFrames[frameIdx];
 
-        const uint32_t frameOffsetWithFlags = byteSwappedU32(pFrameOffsets[frameIdx]);
+        const uint32_t frameOffsetWithFlags = Endian::bigToHost(pFrameOffsets[frameIdx]);
         const uint32_t frameOffset = frameOffsetWithFlags & REMOVE_SPR_OFFSET_FLAGS_MASK;
 
         if (frameOffsetWithFlags & SPR_OFFSET_FLAG_ROTATED) {
@@ -205,7 +205,7 @@ const Sprite* load(const uint32_t resourceNum) noexcept {
 
             for (uint8_t angle = 0; angle < NUM_SPRITE_DIRECTIONS; ++angle) {
                 // Read the header for this angle and fill in its info
-                const uint32_t frameAngleOffsetWithFlags = frameOffset + byteSwappedU32(pFrameAngleOffsets[angle]);
+                const uint32_t frameAngleOffsetWithFlags = frameOffset + Endian::bigToHost(pFrameAngleOffsets[angle]);
                 const uint32_t frameAngleOffset = frameAngleOffsetWithFlags & REMOVE_SPR_OFFSET_FLAGS_MASK;
                 const uint32_t imageDataOffset = frameAngleOffset + sizeof(SpriteImageHeader);
 
