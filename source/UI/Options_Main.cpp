@@ -270,12 +270,12 @@ void O_Control(player_t* const pPlayer) noexcept {
 //----------------------------------------------------------------------------------------------------------------------
 void O_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
     // Erase old and Draw new cursor frame
-    const CelImageArray& skullImgs = CelImages::loadImages(rSKULLS, CelImages::LoadFlagBits::MASKED);
+    const CelImageArray& skullImgs = CelImages::loadImages(rSKULLS, CelLoadFlagBits::MASKED);
     Renderer::drawUISprite(CURSORX, CURSOR_Y_POS[gCursorPos], skullImgs.getImage(gCursorFrame));
     CelImages::releaseImages(rSKULLS);
 
     // Draw menu text
-    const CelImageArray& sliderImgs = CelImages::loadImages(rSLIDER, CelImages::LoadFlagBits::MASKED);
+    const CelImageArray& sliderImgs = CelImages::loadImages(rSLIDER, CelLoadFlagBits::MASKED);
     PrintBigFontCenter(160, 10, "Options");
 
     if (gCursorPos < controls) {

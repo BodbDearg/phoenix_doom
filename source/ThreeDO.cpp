@@ -11,7 +11,6 @@
 #include "Game/DoomMain.h"
 #include "Game/Resources.h"
 #include "GFX/CelImages.h"
-#include "GFX/CelUtils.h"
 #include "GFX/Renderer.h"
 #include "GFX/Sprites.h"
 #include "GFX/Textures.h"

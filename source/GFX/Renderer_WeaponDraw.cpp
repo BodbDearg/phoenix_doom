@@ -19,12 +19,13 @@ static constexpr int32_t SCREEN_GUN_Y = -38;  // Y offset to center the player's
 // Draw a single weapon or muzzle flash on the screen
 //----------------------------------------------------------------------------------------------------------------------
 static void DrawAWeapon(const pspdef_t& psp, const bool bShadow) noexcept {
-    // Get the image to draw for this weapon
+    // Get the images to draw for this weapon.
+    // Note that the weapon image data includes offsets for where to render the sprite!
     const state_t& playerSpriteState = *psp.StatePtr;
     const uint32_t resourceNum = playerSpriteState.SpriteFrame >> FF_SPRITESHIFT;
     const CelImageArray& weaponImgs = CelImages::loadImages(
         resourceNum,
-        CelImages::LoadFlagBits::MASKED | CelImages::LoadFlagBits::HAS_OFFSETS
+        CelLoadFlagBits::MASKED | CelLoadFlagBits::HAS_OFFSETS
     );
     const CelImage& img = weaponImgs.getImage(playerSpriteState.SpriteFrame & FF_FRAMEMASK);
 

@@ -4,17 +4,16 @@
 #include "Base/Macros.h"
 #include "Base/Mem.h"
 #include "Base/Resource.h"
-#include "CelUtils.h"
 #include "Game/DoomRez.h"
 #include "Game/Resources.h"
+#include "ThreeDO/CelUtils.h"
 #include <algorithm>
 #include <map>
 #include <vector>
 
 BEGIN_NAMESPACE(Sprites)
 
-static std::vector<Sprite>  gSprites;
-static std::vector<void*>   gTmpPtrList;
+static std::vector<Sprite> gSprites;
 
 //--------------------------------------------------------------------------------------------------
 // Header for sprite data.
@@ -64,20 +63,20 @@ static Sprite& getSpriteForResourceNum(const uint32_t resourceNum) noexcept {
 //--------------------------------------------------------------------------------------------------
 static void freeSprite(Sprite& sprite) noexcept {
     // Gather up all the texture data pointers that need to be freed
-    ASSERT(gTmpPtrList.empty());
+    std::vector<uint16_t*> tmpTexturePtrList;
 
     {
         SpriteFrame* pCurSpriteFrame = sprite.pFrames;
         SpriteFrame* const pEndSpriteFrame = sprite.pFrames + sprite.numFrames;
 
-        void* pPrevTexture = nullptr;   // Used to help avoid some dupes in the list
+        uint16_t* pPrevTexture = nullptr;   // Used to help avoid some dupes in the list
 
         while (pCurSpriteFrame < pEndSpriteFrame) {
             for (SpriteFrameAngle& angle : pCurSpriteFrame->angles) {
-                void* const pAngleTexture = angle.pTexture;
+                uint16_t* const pAngleTexture = angle.pTexture;
 
                 if (pAngleTexture && pAngleTexture != pPrevTexture) {
-                    gTmpPtrList.push_back(pAngleTexture);
+                    tmpTexturePtrList.push_back(pAngleTexture);
                     pPrevTexture = pAngleTexture;
                 }
             }
@@ -87,20 +86,20 @@ static void freeSprite(Sprite& sprite) noexcept {
     }
 
     // Sort the pointers list so we can deduplicate
-    std::sort(gTmpPtrList.begin(), gTmpPtrList.end());
+    std::sort(tmpTexturePtrList.begin(), tmpTexturePtrList.end());
 
     // Now free all the pointers and cleanup the temp list
     {
-        void* pPrevFreedTexture = nullptr;
+        uint16_t* pPrevFreedTexture = nullptr;
 
-        for (void* pTexture : gTmpPtrList) {
+        for (uint16_t* pTexture : tmpTexturePtrList) {
             if (pTexture != pPrevFreedTexture) {
                 MemFree(pTexture);
                 pPrevFreedTexture = pTexture;
             }
         }
 
-        gTmpPtrList.clear();
+        tmpTexturePtrList.clear();
     }
 
     // Release the frame list and clear all sprite fields
@@ -271,14 +270,22 @@ const Sprite* load(const uint32_t resourceNum) noexcept {
             imageDataSize = spriteDataSize - imageDataOffset;
         }
         
-        // Decode the image
-        CelUtils::decodeDoomCelSprite(
-            (const CelControlBlock*)(pSpriteData + imageDataOffset),
+        // Decode the sprite's image
+        CelImage celImg;
+        const bool bLoadedSpriteOk = CelUtils::loadCelImage(
+            pSpriteData + imageDataOffset,
             imageDataSize,
-            &decodedImage.pPixels,
-            &decodedImage.width,
-            &decodedImage.height
+            CelLoadFlagBits::NONE,
+            celImg
         );
+
+        if (!bLoadedSpriteOk) {
+            FATAL_ERROR("Failed to load a sprite used by the game!");
+        }
+
+        decodedImage.pPixels = celImg.pPixels;
+        decodedImage.width = celImg.width;
+        decodedImage.height = celImg.height;
     }
 
     // Now once we have all the image data, fill in the actual texture info for all sprite frames

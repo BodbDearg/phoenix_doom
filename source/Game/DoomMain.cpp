@@ -361,7 +361,7 @@ static void RunDemo(uint32_t demoname) noexcept {
 // Main entry point for DOOM!!!!
 //----------------------------------------------------------------------------------------------------------------------
 void D_DoomMain() noexcept {
-    gpBigNumFont = &CelImages::loadImages(rBIGNUMB, CelImages::LoadFlagBits::MASKED);   // Cache the large numeric font (Needed always)
+    gpBigNumFont = &CelImages::loadImages(rBIGNUMB, CelLoadFlagBits::MASKED);   // Cache the large numeric font (Needed always)
 
     Renderer::init();   // Init refresh system
     P_Init();           // Init main code

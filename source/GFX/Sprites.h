@@ -6,9 +6,9 @@
 //----------------------------------------------------------------------------------------------------------------------
 // Module that provides access to Doom format sprites from the game's resource file.
 //
-// When I say 'Doom format' I mean that they are in a format specific to this game and very much distinct from the
-// generalized 3DO format ('CEL') files used elsewhere in the game. Note: the sprites used here are also NOT in the same
-// format as the original PC version of Doom, all of this has been tailored to the specifics of the 3DO port.
+// When I say 'Doom format' I mean that they are in a format specific to this game and version of Doom and very much
+// distinct from the generalized 3DO format ('CEL') files used elsewhere in the game, even though they do encode CEL
+// data at some point in the resource data.
 //----------------------------------------------------------------------------------------------------------------------
 
 // The number of sprite angles in Doom (45 degree angle increments)

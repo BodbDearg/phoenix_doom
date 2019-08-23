@@ -184,10 +184,10 @@ void M_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
         O_Drawer(bPresent, bSaveFrameBuffer);
     }
     else {
-        const CelImageArray& shapes = CelImages::loadImages(rMAINMENU, CelImages::LoadFlagBits::MASKED);    // Load shape group
+        const CelImageArray& shapes = CelImages::loadImages(rMAINMENU, CelLoadFlagBits::MASKED);    // Load shape group
 
         // Draw new skull
-        const CelImageArray& skullImgs = CelImages::loadImages(rSKULLS, CelImages::LoadFlagBits::MASKED);
+        const CelImageArray& skullImgs = CelImages::loadImages(rSKULLS, CelLoadFlagBits::MASKED);
         Renderer::drawUISprite(CURSORX, gCursorYs[gCursorPos], skullImgs.getImage(gCursorFrame));
         CelImages::releaseImages(rSKULLS);
 

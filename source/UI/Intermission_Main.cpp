@@ -8,7 +8,6 @@
 #include "Game/DoomRez.h"
 #include "Game/Resources.h"
 #include "GFX/CelImages.h"
-#include "GFX/CelUtils.h"
 #include "GFX/Video.h"
 #include <cstring>
 
@@ -120,7 +119,7 @@ void PrintBigFont(int32_t x, int32_t y, const char* string) noexcept {
 
         // Do I need the ASCII set? Make sure I have the text font.
         if (!gpCurrent) {
-            gpUCharx = &CelImages::loadImages(rCHARSET, CelImages::LoadFlagBits::MASKED);
+            gpUCharx = &CelImages::loadImages(rCHARSET, CelLoadFlagBits::MASKED);
             gpCurrent = gpUCharx;
         }
 
@@ -179,7 +178,7 @@ uint32_t GetBigStringWidth(const char* string) noexcept {
 
         // Do I need the ASCII set? Make sure I have the text font.
         if (!gpCurrent) {
-            gpUCharx = &CelImages::loadImages(rCHARSET, CelImages::LoadFlagBits::MASKED);
+            gpUCharx = &CelImages::loadImages(rCHARSET, CelLoadFlagBits::MASKED);
             gpCurrent = gpUCharx;
         }
 
@@ -314,7 +313,7 @@ void IN_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
     Video::debugClear();
     Renderer::drawUISprite(0, 0, rBACKGRNDBROWN);   // Load and draw the skulls
 
-    const CelImageArray& intermisShapes = CelImages::loadImages(rINTERMIS, CelImages::LoadFlagBits::MASKED);
+    const CelImageArray& intermisShapes = CelImages::loadImages(rINTERMIS, CelLoadFlagBits::MASKED);
 
     PrintBigFontCenter(160,10, MAP_NAMES[gGameMap-1]);              // Print the current map name
     PrintBigFontCenter(160,34, FINISHED);                           // Print "Finished"

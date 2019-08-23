@@ -123,9 +123,9 @@ static void CycleFlash(sbflash_t *FlashPtr)
 // Locate and load all needed graphics for the status bar.
 //----------------------------------------------------------------------------------------------------------------------
 void ST_Start() noexcept {
-    gpSBObj = &CelImages::loadImages(rSBARSHP, CelImages::LoadFlagBits::MASKED);        // Status bar shapes
-    gpFaces = &CelImages::loadImages(rFACES, CelImages::LoadFlagBits::MASKED);          // Load all the face frames
-    gpStatusBarShape = &CelImages::loadImage(rSTBAR);                                   // Load the status bar
+    gpSBObj = &CelImages::loadImages(rSBARSHP, CelLoadFlagBits::MASKED);    // Status bar shapes
+    gpFaces = &CelImages::loadImages(rFACES, CelLoadFlagBits::MASKED);      // Load all the face frames
+    gpStatusBarShape = &CelImages::loadImage(rSTBAR);                       // Load the status bar
 
     memset(&gStBar, 0, sizeof(gStBar));                 // Reset the status bar
     gFaceTics = 0;                                      // Reset the face tic count
