@@ -100,18 +100,19 @@ static const IffChunk* findAiffFormChunk(const std::vector<IffChunk>& chunks) no
 // Need to do things this way since MSVC no longer treats 'long double' as 80-bit extended.
 //--------------------------------------------------------------------------------------------------
 static double readBigEndianExtendedFloat(ByteStream& stream) THROWS {
-    // Read in reverse order to correct endianness
+    // If not big endian, need read in reverse order to correct endianness
     uint8_t bytes[10];
-    bytes[9] = stream.read<uint8_t>();
-    bytes[8] = stream.read<uint8_t>();
-    bytes[7] = stream.read<uint8_t>();
-    bytes[6] = stream.read<uint8_t>();
-    bytes[5] = stream.read<uint8_t>();
-    bytes[4] = stream.read<uint8_t>();
-    bytes[3] = stream.read<uint8_t>();
-    bytes[2] = stream.read<uint8_t>();
-    bytes[1] = stream.read<uint8_t>();
-    bytes[0] = stream.read<uint8_t>();
+
+    #if BIG_ENDIAN
+        for (uint32_t i = 0; i < 10; ++i) {
+            bytes[i] = stream.read<uint8_t>();
+        }
+    #else
+        for (uint32_t i = 10; i > 0;) {
+            --i;
+            bytes[i] = stream.read<uint8_t>();
+        }
+    #endif
 
     // 80-bit IEEE is unusual in that it specifies an integer part.
     // Normally '1.fraction' is assumed with floating point but 80-bit uses 'x.fraction' where 'x'
