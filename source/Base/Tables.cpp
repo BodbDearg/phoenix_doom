@@ -2080,19 +2080,3 @@ float       gGunYScale;
 float       gLightMins[256];
 float       gLightSubs[256];
 float       gLightCoefs[256];
-
-float getViewAngleForX(const int32_t x) noexcept {
-    const float screenWHalf = (float)(gScreenWidth - 1) * 0.5f;
-    const float xf = (float) x - screenWHalf;
-    const float xNorm = xf / screenWHalf;
-
-    if (xNorm <= -1.0f) {
-        return -FMath::ANGLE_45<float>;
-    }
-    else if (xNorm >= 1.0f) {
-        return FMath::ANGLE_45<float>;
-    }
-
-    const float angle = std::atan(xNorm);
-    return angle;
-}

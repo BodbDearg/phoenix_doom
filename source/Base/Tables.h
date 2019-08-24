@@ -31,6 +31,3 @@ extern float        gGunYScale;                         // Scale factor for play
 extern float        gLightMins[256];                    // Minimum light factors
 extern float        gLightSubs[256];                    // Light subtraction
 extern float        gLightCoefs[256];                   // Light coeffecient
-
-// Returns the view angle for the given x screen coordinate
-float getViewAngleForX(const int32_t x) noexcept;

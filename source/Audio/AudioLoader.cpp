@@ -3,8 +3,8 @@
 #include "AudioData.h"
 #include "Base/ByteStream.h"
 #include "Base/Endian.h"
+#include "Base/FileUtils.h"
 #include "Base/Finally.h"
-#include <cstdio>
 #include <memory>
 #include <vector>
 
@@ -342,38 +342,19 @@ static bool readFormChunk(const IffChunk& formChunk, AudioData& audioData) THROW
 }
 
 bool AudioLoader::loadFromFile(const char* const filePath, AudioData& audioData) noexcept {
-    // Open the file firstly
-    ASSERT(filePath);
-    FILE* pFile = std::fopen(filePath, "rb");
+    // Read the file and abort on failure
+    std::byte* pAudioFileData = nullptr;
+    size_t audioFileSize = 0;
 
-    if (!pFile) {
-        return false;
-    }
-
-    auto closeFile = finally([&]() noexcept {
-        std::fclose(pFile);
+    auto freeFileData = finally([&]() noexcept {
+        delete[] pAudioFileData;
     });
 
-    // Figure out what size it is
-    if (std::fseek(pFile, 0, SEEK_END) != 0)
+    if (!FileUtils::getContentsOfFile(filePath, pAudioFileData, audioFileSize))
         return false;
-
-    const long fileSize = std::ftell(pFile);
-
-    if (fileSize <= 0 || fileSize >= INT32_MAX)
-        return false;
-
-    // Read the entire file
-    std::unique_ptr<std::byte[]> fileBytes(new std::byte[fileSize]);
-
-    if (std::fseek(pFile, 0, SEEK_SET) != 0)
-        return false;
-
-    if (std::fread(fileBytes.get(), (uint32_t) fileSize, 1, pFile) != 1)
-        return false;
-
+    
     // Now load the audio from the file's buffer
-    return loadFromBuffer(fileBytes.get(), (uint32_t) fileSize, audioData);
+    return loadFromBuffer(pAudioFileData, (uint32_t) audioFileSize, audioData);
 }
 
 bool AudioLoader::loadFromBuffer(const std::byte* const pBuffer, const uint32_t bufferSize, AudioData& audioData) noexcept {
