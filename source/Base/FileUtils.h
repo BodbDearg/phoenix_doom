@@ -23,4 +23,15 @@ bool getContentsOfFile(
     const std::byte extraBytesValue = std::byte(0)
 ) noexcept;
 
+/**
+ * Write the specified block of bytes to the given file.
+ * Returns 'true' on success.
+ */
+bool writeDataToFile(
+    const char* const filePath,
+    const std::byte* const pData,
+    const size_t dataSize,
+    const bool bAppend = false
+) noexcept;
+
 END_NAMESPACE(FileUtils)

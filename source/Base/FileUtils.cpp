@@ -14,12 +14,13 @@ bool getContentsOfFile(
     const size_t numExtraBytes,
     const std::byte extraBytesValue
 ) noexcept {
+    ASSERT(filePath);
+
     // Clear output firstly
     pOutputMem = nullptr;
     outputSize = 0;
 
-    // Open the file firstly and ensure it will be closed on exit
-    ASSERT(filePath);
+    // Open the file firstly and ensure it will be closed on exit    
     FILE* pFile = std::fopen(filePath, "rb");
 
     if (!pFile) {
@@ -59,6 +60,29 @@ bool getContentsOfFile(
     pOutputMem = pTmpBuffer;
     outputSize = (size_t) fileSize;
     return true;
+}
+
+bool writeDataToFile(
+    const char* const filePath,
+    const std::byte* const pData,
+    const size_t dataSize,
+    const bool bAppend
+) noexcept {
+    ASSERT(filePath);
+
+    // Open the file firstly and ensure it will be closed on exit    
+    FILE* pFile = std::fopen(filePath, bAppend ? "ab" : "wb");
+
+    if (!pFile) {
+        return false;
+    }
+
+    auto closeFile = finally([&]() noexcept {
+        std::fclose(pFile);
+    });    
+
+    // Do the write and return the result
+    return (std::fwrite(pData, dataSize, 1, pFile) == 1);
 }
 
 END_NAMESPACE(FileUtils)
