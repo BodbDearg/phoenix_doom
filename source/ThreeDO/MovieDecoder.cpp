@@ -53,6 +53,33 @@ struct VideoFrameHeader {
     }
 };
 
+// Strip types
+static constexpr uint16_t STRIP_TYPE_KEY_FRAME      = 0x1000;     // This video strip is a keyframe and fully specified
+static constexpr uint16_t STRIP_TYPE_DELTA_FRAME    = 0x1100;     // This video strip is a frame that only receives partial updates from the previous frame
+
+// Header for a strip of video data in the CPAK codec.
+// CPAK allows many of these per frame, but we only need to support 1 for decoding these movies.
+struct VideoStripHeader {
+    uint16_t    _unknown1;
+    uint16_t    _unknown2;
+    uint16_t    _unknown3;
+    uint16_t    stripType;      // Either keyframe or delta frame
+    uint16_t    stripSize;      // Size of the strip data
+    uint16_t    topY;           // Rect defining what part of the video this strip encodes
+    uint16_t    leftX;
+    uint16_t    height;
+    uint16_t    width;
+
+    void convertBigToHostEndian() noexcept {
+        Endian::convertBigToHost(stripType);
+        Endian::convertBigToHost(stripSize);
+        Endian::convertBigToHost(topY);
+        Endian::convertBigToHost(leftX);
+        Endian::convertBigToHost(height);
+        Endian::convertBigToHost(width);
+    }
+};
+
 // Header for audio data in a movie file
 struct AudioStreamHeader {
     uint32_t    _unknown1;
@@ -180,6 +207,23 @@ bool decodeNextVideoFrame(VideoDecoderState& decoderState, uint32_t* const pDstP
         if (bInvalidFrameHeader)
             return false;
         
+        // Read the header for the single strip that we expect to be in the frame and validate
+        VideoStripHeader stripHeader;
+        frameData.read(stripHeader);
+        stripHeader.convertBigToHostEndian();
+
+        const bool bInvalidStripHeader = (
+            (stripHeader.stripType != STRIP_TYPE_KEY_FRAME && stripHeader.stripType != STRIP_TYPE_DELTA_FRAME) ||
+            (stripHeader.stripSize > frameData.getNumBytesLeft()) ||
+            (stripHeader.topY != 0) ||
+            (stripHeader.leftX != 0) ||
+            (stripHeader.height != VIDEO_HEIGHT) ||
+            (stripHeader.width != VIDEO_WIDTH)
+        );
+
+        // Make a sub data stream for the strip data, just in case it doesn't consume all of the rest of the frame data
+        ByteStream stripData(frameData.getCurData(), stripHeader.stripSize);
+
         // TODO: DECODE...
 
         // Update decoder state to point to the next frame
