@@ -18,18 +18,18 @@ int main(int argc, char* argv[]) noexcept {
         AudioData audioData;
         if (!MovieDecoder::decodeMovieAudio(pStreamFileData, streamFileSize, audioData))
             return -1;
-
-        std::byte* pFilmData = nullptr;
-        uint32_t filmSize = 0;
-        if (!ChunkedStreamFileUtils::getSubStreamData(pStreamFileData, streamFileSize, CSFFourCID::make("FILM"), pFilmData, filmSize))
-            return -1;
         
+        MovieDecoder::VideoDecoderState* const pVideoDecoder = new MovieDecoder::VideoDecoderState();
+        if (!MovieDecoder::initVideoDecoder(pStreamFileData, streamFileSize, *pVideoDecoder))
+            return -1;
+                
         FileUtils::writeDataToFile("E:/Darragh/Desktop/AdioLogo.audio", audioData.pBuffer, audioData.bufferSize);
-        FileUtils::writeDataToFile("E:/Darragh/Desktop/AdioLogo.film", pFilmData, filmSize);
+        FileUtils::writeDataToFile("E:/Darragh/Desktop/AdioLogo.film", pVideoDecoder->pMovieData, pVideoDecoder->movieDataSize);
 
-        delete[] pFilmData;
+        MovieDecoder::shutdownVideoDecoder(*pVideoDecoder);
         audioData.freeBuffer();
         delete[] pStreamFileData;
+        delete pVideoDecoder;
     }
 
     {
@@ -43,17 +43,17 @@ int main(int argc, char* argv[]) noexcept {
         if (!MovieDecoder::decodeMovieAudio(pStreamFileData, streamFileSize, audioData))
             return -1;
 
-        std::byte* pFilmData = nullptr;
-        uint32_t filmSize = 0;
-        if (!ChunkedStreamFileUtils::getSubStreamData(pStreamFileData, streamFileSize, CSFFourCID::make("FILM"), pFilmData, filmSize))
+        MovieDecoder::VideoDecoderState* const pVideoDecoder = new MovieDecoder::VideoDecoderState();
+        if (!MovieDecoder::initVideoDecoder(pStreamFileData, streamFileSize, *pVideoDecoder))
             return -1;
         
         FileUtils::writeDataToFile("E:/Darragh/Desktop/logic.audio", audioData.pBuffer, audioData.bufferSize);
-        FileUtils::writeDataToFile("E:/Darragh/Desktop/logic.film", pFilmData, filmSize);
+        FileUtils::writeDataToFile("E:/Darragh/Desktop/logic.film", pVideoDecoder->pMovieData, pVideoDecoder->movieDataSize);
 
-        delete[] pFilmData;
+        MovieDecoder::shutdownVideoDecoder(*pVideoDecoder);
         audioData.freeBuffer();
         delete[] pStreamFileData;
+        delete pVideoDecoder;
     }
 
     ThreeDOMain();

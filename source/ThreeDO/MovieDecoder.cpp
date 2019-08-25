@@ -8,10 +8,23 @@
 
 BEGIN_NAMESPACE(MovieDecoder)
 
-//----------------------------------------------------------------------------------------------------------------------
-// Header for audio data in a movie file. I don't know what all the fields for this are, I only know what I've 
-// managed to figure out and guess from reverse engineering...
-//----------------------------------------------------------------------------------------------------------------------
+// Header for video data in a movie file
+struct VideoStreamHeader {
+    CSFFourCID      id;             // Should say 'CVID'
+    uint32_t        height;         // Height of the movie in pixels
+    uint32_t        width;          // Width of the movie in pixels
+    uint32_t        fps;            // Framerate of the movie
+    uint32_t        numFrames;      // Number of frames in the movie
+
+    void convertBigToHostEndian() noexcept {
+        Endian::convertBigToHost(height);
+        Endian::convertBigToHost(width);
+        Endian::convertBigToHost(fps);
+        Endian::convertBigToHost(numFrames);
+    }
+};
+
+// Header for audio data in a movie file
 struct AudioStreamHeader {
     uint32_t    _unknown1;
     uint32_t    _unknown2;
@@ -32,11 +45,77 @@ struct AudioStreamHeader {
     }
 };
 
+bool initVideoDecoder(
+    const std::byte* const pStreamFileData,
+    const uint32_t streamFileSize,
+    VideoDecoderState& decoderState
+) noexcept {
+    ASSERT(pStreamFileData || streamFileSize <= 0);
+
+    // Default initialize the decoder state initially
+    std::memset(&decoderState, 0, sizeof(VideoDecoderState));
+
+    // Grab the video stream data and abort if that fails
+    bool bInitializedSuccessfully = false;
+    const bool bGotVideoStreamData = ChunkedStreamFileUtils::getSubStreamData(
+        pStreamFileData,
+        streamFileSize,
+        CSFFourCID::make("FILM"),
+        decoderState.pMovieData,
+        decoderState.movieDataSize
+    );
+
+    auto cleanupOnFailure = finally([&]() noexcept {
+        if (!bInitializedSuccessfully) {
+            shutdownVideoDecoder(decoderState);
+        }
+    });
+
+    if (!bGotVideoStreamData)
+        return false;
+
+    // There should be at least the header and more data following it.
+    // Grab the header and verify that it looks as we expect:
+    if (decoderState.movieDataSize <= sizeof(VideoStreamHeader))
+        return false;
+
+    VideoStreamHeader header;
+    std::memcpy(&header, decoderState.pMovieData, sizeof(VideoStreamHeader));
+    header.convertBigToHostEndian();
+
+    if (header.id != CSFFourCID::make("cvid") && header.id != CSFFourCID::make("CVID"))
+        return false;
+    
+    if (header.width != VIDEO_WIDTH || header.height != VIDEO_HEIGHT)
+        return false;
+
+    // Note: disabled this check because 'logic.cine' appears to have garbage in this field or at least something I don't know
+    // how to interpret. Both videos used in 3DO Doom should be 12 FPS anyway so I will just make that assumption...
+    #if 0
+    if (header.fps != VIDEO_FPS)
+        return false;
+    #endif
+    
+    decoderState.curMovieDataOffset += sizeof(VideoStreamHeader);
+
+    // All good if we get to here - fill in the rest of the details!
+    decoderState.totalFrames = header.numFrames;
+    bInitializedSuccessfully = true;
+    return true;
+}
+
+void shutdownVideoDecoder(VideoDecoderState& decoderState) noexcept {
+    delete[] decoderState.pMovieData;
+    decoderState.pMovieData = nullptr;
+}
+
 bool decodeMovieAudio(
     const std::byte* const pStreamFileData,
     const uint32_t streamFileSize,
     AudioData& audioDataOut
 ) noexcept {
+    ASSERT(pStreamFileData || streamFileSize <= 0);
+
     // Default initialize the output until we are successful
     audioDataOut = {};
 
