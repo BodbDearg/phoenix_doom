@@ -23,6 +23,11 @@ int main(int argc, char* argv[]) noexcept {
         if (!MovieDecoder::initVideoDecoder(pStreamFileData, streamFileSize, *pVideoDecoder))
             return -1;
                 
+        while (pVideoDecoder->frameNum < pVideoDecoder->totalFrames) {
+            const bool bSuccess = MovieDecoder::decodeNextVideoFrame(*pVideoDecoder, (uint32_t*) 1);
+            ASSERT(bSuccess);
+        }
+
         FileUtils::writeDataToFile("E:/Darragh/Desktop/AdioLogo.audio", audioData.pBuffer, audioData.bufferSize);
         FileUtils::writeDataToFile("E:/Darragh/Desktop/AdioLogo.film", pVideoDecoder->pMovieData, pVideoDecoder->movieDataSize);
 
@@ -46,6 +51,11 @@ int main(int argc, char* argv[]) noexcept {
         MovieDecoder::VideoDecoderState* const pVideoDecoder = new MovieDecoder::VideoDecoderState();
         if (!MovieDecoder::initVideoDecoder(pStreamFileData, streamFileSize, *pVideoDecoder))
             return -1;
+
+        while (pVideoDecoder->frameNum < pVideoDecoder->totalFrames) {
+            const bool bSuccess = MovieDecoder::decodeNextVideoFrame(*pVideoDecoder, (uint32_t*) 1);
+            ASSERT(bSuccess);
+        }
         
         FileUtils::writeDataToFile("E:/Darragh/Desktop/logic.audio", audioData.pBuffer, audioData.bufferSize);
         FileUtils::writeDataToFile("E:/Darragh/Desktop/logic.film", pVideoDecoder->pMovieData, pVideoDecoder->movieDataSize);
