@@ -24,7 +24,7 @@ int main(int argc, char* argv[]) noexcept {
             return -1;
                 
         while (pVideoDecoder->frameNum < pVideoDecoder->totalFrames) {
-            const bool bSuccess = MovieDecoder::decodeNextVideoFrame(*pVideoDecoder, (uint32_t*) 1);
+            const bool bSuccess = MovieDecoder::readNextVideoFrame(*pVideoDecoder);
             ASSERT(bSuccess);
         }
 
@@ -53,7 +53,7 @@ int main(int argc, char* argv[]) noexcept {
             return -1;
 
         while (pVideoDecoder->frameNum < pVideoDecoder->totalFrames) {
-            const bool bSuccess = MovieDecoder::decodeNextVideoFrame(*pVideoDecoder, (uint32_t*) 1);
+            const bool bSuccess = MovieDecoder::readNextVideoFrame(*pVideoDecoder);
             ASSERT(bSuccess);
         }
         

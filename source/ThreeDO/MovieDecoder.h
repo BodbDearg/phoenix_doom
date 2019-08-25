@@ -97,10 +97,10 @@ bool initVideoDecoder(
 void shutdownVideoDecoder(VideoDecoderState& decoderState) noexcept;
 
 //----------------------------------------------------------------------------------------------------------------------
-// Attempt to decode the next frame of the movie into the given XRGB8888 pixel buffer.
-// Returns 'false' on failure to decode the frame.
+// Read the next frame of the video into the given decoder state.
+// If this has been done successfully ('true' returned) then the video data is ready to be converted to XRGB.
 //----------------------------------------------------------------------------------------------------------------------
-bool decodeNextVideoFrame(VideoDecoderState& decoderState, uint32_t* const pDstPixels) noexcept;
+bool readNextVideoFrame(VideoDecoderState& decoderState) noexcept;
 
 //----------------------------------------------------------------------------------------------------------------------
 // Decode the entire audio for a movie stored in the given 3DO stream file and save to the given audio data object.

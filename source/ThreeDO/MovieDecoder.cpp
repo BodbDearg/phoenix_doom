@@ -25,7 +25,9 @@ struct VideoStreamHeader {
     }
 };
 
+//----------------------------------------------------------------------------------------------------------------------
 // Header for a frame of video data in a movie file
+//----------------------------------------------------------------------------------------------------------------------
 struct VideoFrameHeader {
     // Size of the entire frame data, minus this 32-bit field
     uint32_t frameSize;
@@ -39,11 +41,12 @@ struct VideoFrameHeader {
 
     // Size of the CVID data in the frame as a 24-bit big endian unsigned.
     // Storing as bytes because there is no standard 24-bit unsigned type in C++...
-    uint8_t cvidDataLenght[3];
+    uint8_t cvidDataLength[3];
 
     uint16_t width;         // Width of the video data
     uint16_t height;        // Height of the video data
     uint16_t numStrips;     // Number of coded strips in the CPAK video, I only support '1'
+    uint16_t _unknown;
 
     void convertBigToHostEndian() noexcept {
         Endian::convertBigToHost(frameSize);
@@ -57,12 +60,13 @@ struct VideoFrameHeader {
 static constexpr uint16_t STRIP_TYPE_KEY_FRAME      = 0x1000;     // This video strip is a keyframe and fully specified
 static constexpr uint16_t STRIP_TYPE_DELTA_FRAME    = 0x1100;     // This video strip is a frame that only receives partial updates from the previous frame
 
+//----------------------------------------------------------------------------------------------------------------------
 // Header for a strip of video data in the CPAK codec.
 // CPAK allows many of these per frame, but we only need to support 1 for decoding these movies.
+//----------------------------------------------------------------------------------------------------------------------
 struct VideoStripHeader {
     uint16_t    _unknown1;
     uint16_t    _unknown2;
-    uint16_t    _unknown3;
     uint16_t    stripType;      // Either keyframe or delta frame
     uint16_t    stripSize;      // Size of the strip data
     uint16_t    topY;           // Rect defining what part of the video this strip encodes
@@ -80,7 +84,37 @@ struct VideoStripHeader {
     }
 };
 
+//----------------------------------------------------------------------------------------------------------------------
+// Header for a CVID chunk in the CPAK codec.
+//----------------------------------------------------------------------------------------------------------------------
+struct CVIDChunkHeader {
+    uint16_t    chunkType;
+    uint16_t    chunkSize;
+
+    void convertBigToHostEndian() noexcept {
+        Endian::convertBigToHost(chunkType);
+        Endian::convertBigToHost(chunkSize);
+    }
+};
+
+// CVID Chunk types: key frames
+static constexpr uint16_t CVID_KF_V4_CODEBOOK_12_BIT    = 0x2000;
+static constexpr uint16_t CVID_KF_V1_CODEBOOK_12_BIT    = 0x2200;
+static constexpr uint16_t CVID_KF_V4_CODEBOOK_8_BIT     = 0x2400;
+static constexpr uint16_t CVID_KF_V1_CODEBOOK_8_BIT     = 0x2600;
+static constexpr uint16_t CVID_KF_VECTORS               = 0x3000;
+static constexpr uint16_t CVID_KF_VECTORS_V1_ONLY       = 0x3200;
+
+// CVID Chunk types: delta frames (partially updated frames)
+static constexpr uint16_t CVID_DF_V4_CODEBOOK_12_BIT    = 0x2100;
+static constexpr uint16_t CVID_DF_V1_CODEBOOK_12_BIT    = 0x2300;
+static constexpr uint16_t CVID_DF_V4_CODEBOOK_8_BIT     = 0x2500;
+static constexpr uint16_t CVID_DF_V1_CODEBOOK_8_BIT     = 0x2700;
+static constexpr uint16_t CVID_DF_VECTORS               = 0x3100;
+
+//----------------------------------------------------------------------------------------------------------------------
 // Header for audio data in a movie file
+//----------------------------------------------------------------------------------------------------------------------
 struct AudioStreamHeader {
     uint32_t    _unknown1;
     uint32_t    _unknown2;
@@ -100,6 +134,25 @@ struct AudioStreamHeader {
         Endian::convertBigToHost(audioDataSize);
     }
 };
+
+//----------------------------------------------------------------------------------------------------------------------
+// Attempt to read a CVID chunk in the data for the video frame strip
+//----------------------------------------------------------------------------------------------------------------------
+static void readCVIDChunk(VideoDecoderState& decoderState, ByteStream& stream) THROWS {
+    // Read the chunk header details
+    CVIDChunkHeader chunkHeader;
+    stream.read(chunkHeader);
+    chunkHeader.convertBigToHostEndian();
+
+    // See what type of chunk we are dealing with
+    
+    // TODO...
+
+    {
+        // Unknown type of chunk, skip over it
+        stream.consume(chunkHeader.chunkSize);
+    }
+}
 
 bool initVideoDecoder(
     const std::byte* const pStreamFileData,
@@ -165,13 +218,12 @@ void shutdownVideoDecoder(VideoDecoderState& decoderState) noexcept {
     decoderState.pMovieData = nullptr;
 }
 
-bool decodeNextVideoFrame(VideoDecoderState& decoderState, uint32_t* const pDstPixels) noexcept {
-    // Sanity checks: decoder must have been initialized and there must be a valid destination pixel buffer
+bool readNextVideoFrame(VideoDecoderState& decoderState) noexcept {
+    // Sanity checks: decoder must have been initialized
     ASSERT(decoderState.pMovieData);
     ASSERT(decoderState.movieDataSize > 0);
-    ASSERT(pDstPixels);
 
-    // Can't decode if we are at the end of the data
+    // Can't read if we are at the end of the data
     const bool bAtMovieEnd = (
         (decoderState.curMovieDataOffset >= decoderState.movieDataSize) ||
         (decoderState.frameNum >= decoderState.totalFrames)
@@ -180,7 +232,7 @@ bool decodeNextVideoFrame(VideoDecoderState& decoderState, uint32_t* const pDstP
     if (bAtMovieEnd)
         return false;
     
-    // Start decoding
+    // Start reading
     ByteStream frameData(
         decoderState.pMovieData + decoderState.curMovieDataOffset,
         decoderState.movieDataSize - decoderState.curMovieDataOffset
@@ -194,7 +246,7 @@ bool decodeNextVideoFrame(VideoDecoderState& decoderState, uint32_t* const pDstP
 
         const uint32_t frameSizeRemaining = (
             frameHeader.frameSize
-            + sizeof(uint32_t)  // Have to add this on because the frame size read does not include the 'size' field!
+            + sizeof(uint32_t)              // Have to add this on because the frame size read does not include the 'size' field!
             - sizeof(VideoFrameHeader)
         );
 
@@ -214,17 +266,21 @@ bool decodeNextVideoFrame(VideoDecoderState& decoderState, uint32_t* const pDstP
 
         const bool bInvalidStripHeader = (
             (stripHeader.stripType != STRIP_TYPE_KEY_FRAME && stripHeader.stripType != STRIP_TYPE_DELTA_FRAME) ||
-            (stripHeader.stripSize > frameData.getNumBytesLeft()) ||
             (stripHeader.topY != 0) ||
             (stripHeader.leftX != 0) ||
             (stripHeader.height != VIDEO_HEIGHT) ||
             (stripHeader.width != VIDEO_WIDTH)
         );
 
-        // Make a sub data stream for the strip data, just in case it doesn't consume all of the rest of the frame data
+        if (bInvalidStripHeader)
+            return false;
+        
+        // Read all of the CVID chunks that follow
         ByteStream stripData(frameData.getCurData(), stripHeader.stripSize);
 
-        // TODO: DECODE...
+        while (frameData.hasBytesLeft() > sizeof(CVIDChunkHeader)) {
+            readCVIDChunk(decoderState, frameData);
+        }
 
         // Update decoder state to point to the next frame
         ++decoderState.frameNum;
