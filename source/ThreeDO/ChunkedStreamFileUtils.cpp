@@ -21,12 +21,12 @@ struct DataStreamSubscriber {
 };
 
 //----------------------------------------------------------------------------------------------------------------------
-// Header chunk for a stream file.
+// Header for a stream file.
 // This was obtained from 3DO SDK documentation.
 //----------------------------------------------------------------------------------------------------------------------
-struct HeaderChunk {
+struct StreamHeader {
     CSFFourCID              chunkType;              // Should be 'SHDR'
-    uint32_t                chunkSize;
+    uint32_t                chunkSize;              // Should be 'sizeof(StreamHeader)'
     uint32_t                time;
     uint32_t                channel;
     uint32_t                subChunkType;
@@ -66,13 +66,18 @@ struct HeaderChunk {
 };
 
 //----------------------------------------------------------------------------------------------------------------------
-// A header for a sub chunk in a stream file.
-// The data follows the chunk in the stream.
-// This was obtained from 3DO SDK documentation.
+// A header for chunk (other than the header) in a stream file.
+// The data follows the chunk header in the stream.
+// I have incomplete info on what all these fields mean; what I have here was pieced together from clues in
+// the 3DO SDK as well as a bit of reverse engineering and hex editing...
 //----------------------------------------------------------------------------------------------------------------------
-struct SubChunkHeader {
-   CSFFourCID   chunkType;
-   uint32_t     chunkSize;
+struct ChunkHeader {
+    CSFFourCID      chunkType;
+    uint32_t        chunkSize;
+    uint32_t        _unknown1;
+    uint32_t        _unknown2;
+    CSFFourCID      subChunkType;   // This can just be ignored, 3DO streaming libraries probably made use of this...
+    uint32_t        _unknown3;
 
     void convertBigToHostEndian() noexcept {
         Endian::convertBigToHost(chunkSize);
@@ -87,22 +92,22 @@ uint32_t determineSubStreamSize(
     const uint32_t streamFileSize,
     const CSFFourCID subStreamId
 ) noexcept {
-    ASSERT(streamFileSize > sizeof(HeaderChunk));
+    ASSERT(streamFileSize > sizeof(StreamHeader));
 
     try {
-        // First skip over the file header
+        // First skip over the stream header
         uint32_t subStreamSize = 0;
         ByteStream bytes(pStreamFileData, streamFileSize);
-        bytes.consume(sizeof(HeaderChunk));
+        bytes.consume(sizeof(StreamHeader));
 
         // Keep reading more chunk headers until we are done
         while (bytes.hasBytesLeft()) {
             // Get the sub chunk header and see if it is the type we are interested in.
             // If it is the correct type then account for it's size.
-            SubChunkHeader header;
+            ChunkHeader header;
             bytes.read(header);
             header.convertBigToHostEndian();
-            const uint32_t chunkDataSize = header.chunkSize - sizeof(SubChunkHeader);
+            const uint32_t chunkDataSize = header.chunkSize - sizeof(ChunkHeader);
 
             if (header.chunkType == subStreamId) {
                 subStreamSize += chunkDataSize;
@@ -134,12 +139,12 @@ bool getSubStreamData(
     subStreamSizeOut = 0;
 
     // The stream data MUST be at least big enough for the stream header
-    if (streamFileSize <= sizeof(HeaderChunk))
+    if (streamFileSize <= sizeof(StreamHeader))
         return false;
     
-    // Read the header and endian correct
-    HeaderChunk header;
-    std::memcpy(&header, pStreamFileData, sizeof(HeaderChunk));
+    // Read the stream header and endian correct
+    StreamHeader header;
+    std::memcpy(&header, pStreamFileData, sizeof(StreamHeader));
     header.convertBigToHostEndian();
 
     // Ensure the header is what we expect
@@ -149,6 +154,9 @@ bool getSubStreamData(
     if (header.headerVersion != 2)
         return false;
 
+    if (header.chunkSize != sizeof(StreamHeader))
+        return false;
+    
     // Determine the size of the sub stream, if there is no data then we cannot read it
     const uint32_t subStreamSize = determineSubStreamSize(pStreamFileData, streamFileSize, subStreamId);
 
@@ -159,19 +167,19 @@ bool getSubStreamData(
     std::unique_ptr<std::byte[]> streamData(new std::byte[subStreamSize]);
 
     try {
-        // First skip over the file header
+        // First skip over the stream header
         std::byte* pCurData = streamData.get();
         ByteStream bytes(pStreamFileData, streamFileSize);
-        bytes.consume(sizeof(HeaderChunk));
+        bytes.consume(sizeof(StreamHeader));
 
-        // Keep reading more stream until we are done
+        // Keep reading more chunks in the stream until we are done
         while (bytes.hasBytesLeft()) {
-            // Get the sub chunk header and see if it is the type we are interested in.
+            // Get this chunk's header and see if it is the type we are interested in.
             // If it is the correct type then read the chunk, otherwise skip:
-            SubChunkHeader header;
+            ChunkHeader header;
             bytes.read(header);
             header.convertBigToHostEndian();
-            const uint32_t chunkDataSize = header.chunkSize - sizeof(SubChunkHeader);
+            const uint32_t chunkDataSize = header.chunkSize - sizeof(ChunkHeader);
 
             if (header.chunkType == subStreamId) {
                 bytes.readBytes(pCurData, chunkDataSize);
