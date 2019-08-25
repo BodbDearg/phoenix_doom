@@ -132,6 +132,8 @@ set(SOURCE_FILES
     "ThreeDO/CelUtils.h"
     "ThreeDO/ChunkedStreamFileUtils.cpp"
     "ThreeDO/ChunkedStreamFileUtils.h"
+    "ThreeDO/MovieDecoder.cpp"
+    "ThreeDO/MovieDecoder.h"
     "UI/Automap_Main.cpp"
     "UI/Automap_Main.h"
     "UI/Finale_Main.cpp"

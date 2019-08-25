@@ -10,7 +10,7 @@
 struct AudioData {
     std::byte*  pBuffer;        // Contains all the samples for the audio piece. Note: each sample should be byte aligned!
     uint32_t    bufferSize;     // Actual size in bytes of the audio data byte buffer
-    uint32_t    numSamples;     // Number of samples in the audio data
+    uint32_t    numSamples;     // Number of samples in the audio data (per channel)
     uint32_t    sampleRate;     // 44,100 etc.
     uint16_t    numChannels;    // Should be: '1' or '2', note that the data for each channel is interleaved for each sample.
     uint16_t    bitDepth;       // Should be: '8' or '16' only.

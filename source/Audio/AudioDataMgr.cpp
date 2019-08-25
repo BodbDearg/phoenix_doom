@@ -48,8 +48,7 @@ AudioDataMgr::Handle AudioDataMgr::loadFile(const char* const file) noexcept {
     if (!mFreeHandles.empty()) {
         handle = mFreeHandles.back();
         mFreeHandles.pop_back();
-    }
-    else {
+    } else {
         handle = (uint32_t) mAudioEntries.size();
         mAudioEntries.emplace_back();
     }

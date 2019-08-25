@@ -1,7 +1,10 @@
 #include "ThreeDO.h"
 
+// FIXME: TEMP - REMOVE ME!!
+#include "Audio/AudioData.h"
 #include "Base/FileUtils.h"
 #include "ThreeDO/ChunkedStreamFileUtils.h"
+#include "ThreeDO/MovieDecoder.h"
 
 int main(int argc, char* argv[]) noexcept {
     // FIXME: TEMP - REMOVE ME!!
@@ -12,9 +15,8 @@ int main(int argc, char* argv[]) noexcept {
         if (!FileUtils::getContentsOfFile("AdiLogo.cine", pStreamFileData, streamFileSize))
             return -1;
         
-        std::byte* pSoundData = nullptr;
-        uint32_t soundSize = 0;
-        if (!ChunkedStreamFileUtils::getSubStreamData(pStreamFileData, streamFileSize, CSFFourCID::make("SNDS"), pSoundData, soundSize))
+        AudioData audioData;
+        if (!MovieDecoder::decodeMovieAudio(pStreamFileData, streamFileSize, audioData))
             return -1;
 
         std::byte* pFilmData = nullptr;
@@ -22,11 +24,11 @@ int main(int argc, char* argv[]) noexcept {
         if (!ChunkedStreamFileUtils::getSubStreamData(pStreamFileData, streamFileSize, CSFFourCID::make("FILM"), pFilmData, filmSize))
             return -1;
         
-        FileUtils::writeDataToFile("E:/Darragh/Desktop/AdioLogo.audio", pSoundData, soundSize);
+        FileUtils::writeDataToFile("E:/Darragh/Desktop/AdioLogo.audio", audioData.pBuffer, audioData.bufferSize);
         FileUtils::writeDataToFile("E:/Darragh/Desktop/AdioLogo.film", pFilmData, filmSize);
 
         delete[] pFilmData;
-        delete[] pSoundData;
+        audioData.freeBuffer();
         delete[] pStreamFileData;
     }
 
