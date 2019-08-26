@@ -123,8 +123,8 @@ struct VideoDecodeException {};
 //----------------------------------------------------------------------------------------------------------------------
 struct YUVColor {
     uint8_t y;
-    uint8_t u;
-    uint8_t v;
+    int8_t  u;      // N.B: Chrominance values are signed!
+    int8_t  v;
 };
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -163,7 +163,7 @@ static uint32_t yuvToXRGB8888(const YUVColor color) noexcept {
     const uint32_t g = std::min(std::max(y - (u / 2) - v,   0), 255);
     const uint32_t b = std::min(std::max(y + (u * 2),       0), 255);
 
-    return ((0xFFu << 24) | (r << 16) | (g << 8) | (b << 0));
+    return ((0xFFu << 24) | (b << 16) | (g << 8) | (r << 0));
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -213,7 +213,7 @@ static void readCVIDChunk_KF_Vectors(VideoDecoderState& decoderState, ByteStream
                 block.v2Idx = stream.read<uint8_t>();
                 block.v3Idx = stream.read<uint8_t>();
             } else {
-                // This block uses the v4 codebook: 1 byte for 1 V1 codebook vector reference
+                // This block uses the v1 codebook: 1 byte for 1 V1 codebook vector reference
                 block.codebookIdx = 0;
 
                 const uint32_t vIdx = stream.read<uint8_t>();

@@ -43,8 +43,8 @@ struct VidVec {
     uint8_t y1;
     uint8_t y2;
     uint8_t y3;
-    uint8_t u;      // Chrominance (color) values
-    uint8_t v;
+    int8_t  u;      // Chrominance (color) values: note that these are signed!
+    int8_t  v;
 };
 
 //----------------------------------------------------------------------------------------------------------------------
