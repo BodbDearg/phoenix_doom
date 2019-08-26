@@ -106,7 +106,7 @@ bool readNextVideoFrame(VideoDecoderState& decoderState) noexcept;
 // Decode the current frame read into the given row major pixel buffer, which is expected to be 280x200.
 // The frame data is saved in XRGB8888 format (little endian).
 //----------------------------------------------------------------------------------------------------------------------
-bool decodeCurrentVideoFrame(VideoDecoderState& decoderState, uint32_t* const pDstPixels) noexcept;
+void decodeCurrentVideoFrame(VideoDecoderState& decoderState, uint32_t* const pDstPixels) noexcept;
 
 //----------------------------------------------------------------------------------------------------------------------
 // Decode the entire audio for a movie stored in the given 3DO stream file and save to the given audio data object.

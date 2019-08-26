@@ -395,7 +395,7 @@ bool readNextVideoFrame(VideoDecoderState& decoderState) noexcept {
     }
 }
 
-bool decodeCurrentVideoFrame(VideoDecoderState& decoderState, uint32_t* const pDstPixels) noexcept {
+void decodeCurrentVideoFrame(VideoDecoderState& decoderState, uint32_t* const pDstPixels) noexcept {
     // Decode each 4x4 pixel block
     constexpr uint32_t NUM_BLOCKS_PER_ROW = VIDEO_WIDTH / 4;
 
