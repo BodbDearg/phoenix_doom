@@ -61,10 +61,10 @@ struct VidCodebook {
 //----------------------------------------------------------------------------------------------------------------------
 struct VidBlock {
     uint8_t codebookIdx;    // If '0' use the v1 codebook, if '1' use the 'v4' codebook
+    uint8_t v0Idx;
     uint8_t v1Idx;
     uint8_t v2Idx;
     uint8_t v3Idx;
-    uint8_t v4Idx;
 };
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -101,6 +101,12 @@ void shutdownVideoDecoder(VideoDecoderState& decoderState) noexcept;
 // If this has been done successfully ('true' returned) then the video data is ready to be converted to XRGB.
 //----------------------------------------------------------------------------------------------------------------------
 bool readNextVideoFrame(VideoDecoderState& decoderState) noexcept;
+
+//----------------------------------------------------------------------------------------------------------------------
+// Decode the current frame read into the given row major pixel buffer, which is expected to be 280x200.
+// The frame data is saved in XRGB8888 format (little endian).
+//----------------------------------------------------------------------------------------------------------------------
+bool decodeCurrentVideoFrame(VideoDecoderState& decoderState, uint32_t* const pDstPixels) noexcept;
 
 //----------------------------------------------------------------------------------------------------------------------
 // Decode the entire audio for a movie stored in the given 3DO stream file and save to the given audio data object.

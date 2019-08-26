@@ -5,6 +5,7 @@
 #include "Base/Endian.h"
 #include "Base/Finally.h"
 #include "ChunkedStreamFileUtils.h"
+#include <algorithm>
 #include <memory>
 
 BEGIN_NAMESPACE(MovieDecoder)
@@ -113,6 +114,20 @@ static constexpr uint16_t CVID_DF_V1_CODEBOOK_8_BIT     = 0x2700;
 static constexpr uint16_t CVID_DF_VECTORS               = 0x3100;
 
 //----------------------------------------------------------------------------------------------------------------------
+// Exception thrown when video decoding fails
+//----------------------------------------------------------------------------------------------------------------------
+struct VideoDecodeException {};
+
+//----------------------------------------------------------------------------------------------------------------------
+// Holds a color in YUV format
+//----------------------------------------------------------------------------------------------------------------------
+struct YUVColor {
+    uint8_t y;
+    uint8_t u;
+    uint8_t v;
+};
+
+//----------------------------------------------------------------------------------------------------------------------
 // Header for audio data in a movie file
 //----------------------------------------------------------------------------------------------------------------------
 struct AudioStreamHeader {
@@ -136,6 +151,84 @@ struct AudioStreamHeader {
 };
 
 //----------------------------------------------------------------------------------------------------------------------
+// Convert a color in YUV format to XRGB8888 as it is done in the Cinepak codec.
+// According to what I read this is not a standard way of converting, but was chosen because of it's simplicity.
+//----------------------------------------------------------------------------------------------------------------------
+static uint32_t yuvToXRGB8888(const YUVColor color) noexcept {
+    const int32_t y = (int32_t) color.y;
+    const int32_t u = (int32_t) color.u;
+    const int32_t v = (int32_t) color.v;
+
+    const uint32_t r = std::min(std::max(y + (v * 2),       0), 255);
+    const uint32_t g = std::min(std::max(y - (u / 2) - v,   0), 255);
+    const uint32_t b = std::min(std::max(y + (u * 2),       0), 255);
+
+    return ((0xFFu << 24) | (r << 16) | (g << 8) | (b << 0));
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+// Read CVID chunk: a keyframe codebook in 12 bits per pixel mode
+//----------------------------------------------------------------------------------------------------------------------
+static void readCVIDChunk_KF_Codebook_12_Bit(
+    VideoDecoderState& decoderState,
+    ByteStream& stream,
+    const uint16_t chunkSize,
+    VidCodebook& codebook
+) THROWS {
+    const uint16_t numEntries = chunkSize / 6u;
+
+    if (numEntries > 256) {
+        throw VideoDecodeException();
+    }
+
+    VidVec* pVec = codebook.vectors;
+
+    for (uint32_t i = 0; i < numEntries; ++i) {
+        stream.read(*pVec);
+        ++pVec;
+    }
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+// Read CVID chunk: keyframe vectors (referencing either V1 or V4 codebooks)
+//----------------------------------------------------------------------------------------------------------------------
+static void readCVIDChunk_KF_Vectors(VideoDecoderState& decoderState, ByteStream& stream) THROWS {    
+    // Read in batches of 32 blocks at a time
+    for (uint32_t batchStartBlockIdx = 0; batchStartBlockIdx < NUM_BLOCKS_PER_FRAME; batchStartBlockIdx += 32) {
+        // First read the flags vector telling whether the next 32 blocks are using the V1 or V4 codebook
+        uint32_t updateFlags = stream.read<uint32_t>();
+        Endian::convertBigToHost(updateFlags);
+
+        // Read the vector indexes for the next 32 blocks:
+        const uint32_t endBlockIdx = std::min(batchStartBlockIdx + 32, NUM_BLOCKS_PER_FRAME);
+
+        for (uint32_t blockIdx = batchStartBlockIdx; blockIdx < endBlockIdx; ++blockIdx) {
+            VidBlock& block = decoderState.blocks[blockIdx];
+            
+            if ((updateFlags & 0x80000000u) != 0) {
+                // This block uses the v4 codebook: 4 bytes for 4 V4 codebook vector references
+                block.codebookIdx = 1;
+                block.v0Idx = stream.read<uint8_t>();
+                block.v1Idx = stream.read<uint8_t>();
+                block.v2Idx = stream.read<uint8_t>();
+                block.v3Idx = stream.read<uint8_t>();
+            } else {
+                // This block uses the v4 codebook: 1 byte for 1 V1 codebook vector reference
+                block.codebookIdx = 0;
+
+                const uint32_t vIdx = stream.read<uint8_t>();
+                block.v0Idx = vIdx;
+                block.v1Idx = vIdx;
+                block.v2Idx = vIdx;
+                block.v3Idx = vIdx;
+            }
+
+            updateFlags <<= 1;
+        }
+    }
+}
+
+//----------------------------------------------------------------------------------------------------------------------
 // Attempt to read a CVID chunk in the data for the video frame strip
 //----------------------------------------------------------------------------------------------------------------------
 static void readCVIDChunk(VideoDecoderState& decoderState, ByteStream& stream) THROWS {
@@ -145,12 +238,19 @@ static void readCVIDChunk(VideoDecoderState& decoderState, ByteStream& stream) T
     chunkHeader.convertBigToHostEndian();
 
     // See what type of chunk we are dealing with
-    
-    // TODO...
-
-    {
-        // Unknown type of chunk, skip over it
-        stream.consume(chunkHeader.chunkSize);
+    if (chunkHeader.chunkType == CVID_KF_V4_CODEBOOK_12_BIT) {
+        readCVIDChunk_KF_Codebook_12_Bit(decoderState, stream, chunkHeader.chunkSize, decoderState.codebooks[1]);
+    } 
+    else if (chunkHeader.chunkType == CVID_KF_V1_CODEBOOK_12_BIT) {
+        readCVIDChunk_KF_Codebook_12_Bit(decoderState, stream, chunkHeader.chunkSize, decoderState.codebooks[0]);
+    }
+    else if (chunkHeader.chunkType == CVID_KF_VECTORS) {
+        readCVIDChunk_KF_Vectors(decoderState, stream);
+    }
+    else {
+        // Unknown type of chunk, skip over it.
+        // Note: sometimes the chunk size is slightly wrong, so check for that here:
+        stream.consume(std::min(stream.getNumBytesLeft(), (uint32_t) chunkHeader.chunkSize));
     }
 }
 
@@ -233,7 +333,7 @@ bool readNextVideoFrame(VideoDecoderState& decoderState) noexcept {
         return false;
     
     // Start reading
-    ByteStream frameData(
+    ByteStream movieData(
         decoderState.pMovieData + decoderState.curMovieDataOffset,
         decoderState.movieDataSize - decoderState.curMovieDataOffset
     );
@@ -241,7 +341,7 @@ bool readNextVideoFrame(VideoDecoderState& decoderState) noexcept {
     try {
         // Read the frame header and verify it is correct
         VideoFrameHeader frameHeader;
-        frameData.read(frameHeader);
+        movieData.read(frameHeader);
         frameHeader.convertBigToHostEndian();
 
         const uint32_t frameSizeRemaining = (
@@ -251,7 +351,7 @@ bool readNextVideoFrame(VideoDecoderState& decoderState) noexcept {
         );
 
         const bool bInvalidFrameHeader = (
-            (frameSizeRemaining > frameData.getNumBytesLeft()) ||                           // Bad data length?
+            (frameSizeRemaining > movieData.getNumBytesLeft()) ||                           // Bad data length?
             (frameHeader.width != VIDEO_WIDTH || frameHeader.height != VIDEO_HEIGHT) ||     // Unexpected size?
             (frameHeader.numStrips != 1)                                                    // Allow just 1 strip per frame
         );
@@ -260,6 +360,8 @@ bool readNextVideoFrame(VideoDecoderState& decoderState) noexcept {
             return false;
         
         // Read the header for the single strip that we expect to be in the frame and validate
+        ByteStream frameData(movieData.getCurData(), frameSizeRemaining);
+
         VideoStripHeader stripHeader;
         frameData.read(stripHeader);
         stripHeader.convertBigToHostEndian();
@@ -276,9 +378,7 @@ bool readNextVideoFrame(VideoDecoderState& decoderState) noexcept {
             return false;
         
         // Read all of the CVID chunks that follow
-        ByteStream stripData(frameData.getCurData(), stripHeader.stripSize);
-
-        while (frameData.hasBytesLeft() > sizeof(CVIDChunkHeader)) {
+        while (frameData.getNumBytesLeft() > sizeof(CVIDChunkHeader)) {
             readCVIDChunk(decoderState, frameData);
         }
 
@@ -292,6 +392,73 @@ bool readNextVideoFrame(VideoDecoderState& decoderState) noexcept {
     catch (...) {
         // Failed to decode!
         return false;
+    }
+}
+
+bool decodeCurrentVideoFrame(VideoDecoderState& decoderState, uint32_t* const pDstPixels) noexcept {
+    // Decode each 4x4 pixel block
+    constexpr uint32_t NUM_BLOCKS_PER_ROW = VIDEO_WIDTH / 4;
+
+    for (uint32_t blockIdx = 0; blockIdx < NUM_BLOCKS_PER_FRAME; ++blockIdx) {
+        // Figure out the row and column in terms of rows
+        const uint32_t blockRow = blockIdx / NUM_BLOCKS_PER_ROW;
+        const uint32_t blockCol = blockIdx - (blockRow * NUM_BLOCKS_PER_ROW);
+
+        // Figure out the top left x and y in terms of pixels
+        const uint32_t lx = blockCol * 4;
+        const uint32_t ty = blockRow * 4;
+
+        // Grab the 4 vectors for this block
+        const VidBlock vidBlock = decoderState.blocks[blockIdx];        
+        ASSERT(vidBlock.codebookIdx <= 1);
+
+        const VidCodebook& codebook = decoderState.codebooks[vidBlock.codebookIdx];
+        const VidVec v0 = codebook.vectors[vidBlock.v0Idx];
+        const VidVec v1 = codebook.vectors[vidBlock.v1Idx];
+        const VidVec v2 = codebook.vectors[vidBlock.v2Idx];
+        const VidVec v3 = codebook.vectors[vidBlock.v3Idx];
+
+        // Get the YUV colors for each pixel
+        YUVColor pixelsYUV[16];
+        pixelsYUV[0 ] = { v0.y0, v0.u, v0.v };
+        pixelsYUV[1 ] = { v0.y1, v0.u, v0.v };
+        pixelsYUV[2 ] = { v1.y0, v1.u, v1.v };
+        pixelsYUV[3 ] = { v1.y1, v1.u, v1.v };
+        pixelsYUV[4 ] = { v0.y2, v0.u, v0.v };
+        pixelsYUV[5 ] = { v0.y3, v0.u, v0.v };
+        pixelsYUV[6 ] = { v1.y2, v1.u, v1.v };
+        pixelsYUV[7 ] = { v1.y3, v1.u, v1.v };
+        pixelsYUV[8 ] = { v2.y0, v2.u, v2.v };
+        pixelsYUV[9 ] = { v2.y1, v2.u, v2.v };
+        pixelsYUV[10] = { v3.y0, v3.u, v3.v };
+        pixelsYUV[11] = { v3.y1, v3.u, v3.v };
+        pixelsYUV[12] = { v2.y2, v2.u, v2.v };
+        pixelsYUV[13] = { v2.y3, v2.u, v2.v };
+        pixelsYUV[14] = { v3.y2, v3.u, v3.v };
+        pixelsYUV[15] = { v3.y3, v3.u, v3.v };
+
+        // Now convert each pixel to XRGB and save
+        uint32_t* const pRow1 = pDstPixels + ty * VIDEO_WIDTH + lx;
+        uint32_t* const pRow2 = pRow1 + VIDEO_WIDTH;
+        uint32_t* const pRow3 = pRow1 + VIDEO_WIDTH * 2;
+        uint32_t* const pRow4 = pRow1 + VIDEO_WIDTH * 3;
+
+        pRow1[0] = yuvToXRGB8888(pixelsYUV[0]);
+        pRow1[1] = yuvToXRGB8888(pixelsYUV[1]);
+        pRow1[2] = yuvToXRGB8888(pixelsYUV[2]);
+        pRow1[3] = yuvToXRGB8888(pixelsYUV[3]);
+        pRow2[0] = yuvToXRGB8888(pixelsYUV[4]);
+        pRow2[1] = yuvToXRGB8888(pixelsYUV[5]);
+        pRow2[2] = yuvToXRGB8888(pixelsYUV[6]);
+        pRow2[3] = yuvToXRGB8888(pixelsYUV[7]);
+        pRow3[0] = yuvToXRGB8888(pixelsYUV[8]);
+        pRow3[1] = yuvToXRGB8888(pixelsYUV[9]);
+        pRow3[2] = yuvToXRGB8888(pixelsYUV[10]);
+        pRow3[3] = yuvToXRGB8888(pixelsYUV[11]);
+        pRow4[0] = yuvToXRGB8888(pixelsYUV[12]);
+        pRow4[1] = yuvToXRGB8888(pixelsYUV[13]);
+        pRow4[2] = yuvToXRGB8888(pixelsYUV[14]);
+        pRow4[3] = yuvToXRGB8888(pixelsYUV[15]);
     }
 }
 
