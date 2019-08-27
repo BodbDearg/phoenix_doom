@@ -45,7 +45,7 @@ int main(int argc, char* argv[]) noexcept {
         delete pVideoDecoder;
     }
     */
-    /*
+    
     {
         std::byte* pStreamFileData = nullptr;
         size_t streamFileSize = 0;
@@ -66,15 +66,15 @@ int main(int argc, char* argv[]) noexcept {
             ASSERT(bSuccess);
         }
         
+        /*
         FileUtils::writeDataToFile("E:/Darragh/Desktop/logic.audio", audioData.pBuffer, audioData.bufferSize);
         FileUtils::writeDataToFile("E:/Darragh/Desktop/logic.film", pVideoDecoder->pMovieData, pVideoDecoder->movieDataSize);
-
+        */
         MovieDecoder::shutdownVideoDecoder(*pVideoDecoder);
         audioData.freeBuffer();
         delete[] pStreamFileData;
         delete pVideoDecoder;
     }
-    */
 
     ThreeDOMain();
     return 0;

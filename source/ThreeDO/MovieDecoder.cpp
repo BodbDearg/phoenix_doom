@@ -167,7 +167,7 @@ static uint32_t yuvToXRGB8888(const YUVColor color) noexcept {
 }
 
 //----------------------------------------------------------------------------------------------------------------------
-// Read CVID chunk: a keyframe codebook in 12 bits per pixel mode
+// Read CVID chunk: a codebook for a key frame (12 bits per pixel mode)
 //----------------------------------------------------------------------------------------------------------------------
 static void readCVIDChunk_KF_Codebook_12_Bit(
     VideoDecoderState& decoderState,
@@ -181,19 +181,49 @@ static void readCVIDChunk_KF_Codebook_12_Bit(
         throw VideoDecodeException();
     }
 
-    VidVec* pVec = codebook.vectors;
+    VidVec* pCurVec = codebook.vectors;
 
     for (uint32_t i = 0; i < numEntries; ++i) {
-        stream.read(*pVec);
-        ++pVec;
+        stream.read(*pCurVec);
+        ++pCurVec;
     }
 }
 
 //----------------------------------------------------------------------------------------------------------------------
-// Read CVID chunk: keyframe vectors (referencing either V1 or V4 codebooks)
+// Read CVID chunk: a selectively updated codebook for a delta frame (12 bits per pixel mode)
 //----------------------------------------------------------------------------------------------------------------------
-static void readCVIDChunk_KF_Vectors(VideoDecoderState& decoderState, ByteStream& stream) THROWS {    
-    // Read in batches of 32 blocks at a time
+static void readCVIDChunk_DF_Codebook_12_Bit(
+    VideoDecoderState& decoderState,
+    ByteStream& stream,
+    VidCodebook& codebook
+) THROWS {
+    VidVec* const pVectors = codebook.vectors;
+
+    // Note: need to read a flags vector for every 32 vectors in the code book, hence batches of 32:
+    for (uint32_t startVecIdx = 0; startVecIdx < 256; startVecIdx += 32) {
+        // First read the flags vector telling whether the next 32 vectors are updated or not
+        uint32_t updateFlags = stream.read<uint32_t>();        
+        Endian::convertBigToHost(updateFlags);
+
+        // Update whatever vectors are to be updated
+        const uint32_t endVecIdx = startVecIdx + 32;
+
+        for (uint32_t vecIdx = startVecIdx; vecIdx < endVecIdx; ++vecIdx) {
+            // Is this vector to be updated?
+            if ((updateFlags & 0x80000000) != 0) {
+                pVectors[vecIdx] = stream.read<VidVec>();
+            }
+
+            // Move the next bit up into the top slot for the next loop iteration
+            updateFlags <<= 1;
+        }
+    }
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+// Read CVID chunk: key frame vectors (referencing either V1 or V4 codebooks)
+//----------------------------------------------------------------------------------------------------------------------
+static void readCVIDChunk_KF_Vectors(VideoDecoderState& decoderState, ByteStream& stream) THROWS {
     for (uint32_t batchStartBlockIdx = 0; batchStartBlockIdx < NUM_BLOCKS_PER_FRAME; batchStartBlockIdx += 32) {
         // First read the flags vector telling whether the next 32 blocks are using the V1 or V4 codebook
         uint32_t updateFlags = stream.read<uint32_t>();
@@ -223,7 +253,60 @@ static void readCVIDChunk_KF_Vectors(VideoDecoderState& decoderState, ByteStream
                 block.v3Idx = vIdx;
             }
 
+            updateFlags <<= 1;  // Done with this bit flag
+        }
+    }
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+// Read CVID chunk: delta frame vectors (selectively updated & referencing either V1 or V4 codebooks)
+//----------------------------------------------------------------------------------------------------------------------
+static void readCVIDChunk_DF_Vectors(VideoDecoderState& decoderState, ByteStream& stream) THROWS {    
+    // Maintain a bit vector here and read as needed
+    uint32_t updateFlags = 0;
+    uint32_t updateFlagBitsLeft = 0;
+
+    for (uint32_t blockIdx = 0; blockIdx < NUM_BLOCKS_PER_FRAME; ++blockIdx) {
+        
+        if (updateFlagBitsLeft <= 0) {
+            updateFlags = stream.read<uint32_t>();
+            updateFlagBitsLeft = 32;
+        }
+
+        // See if this block is to be updated
+        bool bBlockUpdated = ((updateFlags & 0x80000000u) != 0);
+        updateFlags <<= 1;
+        updateFlagBitsLeft--;
+
+        if (bBlockUpdated) {
+            VidBlock& block = decoderState.blocks[blockIdx];
+
+            if (updateFlagBitsLeft <= 0) {
+                updateFlags = stream.read<uint32_t>();
+                updateFlagBitsLeft = 32;
+            }
+
+            bool bBlockV4Coded = ((updateFlags & 0x80000000u) != 0);
             updateFlags <<= 1;
+            updateFlagBitsLeft--;
+
+            if (bBlockV4Coded) {
+                // This block uses the v4 codebook: 4 bytes for 4 V4 codebook vector references
+                block.codebookIdx = 1;
+                block.v0Idx = stream.read<uint8_t>();
+                block.v1Idx = stream.read<uint8_t>();
+                block.v2Idx = stream.read<uint8_t>();
+                block.v3Idx = stream.read<uint8_t>();
+            } else {
+                // This block uses the v1 codebook: 1 byte for 1 V1 codebook vector reference
+                block.codebookIdx = 0;
+
+                const uint32_t vIdx = stream.read<uint8_t>();
+                block.v0Idx = vIdx;
+                block.v1Idx = vIdx;
+                block.v2Idx = vIdx;
+                block.v3Idx = vIdx;
+            }
         }
     }
 }
@@ -232,25 +315,48 @@ static void readCVIDChunk_KF_Vectors(VideoDecoderState& decoderState, ByteStream
 // Attempt to read a CVID chunk in the data for the video frame strip
 //----------------------------------------------------------------------------------------------------------------------
 static void readCVIDChunk(VideoDecoderState& decoderState, ByteStream& stream) THROWS {
-    // Read the chunk header details
+    // Read the chunk header details and compute the offset in the stream we expect it to end at
     CVIDChunkHeader chunkHeader;
     stream.read(chunkHeader);
     chunkHeader.convertBigToHostEndian();
+    
+    if (chunkHeader.chunkSize < sizeof(CVIDChunkHeader))
+        throw VideoDecodeException();
+    
+    const uint32_t chunkEndOffset = stream.tell() + chunkHeader.chunkSize;
 
     // See what type of chunk we are dealing with
     if (chunkHeader.chunkType == CVID_KF_V4_CODEBOOK_12_BIT) {
         readCVIDChunk_KF_Codebook_12_Bit(decoderState, stream, chunkHeader.chunkSize, decoderState.codebooks[1]);
     } 
+    else if (chunkHeader.chunkType == CVID_DF_V4_CODEBOOK_12_BIT) {
+        readCVIDChunk_DF_Codebook_12_Bit(decoderState, stream, decoderState.codebooks[1]);
+    }
     else if (chunkHeader.chunkType == CVID_KF_V1_CODEBOOK_12_BIT) {
         readCVIDChunk_KF_Codebook_12_Bit(decoderState, stream, chunkHeader.chunkSize, decoderState.codebooks[0]);
+    }
+    else if (chunkHeader.chunkType == CVID_DF_V1_CODEBOOK_12_BIT) {
+        readCVIDChunk_DF_Codebook_12_Bit(decoderState, stream, decoderState.codebooks[0]);
     }
     else if (chunkHeader.chunkType == CVID_KF_VECTORS) {
         readCVIDChunk_KF_Vectors(decoderState, stream);
     }
+    else if (chunkHeader.chunkType == CVID_DF_VECTORS) {
+        readCVIDChunk_DF_Vectors(decoderState, stream);
+    }
     else {
-        // Unknown type of chunk, skip over it.
-        // Note: sometimes the chunk size is slightly wrong, so check for that here:
-        stream.consume(std::min(stream.getNumBytesLeft(), (uint32_t) chunkHeader.chunkSize));
+        // Unknown or unhandled type of chunk, we will just skip over it outside of debug builds...
+        // Anything that I'm not handling here basically isn't used in 3DO Doom so no point in writing that code!
+        ASSERT(false);
+    }
+
+    // After chunk reading is done, skip over any remaining bytes in the chunk
+    ASSERT_LOG(stream.tell() <= chunkEndOffset, "Chunk reading code exceeded the amount we expected it to read!");
+    
+    if (stream.tell() < chunkEndOffset) {
+        uint32_t bytesToSkip = chunkEndOffset - stream.tell();
+        bytesToSkip = std::min(bytesToSkip, stream.getNumBytesLeft());
+        stream.consume(bytesToSkip);
     }
 }
 
