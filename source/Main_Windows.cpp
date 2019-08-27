@@ -9,7 +9,6 @@
 
 int main(int argc, char* argv[]) noexcept {
     // FIXME: TEMP - REMOVE ME!!
-    /*
     {
         std::byte* pStreamFileData = nullptr;
         size_t streamFileSize = 0;
@@ -44,7 +43,6 @@ int main(int argc, char* argv[]) noexcept {
         delete[] pStreamFileData;
         delete pVideoDecoder;
     }
-    */
     
     {
         std::byte* pStreamFileData = nullptr;
@@ -61,15 +59,20 @@ int main(int argc, char* argv[]) noexcept {
         if (!MovieDecoder::initVideoDecoder(pStreamFileData, streamFileSize, *pVideoDecoder))
             return -1;
 
+        uint32_t* const pDecodedFrame = new uint32_t[MovieDecoder::VIDEO_WIDTH * MovieDecoder::VIDEO_HEIGHT];
+
         while (pVideoDecoder->frameNum < pVideoDecoder->totalFrames) {
             const bool bSuccess = MovieDecoder::readNextVideoFrame(*pVideoDecoder);
             ASSERT(bSuccess);
+            MovieDecoder::decodeCurrentVideoFrame(*pVideoDecoder, pDecodedFrame);
+            std::string savePath = "E:/Darragh/Desktop/FRAMES/Logic_" + std::to_string(pVideoDecoder->frameNum) + ".data";
+            FileUtils::writeDataToFile(savePath.c_str(), (std::byte*) pDecodedFrame, MovieDecoder::VIDEO_WIDTH * MovieDecoder::VIDEO_HEIGHT * sizeof(uint32_t));
         }
         
-        /*
         FileUtils::writeDataToFile("E:/Darragh/Desktop/logic.audio", audioData.pBuffer, audioData.bufferSize);
         FileUtils::writeDataToFile("E:/Darragh/Desktop/logic.film", pVideoDecoder->pMovieData, pVideoDecoder->movieDataSize);
-        */
+        
+        delete[] pDecodedFrame;
         MovieDecoder::shutdownVideoDecoder(*pVideoDecoder);
         audioData.freeBuffer();
         delete[] pStreamFileData;
