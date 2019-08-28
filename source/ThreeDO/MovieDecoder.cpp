@@ -178,7 +178,7 @@ static void readCVIDChunk_KF_Codebook_12_Bit(
     const uint16_t chunkSize,
     VidCodebook& codebook
 ) THROWS {
-    const uint16_t numEntries = chunkSize / 6u;
+    const uint16_t numEntries = chunkSize / (uint16_t) sizeof(VidVec);
 
     if (numEntries > 256) {
         throw VideoDecodeException();
@@ -200,13 +200,13 @@ static void readCVIDChunk_DF_Codebook_12_Bit(
     ByteStream& stream,
     VidCodebook& codebook
 ) THROWS {
+    if (!stream.hasBytesLeft())
+        return;
+    
     VidVec* const pVectors = codebook.vectors;
 
     // Note: need to read a flags vector for every 32 vectors in the code book, hence batches of 32:
     for (uint32_t startVecIdx = 0; startVecIdx < 256; startVecIdx += 32) {
-        if (stream.getNumBytesLeft() < sizeof(uint32_t))
-            break;
-        
         // First read the flags vector telling whether the next 32 vectors are updated or not
         uint32_t updateFlags = stream.read<uint32_t>();        
         Endian::convertBigToHost(updateFlags);
@@ -253,9 +253,9 @@ static void readCVIDChunk_KF_Vectors(VideoDecoderState& decoderState, ByteStream
                 block.v3Idx = stream.read<uint8_t>();
             } else {
                 // This block uses the v1 codebook: 1 byte for 1 V1 codebook vector reference
-                block.codebookIdx = 0;
-
                 const uint32_t vIdx = stream.read<uint8_t>();
+
+                block.codebookIdx = 0;
                 block.v0Idx = vIdx;
                 block.v1Idx = vIdx;
                 block.v2Idx = vIdx;
@@ -324,9 +324,9 @@ static void readCVIDChunk_DF_Vectors(VideoDecoderState& decoderState, ByteStream
                 block.v3Idx = stream.read<uint8_t>();
             } else {
                 // This block uses the v1 codebook: 1 byte for 1 V1 codebook vector reference
-                block.codebookIdx = 0;
-
                 const uint32_t vIdx = stream.read<uint8_t>();
+
+                block.codebookIdx = 0;
                 block.v0Idx = vIdx;
                 block.v1Idx = vIdx;
                 block.v2Idx = vIdx;
