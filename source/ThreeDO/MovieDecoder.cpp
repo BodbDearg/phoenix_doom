@@ -59,6 +59,9 @@ struct VideoFrameHeader {
     }
 };
 
+// Frame flags
+static constexpr uint8_t FRAME_FLAG_KEEP_CODEBOOKS = 0x01;
+
 // Strip types
 static constexpr uint16_t STRIP_TYPE_KEY_FRAME      = 0x1000;     // This video strip is a keyframe and fully specified
 static constexpr uint16_t STRIP_TYPE_DELTA_FRAME    = 0x1100;     // This video strip is a frame that only receives partial updates from the previous frame
@@ -237,8 +240,11 @@ static void readCVIDChunk_KF_Vectors(VideoDecoderState& decoderState, ByteStream
 
         for (uint32_t blockIdx = batchStartBlockIdx; blockIdx < endBlockIdx; ++blockIdx) {
             VidBlock& block = decoderState.blocks[blockIdx];
-            
-            if ((updateFlags & 0x80000000u) != 0) {
+
+            const bool bBlockIsV4Coded = ((updateFlags & 0x80000000u) != 0);
+            updateFlags <<= 1;
+
+            if (bBlockIsV4Coded) {
                 // This block uses the v4 codebook: 4 bytes for 4 V4 codebook vector references
                 block.codebookIdx = 1;
                 block.v0Idx = stream.read<uint8_t>();
@@ -255,8 +261,6 @@ static void readCVIDChunk_KF_Vectors(VideoDecoderState& decoderState, ByteStream
                 block.v2Idx = vIdx;
                 block.v3Idx = vIdx;
             }
-
-            updateFlags <<= 1;  // Done with this bit flag
         }
     }
 }
@@ -307,11 +311,11 @@ static void readCVIDChunk_DF_Vectors(VideoDecoderState& decoderState, ByteStream
                 updateFlagBitsLeft = 32;
             }
 
-            const bool bBlockV4Coded = ((updateFlags & 0x80000000u) != 0);
+            const bool bBlockIsV4Coded = ((updateFlags & 0x80000000u) != 0);
             updateFlags <<= 1;
             updateFlagBitsLeft--;
 
-            if (bBlockV4Coded) {
+            if (bBlockIsV4Coded) {
                 // This block uses the v4 codebook: 4 bytes for 4 V4 codebook vector references
                 block.codebookIdx = 1;
                 block.v0Idx = stream.read<uint8_t>();
@@ -486,6 +490,11 @@ bool readNextVideoFrame(VideoDecoderState& decoderState) noexcept {
 
         if (bInvalidFrameHeader)
             return false;
+
+        // If the frame flags specify to NOT keep the codebooks from previous frames then ensure they are reset here
+        if ((frameHeader.flags & FRAME_FLAG_KEEP_CODEBOOKS) == 0) {
+            std::memset(decoderState.codebooks, 0, sizeof(decoderState.codebooks));
+        }
         
         // Read the header for the single strip that we expect to be in the frame and validate        
         VideoStripHeader stripHeader;
