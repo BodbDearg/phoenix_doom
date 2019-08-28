@@ -113,8 +113,8 @@ namespace Blit {
     }
 
     //------------------------------------------------------------------------------------------------------------------
-    // Blits a column of pixels from the given source image in ARGB1555 format to the destination in XRGB8888 format.
-    // Optionally, alpha testing and blending can be applied.
+    // Blits a column of pixels from the given source image in either ARGB1555 or ARGB8888 format to the destination
+    // pixel buffer which is in XRGB8888 format and ROW MAJOR. Optionally, alpha testing and blending can be applied.
     //
     // Notes:
     //  (1) Destination pixels are written with alpha 0.
@@ -128,9 +128,9 @@ namespace Blit {
     //      It is assumed the callee has already done all required clipping prior to calling this function.
     //  (6) Contrary to the input image, the output image *MUST* always be in row major format.
     //------------------------------------------------------------------------------------------------------------------
-    template <uint32_t BC_FLAGS>
+    template <uint32_t BC_FLAGS, class SrcPixelT>
     inline void blitColumn(
-        const uint16_t* const pSrcPixels,                   // Pixel data for source image
+        const SrcPixelT* const pSrcPixels,                  // Pixel data for source image
         const uint32_t srcW,                                // Width of source image
         const uint32_t srcH,                                // Height of source image
         float srcX,                                         // Where to start blitting from in the input texture: x
@@ -152,6 +152,11 @@ namespace Blit {
         [[maybe_unused]] const float aMul = 1.0f            // Color multiply value: alpha
     ) noexcept {
         // Basic sanity checks
+        static_assert(
+            (std::is_same_v<SrcPixelT, uint16_t> || std::is_same_v<SrcPixelT, uint32_t>),
+            "Source pixel buffer must be either usigned ARGB1555 (16-bit) or ARGB8888 (32-bit)!"
+        );
+
         BLIT_ASSERT(pSrcPixels);
         BLIT_ASSERT(srcW > 0);
         BLIT_ASSERT(srcH > 0);
@@ -305,7 +310,7 @@ namespace Blit {
             }
         #endif
 
-        [[maybe_unused]] const uint16_t* pSrcRowOrCol;
+        [[maybe_unused]] const SrcPixelT* pSrcRowOrCol;
 
         constexpr bool USE_SRC_ROW_INDEXING = (IS_SRC_ROW_MAJOR && DO_X_STEP && (!DO_Y_STEP));
         constexpr bool USE_SRC_COL_INDEXING = (IS_SRC_COL_MAJOR && DO_Y_STEP && (!DO_X_STEP));
@@ -362,47 +367,67 @@ namespace Blit {
                     }
                 }
 
-                // Get the source pixel (ARGB1555 format)
-                uint16_t srcPixelARGB1555;
+                // Get the source pixel (ARGB1555 or ARGB8888 format)
+                SrcPixelT srcPixel;
 
                 if constexpr (USE_SRC_ROW_INDEXING) {
                     curSrcXInt = wrapXCoord<BC_FLAGS>((int32_t) curSrcXInt, srcW);
-                    srcPixelARGB1555 = pSrcRowOrCol[curSrcXInt];
+                    srcPixel = pSrcRowOrCol[curSrcXInt];
                 }
                 else if constexpr (USE_SRC_COL_INDEXING) {
                     curSrcYInt = wrapYCoord<BC_FLAGS>((int32_t) curSrcYInt, srcH);
-                    srcPixelARGB1555 = pSrcRowOrCol[curSrcYInt];
+                    srcPixel = pSrcRowOrCol[curSrcYInt];
                 }
                 else {
                     curSrcXInt = wrapXCoord<BC_FLAGS>((int32_t) curSrcXInt, srcW);
                     curSrcYInt = wrapYCoord<BC_FLAGS>((int32_t) curSrcYInt, srcH);
 
                     if constexpr (IS_SRC_COL_MAJOR) {
-                        srcPixelARGB1555 = pSrcPixels[curSrcXInt * srcH + curSrcYInt];
+                        srcPixel = pSrcPixels[curSrcXInt * srcH + curSrcYInt];
                     } else {
-                        srcPixelARGB1555 = pSrcPixels[curSrcYInt * srcW + curSrcXInt];
+                        srcPixel = pSrcPixels[curSrcYInt * srcW + curSrcXInt];
                     }
                 }
 
                 // Extract RGBA components.
-                // In the case of RGB, shift such that the maximum value is 255 instead of 31.
-                [[maybe_unused]] uint16_t texA;
+                // In the case of ARGB1555 also shift such that the maximum value is 255 instead of 31.
+                // Exception: leave alpha as '1' since that saves us a division when converting to a 0-1 range.
+                [[maybe_unused]] uint8_t texA;
 
                 if constexpr (NEED_ALPHA_CHANNEL) {
-                    texA = (srcPixelARGB1555 & uint16_t(0b1000000000000000)) >> 15;
+                    if constexpr (std::is_same_v<SrcPixelT, uint16_t>) {
+                        texA = (uint8_t)((srcPixel & uint16_t(0b1000000000000000)) >> 15);
+                    } else {
+                        texA = (uint8_t)(srcPixel >> 24);
+                    }
                 }
 
-                const uint16_t texR = (srcPixelARGB1555 & uint16_t(0b0111110000000000)) >> 7;
-                const uint16_t texG = (srcPixelARGB1555 & uint16_t(0b0000001111100000)) >> 2;
-                const uint16_t texB = (srcPixelARGB1555 & uint16_t(0b0000000000011111)) << 3;
+                uint8_t texR;
+                uint8_t texG;
+                uint8_t texB;
 
-                // Get the texture colors in 0-255 float format.
+                if constexpr (std::is_same_v<SrcPixelT, uint16_t>) {
+                    texR = (uint8_t)((srcPixel & uint16_t(0b0111110000000000)) >> 7);
+                    texG = (uint8_t)((srcPixel & uint16_t(0b0000001111100000)) >> 2);
+                    texB = (uint8_t)((srcPixel & uint16_t(0b0000000000011111)) << 3);
+                } else {
+                    texR = (uint8_t)((srcPixel & 0x00FF0000) >> 16);
+                    texG = (uint8_t)((srcPixel & 0x0000FF00) >> 8);
+                    texB = (uint8_t)(srcPixel & 0x000000FF);
+                }
+
+                // Get the texture colors in 0-255 float format, and alpha in a 0-1 format.
                 // Note that if we are not doing any color multiply these conversions would be redundant, but I'm guessing
                 // that the compiler would be smart enough to optimize out the useless operations in those cases (hopefully)!
                 [[maybe_unused]] float a;
 
                 if constexpr (NEED_ALPHA_CHANNEL) {
-                    a = (float) texA;
+                    // N.B - in the case of ARGB1555 alpha is already in a 0-1 range, so just a cast is needed!
+                    if constexpr (std::is_same_v<SrcPixelT, uint16_t>) {
+                        a = (float) texA; 
+                    } else {
+                        a = (float) texA / 255.0f;
+                    }
                 }
 
                 float r = (float) texR;
@@ -472,7 +497,7 @@ namespace Blit {
     }
 
     //------------------------------------------------------------------------------------------------------------------
-    // Blits a portion of a sprite in ARGB1555 format to the destination in XRGB8888 format.
+    // Blits a portion of a sprite in either ARGB1555 or ARGB8888 format to the destination in XRGB8888 format.
     // Optionally, alpha testing and blending can be applied.
     //
     // Notes:
@@ -486,9 +511,9 @@ namespace Blit {
     //          (c) Whether to step in the x and y directions of the source texture.
     //          (d) Whether to allow wrapping.
     //------------------------------------------------------------------------------------------------------------------
-    template <uint32_t BC_FLAGS>
+    template <uint32_t BC_FLAGS, class SrcPixelT>
     inline void blitSprite(
-        const uint16_t* const pSrcPixels,               // Pixel data for source image
+        const SrcPixelT* const pSrcPixels,              // Pixel data for source image
         const uint32_t srcPixelsW,                      // Width of source image
         const uint32_t srcPixelsH,                      // Height of source image
         const float srcX,                               // Where to start blitting from in the input texture: x & y
