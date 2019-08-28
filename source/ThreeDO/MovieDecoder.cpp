@@ -286,10 +286,7 @@ static void readCVIDChunk_DF_Vectors(VideoDecoderState& decoderState, ByteStream
     uint32_t updateFlags = 0;
     uint32_t updateFlagBitsLeft = 0;
 
-    for (uint32_t blockIdx = 0; blockIdx < NUM_BLOCKS_PER_FRAME; ++blockIdx) {
-        if (stream.getNumBytesLeft() <= sizeof(uint32_t))
-            break;
-        
+    for (uint32_t blockIdx = 0; blockIdx < NUM_BLOCKS_PER_FRAME; ++blockIdx) {        
         if (updateFlagBitsLeft <= 0) {
             updateFlags = stream.read<uint32_t>();
             Endian::convertBigToHost(updateFlags);
