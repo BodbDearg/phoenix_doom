@@ -20,30 +20,24 @@ int main(int argc, char* argv[]) noexcept {
         if (!MovieDecoder::decodeMovieAudio(pStreamFileData, streamFileSize, audioData))
             return -1;
         
-        MovieDecoder::VideoDecoderState* const pVideoDecoder = new MovieDecoder::VideoDecoderState();
-        if (!MovieDecoder::initVideoDecoder(pStreamFileData, streamFileSize, *pVideoDecoder))
+        MovieDecoder::VideoDecoderState vidDecoder;
+        if (!MovieDecoder::initVideoDecoder(pStreamFileData, streamFileSize, vidDecoder))
             return -1;
-        
-        uint32_t* const pDecodedFrame = new uint32_t[MovieDecoder::VIDEO_WIDTH * MovieDecoder::VIDEO_HEIGHT];
 
-        while (pVideoDecoder->frameNum < pVideoDecoder->totalFrames) {
-            const bool bSuccess = MovieDecoder::readNextVideoFrame(*pVideoDecoder);
+        while (vidDecoder.frameNum < vidDecoder.totalFrames) {
+            const bool bSuccess = MovieDecoder::decodeNextVideoFrame(vidDecoder);
             ASSERT(bSuccess);
-            MovieDecoder::decodeCurrentVideoFrame(*pVideoDecoder, pDecodedFrame);
-            std::string savePath = "E:/Darragh/Desktop/FRAMES/AdioLogo_" + std::to_string(pVideoDecoder->frameNum) + ".data";
-            FileUtils::writeDataToFile(savePath.c_str(), (std::byte*) pDecodedFrame, MovieDecoder::VIDEO_WIDTH * MovieDecoder::VIDEO_HEIGHT * sizeof(uint32_t));
+            std::string savePath = "E:/Darragh/Desktop/FRAMES/AdioLogo_" + std::to_string(vidDecoder.frameNum) + ".data";
+            FileUtils::writeDataToFile(savePath.c_str(), (std::byte*) vidDecoder.pPixels, MovieDecoder::VIDEO_WIDTH * MovieDecoder::VIDEO_HEIGHT * sizeof(uint32_t));
         }
         
         FileUtils::writeDataToFile("E:/Darragh/Desktop/AdioLogo.audio", audioData.pBuffer, audioData.bufferSize);
-        FileUtils::writeDataToFile("E:/Darragh/Desktop/AdioLogo.film", pVideoDecoder->pMovieData, pVideoDecoder->movieDataSize);
+        FileUtils::writeDataToFile("E:/Darragh/Desktop/AdioLogo.film", vidDecoder.pMovieData, vidDecoder.movieDataSize);
         
-        delete[] pDecodedFrame;
-        MovieDecoder::shutdownVideoDecoder(*pVideoDecoder);
+        MovieDecoder::shutdownVideoDecoder(vidDecoder);
         audioData.freeBuffer();
         delete[] pStreamFileData;
-        delete pVideoDecoder;
     }
-    
     {
         std::byte* pStreamFileData = nullptr;
         size_t streamFileSize = 0;
@@ -55,28 +49,21 @@ int main(int argc, char* argv[]) noexcept {
         if (!MovieDecoder::decodeMovieAudio(pStreamFileData, streamFileSize, audioData))
             return -1;
 
-        MovieDecoder::VideoDecoderState* const pVideoDecoder = new MovieDecoder::VideoDecoderState();
-        if (!MovieDecoder::initVideoDecoder(pStreamFileData, streamFileSize, *pVideoDecoder))
+        MovieDecoder::VideoDecoderState vidDecoder;
+        if (!MovieDecoder::initVideoDecoder(pStreamFileData, streamFileSize, vidDecoder))
             return -1;
 
-        uint32_t* const pDecodedFrame = new uint32_t[MovieDecoder::VIDEO_WIDTH * MovieDecoder::VIDEO_HEIGHT];
-
-        while (pVideoDecoder->frameNum < pVideoDecoder->totalFrames) {
-            const bool bSuccess = MovieDecoder::readNextVideoFrame(*pVideoDecoder);
+        while (vidDecoder.frameNum < vidDecoder.totalFrames) {
+            const bool bSuccess = MovieDecoder::decodeNextVideoFrame(vidDecoder);
             ASSERT(bSuccess);
-            MovieDecoder::decodeCurrentVideoFrame(*pVideoDecoder, pDecodedFrame);
-            std::string savePath = "E:/Darragh/Desktop/FRAMES/Logic_" + std::to_string(pVideoDecoder->frameNum) + ".data";
-            FileUtils::writeDataToFile(savePath.c_str(), (std::byte*) pDecodedFrame, MovieDecoder::VIDEO_WIDTH * MovieDecoder::VIDEO_HEIGHT * sizeof(uint32_t));
+            std::string savePath = "E:/Darragh/Desktop/FRAMES/Logic_" + std::to_string(vidDecoder.frameNum) + ".data";
+            FileUtils::writeDataToFile(savePath.c_str(), (std::byte*) vidDecoder.pPixels, MovieDecoder::VIDEO_WIDTH * MovieDecoder::VIDEO_HEIGHT * sizeof(uint32_t));
         }
-        
         FileUtils::writeDataToFile("E:/Darragh/Desktop/logic.audio", audioData.pBuffer, audioData.bufferSize);
-        FileUtils::writeDataToFile("E:/Darragh/Desktop/logic.film", pVideoDecoder->pMovieData, pVideoDecoder->movieDataSize);
-        
-        delete[] pDecodedFrame;
-        MovieDecoder::shutdownVideoDecoder(*pVideoDecoder);
+        FileUtils::writeDataToFile("E:/Darragh/Desktop/logic.film", vidDecoder.pMovieData, vidDecoder.movieDataSize);
+        MovieDecoder::shutdownVideoDecoder(vidDecoder);
         audioData.freeBuffer();
         delete[] pStreamFileData;
-        delete pVideoDecoder;
     }
 
     ThreeDOMain();

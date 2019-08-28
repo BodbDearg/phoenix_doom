@@ -38,7 +38,7 @@ static constexpr uint32_t NUM_BLOCKS_PER_FRAME = (VIDEO_WIDTH * VIDEO_HEIGHT) / 
 //----------------------------------------------------------------------------------------------------------------------
 // Represents one vector in the Cinepak 'V1' or 'V4' codebook.
 //----------------------------------------------------------------------------------------------------------------------
-struct VidVec {
+struct alignas(1) VidVec {
     uint8_t y0;     // Luminance values
     uint8_t y1;
     uint8_t y2;
@@ -56,28 +56,16 @@ struct VidCodebook {
 };
 
 //----------------------------------------------------------------------------------------------------------------------
-// Holds the vector indices from either that are used for a 4x4 pixel block in the video.
-// In the case of a 'V1' coded block, only the 'v1' vector index is used.
-//----------------------------------------------------------------------------------------------------------------------
-struct VidBlock {
-    uint8_t codebookIdx;    // If '0' use the v1 codebook, if '1' use the 'v4' codebook
-    uint8_t v0Idx;
-    uint8_t v1Idx;
-    uint8_t v2Idx;
-    uint8_t v3Idx;
-};
-
-//----------------------------------------------------------------------------------------------------------------------
 // Holds the current state/context for decoding video
 //----------------------------------------------------------------------------------------------------------------------
 struct VideoDecoderState {
-    std::byte*      pMovieData;                     // The de-chunked movie data for the movie
-    uint32_t        movieDataSize;                  // Size of the movie data
-    uint32_t        curMovieDataOffset;             // Offset to the next movie data to use
-    uint32_t        frameNum;                       // What frame we are on, '1' for the first frame and '0' before the first frame has been decoded.
-    uint32_t        totalFrames;                    // Total number of frames in the movie.
-    VidCodebook     codebooks[2];                   // V1 and V4 codebooks of vectors (in that order)
-    VidBlock        blocks[NUM_BLOCKS_PER_FRAME];   // Data for each block in the image and which vectors the block uses
+    std::byte*      pMovieData;             // The de-chunked movie data for the movie
+    uint32_t        movieDataSize;          // Size of the movie data
+    uint32_t        curMovieDataOffset;     // Offset to the next movie data to use
+    uint32_t        frameNum;               // What frame we are on, '1' for the first frame and '0' before the first frame has been decoded.
+    uint32_t        totalFrames;            // Total number of frames in the movie.
+    VidCodebook     codebooks[2];           // V1 and V4 codebooks of vectors (in that order)
+    uint32_t*       pPixels;                // The decoded pixels       
 };
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -97,16 +85,11 @@ bool initVideoDecoder(
 void shutdownVideoDecoder(VideoDecoderState& decoderState) noexcept;
 
 //----------------------------------------------------------------------------------------------------------------------
-// Read the next frame of the video into the given decoder state.
-// If this has been done successfully ('true' returned) then the video data is ready to be converted to XRGB.
+// Decode the next frame of the video into the given decoder state.
+// This advances the frame number by '1' and calling continously will advance the movie.
+// If this has been done successfully ('true' returned) then the frame is stored in the decoder pixel buffer.
 //----------------------------------------------------------------------------------------------------------------------
-bool readNextVideoFrame(VideoDecoderState& decoderState) noexcept;
-
-//----------------------------------------------------------------------------------------------------------------------
-// Decode the current frame read into the given row major pixel buffer, which is expected to be 280x200.
-// The frame data is saved in XRGB8888 format (little endian).
-//----------------------------------------------------------------------------------------------------------------------
-void decodeCurrentVideoFrame(VideoDecoderState& decoderState, uint32_t* const pDstPixels) noexcept;
+bool decodeNextVideoFrame(VideoDecoderState& decoderState) noexcept;
 
 //----------------------------------------------------------------------------------------------------------------------
 // Decode the entire audio for a movie stored in the given 3DO stream file and save to the given audio data object.
