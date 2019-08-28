@@ -281,7 +281,7 @@ static void readCVIDChunk_KF_Vectors_V1_Only(VideoDecoderState& decoderState, By
 //----------------------------------------------------------------------------------------------------------------------
 // Read CVID chunk: delta frame vectors (selectively updated & referencing either V1 or V4 codebooks)
 //----------------------------------------------------------------------------------------------------------------------
-static void readCVIDChunk_DF_Vectors(VideoDecoderState& decoderState, ByteStream& stream) THROWS {    
+static void readCVIDChunk_DF_Vectors(VideoDecoderState& decoderState, ByteStream& stream) THROWS {
     // Maintain a bit vector here and read as needed
     uint32_t updateFlags = 0;
     uint32_t updateFlagBitsLeft = 0;
@@ -292,11 +292,12 @@ static void readCVIDChunk_DF_Vectors(VideoDecoderState& decoderState, ByteStream
         
         if (updateFlagBitsLeft <= 0) {
             updateFlags = stream.read<uint32_t>();
+            Endian::convertBigToHost(updateFlags);
             updateFlagBitsLeft = 32;
         }
 
         // See if this block is to be updated
-        bool bBlockUpdated = ((updateFlags & 0x80000000u) != 0);
+        const bool bBlockUpdated = ((updateFlags & 0x80000000u) != 0);
         updateFlags <<= 1;
         updateFlagBitsLeft--;
 
@@ -305,6 +306,7 @@ static void readCVIDChunk_DF_Vectors(VideoDecoderState& decoderState, ByteStream
 
             if (updateFlagBitsLeft <= 0) {
                 updateFlags = stream.read<uint32_t>();
+                Endian::convertBigToHost(updateFlags);
                 updateFlagBitsLeft = 32;
             }
 
