@@ -272,13 +272,18 @@ void P_Start() noexcept {
     gTimeMark1 = 0;  // Init the static timers
     gTimeMark2 = 0;
     gTimeMark4 = 0;
-    gPlayer.AutomapFlags &= AF_GODMODE;     // No automapping specials (but allow godmode)
+    gPlayer.AutomapFlags &= (AF_GODMODE|AF_NOCLIP);     // No automapping specials (but preserve godmode and noclip cheats)
 
     AM_Start();                     // Start the automap system
     ST_Start();                     // Init the status bar this level
     G_DoLoadLevel();                // Load a level into memory
     Random::init();                 // Reset the random number generator
     PlayerCalcHeight(gPlayer);      // Required for the view to be at the right height for the screen wipe
+
+    // Reapply the noclip cheat to the player map object if that cheat was enabled in the previous level
+    if ((gPlayer.AutomapFlags & AF_NOCLIP) != 0) {
+        gPlayer.mo->flags |= (MF_NOCLIP|MF_SOLID);
+    }
 
     S_StartSong(Song_e1m1 - 1 + gGameMap);
 }

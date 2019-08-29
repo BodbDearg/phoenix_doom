@@ -8,7 +8,6 @@ TODO
 - Intro logos
 - Higher resolution + fullscreen support
 - Screen sizes need to scale with resolution
-- Preserve noclip cheat across levels
 - WASD + Mouse support
 - Gamepad support
 - Remove temp function key cheats
