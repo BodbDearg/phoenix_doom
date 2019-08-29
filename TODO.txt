@@ -24,6 +24,7 @@ TODO
 - Is the pistol reload speed too slow?
 - Ensure last map accessible via menu (wasn't on 3DO version?)
 - Crash when reading loading plaque
+- Switch not working on Limbo map - bug?
 - Allow exit out of finale back to main menu
 - Allow exit out of app from main menu
 - Allow quit out of level to main menu

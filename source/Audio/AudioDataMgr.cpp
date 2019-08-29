@@ -41,19 +41,9 @@ AudioDataMgr::Handle AudioDataMgr::loadFile(const char* const file) noexcept {
 
     if (!AudioLoader::loadFromFile(file, audioData))
         return INVALID_HANDLE;
-
-    // Otherwise try to allocate a handle for the file
-    uint32_t handle;
-
-    if (!mFreeHandles.empty()) {
-        handle = mFreeHandles.back();
-        mFreeHandles.pop_back();
-    } else {
-        handle = (uint32_t) mAudioEntries.size();
-        mAudioEntries.emplace_back();
-    }
-
-    // Add path to handle lut entry
+    
+    // Alloc a new handle and add a path to handle lut entry
+    const Handle handle = allocHandle();
     HandleLut::iterator pathToHandleIter = mPathToHandle.insert({ file, handle }).first;
 
     // Save the entry details and return the loaded handle
@@ -64,13 +54,43 @@ AudioDataMgr::Handle AudioDataMgr::loadFile(const char* const file) noexcept {
     return handle;
 }
 
+AudioDataMgr::Handle AudioDataMgr::addAudioDataWithOwnership(AudioData& data) noexcept {
+    // Validate the input data firstly, if it's bad then the load fails
+    const bool bDataIsValid = (
+        (data.pBuffer != nullptr) &&
+        (data.bufferSize > 0) &&
+        (data.numSamples > 0) &&
+        (data.sampleRate > 0) &&
+        (data.numChannels == 1 || data.numChannels == 2) &&
+        (data.bitDepth == 8 || data.bitDepth == 16)
+    );
+
+    if (!bDataIsValid) {
+        data.clear();
+        return INVALID_HANDLE;
+    }
+
+    // Assign the audio data a handle and save the audio entry
+    const Handle handle = allocHandle();
+
+    AudioEntry& audioEntry = mAudioEntries[handle];
+    audioEntry.data = data;
+    audioEntry.pathToHandleIter = mPathToHandle.end();
+
+    return handle;
+}
+
 void AudioDataMgr::unloadHandle(const Handle handle) noexcept {
     if (handle < mAudioEntries.size()) {
         AudioEntry& entry = mAudioEntries[handle];
 
         if (entry.isLoaded()) {
             entry.data.clear();
-            mPathToHandle.erase(entry.pathToHandleIter);
+
+            if (entry.pathToHandleIter != mPathToHandle.end()) {
+                mPathToHandle.erase(entry.pathToHandleIter);
+            }
+
             entry.pathToHandleIter = {};
             mFreeHandles.emplace_back(handle);
         }
@@ -87,4 +107,19 @@ void AudioDataMgr::unloadAll() noexcept {
     mAudioEntries.clear();
     mFreeHandles.clear();
     mPathToHandle.clear();
+}
+
+AudioDataMgr::Handle AudioDataMgr::allocHandle() noexcept {
+    // Reuse an existing free handle if there is one, otherwise make a new one
+    uint32_t handle;
+
+    if (!mFreeHandles.empty()) {
+        handle = mFreeHandles.back();
+        mFreeHandles.pop_back();
+    } else {
+        handle = (uint32_t) mAudioEntries.size();
+        mAudioEntries.emplace_back();
+    }
+
+    return handle;
 }
