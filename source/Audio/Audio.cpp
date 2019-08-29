@@ -167,4 +167,16 @@ void setSoundVolume(const uint32_t volume) noexcept {
     }
 }
 
+AudioDataMgr& getAudioDataMgr() noexcept {
+    return gAudioDataMgr;
+}
+
+AudioSystem& getSoundAudioSystem() noexcept {
+    return gSoundAudioSystem;
+}
+
+AudioSystem& getMusicAudioSystem() noexcept {
+    return gMusicAudioSystem;
+}
+
 END_NAMESPACE(Audio)

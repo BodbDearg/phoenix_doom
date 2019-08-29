@@ -3,6 +3,9 @@
 #include "Base/Macros.h"
 #include <cstdint>
 
+class AudioDataMgr;
+class AudioSystem;
+
 //--------------------------------------------------------------------------------------------------
 // Functionality for playing music and sound
 //--------------------------------------------------------------------------------------------------
@@ -41,5 +44,10 @@ uint32_t getMusicVolume() noexcept;
 void setMusicVolume(const uint32_t volume) noexcept;
 uint32_t getSoundVolume() noexcept;
 void setSoundVolume(const uint32_t volume) noexcept;
+
+// Low level access
+AudioDataMgr& getAudioDataMgr() noexcept;
+AudioSystem& getSoundAudioSystem() noexcept;
+AudioSystem& getMusicAudioSystem() noexcept;
 
 END_NAMESPACE(Audio)

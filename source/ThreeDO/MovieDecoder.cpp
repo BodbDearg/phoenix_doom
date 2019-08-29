@@ -166,7 +166,7 @@ static uint32_t yuvToXRGB8888(const YUVColor color) noexcept {
     const uint32_t g = std::min(std::max(y - (u / 2) - v,   0), 255);
     const uint32_t b = std::min(std::max(y + (u * 2),       0), 255);
 
-    return ((0xFFu << 24) | (b << 16) | (g << 8) | (r << 0));
+    return (0xFF000000u | (r << 16) | (g << 8) | (b << 0));
 }
 
 //----------------------------------------------------------------------------------------------------------------------

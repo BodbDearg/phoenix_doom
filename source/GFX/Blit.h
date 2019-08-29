@@ -411,9 +411,9 @@ namespace Blit {
                     texG = (uint8_t)((srcPixel & uint16_t(0b0000001111100000)) >> 2);
                     texB = (uint8_t)((srcPixel & uint16_t(0b0000000000011111)) << 3);
                 } else {
-                    texR = (uint8_t)((srcPixel & 0x00FF0000) >> 16);
-                    texG = (uint8_t)((srcPixel & 0x0000FF00) >> 8);
-                    texB = (uint8_t)(srcPixel & 0x000000FF);
+                    texR = (uint8_t)((srcPixel & 0x00FF0000u) >> 16);
+                    texG = (uint8_t)((srcPixel & 0x0000FF00u) >> 8);
+                    texB = (uint8_t)(srcPixel & 0x000000FFu);
                 }
 
                 // Get the texture colors in 0-255 float format, and alpha in a 0-1 format.

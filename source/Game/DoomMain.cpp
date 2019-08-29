@@ -15,6 +15,7 @@
 #include "Resources.h"
 #include "ThreeDO.h"
 #include "TickCounter.h"
+#include "UI/IntroMovies.h"
 #include "UI/Menu_Main.h"
 #include "UI/Options_Main.h"
 #include "WipeFx.h"
@@ -366,6 +367,8 @@ void D_DoomMain() noexcept {
     Renderer::init();   // Init refresh system
     P_Init();           // Init main code
     O_Init();           // Init controls
+
+    IntroMovies::run();
 
     while (!Input::quitRequested()) {
         RunTitle();         // Show the title page

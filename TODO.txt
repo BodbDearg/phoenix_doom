@@ -6,7 +6,6 @@ TODO
 - Fix BSP check BBOX for high res rendering
 - Cleanup and optimize render code
 - Intro logos
-- Intro videos? (maybe)
 - Higher resolution + fullscreen support
 - Screen sizes need to scale with resolution
 - Preserve noclip cheat across levels
@@ -24,7 +23,6 @@ TODO
 - Is the pistol reload speed too slow?
 - Ensure last map accessible via menu (wasn't on 3DO version?)
 - Crash when reading loading plaque
-- Switch not working on Limbo map - bug?
 - Allow exit out of finale back to main menu
 - Allow exit out of app from main menu
 - Allow quit out of level to main menu
@@ -34,3 +32,4 @@ Known issues: document
 ------------------------------------------------------------------------------------------------------------------------
 
 - Issue on level 10 with small crate textures (found this in 3DO version - data problem?)
+- Switch on 'Limbo' level not working (seems to be the same on the 3DO too, level design bug?)
