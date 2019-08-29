@@ -5,6 +5,7 @@
 #include "Audio/AudioSystem.h"
 #include "Base/FileUtils.h"
 #include "Base/Finally.h"
+#include "Base/Input.h"
 #include "Base/Tables.h"
 #include "Burger.h"
 #include "Game/Data.h"
@@ -176,6 +177,9 @@ static void drawMovie(const bool bPresent, const bool bSaveFrameBuffer) noexcept
 }
 
 void run() noexcept {
+    if (Input::isQuitRequested())
+        return;
+
     if (MiniLoop(onLogicwareMovieStarting, onMovieStopping, updateMovie, drawMovie) == ga_quit)
         return;
     

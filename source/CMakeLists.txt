@@ -140,6 +140,8 @@ set(SOURCE_FILES
     "UI/Finale_Main.h"
     "UI/Intermission_Main.cpp"
     "UI/Intermission_Main.h"
+    "UI/IntroLogos.cpp"
+    "UI/IntroLogos.h"
     "UI/IntroMovies.cpp"
     "UI/IntroMovies.h"
     "UI/Menu_Main.cpp"

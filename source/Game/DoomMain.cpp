@@ -15,6 +15,7 @@
 #include "Resources.h"
 #include "ThreeDO.h"
 #include "TickCounter.h"
+#include "UI/IntroLogos.h"
 #include "UI/IntroMovies.h"
 #include "UI/Menu_Main.h"
 #include "UI/Options_Main.h"
@@ -139,7 +140,7 @@ gameaction_e MiniLoop(
         // Update input and if a quit was requested then exit immediately
         Input::update();
 
-        if (Input::quitRequested()) {
+        if (Input::isQuitRequested()) {
             nextGameAction = ga_quit;
             break;
         }
@@ -288,7 +289,7 @@ static void DRAW_LogicwareCredits(const bool bPresent, const bool bSaveFrameBuff
 // Execute the main menu
 //----------------------------------------------------------------------------------------------------------------------
 static void RunMenu() {
-    if (Input::quitRequested())
+    if (Input::isQuitRequested())
         return;
 
     if (MiniLoop(M_Start, M_Stop, M_Ticker, M_Drawer) == ga_completed) {
@@ -302,7 +303,7 @@ static void RunMenu() {
 // Run the title page
 //----------------------------------------------------------------------------------------------------------------------
 static void RunTitle() noexcept {
-    if (Input::quitRequested())
+    if (Input::isQuitRequested())
         return;
 
     // Run the main menu if the user exited out of this screen
@@ -315,7 +316,7 @@ static void RunTitle() noexcept {
 // Show the game credit pages
 //----------------------------------------------------------------------------------------------------------------------
 static void RunCredits() noexcept {
-    if (Input::quitRequested())
+    if (Input::isQuitRequested())
         return;
 
     // Show ID credits, Art Data Interactive credits and then Logicware credits in that order.
@@ -340,7 +341,7 @@ static void RunCredits() noexcept {
 // Run the game demo
 //----------------------------------------------------------------------------------------------------------------------
 static void RunDemo(uint32_t demoname) noexcept {
-    if (Input::quitRequested())
+    if (Input::isQuitRequested())
         return;
 
     // DC: This was disabled in the original 3DO source.
@@ -368,9 +369,10 @@ void D_DoomMain() noexcept {
     P_Init();           // Init main code
     O_Init();           // Init controls
 
+    IntroLogos::run();
     IntroMovies::run();
 
-    while (!Input::quitRequested()) {
+    while (!Input::isQuitRequested()) {
         RunTitle();         // Show the title page
         RunDemo(rDEMO1);    // Run the first demo
         RunCredits();       // Show the credits page

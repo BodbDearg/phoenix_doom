@@ -199,7 +199,7 @@ void doWipe(const GameLoopDrawFunc drawFunc) noexcept {
         // Update input and if a quit was requested then exit immediately
         Input::update();
 
-        if (Input::quitRequested()) {
+        if (Input::isQuitRequested()) {
             break;
         }
 

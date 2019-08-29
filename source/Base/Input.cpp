@@ -4,7 +4,7 @@
 
 BEGIN_NAMESPACE(Input)
 
-bool                        gbQuitRequested;
+bool                        gbIsQuitRequested;
 const Uint8*                gpKeyboardState;
 int                         gNumKeyboardStateKeys;
 std::vector<SDL_Scancode>   gKeysJustPressed;
@@ -30,7 +30,7 @@ static inline void removeValueFromVector(const T val, std::vector<T>& vec) noexc
 }
 
 void init() noexcept {
-    gbQuitRequested = false;
+    gbIsQuitRequested = false;
     gpKeyboardState = SDL_GetKeyboardState(&gNumKeyboardStateKeys);
     gKeysJustPressed.reserve(16);
     gKeysJustReleased.reserve(16);
@@ -42,7 +42,7 @@ void shutdown() noexcept {
     gKeysJustPressed.shrink_to_fit();
     gNumKeyboardStateKeys = 0;
     gpKeyboardState = nullptr;
-    gbQuitRequested = false;
+    gbIsQuitRequested = false;
 }
 
 void update() noexcept {
@@ -52,7 +52,7 @@ void update() noexcept {
     while (SDL_PollEvent(&sdlEvent) != 0) {
         switch (sdlEvent.type) {
             case SDL_QUIT:
-                gbQuitRequested = true;
+                gbIsQuitRequested = true;
                 break;
 
             case SDL_KEYDOWN: {
@@ -75,8 +75,8 @@ void consumeEvents() noexcept {
     gKeysJustReleased.clear();
 }
 
-bool quitRequested() noexcept {
-    return gbQuitRequested;
+bool isQuitRequested() noexcept {
+    return gbIsQuitRequested;
 }
 
 bool isKeyPressed(const SDL_Scancode key) noexcept {

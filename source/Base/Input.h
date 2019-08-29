@@ -18,7 +18,7 @@ void update() noexcept;
 void consumeEvents() noexcept;
 
 // Returns true if the user requested that the app be quit (via close button)
-bool quitRequested() noexcept;
+bool isQuitRequested() noexcept;
 
 // Query input state and whether something is just pressed or released
 bool isKeyPressed(const SDL_Scancode key) noexcept;

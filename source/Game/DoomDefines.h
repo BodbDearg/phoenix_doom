@@ -12,17 +12,18 @@ static constexpr uint32_t   MAXSCREENWIDTH  = 280;                  // Maximum w
 static constexpr Fixed      VIEWHEIGHT      = 41 * FRACUNIT;        // Height to render from
 
 // Gameplay/simulation related constants
-static constexpr uint32_t   TICKSPERSEC     = 60;                   // The game timebase (ticks per second)
-static constexpr uint32_t   MAPBLOCKSHIFT   = FRACBITS + 7;         // Shift value to convert Fixed to 128 pixel blocks
-static constexpr Fixed      ONFLOORZ        = FRACMIN;              // Attach object to floor with this z
-static constexpr Fixed      ONCEILINGZ      = FRACMAX;              // Attach object to ceiling with this z
-static constexpr Fixed      GRAVITY         = 4 * FRACUNIT;         // Rate of fall
-static constexpr Fixed      MAXMOVE         = 16 * FRACUNIT;        // Maximum velocity
-static constexpr Fixed      MAXRADIUS       = 32 * FRACUNIT;        // Largest radius of any critter
-static constexpr Fixed      MELEERANGE      = 70 * FRACUNIT;        // Range of hand to hand combat
-static constexpr Fixed      MISSILERANGE    = 32 * 64 * FRACUNIT;   // Range of guns targeting
-static constexpr Fixed      FLOATSPEED      = 8 * FRACUNIT;         // Speed an object can float vertically
-static constexpr Fixed      SKULLSPEED      = 40 * FRACUNIT;        // Speed of the skull to attack
+static constexpr uint32_t   TICKSPERSEC     = 60;                           // The game timebase (ticks per second)
+static constexpr float      SECS_PER_TICK   = 1.0f / (float) TICKSPERSEC;   // The number of seconds per tick
+static constexpr uint32_t   MAPBLOCKSHIFT   = FRACBITS + 7;                 // Shift value to convert Fixed to 128 pixel blocks
+static constexpr Fixed      ONFLOORZ        = FRACMIN;                      // Attach object to floor with this z
+static constexpr Fixed      ONCEILINGZ      = FRACMAX;                      // Attach object to ceiling with this z
+static constexpr Fixed      GRAVITY         = 4 * FRACUNIT;                 // Rate of fall
+static constexpr Fixed      MAXMOVE         = 16 * FRACUNIT;                // Maximum velocity
+static constexpr Fixed      MAXRADIUS       = 32 * FRACUNIT;                // Largest radius of any critter
+static constexpr Fixed      MELEERANGE      = 70 * FRACUNIT;                // Range of hand to hand combat
+static constexpr Fixed      MISSILERANGE    = 32 * 64 * FRACUNIT;           // Range of guns targeting
+static constexpr Fixed      FLOATSPEED      = 8 * FRACUNIT;                 // Speed an object can float vertically
+static constexpr Fixed      SKULLSPEED      = 40 * FRACUNIT;                // Speed of the skull to attack
 
 // Graphics
 static constexpr float  MF_SHADOW_ALPHA         = 0.5f;     // Alpha to render things with that have the 'MF_SHADOW' map thing flag applied

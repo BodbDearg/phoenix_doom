@@ -163,7 +163,7 @@ void G_InitNew(skill_e skill, uint32_t map)
 **********************************/
 
 void G_RunGame() noexcept {
-    while (!Input::quitRequested()) {
+    while (!Input::isQuitRequested()) {
         // Run a level until death or completion
         MiniLoop(P_Start, P_Stop, P_Ticker, P_Drawer);
 
