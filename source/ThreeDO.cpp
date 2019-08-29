@@ -171,12 +171,7 @@ void ReadPrefsFile() noexcept {
 **********************************/
 // TODO: MOVE ELSEWHERE
 void DrawPlaque(uint32_t RezNum) noexcept  {
-    
-    // FIXME: DC - The plaque causes a crash - is the image corrupt or are we reading it wrong?
-
-    /*
     const CelImage& img = CelImages::loadImage(RezNum);
     Renderer::drawUISprite(160 - img.width / 2, 80, img);
     CelImages::releaseImages(RezNum);
-    */
 }

@@ -139,29 +139,51 @@ static void decodeUnpackedCelImageData(
     BitStream bitStream(pImageData, imageDataSize);
     uint16_t* pCurOutputPixel = pImageOut;
 
+    // Figure out the size of each row after 64-bit alignment is applied; use that to decide whether to do 64-bit
+    // alignment or not. For some reason most CELs in the game require 64-bit alignment at the end of each row but
+    // there are a couple of odd CELS (like the loading plaque) that CAN'T have this alignment applied without
+    // overstepping the boundary of the data. Not sure of a proper way to determine this, maybe some mysterious CCB flag?
+    // This works just as well anyway...
+    bool bDo64BitAlignment = true;
+
+    {
+        const uint32_t rowSizeInBits = imageBPP * imageW;
+        const uint32_t alignedRowSizeInBits = (rowSizeInBits + 63) & (~63u);
+        const uint32_t alignedRowSizeInBytes = alignedRowSizeInBits / 8;
+        const uint32_t totalImageSizeWithAlignment = alignedRowSizeInBytes * imageH;
+
+        if (totalImageSizeWithAlignment > imageDataSize) {
+            bDo64BitAlignment = false;
+        }
+    }
+
     // Read the entire image
     if (bColorIndexed) {
         for (uint16_t y = 0; y < imageH; ++y) {
+            if (bDo64BitAlignment) {
+                bitStream.align64();
+            }
+
             for (uint16_t x = 0; x < imageW; ++x) {
                 const uint8_t colorIdx = bitStream.readBitsAsUInt<uint8_t>(imageBPP);
                 const uint16_t color = Endian::bigToHost(pPLUT[colorIdx]) | OPAQUE_PIXEL_BITS;  // Note: making 'always opaque' only works assuming the image is used as a 'masked' image...
                 *pCurOutputPixel = color;
                 ++pCurOutputPixel;
             }
-
-            bitStream.align64();
         }
     } else {
         ASSERT(imageBPP == 16);
 
         for (uint16_t y = 0; y < imageH; ++y) {
+            if (bDo64BitAlignment) {
+                bitStream.align64();
+            }
+
             for (uint16_t x = 0; x < imageW; ++x) {
                 const uint16_t color = bitStream.readBitsAsUInt<uint16_t>(16);
                 *pCurOutputPixel = color;
                 ++pCurOutputPixel;
             }
-
-            bitStream.align64();
         }
     }
 }
