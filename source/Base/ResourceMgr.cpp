@@ -1,6 +1,7 @@
 #include "ResourceMgr.h"
 
 #include "Endian.h"
+#include "FourCID.h"
 #include "Macros.h"
 #include "Mem.h"
 #include "Resource.h"
@@ -8,7 +9,7 @@
 #include <memory>
 
 struct ResourceFileHeader {
-    std::byte   magic[4];               // Should read 'BRGR'
+    FourCID     magic;  // Should read 'BRGR'
     uint32_t    numResourceGroups;
     uint32_t    resourceGroupHeadersSize;
 
@@ -74,10 +75,7 @@ void ResourceMgr::init(const char* const fileName) noexcept {
     fileHeader.convertBigToHostEndian();
 
     const bool bHeaderOk = (
-        (fileHeader.magic[0] == std::byte('B')) &&
-        (fileHeader.magic[1] == std::byte('R')) &&
-        (fileHeader.magic[2] == std::byte('G')) &&
-        (fileHeader.magic[3] == std::byte('R')) &&
+        (fileHeader.magic == FourCID("BRGR")) &&
         (fileHeader.numResourceGroups > 0) &&
         (fileHeader.resourceGroupHeadersSize > 0)
     );

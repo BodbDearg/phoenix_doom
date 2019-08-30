@@ -12,8 +12,8 @@ BEGIN_NAMESPACE(ChunkedStreamFileUtils)
 // This was obtained from 3DO SDK documentation.
 //----------------------------------------------------------------------------------------------------------------------
 struct DataStreamSubscriber {
-    CSFFourCID   dataType;
-    uint32_t     subscriberPort;
+    FourCID     dataType;
+    uint32_t    subscriberPort;
 
     void convertBigToHostEndian() noexcept {
         Endian::convertBigToHost(subscriberPort);
@@ -25,7 +25,7 @@ struct DataStreamSubscriber {
 // This was obtained from 3DO SDK documentation.
 //----------------------------------------------------------------------------------------------------------------------
 struct StreamHeader {
-    CSFFourCID              chunkType;              // Should be 'SHDR'
+    FourCID                 chunkType;              // Should be 'SHDR'
     uint32_t                chunkSize;              // Should be 'sizeof(StreamHeader)'
     uint32_t                time;
     uint32_t                channel;
@@ -72,12 +72,12 @@ struct StreamHeader {
 // the 3DO SDK as well as a bit of reverse engineering and hex editing...
 //----------------------------------------------------------------------------------------------------------------------
 struct ChunkHeader {
-    CSFFourCID      chunkType;
-    uint32_t        chunkSize;
-    uint32_t        _unknown1;
-    uint32_t        _unknown2;
-    CSFFourCID      subChunkType;   // This can just be ignored, 3DO streaming libraries probably made use of this...
-    uint32_t        _unknown3;
+    FourCID     chunkType;
+    uint32_t    chunkSize;
+    uint32_t    _unknown1;
+    uint32_t    _unknown2;
+    FourCID     subChunkType;   // This can just be ignored, 3DO streaming libraries probably made use of this...
+    uint32_t    _unknown3;
 
     void convertBigToHostEndian() noexcept {
         Endian::convertBigToHost(chunkSize);
@@ -90,7 +90,7 @@ struct ChunkHeader {
 uint32_t determineSubStreamSize(
     const std::byte* const pStreamFileData,
     const uint32_t streamFileSize,
-    const CSFFourCID subStreamId
+    const FourCID subStreamId
 ) noexcept {
     ASSERT(streamFileSize > sizeof(StreamHeader));
 
@@ -128,7 +128,7 @@ uint32_t determineSubStreamSize(
 bool getSubStreamData(
     const std::byte* const pStreamFileData,
     const uint32_t streamFileSize,
-    const CSFFourCID subStreamId,
+    const FourCID subStreamId,
     std::byte*& pSubStreamDataOut,
     uint32_t& subStreamSizeOut
 ) noexcept {
@@ -148,7 +148,7 @@ bool getSubStreamData(
     header.convertBigToHostEndian();
 
     // Ensure the header is what we expect
-    if (header.chunkType != CSFFourCID::make("SHDR"))
+    if (header.chunkType != FourCID("SHDR"))
         return false;
     
     if (header.headerVersion != 2)

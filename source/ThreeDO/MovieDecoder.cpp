@@ -12,11 +12,11 @@ BEGIN_NAMESPACE(MovieDecoder)
 
 // Header for video data in a movie file
 struct VideoStreamHeader {
-    CSFFourCID      id;             // Should say 'CVID'
-    uint32_t        height;         // Height of the movie in pixels
-    uint32_t        width;          // Width of the movie in pixels
-    uint32_t        fps;            // Framerate of the movie
-    uint32_t        numFrames;      // Number of frames in the movie
+    FourCID     id;             // Should say 'CVID'
+    uint32_t    height;         // Height of the movie in pixels
+    uint32_t    width;          // Width of the movie in pixels
+    uint32_t    fps;            // Framerate of the movie
+    uint32_t    numFrames;      // Number of frames in the movie
 
     void convertBigToHostEndian() noexcept {
         Endian::convertBigToHost(height);
@@ -453,7 +453,7 @@ bool initVideoDecoder(
     const bool bGotVideoStreamData = ChunkedStreamFileUtils::getSubStreamData(
         pStreamFileData,
         streamFileSize,
-        CSFFourCID::make("FILM"),
+        FourCID("FILM"),
         decoderState.pMovieData,
         decoderState.movieDataSize
     );
@@ -476,7 +476,7 @@ bool initVideoDecoder(
     std::memcpy(&header, decoderState.pMovieData, sizeof(VideoStreamHeader));
     header.convertBigToHostEndian();
 
-    if (header.id != CSFFourCID::make("cvid") && header.id != CSFFourCID::make("CVID"))
+    if (header.id != FourCID("cvid") && header.id != FourCID("CVID"))
         return false;
     
     if (header.width != VIDEO_WIDTH || header.height != VIDEO_HEIGHT)
@@ -611,7 +611,7 @@ bool decodeMovieAudio(
     const bool bGotAudioStreamData = ChunkedStreamFileUtils::getSubStreamData(
         pStreamFileData,
         streamFileSize,
-        CSFFourCID::make("SNDS"),
+        FourCID("SNDS"),
         pAudioStreamData,
         audioStreamDataSize
     );

@@ -27,6 +27,7 @@ set(SOURCE_FILES
     "Base/Finally.h"
     "Base/Fixed.h"
     "Base/FMath.h"
+    "Base/FourCID.h"
     "Base/Input.cpp"
     "Base/Input.h"
     "Base/Macros.h"
