@@ -45,6 +45,7 @@ static void loadLogo(const char* path) noexcept {
 }
 
 static void on3doLogoStarting() noexcept {
+    gDoWipe = false;
     gLogoFadeInTime = 0.0f;
     gLogoHoldTime = 3.0f;
     gLogoFadeOutTime = 1.0f;
@@ -54,6 +55,7 @@ static void on3doLogoStarting() noexcept {
 }
 
 static void onIdLogoStarting() noexcept {
+    gDoWipe = false;
     gLogoFadeInTime = 1.0f;
     gLogoHoldTime = 2.0f;
     gLogoFadeOutTime = 1.0f;
@@ -116,8 +118,8 @@ static void drawLogo(const bool bPresent, const bool bSaveFrameBuffer) noexcept 
     }
 
     // Figure out positition for the logo (in the original 320x200 resolution)
-    const uint16_t logoX = (Renderer::REFERENCE_SCREEN_WIDTH - gLogoImg.width) / 2;
-    const uint16_t logoY = (Renderer::REFERENCE_SCREEN_HEIGHT - gLogoImg.height) / 2;
+    const int32_t logoX = ((int32_t) Renderer::REFERENCE_SCREEN_WIDTH - (int32_t) gLogoImg.width) / 2;
+    const int32_t logoY = ((int32_t) Renderer::REFERENCE_SCREEN_HEIGHT - (int32_t) gLogoImg.height) / 2;
 
     // Now figure out the scaled position and size of the logo
     const float xScaled = (float) logoX * gScaleFactor;
