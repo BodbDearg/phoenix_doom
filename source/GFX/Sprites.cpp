@@ -272,7 +272,7 @@ const Sprite* load(const uint32_t resourceNum) noexcept {
         
         // Decode the sprite's image
         CelImage celImg;
-        const bool bLoadedSpriteOk = CelUtils::loadCelImage(
+        const bool bLoadedSpriteOk = CelUtils::loadRezFileCelImage(
             pSpriteData + imageDataOffset,
             imageDataSize,
             CelLoadFlagBits::NONE,

@@ -475,7 +475,7 @@ uint16_t getCCBHeight(const CelControlBlock& ccb) noexcept {
     return height;
 }
 
-bool loadCelImage(
+bool loadRezFileCelImage(
     const std::byte* const pData,
     const uint32_t dataSize,
     const CelLoadFlags loadFlags,
@@ -521,7 +521,7 @@ bool loadCelImage(
     return bSuccess;
 }
 
-bool loadCelImages(
+bool loadRezFileCelImages(
     const std::byte* const pData,
     const uint32_t dataSize,
     const CelLoadFlags loadFlags,
@@ -560,7 +560,7 @@ bool loadCelImages(
         }
 
         // Load the image and abort if it failed
-        const bool bImageLoadSucceeded = loadCelImage(
+        const bool bImageLoadSucceeded = loadRezFileCelImage(
             pData + thisImageOffset,
             thisImageDataSize,
             loadFlags,

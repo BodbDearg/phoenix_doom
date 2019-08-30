@@ -28,7 +28,7 @@ static void loadImages(
     // Read each individual image.
     // Note: could be dealing with an array of images or just one.
     if (bLoadImageArray) {
-        if (!CelUtils::loadCelImages(pResourceData, resourceSize, loadFlags, imageArray)) {
+        if (!CelUtils::loadRezFileCelImages(pResourceData, resourceSize, loadFlags, imageArray)) {
             FATAL_ERROR("Failed to load a CEL format image used by the game!");
         }
     } else {
@@ -36,7 +36,7 @@ static void loadImages(
         imageArray.loadFlags = loadFlags;
         imageArray.pImages = new CelImage[1];
 
-        if (!CelUtils::loadCelImage(pResourceData, resourceSize, loadFlags, imageArray.pImages[0])) {
+        if (!CelUtils::loadRezFileCelImage(pResourceData, resourceSize, loadFlags, imageArray.pImages[0])) {
             FATAL_ERROR("Failed to load a CEL format image used by the game!");
         }
     }

@@ -140,8 +140,9 @@ extern uint16_t getCCBHeight(const CelControlBlock& ccb) noexcept;
 
 //----------------------------------------------------------------------------------------------------------------------
 // Load a single CEL image from the given data.
+// The CEL data has been obtained from the game's resource file and there are no 3DO .CEL file chunk headers.
 //----------------------------------------------------------------------------------------------------------------------
-bool loadCelImage(
+bool loadRezFileCelImage(
     const std::byte* const pData,
     const uint32_t dataSize,
     const CelLoadFlags loadFlags,
@@ -150,10 +151,11 @@ bool loadCelImage(
 
 //----------------------------------------------------------------------------------------------------------------------
 // Load an array of CEL images from the given data.
+// The CEL data has been obtained from the game's resource file and there are no 3DO .CEL file chunk headers.
 // The given data is expected to start with an array of offsets to each image.
 // Saves the images to the given object.
 //----------------------------------------------------------------------------------------------------------------------
-bool loadCelImages(
+bool loadRezFileCelImages(
     const std::byte* const pData,
     const uint32_t dataSize,
     const CelLoadFlags loadFlags,
