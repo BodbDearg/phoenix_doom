@@ -37,11 +37,21 @@ static void loadLogo(const char* path) noexcept {
 
     if (!FileUtils::getContentsOfFile(path, pLogoFileData, logoFileSize))
         return;
+    
+    /* FIXME
+
+    // Note: have to skip this number of bytes at the start of the file!
+    constexpr uint32_t SKIP_BYTES = 3 * sizeof(uint32_t);
+
+    if (logoFileSize <= SKIP_BYTES)
+        return;
 
     // Load the logo CEL from that
-    if (!CelUtils::loadCelImage(pLogoFileData, (uint32_t) logoFileSize, CelLoadFlagBits::NONE, gLogoImg)) {
+    if (!CelUtils::loadRezFileCelImage(pLogoFileData + SKIP_BYTES, (uint32_t) logoFileSize - SKIP_BYTES, CelLoadFlagBits::NONE, gLogoImg)) {
         gLogoImg.free();
     }
+
+    */
 }
 
 static void on3doLogoStarting() noexcept {

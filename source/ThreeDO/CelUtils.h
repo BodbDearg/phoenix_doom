@@ -139,6 +139,17 @@ extern uint16_t getCCBWidth(const CelControlBlock& ccb) noexcept;
 extern uint16_t getCCBHeight(const CelControlBlock& ccb) noexcept;
 
 //----------------------------------------------------------------------------------------------------------------------
+// Decdoe a single CEL image from the given data components.
+//----------------------------------------------------------------------------------------------------------------------
+bool decodeCelImage(
+    const CelControlBlock& ccb,
+    const std::byte* const pImageData,
+    const uint32_t imageDataSize,
+    const uint16_t* const pPLUT,    // Note: can be null if the image is 16-bit!
+    CelImage& imageOut
+) noexcept;
+
+//----------------------------------------------------------------------------------------------------------------------
 // Load a single CEL image from the given data.
 // The CEL data has been obtained from the game's resource file and there are no 3DO .CEL file chunk headers.
 //----------------------------------------------------------------------------------------------------------------------

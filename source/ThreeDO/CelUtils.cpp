@@ -125,7 +125,7 @@ static uint8_t getCCBBitsPerPixel(const CelControlBlock& ccb) noexcept {
 // Decodes unpacked (raw) CEL image data.
 // The pointer to the image data must point to the start data for the first row.
 //----------------------------------------------------------------------------------------------------------------------
-static void decodeUnpackedCelImageData(
+static void decodeUnpackedCelPixelData(
     const std::byte* const pImageData,
     const uint32_t imageDataSize,
     const uint16_t* const pPLUT,
@@ -189,10 +189,10 @@ static void decodeUnpackedCelImageData(
 }
 
 //-------------------------------------------------------------------------------------------------
-// Decode packed CEL image data.
+// Decode packed CEL pixel data.
 // The pointer to the image data must point to the start data for the first row.
 //-------------------------------------------------------------------------------------------------
-static void decodePackedCelImageData(
+static void decodePackedCelPixelData(
     const std::byte* const pImageData,
     const uint32_t imageDataSize,
     const uint16_t* const pPLUT,
@@ -315,11 +315,11 @@ static void decodePackedCelImageData(
 }
 
 //----------------------------------------------------------------------------------------------------------------------
-// Decodes the actual CEL image data.
+// Decodes the actual CEL pixel data.
 // The pointer to the image data must point to the start data for the first row.
 // If decoding fails then a null pointer will be returned.
 //----------------------------------------------------------------------------------------------------------------------
-static uint16_t* decodeCelImageData(
+static uint16_t* decodeCelPixelData(
     const std::byte* const pImageData,
     const uint32_t imageDataSize,
     const uint16_t* const pPLUT,
@@ -342,7 +342,7 @@ static uint16_t* decodeCelImageData(
     // Try and do the decode
     try {
         if (bImageIsPacked) {
-            decodePackedCelImageData(
+            decodePackedCelPixelData(
                 pImageData,
                 imageDataSize,
                 pPLUT,
@@ -353,7 +353,7 @@ static uint16_t* decodeCelImageData(
                 pImageOut
             );
         } else {
-            decodeUnpackedCelImageData(
+            decodeUnpackedCelPixelData(
                 pImageData,
                 imageDataSize,
                 pPLUT,
@@ -372,60 +372,33 @@ static uint16_t* decodeCelImageData(
     return pImageOut;
 }
 
-//----------------------------------------------------------------------------------------------------------------------
-// Decode a CEL image, using it's header to understand how to to decode and what it's properties are.
-// The image data MUST follow the header.
-// Returns 'true' if decoding succeeds, false otherwise.
-//----------------------------------------------------------------------------------------------------------------------
-static bool decodeCel(
-    const CelControlBlock& ccbAndData,
-    const uint32_t celDataSize,
-    uint16_t*& pImageOut,
-    uint16_t& imageWidthOut,
-    uint16_t& imageHeightOut
+bool decodeCelImage(
+    const CelControlBlock& ccb,
+    const std::byte* const pImageData,
+    const uint32_t imageDataSize,
+    const uint16_t* const pPLUT,
+    CelImage& imageOut
 ) noexcept {
-    // Initially these are all zeroed
-    pImageOut = nullptr;
-    imageWidthOut = 0;
-    imageHeightOut = 0;
-
-    // If the data size is not big enough then decode fails
-    if (celDataSize <= sizeof(CelControlBlock))
-        return false;
+    // Just in case something is already loaded into this image...
+    imageOut.free();
 
     // Get image width and height
-    const uint16_t imageW = getCCBWidth(ccbAndData);
-    const uint16_t imageH = getCCBHeight(ccbAndData);
+    const uint16_t imageW = getCCBWidth(ccb);
+    const uint16_t imageH = getCCBHeight(ccb);
 
     // Image dimensions must be valid or decode fails
     if (imageW <= 0 || imageH <= 0)
         return false;
     
     // Get flags for the CCB
-    const uint32_t imageCCBFlags = Endian::bigToHost(ccbAndData.flags);
-
-    // Get the offset to the image data for the CCB; ensure this offset is valid:
-    const uint32_t imageDataOffset = Endian::bigToHost(ccbAndData.sourcePtr) + 12;
-
-    if (imageDataOffset >= celDataSize)
-        return false;
+    const uint32_t imageCCBFlags = Endian::bigToHost(ccb.flags);
     
     // Get image bits per pixel. Note: don't support images with bit depth > 16 bpp!
-    const uint8_t imageBPP = getCCBBitsPerPixel(ccbAndData);
+    const uint8_t imageBPP = getCCBBitsPerPixel(ccb);
 
     if (imageBPP > 16)
         return false;
-
-    if (celDataSize <= 60)  // Ensure there is room for the PLUT
-        return false;
     
-    // Get the pointers to the PLUT and image data
-    const std::byte* const pCelBytes = (const std::byte*) &ccbAndData;
-    const uint16_t* const pPLUT = (const uint16_t*)(pCelBytes + 60);    // 3DO Doom harcoded this offset?
-    const std::byte* const pImageData = pCelBytes + imageDataOffset;
-
-    const uint32_t imageDataSize = celDataSize - (uint32_t)(pImageData - pCelBytes);
-
     // Determining whether the CCB is color indexed or not SHOULD be a simple case of checking the 'linear' flag but
     // sometimes this lies to us for some of the Doom resources.
     // Fix up some contradictions here...
@@ -437,8 +410,12 @@ static bool decodeCel(
         bIsColorIndexed = false;    // MUST NOT be color indexed
     }
 
+    // If the image is color indexed and a pixel LUT has not been provided then loading fails
+    if (bIsColorIndexed && (!pPLUT))
+        return false;
+    
     // Decode and if the result is successful return also the image dimensions
-    pImageOut = decodeCelImageData(
+    imageOut.pPixels = decodeCelPixelData(
         pImageData,
         imageDataSize,
         pPLUT,
@@ -449,9 +426,9 @@ static bool decodeCel(
         bIsColorIndexed
     );
 
-    if (pImageOut) {
-        imageWidthOut = imageW;
-        imageHeightOut = imageH;
+    if (imageOut.pPixels) {
+        imageOut.width = imageW;
+        imageOut.height = imageH;
         return true;
     } else {
         return false;
@@ -502,13 +479,35 @@ bool loadRezFileCelImage(
 
     // Read the actual image data
     const uint32_t bytesConsumedSoFar = (uint32_t)(pCurData - pData);
+    const uint32_t celDataSize = dataSize - bytesConsumedSoFar;
 
-    const bool bSuccess = decodeCel(
-        (const CelControlBlock&) *pCurData,
-        dataSize - bytesConsumedSoFar,
-        imageOut.pPixels,
-        imageOut.width,
-        imageOut.height
+    // If the data size is not big enough then decode fails
+    if (celDataSize <= sizeof(CelControlBlock))
+        return false;
+
+    if (celDataSize <= 60)  // Ensure there is room for the PLUT
+        return false;
+    
+    // Get the offset to the image data for the CCB; ensure this offset is valid:
+    const std::byte* const pCelBytes = (const std::byte*) pCurData;
+    const CelControlBlock& ccb = reinterpret_cast<const CelControlBlock&>(*pCelBytes);
+    const uint32_t imageDataOffset = Endian::bigToHost(ccb.sourcePtr) + 12;
+
+    if (imageDataOffset >= celDataSize)
+        return false;
+    
+    // Get the pointers to the PLUT and image data
+    const uint16_t* const pPLUT = (const uint16_t*)(pCelBytes + 60);    // 3DO Doom harcoded this offset?
+    const std::byte* const pImageData = pCelBytes + imageDataOffset;
+    const uint32_t imageDataSize = celDataSize - (uint32_t)(pImageData - pCelBytes);
+
+    // Decode the actual CEL image data
+    const bool bSuccess = decodeCelImage(
+        ccb,
+        pImageData,
+        imageDataSize,
+        pPLUT,
+        imageOut
     );
 
     // Do conversions for 'masked' images if we have loaded successfully and that is required
@@ -516,6 +515,8 @@ bool loadRezFileCelImage(
         if ((loadFlags & CelLoadFlagBits::MASKED) != 0) {
             transformMaskedImageToImageWithAlpha(imageOut);
         }
+    } else {
+        imageOut.free();
     }
 
     return bSuccess;
