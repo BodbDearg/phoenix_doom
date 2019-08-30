@@ -173,4 +173,13 @@ bool loadRezFileCelImages(
     CelImageArray& imagesOut
 ) noexcept;
 
+//----------------------------------------------------------------------------------------------------------------------
+// Load a single CEL image from a chunked .CEL file in memory.
+//----------------------------------------------------------------------------------------------------------------------
+bool loadCelFileCelImage(
+    const std::byte* const pData,
+    const uint32_t dataSize,
+    CelImage& imageOut
+) noexcept;
+
 END_NAMESPACE(CelUtils)

@@ -1,13 +1,32 @@
 #include "CelUtils.h"
 
 #include "Base/BitStream.h"
+#include "Base/ByteStream.h"
 #include "Base/Endian.h"
+#include "Base/FourCID.h"
 #include "Base/Macros.h"
 #include "Base/Mem.h"
 #include <cstring>
 #include <type_traits>
 
 BEGIN_NAMESPACE(CelUtils)
+
+//----------------------------------------------------------------------------------------------------------------------
+// Chunk header for a CEL file
+//----------------------------------------------------------------------------------------------------------------------
+struct CelFileChunkHeader {
+    FourCID     id;
+    uint32_t    size;
+};
+
+//----------------------------------------------------------------------------------------------------------------------
+// The entire chunk data for the CCB chunk in a cel file
+//----------------------------------------------------------------------------------------------------------------------
+struct CelFileCCBChunk {
+    CelFileChunkHeader  header;
+    uint32_t            version;
+    CelControlBlock     ccb;
+};
 
 //----------------------------------------------------------------------------------------------------------------------
 // Exception thrown when there is an error decoding a CEL image
@@ -580,6 +599,69 @@ bool loadRezFileCelImages(
         return true;
     } else {
         imagesOut.free();
+        return false;
+    }
+}
+
+bool loadCelFileCelImage(
+    const std::byte* const pData,
+    const uint32_t dataSize,
+    CelImage& imageOut
+) noexcept {
+    ASSERT(pData || dataSize == 0);
+    imageOut.free();
+
+    try {
+        ByteStream dataStream(pData, dataSize);
+
+        // Try to locate the CCB chunk, pixels chunk and PLUT chunk in the CEL file (if there)
+        const CelFileCCBChunk* pCCBChunk = nullptr;
+        const CelFileChunkHeader* pPixelsChunk = nullptr;
+        const CelFileChunkHeader* pPlutChunk = nullptr;
+
+        while (dataStream.hasBytesLeft()) {
+            // Grab this chunk header and its size
+            dataStream.ensureBytesLeft(sizeof(CelFileChunkHeader));
+            const CelFileChunkHeader* const pChunkHeader = (const CelFileChunkHeader*) dataStream.getCurData();
+            const uint32_t chunkSize = Endian::bigToHost(pChunkHeader->size);
+            dataStream.ensureBytesLeft(chunkSize);
+            
+            // See what we are dealing with
+            if (pChunkHeader->id == FourCID("CCB ")) {
+                // CCB chunk: make sure it is big enough!
+                if (chunkSize < sizeof(CelFileCCBChunk))
+                    return false;
+                
+                pCCBChunk = (const CelFileCCBChunk*) dataStream.getCurData();
+            }
+            else if (pChunkHeader->id == FourCID("PDAT")) {
+                if (chunkSize > sizeof(CelFileChunkHeader)) {
+                    pPixelsChunk = pChunkHeader;
+                }
+            }            
+            else if (pChunkHeader->id == FourCID("PLUT")) {
+                if (chunkSize > sizeof(CelFileChunkHeader)) {
+                    pPlutChunk = pChunkHeader;
+                }
+            }
+
+            // Move past this chunk and possibly onto the next
+            dataStream.consume(chunkSize);
+        }
+
+        // Require at a minimum pixels and a CCB to decode!
+        if ((!pCCBChunk) || (!pPixelsChunk))
+            return false;
+        
+        // Get a pointer to the pixel data and the PLUT data (if there)
+        const std::byte* const pImageData = (const std::byte*) &pPixelsChunk[1];
+        const uint32_t imageDataSize = Endian::bigToHost(pPixelsChunk->size) - sizeof(CelFileChunkHeader);
+        const uint16_t* const pPlut = (pPlutChunk != nullptr) ? (const uint16_t*) &pPlutChunk[1] : nullptr;
+
+        // Decode the cel image
+        return decodeCelImage(pCCBChunk->ccb, pImageData, imageDataSize, pPlut, imageOut);
+    }
+    catch (...) {
         return false;
     }
 }
