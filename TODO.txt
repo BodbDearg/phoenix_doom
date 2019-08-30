@@ -5,7 +5,6 @@ TODO
 - New sprite clipping method that takes into account side of seg sprite is on.
 - Fix BSP check BBOX for high res rendering
 - Cleanup and optimize render code
-- Intro logos
 - Higher resolution + fullscreen support
 - Screen sizes need to scale with resolution
 - WASD + Mouse support

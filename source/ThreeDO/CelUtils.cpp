@@ -656,7 +656,7 @@ bool loadCelFileCelImage(
         // Get a pointer to the pixel data and the PLUT data (if there)
         const std::byte* const pImageData = (const std::byte*) &pPixelsChunk[1];
         const uint32_t imageDataSize = Endian::bigToHost(pPixelsChunk->size) - sizeof(CelFileChunkHeader);
-        const uint16_t* const pPlut = (pPlutChunk != nullptr) ? (const uint16_t*) &pPlutChunk[1] : nullptr;
+        const uint16_t* const pPlut = (pPlutChunk != nullptr) ? (const uint16_t*) &pPlutChunk[1] + 2 : nullptr;     // Note: +2 to skip past a u32 giving the number of entries in the PLUT!
 
         // Decode the cel image
         return decodeCelImage(pCCBChunk->ccb, pImageData, imageDataSize, pPlut, imageOut);
