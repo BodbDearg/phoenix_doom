@@ -216,7 +216,8 @@ static void decodePackedCelImageData(
     for (uint16_t y = 0; y < imageH; ++y) {
         // Firstly read offset to the next row and store the pointer.
         // That is the first bit of info for each row of pixels.
-        const uint32_t imageDataSizeLeft = imageDataSize - (uint32_t)(pCurRowData - pImageData);
+        const uint32_t curOffsetInImgData = (uint32_t)(pCurRowData - pImageData);
+        const uint32_t imageDataSizeLeft = (curOffsetInImgData < imageDataSize) ? imageDataSize - curOffsetInImgData : 0;
         BitStream bitStream(pCurRowData, imageDataSizeLeft);
         uint32_t nextRowOffset;
 
