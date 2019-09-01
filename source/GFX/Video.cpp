@@ -98,19 +98,49 @@ void Video::shutdown() noexcept {
     SDL_QuitSubSystem(SDL_INIT_VIDEO);
 }
 
-void Video::debugClear() noexcept {
-    ASSERT(gpFrameBuffer);
+void Video::clearScreen(const uint8_t r, const uint8_t g, const uint8_t b) noexcept {
+    ASSERT(gpFrameBuffer);    
 
+    // Cache these for the loop
+    uint32_t* const pFramebuffer = gpFrameBuffer;
+    const uint32_t clearColorXRGB8888 = ((uint32_t) r << 16) | ((uint32_t) g << 8) | (uint32_t) b;
+
+    // Clear 16 pixels at a time at first
+    const uint32_t endPixelIdx = (SCREEN_WIDTH * SCREEN_HEIGHT);
+    const uint32_t endPixelIdx16 = endPixelIdx & 0xFFFFFFF0u;
+    uint32_t pixelIdx = 0;
+    
+    while (pixelIdx < endPixelIdx16) {
+        pFramebuffer[pixelIdx + 0 ] = clearColorXRGB8888;
+        pFramebuffer[pixelIdx + 1 ] = clearColorXRGB8888;
+        pFramebuffer[pixelIdx + 2 ] = clearColorXRGB8888;
+        pFramebuffer[pixelIdx + 3 ] = clearColorXRGB8888;
+        pFramebuffer[pixelIdx + 4 ] = clearColorXRGB8888;
+        pFramebuffer[pixelIdx + 5 ] = clearColorXRGB8888;
+        pFramebuffer[pixelIdx + 6 ] = clearColorXRGB8888;
+        pFramebuffer[pixelIdx + 7 ] = clearColorXRGB8888;
+        pFramebuffer[pixelIdx + 8 ] = clearColorXRGB8888;
+        pFramebuffer[pixelIdx + 9 ] = clearColorXRGB8888;
+        pFramebuffer[pixelIdx + 10] = clearColorXRGB8888;
+        pFramebuffer[pixelIdx + 11] = clearColorXRGB8888;
+        pFramebuffer[pixelIdx + 12] = clearColorXRGB8888;
+        pFramebuffer[pixelIdx + 13] = clearColorXRGB8888;
+        pFramebuffer[pixelIdx + 14] = clearColorXRGB8888;
+        pFramebuffer[pixelIdx + 15] = clearColorXRGB8888;
+        pixelIdx += 16;
+    }
+
+    // Clear any remaining pixels
+    while (pixelIdx < endPixelIdx) {
+        pFramebuffer[pixelIdx] = clearColorXRGB8888;
+        ++pixelIdx;
+    }
+}
+
+void Video::debugClearScreen() noexcept {
     // Clear the framebuffer to pink to spot rendering gaps
     #if ASSERTS_ENABLED
-        const uint32_t pinkU32 = 0x00FF00FF;
-        uint32_t* pPixel = gpFrameBuffer;
-        uint32_t* const pEndPixel = gpFrameBuffer + (SCREEN_WIDTH * SCREEN_HEIGHT);
-
-        while (pPixel < pEndPixel) {
-            *pPixel = pinkU32;
-            ++pPixel;
-        }
+        clearScreen(255, 0, 255);
     #endif
 }
 

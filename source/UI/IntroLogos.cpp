@@ -27,6 +27,9 @@ static LogoState    gLogoCurState       = LogoState::FADE_IN;
 static float        gLogoCurStateTime   = 0.0f;
 
 static void loadLogo(const char* path) noexcept {
+    // Ensure the screen is clear before we display the logo
+    Video::clearScreen(0, 0, 0);
+
     // Try to load the logo file into memory
     std::byte* pLogoFileData = nullptr;
     size_t logoFileSize = 0;

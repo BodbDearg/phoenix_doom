@@ -328,7 +328,7 @@ gameaction_e F_Ticker() noexcept {
 // Draw the frame for the finale
 //----------------------------------------------------------------------------------------------------------------------
 void F_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
-    Video::debugClear();
+    Video::debugClearScreen();
     Renderer::drawUISprite(0, 0, rBACKGRNDBROWN);       // Draw the background
 
     if (gStatus == fin_endtext) {

@@ -244,7 +244,7 @@ static void STOP_Title() noexcept {
 // Draws the title page
 //----------------------------------------------------------------------------------------------------------------------
 static void DRAW_Title(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
-    Video::debugClear();
+    Video::debugClearScreen();
     Renderer::drawUISprite(0, 0, rTITLE);           // Draw the doom logo
     Video::endFrame(bPresent, bSaveFrameBuffer);
 }
@@ -268,7 +268,7 @@ static gameaction_e TIC_Credits() noexcept {
 // Draw the credits pages
 //----------------------------------------------------------------------------------------------------------------------
 static void DRAW_Credits(const bool bPresent, const bool bSaveFrameBuffer, const uint32_t creditsPageResourceNum) noexcept {
-    Video::debugClear();
+    Video::debugClearScreen();
     Renderer::drawUISprite(0, 0, creditsPageResourceNum);
     Video::endFrame(bPresent, bSaveFrameBuffer);
 }

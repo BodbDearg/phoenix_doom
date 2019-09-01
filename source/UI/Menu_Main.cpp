@@ -177,7 +177,7 @@ gameaction_e M_Ticker() noexcept {
 // Draw the main menu
 //--------------------------------------------------------------------------------------------------
 void M_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
-    Video::debugClear();
+    Video::debugClearScreen();
     Renderer::drawUISprite(0, 0, rMAINDOOM);
 
     if (gOptionActive) {

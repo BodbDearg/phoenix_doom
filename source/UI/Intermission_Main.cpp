@@ -310,7 +310,7 @@ gameaction_e IN_Ticker() noexcept {
 
 **********************************/
 void IN_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
-    Video::debugClear();
+    Video::debugClearScreen();
     Renderer::drawUISprite(0, 0, rBACKGRNDBROWN);   // Load and draw the skulls
 
     const CelImageArray& intermisShapes = CelImages::loadImages(rINTERMIS, CelLoadFlagBits::MASKED);

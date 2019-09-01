@@ -42,6 +42,9 @@ static void shutdownMovie() noexcept {
 // Starts playing the audio.
 //----------------------------------------------------------------------------------------------------------------------
 static void startupMovie(const char* path) noexcept {
+    // Ensure the screen is clear before we display the movie
+    Video::clearScreen(0, 0, 0);
+
     // Don't do any screen wipes for movies
     gDoWipe = false;
 

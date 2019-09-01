@@ -27,9 +27,12 @@ namespace Video {
     void init() noexcept;
     void shutdown() noexcept;
 
+    // Clear the screen to the specified RGB color   
+    void clearScreen(const uint8_t r, const uint8_t g, const uint8_t b) noexcept;
+
     // Does a debug clear of the framebuffer to a known color - does nothing in release builds.
     // Used to identify issues where parts of the screen are not being drawn to.
-    void debugClear() noexcept;
+    void debugClearScreen() noexcept;
 
     SDL_Window* getWindow() noexcept;
 

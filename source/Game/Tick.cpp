@@ -238,19 +238,19 @@ void P_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
         DrawPlaque(rPAUSED);            // Draw 'Paused' plaque
         Video::endFrame(bPresent, bSaveFrameBuffer);
     } else if (gPlayer.AutomapFlags & AF_OPTIONSACTIVE) {
-        Video::debugClear();
+        Video::debugClearScreen();
         Renderer::drawPlayerView();                     // Render the 3D view
         ST_Drawer();                                    // Draw the status bar
         O_Drawer(bPresent, bSaveFrameBuffer);           // Draw the console handler
         gbRefreshDrawn = false;
     } else if (gPlayer.AutomapFlags & AF_ACTIVE) {
-        Video::debugClear();
+        Video::debugClearScreen();
         AM_Drawer();                                    // Draw the automap
         ST_Drawer();                                    // Draw the status bar
         Video::endFrame(bPresent, bSaveFrameBuffer);
         gbRefreshDrawn = true;
     } else {
-        Video::debugClear();
+        Video::debugClearScreen();
         Renderer::drawPlayerView();                     // Render the 3D view
         ST_Drawer();                                    // Draw the status bar
         Video::endFrame(bPresent, bSaveFrameBuffer);
