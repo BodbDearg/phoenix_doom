@@ -114,6 +114,10 @@ void Video::debugClear() noexcept {
     #endif
 }
 
+SDL_Window* Video::getWindow() noexcept {
+    return gWindow;
+}
+
 void Video::saveFrameBuffer() noexcept {
     ASSERT(gpSavedFrameBuffer);
     ASSERT(gpFrameBuffer);

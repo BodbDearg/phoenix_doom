@@ -5,6 +5,8 @@
 // TODO: REMOVE
 #include "Renderer.h"
 
+struct SDL_Window;
+
 namespace Video {
     // DC: FIXME: DO NOT HARDCODE LIKE THIS!
     // TODO: REMOVE
@@ -28,6 +30,8 @@ namespace Video {
     // Does a debug clear of the framebuffer to a known color - does nothing in release builds.
     // Used to identify issues where parts of the screen are not being drawn to.
     void debugClear() noexcept;
+
+    SDL_Window* getWindow() noexcept;
 
     // Saves a copy of the current framebuffer to the 'saved' framebuffer.
     // This should be done prior to calling 'present'.

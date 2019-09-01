@@ -22,6 +22,8 @@ set(SOURCE_FILES
     "Base/BitStream.h"
     "Base/ByteStream.h"
     "Base/Endian.h"
+    "Base/FatalErrors.cpp"
+    "Base/FatalErrors.h"
     "Base/FileUtils.cpp"
     "Base/FileUtils.h"
     "Base/Finally.h"

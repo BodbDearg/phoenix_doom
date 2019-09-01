@@ -1,5 +1,7 @@
 #pragma once
 
+#include "FatalErrors.h"
+
 // Whether or not asserts are enabled
 #ifndef NDEBUG
     #define ASSERTS_ENABLED 1
@@ -14,8 +16,7 @@
     #define ASSERT(Condition)\
         do {\
             if (!(Condition)) {\
-                printf("Assert failed! Condition: %s\n", #Condition);\
-                abort();\
+                FatalErrors::errorWithFormat("Assert failed! Condition: %s\n", #Condition);\
             }\
         } while (0)
 #else
@@ -27,9 +28,7 @@
     #define ASSERT_LOG(Condition, Message)\
         do {\
             if (!(Condition)) {\
-                printf("Assert failed! Condition: %s\n", #Condition);\
-                printf("%s\n", Message);\
-                abort();\
+                FatalErrors::errorWithFormat("Assert failed! Condition: %s\n%s\n", #Condition, Message);\
             }\
         } while (0)
 #else
@@ -41,9 +40,7 @@
     #define ASSERT_LOG_F(Condition, MessageFormat, ...)\
         do {\
             if (!(Condition)) {\
-                printf("Assert failed! Condition: %s\n", #Condition);\
-                printf(MessageFormat "\n", __VA_ARGS__);\
-                abort();\
+                FatalErrors::errorWithFormat("Assert failed! Condition: %s\n" ## MessageFormat ## "\n", #Condition, __VA_ARGS__);\
             }\
         } while (0)
 #else
@@ -53,15 +50,13 @@
 // Raise a fatal error message
 #define FATAL_ERROR(Message)\
     do {\
-        printf("%s\n", Message);\
-        abort();\
+        FatalErrors::errorWithFormat("%s\n", Message);\
     } while (0)
 
 // Raise a formatted Fatal error message
 #define FATAL_ERROR_F(MessageFormat, ...)\
     do {\
-        printf(MessageFormat "\n", __VA_ARGS__);\
-        abort();\
+        FatalErrors::errorWithFormat("" ## MessageFormat, __VA_ARGS__);\
     } while (0)
 
 // Used to decorate exception throwing C++ functions
