@@ -9,6 +9,7 @@
 #include "Burger.h"
 #include "Game/Data.h"
 #include "Game/DoomMain.h"
+#include "Game/Prefs.h"
 #include "Game/Resources.h"
 #include "GFX/CelImages.h"
 #include "GFX/Renderer.h"
@@ -37,6 +38,7 @@ void initGameSubsystems() noexcept {
         #endif
     #endif
 
+    Prefs::read();
     Resources::init();
     CelImages::init();
     Video::init();
