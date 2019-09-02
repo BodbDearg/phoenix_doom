@@ -2,6 +2,7 @@
 
 #include "Base/FileUtils.h"
 #include "Base/Finally.h"
+#include "Base/IniUtils.h"
 #include <cstring>
 #include <filesystem>
 #include <SDL.h>
@@ -292,8 +293,12 @@ Keypad +        = automap_free_cam_zoom_in
 #---------------------------------------------------------------------------------------------------
 )";
 
-Controls::MenuActions gKeyboardMenuActions[MAX_KEYBOARD_SCAN_CODES];
-Controls::GameActions gKeyboardGameActions[MAX_KEYBOARD_SCAN_CODES];
+static std::string gTmpActionStr;   // Re-use this buffer during parsing to prevent reallocs. Not that it probably matters that much...
+
+bool                    gbFullscreen;
+uint32_t                gRenderScale;
+Controls::MenuActions   gKeyboardMenuActions[MAX_KEYBOARD_SCAN_CODES];
+Controls::GameActions   gKeyboardGameActions[MAX_KEYBOARD_SCAN_CODES];
 
 //----------------------------------------------------------------------------------------------------------------------
 // Determines the path to the config .ini for the game
@@ -349,9 +354,164 @@ static void regenerateDefaultConfigFileIfNotPresent(const std::string& iniFilePa
     }
 }
 
-void clear() noexcept {
+//----------------------------------------------------------------------------------------------------------------------
+// Parse a single game or menu action string
+//----------------------------------------------------------------------------------------------------------------------
+static void parseSingleActionString(
+    const std::string& actionStr,
+    Controls::GameActions& gameActionsOut,
+    Controls::MenuActions& menuActionsOut
+) noexcept {
+    // These cut down on repetivie code
+    auto handleGameAction = [&](const char* const pName, const Controls::GameActions actionBits) noexcept {
+        if (actionStr == pName) {
+            gameActionsOut |= actionBits;
+        }
+    };
+
+    auto handleMenuAction = [&](const char* const pName, const Controls::MenuActions actionBits) noexcept {
+        if (actionStr == pName) {
+            menuActionsOut |= actionBits;
+        }
+    };
+
+    handleGameAction("move_forward",                Controls::GameActionBits::MOVE_FORWARD);
+    handleGameAction("move_backward",               Controls::GameActionBits::MOVE_BACKWARD);
+    handleGameAction("turn_left",                   Controls::GameActionBits::TURN_LEFT);
+    handleGameAction("turn_right",                  Controls::GameActionBits::TURN_RIGHT);
+    handleGameAction("strafe_left",                 Controls::GameActionBits::STRAFE_LEFT);
+    handleGameAction("strafe_right",                Controls::GameActionBits::STRAFE_RIGHT);
+    handleGameAction("shoot",                       Controls::GameActionBits::SHOOT);
+    handleGameAction("use",                         Controls::GameActionBits::USE);
+    handleGameAction("options",                     Controls::GameActionBits::OPTIONS);
+    handleGameAction("run",                         Controls::GameActionBits::RUN);
+    handleGameAction("prev_weapon",                 Controls::GameActionBits::PREV_WEAPON);
+    handleGameAction("next_weapon",                 Controls::GameActionBits::NEXT_WEAPON);
+    handleGameAction("pause",                       Controls::GameActionBits::PAUSE);
+    handleGameAction("weapon_1",                    Controls::GameActionBits::WEAPON_1);
+    handleGameAction("weapon_2",                    Controls::GameActionBits::WEAPON_2);
+    handleGameAction("weapon_3",                    Controls::GameActionBits::WEAPON_3);
+    handleGameAction("weapon_4",                    Controls::GameActionBits::WEAPON_4);
+    handleGameAction("weapon_5",                    Controls::GameActionBits::WEAPON_5);
+    handleGameAction("weapon_6",                    Controls::GameActionBits::WEAPON_6);
+    handleGameAction("weapon_7",                    Controls::GameActionBits::WEAPON_7);
+    handleGameAction("automap_toggle",              Controls::GameActionBits::AUTOMAP_TOGGLE);
+    handleGameAction("automap_free_cam_toggle",     Controls::GameActionBits::AUTOMAP_FREE_CAM_TOGGLE);
+    handleGameAction("automap_free_cam_zoom_out",   Controls::GameActionBits::AUTOMAP_FREE_CAM_ZOOM_OUT);
+    handleGameAction("automap_free_cam_zoom_in",    Controls::GameActionBits::AUTOMAP_FREE_CAM_ZOOM_IN);
+
+    handleMenuAction("menu_up",     Controls::MenuActionBits::UP);
+    handleMenuAction("menu_down",   Controls::MenuActionBits::DOWN);
+    handleMenuAction("menu_left",   Controls::MenuActionBits::LEFT);
+    handleMenuAction("menu_right",  Controls::MenuActionBits::RIGHT);
+    handleMenuAction("menu_ok",     Controls::MenuActionBits::OK);
+    handleMenuAction("menu_back",   Controls::MenuActionBits::BACK);
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+// Parse a game and menu actions bindings string
+//----------------------------------------------------------------------------------------------------------------------
+static void parseActionsString(
+    const std::string& actionsStr,
+    Controls::GameActions& gameActionsOut,
+    Controls::MenuActions& menuActionsOut
+) noexcept {
+    gameActionsOut = Controls::GameActionBits::NONE;
+    menuActionsOut = Controls::MenuActionBits::NONE;
+
+    const char* pActionStart = actionsStr.c_str();
+    const char* const pActionsStrEnd = actionsStr.c_str() + actionsStr.size();
+
+    while (pActionStart < pActionsStrEnd) {
+        // Skip over commas and whitespace
+        const char firstChar = pActionStart[0];
+        const bool bSkipFirstChar = (
+            (firstChar == ' ') ||
+            (firstChar == '\t') ||
+            (firstChar == '\n') ||
+            (firstChar == '\r') ||
+            (firstChar == '\f') ||
+            (firstChar == '\v') ||
+            (firstChar == ',')
+        );
+
+        if (bSkipFirstChar) {
+            ++pActionStart;
+            continue;
+        }
+
+        // Now find the end of this action, stop at the string end or ','
+        const char* pActionEnd = pActionStart + 1;
+
+        while (pActionEnd < pActionsStrEnd) {
+            if (pActionEnd[0] == ',') {
+                break;
+            } else {
+                ++pActionEnd;
+            }
+        }
+
+        // Parse this action string
+        const size_t actionLen = (size_t)(pActionEnd - pActionStart);
+        gTmpActionStr.clear();
+        gTmpActionStr.assign(pActionStart, actionLen);
+
+        parseSingleActionString(gTmpActionStr, gameActionsOut, menuActionsOut);
+
+        // Move on to the next action in the string (if any)
+        pActionStart = pActionEnd + 1;
+    }
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+// Parse the bindings/actions for a particular keyboard key
+//----------------------------------------------------------------------------------------------------------------------
+static void parseKeyboardKeyActions(const uint32_t keyIdx, const std::string& actionsStr) noexcept {
+    if (keyIdx >= MAX_KEYBOARD_SCAN_CODES)
+        return;
+    
+    Controls::GameActions gameActions = Controls::GameActionBits::NONE;
+    Controls::MenuActions menuActions = Controls::MenuActionBits::NONE;
+    parseActionsString(actionsStr, gameActions, menuActions);
+
+    gKeyboardGameActions[keyIdx] = gameActions;
+    gKeyboardMenuActions[keyIdx] = menuActions;
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+// Handle a prefs file entry.
+// This is not a particularly elegant or fast implementation, but it gets the job done... 
+//----------------------------------------------------------------------------------------------------------------------
+static void handlePrefsEntry(const IniUtils::Entry& entry) noexcept {
+    if (entry.section == "Video") {
+        if (entry.key == "Fullscreen") {
+            gbFullscreen = entry.getBoolValue(gbFullscreen);
+        } else if (entry.key == "RenderScale") {
+            gRenderScale = std::min(std::max(entry.getIntValue(gRenderScale), 1), 1000);
+        }
+    }
+    else if (entry.section == "KeyboardControls") {
+        const SDL_Scancode scancode = SDL_GetScancodeFromName(entry.key.c_str());
+
+        if (scancode != SDL_SCANCODE_UNKNOWN) {
+            const uint32_t scancodeIdx = (uint32_t) scancode;
+
+            if (scancodeIdx < MAX_KEYBOARD_SCAN_CODES) {
+                parseKeyboardKeyActions(scancodeIdx, entry.value.c_str());
+            }
+        }
+    }
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+// Clears all settings (used prior to reading prefs)
+//----------------------------------------------------------------------------------------------------------------------
+static void clear() noexcept {
+    gbFullscreen = true;
+    gRenderScale = 1;
+
     std::memset(gKeyboardMenuActions, 0, sizeof(gKeyboardMenuActions));
-    std::memset(gKeyboardGameActions, 0, sizeof(gKeyboardGameActions));
+    std::memset(gKeyboardGameActions, 0, sizeof(gKeyboardGameActions));    
 }
 
 void read() noexcept {
@@ -362,11 +522,19 @@ void read() noexcept {
     regenerateDefaultConfigFileIfNotPresent(iniFilePath);
 
     // Firstly read the ini file bytes, if that fails then abort with an error
-    /*
     std::byte* pIniFileData = nullptr;
     size_t iniFileDataSize = 0;
-    FileUtils::getContentsOfFile(filePath, pIniFileData, iniFileDataSize);
-    */
+
+    auto cleanupIniFileData = finally([&](){
+        delete[] pIniFileData;
+    });
+
+    if (!FileUtils::getContentsOfFile(iniFilePath.c_str(), pIniFileData, iniFileDataSize)) {
+        FATAL_ERROR_F("Failed to read the game config file at path '%s'!", iniFilePath.c_str());
+    }
+
+    // Parse the ini file
+    IniUtils::parseIniFromString((const char*) pIniFileData, iniFileDataSize, handlePrefsEntry);
 }
 
 END_NAMESPACE(Prefs)

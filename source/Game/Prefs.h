@@ -8,6 +8,10 @@ BEGIN_NAMESPACE(Prefs)
 // Verified via static assert in the .cpp file. 
 static constexpr uint32_t MAX_KEYBOARD_SCAN_CODES = 512;
 
+// Video settings
+extern bool         gbFullscreen;
+extern uint32_t     gRenderScale;
+
 // Keyboard key bindings
 extern Controls::MenuActions gKeyboardMenuActions[MAX_KEYBOARD_SCAN_CODES];
 extern Controls::GameActions gKeyboardGameActions[MAX_KEYBOARD_SCAN_CODES];
