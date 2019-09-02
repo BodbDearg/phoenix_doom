@@ -30,6 +30,8 @@ set(SOURCE_FILES
     "Base/Fixed.h"
     "Base/FMath.h"
     "Base/FourCID.h"
+    "Base/IniUtils.cpp"
+    "Base/IniUtils.h"
     "Base/Input.cpp"
     "Base/Input.h"
     "Base/Macros.h"
