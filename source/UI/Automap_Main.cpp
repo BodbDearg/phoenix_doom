@@ -31,20 +31,19 @@ static constexpr uint16_t COLOR_LILAC       = 0x6A9Eu;
 static constexpr uint16_t COLOR_LIGHTGREY   = 0x6318u;
 
 // Used to restore the view if the screen goes blank
-static Fixed        gOldPlayerX;        // X coord of the player previously
-static Fixed        gOldPlayerY;        // Y coord of the player previously
-static Fixed        gUnscaledOldScale;  // Previous scale value (at original 320x200 resolution)
-static Fixed        gUnscaledMapScale;  // Scaling constant for the automap (at original 320x200 resolution)
-static Fixed        gMapScale;          // Scaling constant for the automap (for current screen resolution, i.e has scale factor applied)
-static uint32_t     gMapPixelsW;        // Width of the automap display (pixels)
-static uint32_t     gMapPixelsH;        // Height of the automap display (pixels)
-static int32_t      gMapClipLx;         // Line clip bounds: left x (inclusive)
-static int32_t      gMapClipRx;         // Line clip bounds: right x (inclusive)
-static int32_t      gMapClipTy;         // Line clip bounds: top y (inclusive)
-static int32_t      gMapClipBy;         // Line clip bounds: bottom y (inclusive)
-static bool         gFollowMode;        // Follow mode active if true
-static bool         gShowAllThings;     // If true, show all objects
-static bool         gShowAllLines;      // If true, show all lines
+static Fixed        gOldPlayerX;            // X coord of the player previously
+static Fixed        gOldPlayerY;            // Y coord of the player previously
+static Fixed        gUnscaledOldScale;      // Previous scale value (at original 320x200 resolution)
+static Fixed        gUnscaledMapScale;      // Scaling constant for the automap (at original 320x200 resolution)
+static Fixed        gMapScale;              // Scaling constant for the automap (for current screen resolution, i.e has scale factor applied)
+static uint32_t     gMapPixelsW;            // Width of the automap display (pixels)
+static uint32_t     gMapPixelsH;            // Height of the automap display (pixels)
+static int32_t      gMapClipLx;             // Line clip bounds: left x (inclusive)
+static int32_t      gMapClipRx;             // Line clip bounds: right x (inclusive)
+static int32_t      gMapClipTy;             // Line clip bounds: top y (inclusive)
+static int32_t      gMapClipBy;             // Line clip bounds: bottom y (inclusive)
+static bool         gShowAllThings;         // If true, show all objects
+static bool         gShowAllLines;          // If true, show all lines
 
 static constexpr Fixed NOSELENGTH = 0x200000;   // Player's triangle
 static constexpr Fixed MOBJLENGTH = 0x100000;   // Object's triangle
@@ -96,10 +95,10 @@ void AM_Start() noexcept {
     gMapClipTy = (int32_t) std::floor(-80.0f * gScaleFactor);
     gMapClipBy = (int32_t) std::ceil(80.0f * gScaleFactor);
 
-    gShowAllThings = false;                 // Turn off the cheat
-    gShowAllLines = false;                  // Turn off the cheat
-    gFollowMode = true;                     // Follow the player
-    gPlayer.AutomapFlags &= ~AF_ACTIVE;     // Automap off
+    gShowAllThings = false;                     // Turn off the cheat
+    gShowAllLines = false;                      // Turn off the cheat
+    gPlayer.AutomapFlags &= ~AF_FREE_CAM;       // Follow the player
+    gPlayer.AutomapFlags &= ~AF_ACTIVE;         // Automap off
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -283,7 +282,7 @@ void AM_Control(player_t& player) noexcept {
             break;
     }
 
-    if (gFollowMode) {                          // Test here to make SURE I get called at least once
+    if (player.isAutomapFollowModeActive()) {   // Test here to make SURE I get called at least once
         mobj_t* const pMapObj = player.mo;
         player.automapx = pMapObj->x;           // Mark the automap position
         player.automapy = pMapObj->y;
@@ -295,11 +294,11 @@ void AM_Control(player_t& player) noexcept {
 
     // Enable/disable follow mode
     if (GAME_ACTION_ENDED(AUTOMAP_FREE_CAM_TOGGLE)) {
-        gFollowMode ^= true;
+        player.AutomapFlags ^= AF_FREE_CAM;
     }
 
     // If follow mode if off, then I intercept the joypad motion to move the map anywhere on the screen.
-    if (!gFollowMode) {
+    if (!player.isAutomapFollowModeActive()) {
         Fixed step = STEPVALUE;                         // Multiplier for joypad motion: mul by integer
         step = fixedDiv(step, gUnscaledMapScale);       // Adjust for scale factor
 

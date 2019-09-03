@@ -12,13 +12,14 @@ static constexpr Fixed      USERANGE        = 70 * FRACUNIT;    // Range of pres
 static constexpr uint32_t   MAXHEALTH       = 100;              // Normal health at start of game
 
 // Player automap flags
-static constexpr uint32_t AF_ACTIVE = 0x01;             // Automap active
-static constexpr uint32_t AF_FOLLOW = 0x02;             // Follow mode on
-static constexpr uint32_t AF_ALLLINES = 0x04;           // All lines cheat
-static constexpr uint32_t AF_ALLMOBJ = 0x08;            // All objects cheat
-static constexpr uint32_t AF_NOCLIP = 0x10;             // Can walk through walls
-static constexpr uint32_t AF_GODMODE = 0x20;            // No one can hurt me!
-static constexpr uint32_t AF_OPTIONSACTIVE = 0x80;      // Options screen running
+static constexpr uint32_t AF_ACTIVE         = 0x01;     // Automap active
+static constexpr uint32_t AF_FOLLOW         = 0x02;     // Follow mode on
+static constexpr uint32_t AF_ALLLINES       = 0x04;     // All lines cheat
+static constexpr uint32_t AF_ALLMOBJ        = 0x08;     // All objects cheat
+static constexpr uint32_t AF_NOCLIP         = 0x10;     // Can walk through walls
+static constexpr uint32_t AF_GODMODE        = 0x20;     // No one can hurt me!
+static constexpr uint32_t AF_OPTIONSACTIVE  = 0x80;     // Options screen running
+static constexpr uint32_t AF_FREE_CAM       = 0x100;    // Follow mode deactivated?
 
 // Current state of the player
 enum playerstate_e {
@@ -117,6 +118,10 @@ struct player_t {
 
     inline bool isAutomapActive() const noexcept {
         return ((AutomapFlags & AF_ACTIVE) != 0);
+    }
+
+    inline bool isAutomapFollowModeActive() const noexcept {
+        return ((AutomapFlags & AF_FREE_CAM) == 0);
     }
 
     inline bool isOptionsMenuActive() const noexcept {

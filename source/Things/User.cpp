@@ -210,7 +210,14 @@ static void P_PlayerMobjThink(mobj_t& mobj) noexcept {
 // Convert joypad inputs into player motion
 //----------------------------------------------------------------------------------------------------------------------
 static void P_BuildMove(player_t& player) noexcept {
-    if (!player.isOptionsMenuActive()) {
+    const bool bCanMoveAndTurn = (
+        (!player.isOptionsMenuActive()) && (
+            (!player.isAutomapActive()) ||
+            (player.isAutomapFollowModeActive())
+        )
+    );
+
+    if (bCanMoveAndTurn) {
         // Use two stage accelerative turning on the joypad.
         // If none of the turn keys are pressed then reset acceleration.
         uint32_t turnIndex = player.turnheld + 1;
@@ -283,7 +290,7 @@ static void P_BuildMove(player_t& player) noexcept {
         }
     }
     else {
-        // In the options menu!
+        // In the options menu or automap follow mode off!
         player.turnheld = 0;
         player.angleturn = 0;
         player.sidemove = 0;
