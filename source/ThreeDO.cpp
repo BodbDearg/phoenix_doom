@@ -21,22 +21,6 @@
 // Setup various game subsystems (audio, video input etc.)
 //----------------------------------------------------------------------------------------------------------------------
 void initGameSubsystems() noexcept {
-    // DC: 3DO specific - disabling
-    #if 0
-        #if 1
-            Show3DOLogo();  // Show the 3DO Logo
-            RunAProgram("IdLogo IDLogo.cel");
-            #if 1   // Set to 1 for Japanese version
-                RunAProgram("IdLogo LogicLogo.cel");
-                RunAProgram("PlayMovie EALogo.cine");
-                RunAProgram("IdLogo AdiLogo.cel");
-            #else
-                RunAProgram("PlayMovie Logic.cine");
-                RunAProgram("PlayMovie AdiLogo.cine");
-            #endif
-        #endif
-    #endif
-
     Prefs::init();
     Resources::init();
     CelImages::init();
