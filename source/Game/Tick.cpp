@@ -5,12 +5,11 @@
 #include "Audio/Sounds.h"
 #include "Base/Mem.h"
 #include "Base/Random.h"
-#include "Burger.h"
+#include "Controls.h"
 #include "Data.h"
 #include "DoomDefines.h"
 #include "DoomRez.h"
 #include "Game.h"
-#include "GFX/Renderer.h"
 #include "GFX/Video.h"
 #include "Map/Ceiling.h"
 #include "Map/Platforms.h"
@@ -150,20 +149,21 @@ void RunThinkers() noexcept {
 }
 
 //----------------------------------------------------------------------------------------------------------------------
-// Check the cheat keys... :)
+// Check for the pause button
 //----------------------------------------------------------------------------------------------------------------------
-static void CheckCheats() noexcept {
-    if (((gNewJoyPadButtons & PadStart) != 0) && ((gPlayer.AutomapFlags & AF_OPTIONSACTIVE) == 0)) {    // Pressed pause?
-        if (gbGamePaused || ((gJoyPadButtons & gPadUse) == 0)) {
-            gbGamePaused = (!gbGamePaused);
+static void checkForPauseButton() noexcept {
+    if (gPlayer.isOptionsMenuActive())  // Can't pause on options screen!
+        return;
+    
+    if (GAME_ACTION_ENDED(PAUSE)) {
+        gbGamePaused = (!gbGamePaused);
 
-            if (gbGamePaused) {
-                Audio::pauseAllSounds();
-                Audio::pauseMusic();
-            } else {
-                Audio::resumeAllSounds();
-                Audio::resumeMusic();
-            }
+        if (gbGamePaused) {
+            Audio::pauseAllSounds();
+            Audio::pauseMusic();
+        } else {
+            Audio::resumeAllSounds();
+            Audio::resumeMusic();
         }
     }
 }
@@ -197,7 +197,7 @@ gameaction_e P_Ticker() noexcept {
         gbTick4 = true;
     }
 
-    CheckCheats();      // Handle pause and cheats
+    checkForPauseButton();
 
     // If in pause mode, then don't do any game logic
     if (gbGamePaused) {
@@ -215,9 +215,9 @@ gameaction_e P_Ticker() noexcept {
     O_Control(&player);         // Handle option controls
     P_PlayerThink(player);      // Process player in the game
 
-    if ((gPlayer.AutomapFlags & AF_OPTIONSACTIVE) == 0) {
-        RunThinkers();          // Handle logic for doors, walls etc...
-        P_RunMobjBase();        // Handle critter think logic
+    if (!gPlayer.isOptionsMenuActive()) {
+        RunThinkers();      // Handle logic for doors, walls etc...
+        P_RunMobjBase();    // Handle critter think logic
     }
 
     P_UpdateSpecials();     // Handle wall and floor animations
@@ -237,13 +237,13 @@ void P_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
     if (gbGamePaused && gbRefreshDrawn) {
         DrawPlaque(rPAUSED);            // Draw 'Paused' plaque
         Video::endFrame(bPresent, bSaveFrameBuffer);
-    } else if (gPlayer.AutomapFlags & AF_OPTIONSACTIVE) {
+    } else if (gPlayer.isOptionsMenuActive()) {
         Video::debugClearScreen();
         Renderer::drawPlayerView();                     // Render the 3D view
         ST_Drawer();                                    // Draw the status bar
         O_Drawer(bPresent, bSaveFrameBuffer);           // Draw the console handler
         gbRefreshDrawn = false;
-    } else if (gPlayer.AutomapFlags & AF_ACTIVE) {
+    } else if (gPlayer.isAutomapActive()) {
         Video::debugClearScreen();
         AM_Drawer();                                    // Draw the automap
         ST_Drawer();                                    // Draw the status bar

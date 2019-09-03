@@ -6,9 +6,7 @@
 #include "GFX/Video.h"
 #include "TickCounter.h"
 #include <algorithm>
-#include <memory>
 #include <thread>
-#include <vector>
 
 BEGIN_NAMESPACE(WipeFx)
 
@@ -120,7 +118,7 @@ static void drawWipe(
     //------------------------------------------------------------------------------------------------------------------
     for (uint32_t x = 0; x < screenW; ++x) {
         uint32_t* const pDstPixelsCol = pDstPixels + x;
-        const uint32_t* const gpNewImgCol = gpNewImg + x * screenH;
+        const uint32_t* const gpNewImgCol = gpNewImg + (uintptr_t) x * screenH;
 
         const uint32_t yDelta = std::min((uint32_t) std::max(pYDeltas[x], 0.0f), screenH);
         const uint32_t yDelta8 = (yDelta / 8) * 8;
@@ -146,7 +144,7 @@ static void drawWipe(
     //------------------------------------------------------------------------------------------------------------------
     for (uint32_t x = 0; x < screenW; ++x) {
         uint32_t* const pDstPixelsCol = pDstPixels + x;
-        const uint32_t* const gpOldImgCol = gpOldImg + x * screenH;
+        const uint32_t* const gpOldImgCol = gpOldImg + (uintptr_t) x * screenH;
 
         const uint32_t yDelta = std::min((uint32_t) std::max(pYDeltas[x], 0.0f), screenH);
         const uint32_t numPixelsRemaining = screenH - yDelta;

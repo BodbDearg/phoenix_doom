@@ -12,9 +12,9 @@ static constexpr uint32_t PNFLAGS_CENTER    = 2;    // Use X as center and not l
 static constexpr uint32_t PNFLAGS_RIGHT     = 4;    // Use right justification
 
 // TODO: These should probably live somewhere else
-void PrintBigFont(int32_t x, int32_t y, const char* string) noexcept;
-uint32_t GetBigStringWidth(const char* string) noexcept;
-void PrintNumber(int32_t x, int32_t y, uint32_t value, uint32_t Flags) noexcept;
+void PrintBigFont(const int32_t x, const int32_t y, const char* const pString) noexcept;
+uint32_t GetBigStringWidth(const char* const pString) noexcept;
+void PrintNumber(const int32_t x, const int32_t y, const uint32_t value, const uint32_t flags) noexcept;
 void PrintBigFontCenter(const int32_t x, const int32_t y, const char* const str) noexcept;
 
 void IN_Start() noexcept;

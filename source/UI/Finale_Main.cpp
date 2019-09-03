@@ -3,7 +3,7 @@
 #include "Audio/Sound.h"
 #include "Audio/Sounds.h"
 #include "Base/Tables.h"
-#include "Burger.h"
+#include "Game/Controls.h"
 #include "Game/Data.h"
 #include "Game/DoomRez.h"
 #include "GFX/Blit.h"
@@ -221,9 +221,11 @@ void F_Stop() noexcept {
 // Handle joypad input etc.
 //----------------------------------------------------------------------------------------------------------------------
 gameaction_e F_Ticker() noexcept {
+    ASSERT(gCastState);
+
     // Check for press a key to kill actor
     if (gStatus == fin_endtext) {   // Am I printing text?
-        if ((gNewJoyPadButtons & (PadA|PadB|PadC)) != 0 && (gTotalGameTicks >= (3 * TICKSPERSEC))) {
+        if (MENU_ACTION(OK) && (gTotalGameTicks >= 3 * TICKSPERSEC)) {
             gStatus = fin_charcast;                 // Continue to the second state
             S_StartSound(0, gCastInfo->seesound);   // Ohhh..
         }
@@ -232,7 +234,7 @@ gameaction_e F_Ticker() noexcept {
 
     // If not dead then maybe go into death frame if the right inputs are pressed
     if (!gCastDeath) {
-        if ((gNewJoyPadButtons & (PadA|PadB|PadC)) != 0) {
+        if (MENU_ACTION(OK)) {
             // Enter death state
             S_StartSound(0, gCastInfo->deathsound);
             gCastDeath = true;

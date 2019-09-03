@@ -2,7 +2,6 @@
 
 #include "Base/Tables.h"
 #include "Blit.h"
-#include "Burger.h"
 #include "CelImages.h"
 #include "Game/Data.h"
 #include "Game/DoomRez.h"

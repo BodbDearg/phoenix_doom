@@ -4,7 +4,7 @@
 #include "Base/Finally.h"
 #include "Base/Input.h"
 #include "Base/Tables.h"
-#include "Burger.h"
+#include "Game/Controls.h"
 #include "Game/Data.h"
 #include "Game/DoomMain.h"
 #include "GFX/Blit.h"
@@ -81,11 +81,9 @@ static gameaction_e updateLogo() noexcept {
         return ga_completed;
 
     // Skip pressed?
-    const uint32_t buttonsJustReleased = (~gJoyPadButtons) & gPrevJoyPadButtons;
-
-    if ((buttonsJustReleased & (PadA|PadB|PadC|PadD)) != 0)
+    if (MENU_ACTION_ENDED(OK) || MENU_ACTION_ENDED(BACK))
         return ga_exitdemo;
-
+    
     // Advance logo state
     gLogoCurStateTime += SECS_PER_TICK;
 

@@ -3,17 +3,14 @@
 #include "Audio/Sound.h"
 #include "Audio/Sounds.h"
 #include "Base/Input.h"
-#include "Burger.h"
+#include "Controls.h"
 #include "Data.h"
 #include "DoomDefines.h"
 #include "DoomRez.h"
 #include "Game.h"
 #include "GFX/CelImages.h"
-#include "GFX/Renderer.h"
 #include "GFX/Video.h"
 #include "Map/Setup.h"
-#include "Resources.h"
-#include "ThreeDO.h"
 #include "TickCounter.h"
 #include "UI/IntroLogos.h"
 #include "UI/IntroMovies.h"
@@ -40,59 +37,6 @@ void AddToBox(Fixed* box, Fixed x, Fixed y) noexcept {
     } else if (y > box[BOXTOP]) {       // Off the bottom of the box?
         box[BOXTOP] = y;
     }
-}
-
-//----------------------------------------------------------------------------------------------------------------------
-// Convert a joypad response into a network joypad record.
-// This is to compensate the fact that different computers have different hot keys for motion control.
-//----------------------------------------------------------------------------------------------------------------------
-static uint32_t LocalToNet(uint32_t cmd) noexcept {
-    uint32_t NewCmd = 0;
-
-    if (cmd & gPadSpeed) {      // Was speed true?
-        NewCmd = PadA;          // Save it
-    }
-
-    if (cmd & gPadAttack) {     // Was attack true?
-        NewCmd |= PadB;         // Save it
-    }
-
-    if (cmd & gPadUse) {        // Was use true?
-        NewCmd |= PadC;         // Save it
-    }
-
-    return (cmd & ~(PadA|PadB|PadC)) | NewCmd;  // Return the network compatible response
-}
-
-//----------------------------------------------------------------------------------------------------------------------
-// Convert a network response into a local joypad record.
-// This is to compensate the fact that different computers have different hot keys for motion control.
-//----------------------------------------------------------------------------------------------------------------------
-static uint32_t NetToLocal(uint32_t cmd) noexcept {
-    uint32_t NewCmd = 0;
-
-    if (cmd & PadA) {
-        NewCmd = gPadSpeed;     // Set the speed bit
-    }
-
-    if (cmd & PadB) {
-        NewCmd |= gPadAttack;   // Set the attack bit
-    }
-
-    if (cmd & PadC) {
-        NewCmd |= gPadUse;      // Set the use bit
-    }
-
-    return (cmd & ~(PadA|PadB|PadC)) | NewCmd;  // Return the localized joypad setting
-}
-
-//----------------------------------------------------------------------------------------------------------------------
-// Read a joypad command byte from the demo data
-//----------------------------------------------------------------------------------------------------------------------
-static uint32_t GetDemoCmd() noexcept {
-    const uint32_t cmd = gDemoDataPtr[0];       // Get a joypad byte from the demo stream
-    ++gDemoDataPtr;                             // Inc the state
-    return NetToLocal(cmd);                     // Convert the network command to local
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -124,10 +68,8 @@ gameaction_e MiniLoop(
     if (gDoWipe) {
         WipeFx::doWipe(drawer);
     }
-
-    // Init the joypad states
-    gJoyPadButtons = gPrevJoyPadButtons = gNewJoyPadButtons = 0;
-
+    
+    // Run the game loop until instructed to exit
     do {
         // See how many ticks are to be simulated, if none then sleep for a bit
         uint32_t ticksLeftToSimulate = TickCounter::update();
@@ -137,8 +79,9 @@ gameaction_e MiniLoop(
             continue;
         }
 
-        // Update input and if a quit was requested then exit immediately
+        // Update input and controls and if a quit was requested then exit immediately
         Input::update();
+        Controls::update();
 
         if (Input::isQuitRequested()) {
             nextGameAction = ga_quit;
@@ -151,38 +94,17 @@ gameaction_e MiniLoop(
                 ++gTotalGameTicks;              // Add to the VBL count
                 --ticksLeftToSimulate;
                 nextGameAction = ticker();      // Process the keypad commands
-                Input::consumeEvents();         // Don't allow any more keypress events if we do more than 1 tick
+
+                if (ticksLeftToSimulate > 0) {
+                    Input::consumeEvents();     // Don't allow any more keypress events if we do more than 1 tick
+                    Controls::update();         // Update controls based on that for the next tick
+                }
             }
         }
 
-        // Get buttons for next tic
-        gPrevJoyPadButtons = gJoyPadButtons;        // Pass through the latest keypad info
-        uint32_t buttons = ReadJoyButtons(0);       // Read the controller
-        gJoyPadButtons = buttons;                   // Save it
-
-        if (gDemoPlayback) {                            // Playing back a demo?
-            if (buttons & (PadA|PadB|PadC|PadD) ) {     // Abort?
-                nextGameAction = ga_exitdemo;           // Exit the demo
-            }
-
-            // Get a joypad from demo data
-            gJoyPadButtons = buttons = GetDemoCmd();
-        }
-
-        gNewJoyPadButtons = (buttons ^ gPrevJoyPadButtons) & buttons;   // Get the joypad downs...
-
-        if (gDemoRecording) {                           // Am I recording a demo?
-            gDemoDataPtr[0] = LocalToNet(buttons);      // Save the current joypad data
-            ++gDemoDataPtr;
-        }
-
-        // Am I recording a demo?
-        if ((gDemoRecording || gDemoPlayback) && (buttons & PadStart) ) {
-            nextGameAction = ga_completed;      // End the game right now!
-        }
-
-        if (gGameAction == ga_warped) {         // Did I end the level?
-            nextGameAction = ga_warped;         // Exit after drawing
+        // Did I end the level? If so then exit after drawing
+        if (gGameAction == ga_warped) {
+            nextGameAction = ga_warped;
         }
 
         // Sync up with the refresh - draw the screen.
@@ -192,10 +114,12 @@ gameaction_e MiniLoop(
             const bool bSaveFrameBuffer = (nextGameAction != ga_nothing);
             drawer(bPresent, bSaveFrameBuffer);
         }
+
     } while (nextGameAction == ga_nothing);     // Is the loop finished?
 
+    // Cleanup, release resources etc.
     if (stop) {
-        stop();     // Cleanup, release resources etc.
+        stop();     
     }
 
     S_Clear();                  // Kill sounds
@@ -212,11 +136,8 @@ static gameaction_e TIC_Abortable() noexcept {
         return ga_died;                                 // Go on to next demo
     }
 
-    if (gNewJoyPadButtons&(PadA|PadB|PadC|PadD)) {      // Pressed A B or C?
-        return ga_exitdemo;                             // Exit the demo right now!
-    }
-
-    return ga_nothing;  // Continue the demo
+    const bool bShouldExit = (MENU_ACTION(OK) || MENU_ACTION(BACK));
+    return (bShouldExit) ? ga_exitdemo : ga_nothing;
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -257,11 +178,8 @@ static gameaction_e TIC_Credits() noexcept {
         return ga_died;                             // Go on to next demo
     }
 
-    if (gNewJoyPadButtons & (PadA|PadB|PadC|PadD)) {    // Pressed A,B or C?
-        return ga_exitdemo;                             // Abort the demo
-    }
-
-    return ga_nothing;  // Don't stop!
+    const bool bShouldExit = (MENU_ACTION(OK) || MENU_ACTION(BACK));
+    return (bShouldExit) ? ga_exitdemo : ga_nothing;
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -338,28 +256,6 @@ static void RunCredits() noexcept {
 }
 
 //----------------------------------------------------------------------------------------------------------------------
-// Run the game demo
-//----------------------------------------------------------------------------------------------------------------------
-static void RunDemo(uint32_t demoname) noexcept {
-    if (Input::isQuitRequested())
-        return;
-
-    // DC: This was disabled in the original 3DO source.
-    // The 3DO version of the game did not ship with demos?
-    #if 0
-        Word *demo;
-        Word exit;
-        demo = (Word *)LoadAResource(demoname);     // Load the demo
-        exit = G_PlayDemoPtr(demo);                 // Play the demo
-        ReleaseAResource(demoname);                 // Release the demo data
-
-        if (exit == ga_exitdemo) {      // Quit?
-            RunMenu();                  // Show the main menu
-        }
-    #endif
-}
-
-//----------------------------------------------------------------------------------------------------------------------
 // Main entry point for DOOM!!!!
 //----------------------------------------------------------------------------------------------------------------------
 void D_DoomMain() noexcept {
@@ -373,9 +269,7 @@ void D_DoomMain() noexcept {
     IntroMovies::run();
 
     while (!Input::isQuitRequested()) {
-        RunTitle();         // Show the title page
-        RunDemo(rDEMO1);    // Run the first demo
-        RunCredits();       // Show the credits page
-        RunDemo(rDEMO2);    // Run the second demo
+        RunTitle();
+        RunCredits();
     }
 }

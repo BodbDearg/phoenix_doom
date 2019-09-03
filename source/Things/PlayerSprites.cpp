@@ -5,6 +5,7 @@
 #include "Audio/Sounds.h"
 #include "Base/Random.h"
 #include "Base/Tables.h"
+#include "Game/Controls.h"
 #include "Game/Data.h"
 #include "Info.h"
 #include "Interactions.h"
@@ -269,10 +270,12 @@ void A_WeaponReady(player_t& player, pspdef_t& psp) noexcept {
         return;
     }
 
-    // Check for weapon fire
-    if ((gJoyPadButtons & gPadAttack) != 0) {       // Attack?
-        FireWeapon(player);                         // Fire the weapon...
-        return;                                     // Exit now
+    // Check for weapon firing
+    if (!player.isOptionsMenuActive()) {
+        if (GAME_ACTION(ATTACK)) {
+            FireWeapon(player);
+            return;
+        }
     }
 
     // Bob the weapon based on movement speed
@@ -289,7 +292,8 @@ void A_WeaponReady(player_t& player, pspdef_t& psp) noexcept {
 void A_ReFire(player_t& player, pspdef_t& psp) noexcept {
     // Check for fire (if a weaponchange is pending, let it go through instead)
     const bool bFiring = (
-        ((gJoyPadButtons & gPadAttack) != 0) &&
+        GAME_ACTION(ATTACK) &&
+        (!player.isOptionsMenuActive()) &&
         (player.pendingweapon == wp_nochange) &&
         (player.health > 0)
     );

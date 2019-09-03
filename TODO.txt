@@ -18,6 +18,7 @@ TODO
 - Fix address sanitizer crash on angle LUT lookup (easy to reproduce on MacOS with Xcode) (might not be applicable anymore)
 - Maybe add menu sounds? (might not be applicable anymore)
 - Optimize audio mixing for different channel counts and bit depths
+- Remove old 3DO control options
 - Is the pistol reload speed too slow?
 - Ensure last map accessible via menu (wasn't on 3DO version?)
 - Allow exit out of finale back to main menu

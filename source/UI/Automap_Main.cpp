@@ -1,9 +1,8 @@
 #include "Automap_Main.h"
 
-#include "Base/Fixed.h"
 #include "Base/Input.h"
 #include "Base/Tables.h"
-#include "Burger.h"
+#include "Game/Controls.h"
 #include "Game/Data.h"
 #include "Game/Tick.h"
 #include "GFX/Blit.h"
@@ -11,7 +10,9 @@
 #include "Map/MapData.h"
 #include "Things/MapObj.h"
 #include "ThreeDO.h"
-#include <cstring>
+
+// FIXME: TEMP
+#include <SDL.h>
 
 static constexpr Fixed STEPVALUE    = (2 << FRACBITS);      // Speed to move around in the map (Fixed) For non-follow mode
 static constexpr Fixed MAXSCALES    = 0x10000;              // Maximum scale factor (Largest)
@@ -41,7 +42,6 @@ static int32_t      gMapClipLx;         // Line clip bounds: left x (inclusive)
 static int32_t      gMapClipRx;         // Line clip bounds: right x (inclusive)
 static int32_t      gMapClipTy;         // Line clip bounds: top y (inclusive)
 static int32_t      gMapClipBy;         // Line clip bounds: bottom y (inclusive)
-static uint32_t     gTrueOldButtons;    // Previous buttons for joypad downs
 static bool         gFollowMode;        // Follow mode active if true
 static bool         gShowAllThings;     // If true, show all objects
 static bool         gShowAllLines;      // If true, show all lines
@@ -49,42 +49,16 @@ static bool         gShowAllLines;      // If true, show all lines
 static constexpr Fixed NOSELENGTH = 0x200000;   // Player's triangle
 static constexpr Fixed MOBJLENGTH = 0x100000;   // Object's triangle
 
-typedef enum {      // Cheat enum
-    ch_allmap,      // Show the map
-    ch_things,      // Show the items
+// Cheat enum
+enum cheat_e {
+    ch_allmap,          // Show the map
+    ch_things,          // Show the items
     ch_godmode,
     ch_idkfa,
     ch_levelaccess,
     ch_noclip,
     ch_maxcheats
-} cheat_e;
-
-// order should mirror cheat_e
-static char CheatStrings[ch_maxcheats][10] = {
-    {"SEEALLUAC"},      // Allmap cheat
-    {"SEERUBBLE"},      // Things cheat
-    {"URABADASS"},      // God mode
-    {"ALABARACA"},      // All weapons
-    {"SUCCEDALL"},      // Level access
 };
-
-#define CHEATLETTERS 9
-
-// Masks for the joypad
-static uint32_t codes[CHEATLETTERS] = {
-    PadA,
-    PadB,
-    PadC,
-    PadUp,
-    PadDown,
-    PadLeft,
-    PadRight,
-    PadLeftShift,
-    PadRightShift
-};
-
-static char CheatLetter[CHEATLETTERS + 1] = { "ABCUDLRSE" };
-static char CurrentCheat[9];    // Current cheat string
 
 //--------------------------------------------------------------------------------------------------
 // Multiply a map coord and a fixed point scale value and return the INTEGER result.
@@ -126,69 +100,27 @@ void AM_Start() noexcept {
     gShowAllLines = false;                  // Turn off the cheat
     gFollowMode = true;                     // Follow the player
     gPlayer.AutomapFlags &= ~AF_ACTIVE;     // Automap off
-    gTrueOldButtons = gJoyPadButtons;       // Get the current state
-
-    memset((char*) CurrentCheat, 0, sizeof(CurrentCheat));
 }
 
 //--------------------------------------------------------------------------------------------------
 // Check for cheat codes for automap fun stuff!
 // Pass to me all the new joypad downs.
 //--------------------------------------------------------------------------------------------------
-static cheat_e AM_CheckCheat(uint32_t NewButtons) noexcept {
+static cheat_e AM_CheckCheat() noexcept {
     // FIXME: DC - TEMP
     cheat_e cheat = ch_maxcheats;
 
-    if (Input::isKeyJustPressed(SDL_SCANCODE_F1)) {
+    if (Input::isKeyboardKeyJustPressed(SDL_SCANCODE_F1)) {
         cheat = cheat_e::ch_godmode;
     }
-    else if (Input::isKeyJustPressed(SDL_SCANCODE_F2)) {
+    else if (Input::isKeyboardKeyJustPressed(SDL_SCANCODE_F2)) {
         cheat = cheat_e::ch_idkfa;
     }
-    else if (Input::isKeyJustPressed(SDL_SCANCODE_F3)) {
+    else if (Input::isKeyboardKeyJustPressed(SDL_SCANCODE_F3)) {
         cheat = cheat_e::ch_noclip;
     }
 
     return cheat;
-
-    // FIMXE: DC: Replace/remove
-    #if 0
-    Word c;
-    char *SourcePtr;
-    // Convert the button press to a cheat char
-    c = 0;
-    do {
-        if (NewButtons & codes[c]) {        // Key press?
-
-            // Shift the entire string over 1 char
-            {
-                char*EndPtr;
-                SourcePtr = CurrentCheat;
-                EndPtr = SourcePtr+8;
-                do {
-                    SourcePtr[0] = SourcePtr[1];
-                    ++SourcePtr;
-                } while (SourcePtr!=EndPtr);
-                EndPtr[0] = CheatLetter[c];     // Set the new end char
-            }
-            // Does the string match a cheat sequence?
-            {
-                Word i;
-                i = 0;
-                SourcePtr = &CheatStrings[0][0];    // Main string pointer
-                do {
-                    if (!memcmp((char *)CurrentCheat,(char *)SourcePtr,9)) {    // Match the strings
-                        memset((char *)CurrentCheat,0,sizeof(CurrentCheat));    // Zap the string
-                        S_StartSound(0,sfx_rxplod);
-                        return (cheat_e)i;      // I got a CHEAT!!
-                    }
-                    SourcePtr+=9;
-                } while (++i<ch_maxcheats - 1);
-            }
-        }
-    } while (++c<CHEATLETTERS);     // All scanned?
-    return (cheat_e)-1;     // No cheat found this time
-    #endif
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -282,27 +214,19 @@ static void DrawLine(
 // Since I am making joypad events disappear and I want to track joypad downs, I need to cache
 // the UNFILTERED JoyPadButtons and pass through a filtered NewPadButtons and JoyPadButtons.
 //--------------------------------------------------------------------------------------------------
-void AM_Control(player_t& player) noexcept {
-    uint32_t buttons = gJoyPadButtons;                              // Get the joypad
-    uint32_t NewButtons = (gTrueOldButtons ^ buttons) & buttons;    // Get the UNFILTERED joypad
-    gTrueOldButtons = buttons;                                      // Set the previous joypad UNFILTERED
-
-    if (NewButtons & (gPadUse|PadStart)) {                              // Shift down event?
-        if ((buttons & (gPadUse|PadStart)) == (gPadUse|PadStart)) {
-            if (!(player.AutomapFlags & AF_OPTIONSACTIVE)) {            // Can't toggle in option mode!
-                player.AutomapFlags ^= AF_ACTIVE;                       // Swap the automap state if both held
-            }
+void AM_Control(player_t& player) noexcept {    
+    if (GAME_ACTION_ENDED(AUTOMAP_TOGGLE)) {        // Toggle event?
+        if (!player.isOptionsMenuActive()) {        // Can't toggle in option mode!
+            player.AutomapFlags ^= AF_ACTIVE;       // Swap the automap state if both held
         }
     }
 
-    if (!(player.AutomapFlags & AF_ACTIVE)) {   // Is the automap is off?
-        return;                                 // Exit now!
+    if (!player.isAutomapActive()) {    // Is the automap is off?
+        return;                         // Exit now!
     }
 
-    buttons &= ~PadX;   // Don't allow option screen to come up
-
     // Check cheat events
-    switch (AM_CheckCheat(NewButtons)) {
+    switch (AM_CheckCheat()) {
         case ch_allmap:
             gShowAllLines ^= true;      // Toggle lines
             break;
@@ -369,8 +293,9 @@ void AM_Control(player_t& player) noexcept {
     gOldPlayerY = player.automapy;
     gUnscaledOldScale = gUnscaledMapScale;               // And scale value
 
-    if (NewButtons & PadX) {    // Enable/disable follow mode
-        gFollowMode ^= true;    // Toggle the mode
+    // Enable/disable follow mode
+    if (GAME_ACTION_ENDED(AUTOMAP_FREE_CAM_TOGGLE)) {
+        gFollowMode ^= true;
     }
 
     // If follow mode if off, then I intercept the joypad motion to move the map anywhere on the screen.
@@ -378,58 +303,44 @@ void AM_Control(player_t& player) noexcept {
         Fixed step = STEPVALUE;                         // Multiplier for joypad motion: mul by integer
         step = fixedDiv(step, gUnscaledMapScale);       // Adjust for scale factor
 
-        if (buttons & PadRight) {
+        if (GAME_ACTION(TURN_RIGHT) || GAME_ACTION(STRAFE_RIGHT)) {
             player.automapx += step;    // Step to the right
         }
 
-        if (buttons & PadLeft) {
+        if (GAME_ACTION(TURN_LEFT) || GAME_ACTION(STRAFE_LEFT)) {
             player.automapx -= step;    // Step to the left
         }
 
-        if (buttons & PadUp) {
+        if (GAME_ACTION(MOVE_FORWARD)) {
             player.automapy += step;    // Step up
         }
 
-        if (buttons & PadDown) {
+        if (GAME_ACTION(MOVE_BACKWARD)) {
             player.automapy -= step;    // Step down
         }
 
         // Scaling is tricky, I cannot use a simple multiply to adjust the scale factor to the
         // timebase since the formula is ZOOM to the ElapsedTime power times scale.
-        if (buttons & PadRightShift) {
-            NewButtons = 0; // Init the count
-            do {
-                gUnscaledMapScale = fixedMul(gUnscaledMapScale, ZOOMOUT);   // Perform the scale
-                if (gUnscaledMapScale < MINSCALES) {                        // Too small?
-                    gUnscaledMapScale = MINSCALES;                          // Set to smallest allowable
-                    updateMapScale();
-                    break;
-                } else {
-                    updateMapScale();
-                }
-            } while (++NewButtons < 1); // All done?
+        if (GAME_ACTION(AUTOMAP_FREE_CAM_ZOOM_OUT)) {
+            gUnscaledMapScale = fixedMul(gUnscaledMapScale, ZOOMOUT);   // Perform the scale
+            if (gUnscaledMapScale < MINSCALES) {                        // Too small?
+                gUnscaledMapScale = MINSCALES;                          // Set to smallest allowable
+                updateMapScale();
+            } else {
+                updateMapScale();
+            }
         }
 
-        if (buttons & PadLeftShift) {
-            NewButtons = 0; // Init the count
-            do {
-                gUnscaledMapScale = fixedMul(gUnscaledMapScale, ZOOMIN);    // Perform the scale
-                if (gUnscaledMapScale >= MAXSCALES) {                       // Too large?
-                    gUnscaledMapScale = MAXSCALES;                          // Set to maximum
-                    updateMapScale();
-                    break;
-                } else {
-                    updateMapScale();
-                }
-            } while (++NewButtons < 1); // All done?
+        if (GAME_ACTION(AUTOMAP_FREE_CAM_ZOOM_IN)) {
+            gUnscaledMapScale = fixedMul(gUnscaledMapScale, ZOOMIN);    // Perform the scale
+            if (gUnscaledMapScale >= MAXSCALES) {                       // Too large?
+                gUnscaledMapScale = MAXSCALES;                          // Set to maximum
+                updateMapScale();
+            } else {
+                updateMapScale();
+            }
         }
-
-        // Eat the direction keys if not in follow mode
-        buttons &= ~(PadUp|PadLeft|PadRight|PadDown|PadRightShift|PadLeftShift);
     }
-
-    gJoyPadButtons = buttons;                                       // Save the filtered joypad value
-    gNewJoyPadButtons = (gPrevJoyPadButtons ^ buttons) & buttons;   // Filter the joydowns
 }
 
 //--------------------------------------------------------------------------------------------------

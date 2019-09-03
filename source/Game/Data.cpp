@@ -1,7 +1,5 @@
 #include "Data.h"
 
-#include "Burger.h"
-
 ammotype_e gWeaponAmmos[NUMWEAPONS] = {
     am_noammo,      // Fists
     am_clip,        // Pistol
@@ -20,17 +18,11 @@ uint32_t gMaxAmmo[NUMAMMO] = {
     50
 };
 
-uint32_t                gPadAttack = PadA;
-uint32_t                gPadUse = PadB;
-uint32_t                gPadSpeed = PadC;
-uint32_t                gControlType;
+uint32_t                gControlType;   // TODO: REMOVE
 uint32_t                gTotalGameTicks;
 uint32_t                gMaxLevel;
 uint32_t*               gDemoDataPtr;
 uint32_t*               gDemoBuffer;
-uint32_t                gJoyPadButtons;
-uint32_t                gPrevJoyPadButtons;
-uint32_t                gNewJoyPadButtons;
 skill_e                 gStartSkill;
 uint32_t                gStartMap;
 const CelImageArray*    gpBigNumFont;
@@ -43,7 +35,5 @@ skill_e                 gGameSkill;
 uint32_t                gGameMap;
 uint32_t                gNextMap;
 uint32_t                gScreenSize;
-bool                    gDemoRecording;
-bool                    gDemoPlayback;
 bool                    gDoWipe;
 uint32_t                gValidCount;

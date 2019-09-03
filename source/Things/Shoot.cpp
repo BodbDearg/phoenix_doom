@@ -56,19 +56,20 @@ static bool PA_CrossBSPNode(const node_t* pNode) {
     }
 
     // Decide which side the start point is on and cross the starting side
-    const uint32_t side = PointOnVectorSide(gShootDiv.x, gShootDiv.y, pNode->Line);
+    const bool bOnRightSide = PointOnVectorSide(gShootDiv.x, gShootDiv.y, pNode->Line);
+    const uint32_t sideIdx = (bOnRightSide) ? 1 : 0;
 
-    if (!PA_CrossBSPNode((const node_t*) pNode->Children[side])) {
+    if (!PA_CrossBSPNode((const node_t*) pNode->Children[sideIdx])) {
         return false;
     }
 
     // The partition plane is crossed here
-    if (side == PointOnVectorSide(gShootX2, gShootY2, pNode->Line)) {
+    if (bOnRightSide == PointOnVectorSide(gShootX2, gShootY2, pNode->Line)) {
         return true;    // The line doesn't touch the other side
     }
 
     // Cross the ending side
-    return PA_CrossBSPNode((const node_t*) pNode->Children[side ^ 1]);
+    return PA_CrossBSPNode((const node_t*) pNode->Children[sideIdx ^ 1]);
 }
 
 /*

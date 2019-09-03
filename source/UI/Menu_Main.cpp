@@ -1,29 +1,30 @@
 #include "Menu_Main.h"
 
-#include "Burger.h"
+#include "Base/Input.h"
+#include "Game/Controls.h"
 #include "Game/Data.h"
 #include "Game/DoomDefines.h"
 #include "Game/DoomRez.h"
-#include "Game/Resources.h"
 #include "GFX/CelImages.h"
 #include "GFX/Video.h"
 #include "Intermission_Main.h"
 #include "Options_Main.h"
 #include "ThreeDO.h"
 
-#define CURSORX 50      // X coord of skull cursor
-#define AREAY 66
-#define DIFFICULTYY 116
-#define OPTIONSY 166
+static constexpr int32_t CURSORX        = 50;       // X coord of skull cursor
+static constexpr int32_t AREAY          = 66;
+static constexpr int32_t DIFFICULTYY    = 116;
+static constexpr int32_t OPTIONSY       = 166;
 
-typedef enum {
+enum menu_t {
     level,
     difficulty,
     options,
     NUMMENUITEMS
-} menu_t;
+};
 
-enum {      // Enum to index to the shapes
+// Enum to index to the shapes
+enum {
     DIFFSHAPE1,
     DIFFSHAPE2,
     DIFFSHAPE3,
@@ -33,25 +34,25 @@ enum {      // Enum to index to the shapes
     DIFFSHAPE
 };
 
-static uint32_t gCursorFrame;                   // Skull animation frame
-static uint32_t gCursorCount;                   // Time mark to animate the skull
-static uint32_t gCursorPos;                     // Y position of the skull
-static uint32_t gMoveCount;                     // Time mark to move the skull
-static uint32_t gPlayerMap;                     // Map requested
-static uint32_t gPlayerSkill;                   // Requested skill
-static uint32_t gSleepMark;                     // Time from last access
+static uint32_t gCursorFrame;       // Skull animation frame
+static uint32_t gCursorCount;       // Time mark to animate the skull
+static uint32_t gCursorPos;         // Y position of the skull
+static uint32_t gMoveCount;         // Time mark to move the skull
+static uint32_t gPlayerMap;         // Map requested
+static uint32_t gPlayerSkill;       // Requested skill
+static uint32_t gSleepMark;         // Time from last access
+
 static uint32_t gCursorYs[NUMMENUITEMS] = {
-    AREAY -2 ,
+    AREAY - 2,
     DIFFICULTYY - 2,
     OPTIONSY - 2
 };
+
 static uint32_t gOptionActive;
 
-/**********************************
-
-    Init memory needed for the main game menu
-
-**********************************/
+//--------------------------------------------------------------------------------------------------
+// Init memory needed for the main game menu
+//--------------------------------------------------------------------------------------------------
 void M_Start() noexcept {
     gCursorCount = 0;               // Init the animation timer
     gCursorFrame = 0;               // Init the animation frame
@@ -62,115 +63,123 @@ void M_Start() noexcept {
     gOptionActive = false;          // Option screen on
 }
 
-/**********************************
-
-    Release memory used by the main menu
-
-**********************************/
+//--------------------------------------------------------------------------------------------------
+// Release memory used by the main menu
+//--------------------------------------------------------------------------------------------------
 void M_Stop() noexcept {
-    WritePrefsFile();       // Save the current prefs
+    WritePrefsFile();               // Save the current prefs
 }
 
-/**********************************
-
-    Execute every tick
-
-**********************************/
+//--------------------------------------------------------------------------------------------------
+// Execute every tick
+//--------------------------------------------------------------------------------------------------
 gameaction_e M_Ticker() noexcept {
-    uint32_t buttons;
-
-    buttons = gJoyPadButtons;    // Get the joypad buttons
-
-// Exit menu if button press
-
-    if (gTotalGameTicks > (TICKSPERSEC/2) &&     // Minimum time...
-        ((buttons & PadStart) ||        // Start always works!
-        ((buttons & (PadA|PadB|PadC|PadStart)) && (gCursorPos!=options)))) {
-        gStartMap = gPlayerMap;   // set map number
-        gStartSkill = (skill_e)gPlayerSkill;  // Set skill level
-        return ga_completed;        // done with menu
+    // Exit menu if 'OK' pressed on the right option and enough time has elapsed
+    if ((gTotalGameTicks > TICKSPERSEC / 2) &&
+        MENU_ACTION_ENDED(OK) &&
+        (gCursorPos != options)
+    ) {
+        gStartMap = gPlayerMap;                 // Set map number
+        gStartSkill = (skill_e) gPlayerSkill;   // Set skill level
+        return ga_completed;                    // Done with menu
     }
 
-    if (buttons) {  // If buttons are held down then reset the timer
+    // If buttons are held down then reset the timer
+    if (Input::areAnyKeysOrButtonsPressed()) {
         gSleepMark = gTotalGameTicks;
     }
 
     if (gOptionActive) {
         O_Control(nullptr);
-        if (gNewJoyPadButtons&PadX) {
+
+        if (MENU_ACTION_ENDED(BACK) || MENU_ACTION_ENDED(OK)) {
             gOptionActive = false;
         }
+
         return ga_nothing;
     }
 
-    if ((gNewJoyPadButtons & PadX) ||     // Pressed abort?
-        ((gTotalGameTicks - gSleepMark) >= (TICKSPERSEC * 15))
-    ) {
-        return ga_died;     // Exit now
+    // Backing out of the main menu or timing out? If so then exit now
+    if (MENU_ACTION_ENDED(BACK) || (gTotalGameTicks - gSleepMark >= TICKSPERSEC * 15)) {
+        return ga_died;
     }
 
     // Animate skull
-    ++gCursorCount;     // Add time
-    if (gCursorCount>=(TICKSPERSEC/4)) { // Time to toggle the shape?
+    ++gCursorCount;                         // Add time
+    if (gCursorCount >= TICKSPERSEC / 4) {  // Time to toggle the shape?
         gCursorFrame ^= 1;
-        gCursorCount = 0;        // Reset the count
+        gCursorCount = 0;                   // Reset the count
     }
 
-// Check for movement
+    // Switch to options menu?
+    if (gCursorPos == options && MENU_ACTION_ENDED(OK)) {
+        gOptionActive = true;
+    }
 
-    if (! (buttons & (PadUp|PadDown|PadLeft|PadRight|PadA|PadB|PadC|PadD) ) ) {
-        gMoveCount = TICKSPERSEC;    // Move immediately on next press
+    // Check for up/down/left/right movement
+    if (!Input::areAnyKeysOrButtonsPressed()) {
+        // Move immediately on next press if nothing is pressed
+        gMoveCount = TICKSPERSEC;
     } else {
         ++gMoveCount;   // Time unit
-        if ( (gMoveCount >= (TICKSPERSEC/4)) ||      // Allow slow
-            (gCursorPos == level && gMoveCount >= (TICKSPERSEC/5))) { // Fast?
-            gMoveCount = 0;      // Reset the timer
-            if (buttons & PadDown) {
+
+        if ((gMoveCount >= TICKSPERSEC / 4) ||                      // Allow slow
+            (gCursorPos == level && gMoveCount >= TICKSPERSEC / 5)  // Fast?
+        ) {
+            // Reset the timer
+            gMoveCount = 0;
+
+            // Up and down menu movement
+            if (MENU_ACTION(DOWN)) {
                 ++gCursorPos;
-                if (gCursorPos >= NUMMENUITEMS) {      // Off the bottom?
+                if (gCursorPos >= NUMMENUITEMS) {
                     gCursorPos = 0;
                 }
             }
-            if (buttons & PadUp) {      // Going up?
-                if (!gCursorPos) {       // At the top already?
+
+            if (MENU_ACTION(UP)) {
+                if (gCursorPos == 0) {
                     gCursorPos = NUMMENUITEMS;
                 }
                 --gCursorPos;
             }
 
+            // Other menu input
             switch (gCursorPos) {
-            case level:             // Select level to start with
-                if (buttons & PadRight) {
-                    if (gPlayerMap < gMaxLevel) {
-                        ++gPlayerMap;
+                // Select level to start with
+                case level: {
+                    if (MENU_ACTION(RIGHT)) {
+                        if (gPlayerMap < gMaxLevel) {
+                            ++gPlayerMap;
+                        }
                     }
-                }
-                if (buttons & PadLeft) {
-                    if (gPlayerMap!=1) {
-                        --gPlayerMap;
+
+                    if (MENU_ACTION(LEFT)) {
+                        if (gPlayerMap != 1) {
+                            --gPlayerMap;
+                        }
                     }
-                }
-                break;
-            case difficulty:        // Select game difficulty
-                if (buttons & PadRight) {
-                    if (gPlayerSkill < sk_nightmare) {
-                        ++gPlayerSkill;
+                }   break;
+
+                // Select game difficulty
+                case difficulty: {
+                    if (MENU_ACTION(RIGHT)) {
+                        if (gPlayerSkill < sk_nightmare) {
+                            ++gPlayerSkill;
+                        }
                     }
-                }
-                if (buttons & PadLeft) {
-                    if (gPlayerSkill) {
-                        --gPlayerSkill;
+
+                    if (MENU_ACTION(LEFT)) {
+                        if (gPlayerSkill > 0) {
+                            --gPlayerSkill;
+                        }
                     }
-                }
-                break;
-            case options:
-                if (buttons & (PadA|PadB|PadC|PadD|PadRight|PadLeft)) {
-                    gOptionActive = true;
-                }
+                }   break;
             }
         }
     }
-    return ga_nothing;      // Don't quit!
+
+    return ga_nothing;  // Don't quit!
 }
 
 //--------------------------------------------------------------------------------------------------

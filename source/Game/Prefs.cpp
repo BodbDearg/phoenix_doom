@@ -3,15 +3,13 @@
 #include "Base/FileUtils.h"
 #include "Base/Finally.h"
 #include "Base/IniUtils.h"
-#include <cstring>
 #include <filesystem>
 #include <SDL.h>
-#include <string>
 
 BEGIN_NAMESPACE(Prefs)
 
 // Sanity check! These must agree:
-static_assert(MAX_KEYBOARD_SCAN_CODES == SDL_NUM_SCANCODES);
+static_assert(Input::NUM_KEYBOARD_KEYS == SDL_NUM_SCANCODES);
 
 static constexpr char* const DEFAULT_CONFIG_INI = R"(#---------------------------------------------------------------------------------------------------
 # === Phoenix Doom config file ===
@@ -71,8 +69,8 @@ A               = strafe_left,      menu_left
 D               = strafe_right,     menu_right
 W               = move_forward,     menu_up
 S               = move_backward,    menu_down
-Left Ctrl       = shoot
-Right Ctrl      = shoot
+Left Ctrl       = attack
+Right Ctrl      = attack
 Space           = use,              menu_ok
 Return          = use,              menu_ok
 E               = use
@@ -295,10 +293,10 @@ Keypad +        = automap_free_cam_zoom_in
 
 static std::string gTmpActionStr;   // Re-use this buffer during parsing to prevent reallocs. Not that it probably matters that much...
 
-bool                    gbFullscreen;
-uint32_t                gRenderScale;
-Controls::MenuActions   gKeyboardMenuActions[MAX_KEYBOARD_SCAN_CODES];
-Controls::GameActions   gKeyboardGameActions[MAX_KEYBOARD_SCAN_CODES];
+bool                        gbFullscreen;
+uint32_t                    gRenderScale;
+Controls::MenuActionBits    gKeyboardMenuActions[Input::NUM_KEYBOARD_KEYS];
+Controls::GameActionBits    gKeyboardGameActions[Input::NUM_KEYBOARD_KEYS];
 
 //----------------------------------------------------------------------------------------------------------------------
 // Determines the path to the config .ini for the game
@@ -359,53 +357,53 @@ static void regenerateDefaultConfigFileIfNotPresent(const std::string& iniFilePa
 //----------------------------------------------------------------------------------------------------------------------
 static void parseSingleActionString(
     const std::string& actionStr,
-    Controls::GameActions& gameActionsOut,
-    Controls::MenuActions& menuActionsOut
+    Controls::GameActionBits& gameActionsOut,
+    Controls::MenuActionBits& menuActionsOut
 ) noexcept {
     // These cut down on repetivie code
-    auto handleGameAction = [&](const char* const pName, const Controls::GameActions actionBits) noexcept {
+    auto handleGameAction = [&](const char* const pName, const Controls::GameActionBits actionBits) noexcept {
         if (actionStr == pName) {
             gameActionsOut |= actionBits;
         }
     };
 
-    auto handleMenuAction = [&](const char* const pName, const Controls::MenuActions actionBits) noexcept {
+    auto handleMenuAction = [&](const char* const pName, const Controls::MenuActionBits actionBits) noexcept {
         if (actionStr == pName) {
             menuActionsOut |= actionBits;
         }
     };
 
-    handleGameAction("move_forward",                Controls::GameActionBits::MOVE_FORWARD);
-    handleGameAction("move_backward",               Controls::GameActionBits::MOVE_BACKWARD);
-    handleGameAction("turn_left",                   Controls::GameActionBits::TURN_LEFT);
-    handleGameAction("turn_right",                  Controls::GameActionBits::TURN_RIGHT);
-    handleGameAction("strafe_left",                 Controls::GameActionBits::STRAFE_LEFT);
-    handleGameAction("strafe_right",                Controls::GameActionBits::STRAFE_RIGHT);
-    handleGameAction("shoot",                       Controls::GameActionBits::SHOOT);
-    handleGameAction("use",                         Controls::GameActionBits::USE);
-    handleGameAction("options",                     Controls::GameActionBits::OPTIONS);
-    handleGameAction("run",                         Controls::GameActionBits::RUN);
-    handleGameAction("prev_weapon",                 Controls::GameActionBits::PREV_WEAPON);
-    handleGameAction("next_weapon",                 Controls::GameActionBits::NEXT_WEAPON);
-    handleGameAction("pause",                       Controls::GameActionBits::PAUSE);
-    handleGameAction("weapon_1",                    Controls::GameActionBits::WEAPON_1);
-    handleGameAction("weapon_2",                    Controls::GameActionBits::WEAPON_2);
-    handleGameAction("weapon_3",                    Controls::GameActionBits::WEAPON_3);
-    handleGameAction("weapon_4",                    Controls::GameActionBits::WEAPON_4);
-    handleGameAction("weapon_5",                    Controls::GameActionBits::WEAPON_5);
-    handleGameAction("weapon_6",                    Controls::GameActionBits::WEAPON_6);
-    handleGameAction("weapon_7",                    Controls::GameActionBits::WEAPON_7);
-    handleGameAction("automap_toggle",              Controls::GameActionBits::AUTOMAP_TOGGLE);
-    handleGameAction("automap_free_cam_toggle",     Controls::GameActionBits::AUTOMAP_FREE_CAM_TOGGLE);
-    handleGameAction("automap_free_cam_zoom_out",   Controls::GameActionBits::AUTOMAP_FREE_CAM_ZOOM_OUT);
-    handleGameAction("automap_free_cam_zoom_in",    Controls::GameActionBits::AUTOMAP_FREE_CAM_ZOOM_IN);
+    handleGameAction("move_forward",                Controls::GameActions::MOVE_FORWARD);
+    handleGameAction("move_backward",               Controls::GameActions::MOVE_BACKWARD);
+    handleGameAction("turn_left",                   Controls::GameActions::TURN_LEFT);
+    handleGameAction("turn_right",                  Controls::GameActions::TURN_RIGHT);
+    handleGameAction("strafe_left",                 Controls::GameActions::STRAFE_LEFT);
+    handleGameAction("strafe_right",                Controls::GameActions::STRAFE_RIGHT);
+    handleGameAction("attack",                      Controls::GameActions::ATTACK);
+    handleGameAction("use",                         Controls::GameActions::USE);
+    handleGameAction("options",                     Controls::GameActions::OPTIONS);
+    handleGameAction("run",                         Controls::GameActions::RUN);
+    handleGameAction("prev_weapon",                 Controls::GameActions::PREV_WEAPON);
+    handleGameAction("next_weapon",                 Controls::GameActions::NEXT_WEAPON);
+    handleGameAction("pause",                       Controls::GameActions::PAUSE);
+    handleGameAction("weapon_1",                    Controls::GameActions::WEAPON_1);
+    handleGameAction("weapon_2",                    Controls::GameActions::WEAPON_2);
+    handleGameAction("weapon_3",                    Controls::GameActions::WEAPON_3);
+    handleGameAction("weapon_4",                    Controls::GameActions::WEAPON_4);
+    handleGameAction("weapon_5",                    Controls::GameActions::WEAPON_5);
+    handleGameAction("weapon_6",                    Controls::GameActions::WEAPON_6);
+    handleGameAction("weapon_7",                    Controls::GameActions::WEAPON_7);
+    handleGameAction("automap_toggle",              Controls::GameActions::AUTOMAP_TOGGLE);
+    handleGameAction("automap_free_cam_toggle",     Controls::GameActions::AUTOMAP_FREE_CAM_TOGGLE);
+    handleGameAction("automap_free_cam_zoom_out",   Controls::GameActions::AUTOMAP_FREE_CAM_ZOOM_OUT);
+    handleGameAction("automap_free_cam_zoom_in",    Controls::GameActions::AUTOMAP_FREE_CAM_ZOOM_IN);
 
-    handleMenuAction("menu_up",     Controls::MenuActionBits::UP);
-    handleMenuAction("menu_down",   Controls::MenuActionBits::DOWN);
-    handleMenuAction("menu_left",   Controls::MenuActionBits::LEFT);
-    handleMenuAction("menu_right",  Controls::MenuActionBits::RIGHT);
-    handleMenuAction("menu_ok",     Controls::MenuActionBits::OK);
-    handleMenuAction("menu_back",   Controls::MenuActionBits::BACK);
+    handleMenuAction("menu_up",     Controls::MenuActions::UP);
+    handleMenuAction("menu_down",   Controls::MenuActions::DOWN);
+    handleMenuAction("menu_left",   Controls::MenuActions::LEFT);
+    handleMenuAction("menu_right",  Controls::MenuActions::RIGHT);
+    handleMenuAction("menu_ok",     Controls::MenuActions::OK);
+    handleMenuAction("menu_back",   Controls::MenuActions::BACK);
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -413,11 +411,11 @@ static void parseSingleActionString(
 //----------------------------------------------------------------------------------------------------------------------
 static void parseActionsString(
     const std::string& actionsStr,
-    Controls::GameActions& gameActionsOut,
-    Controls::MenuActions& menuActionsOut
+    Controls::GameActionBits& gameActionsOut,
+    Controls::MenuActionBits& menuActionsOut
 ) noexcept {
-    gameActionsOut = Controls::GameActionBits::NONE;
-    menuActionsOut = Controls::MenuActionBits::NONE;
+    gameActionsOut = Controls::GameActions::NONE;
+    menuActionsOut = Controls::MenuActions::NONE;
 
     const char* pActionStart = actionsStr.c_str();
     const char* const pActionsStrEnd = actionsStr.c_str() + actionsStr.size();
@@ -466,12 +464,12 @@ static void parseActionsString(
 //----------------------------------------------------------------------------------------------------------------------
 // Parse the bindings/actions for a particular keyboard key
 //----------------------------------------------------------------------------------------------------------------------
-static void parseKeyboardKeyActions(const uint32_t keyIdx, const std::string& actionsStr) noexcept {
-    if (keyIdx >= MAX_KEYBOARD_SCAN_CODES)
+static void parseKeyboardKeyActions(const uint16_t keyIdx, const std::string& actionsStr) noexcept {
+    if (keyIdx >= Input::NUM_KEYBOARD_KEYS)
         return;
     
-    Controls::GameActions gameActions = Controls::GameActionBits::NONE;
-    Controls::MenuActions menuActions = Controls::MenuActionBits::NONE;
+    Controls::GameActionBits gameActions = Controls::GameActions::NONE;
+    Controls::MenuActionBits menuActions = Controls::MenuActions::NONE;
     parseActionsString(actionsStr, gameActions, menuActions);
 
     gKeyboardGameActions[keyIdx] = gameActions;
@@ -494,9 +492,9 @@ static void handlePrefsEntry(const IniUtils::Entry& entry) noexcept {
         const SDL_Scancode scancode = SDL_GetScancodeFromName(entry.key.c_str());
 
         if (scancode != SDL_SCANCODE_UNKNOWN) {
-            const uint32_t scancodeIdx = (uint32_t) scancode;
+            const uint16_t scancodeIdx = (uint16_t) scancode;
 
-            if (scancodeIdx < MAX_KEYBOARD_SCAN_CODES) {
+            if (scancodeIdx < Input::NUM_KEYBOARD_KEYS) {
                 parseKeyboardKeyActions(scancodeIdx, entry.value.c_str());
             }
         }
@@ -514,7 +512,7 @@ static void clear() noexcept {
     std::memset(gKeyboardGameActions, 0, sizeof(gKeyboardGameActions));    
 }
 
-void read() noexcept {
+void init() noexcept {
     clear();
 
     // Get the path to the config ini file and regenerate it if it doesn't exist
@@ -535,6 +533,11 @@ void read() noexcept {
 
     // Parse the ini file
     IniUtils::parseIniFromString((const char*) pIniFileData, iniFileDataSize, handlePrefsEntry);
+}
+
+void shutdown() noexcept {
+    gTmpActionStr.clear();
+    gTmpActionStr.shrink_to_fit();
 }
 
 END_NAMESPACE(Prefs)

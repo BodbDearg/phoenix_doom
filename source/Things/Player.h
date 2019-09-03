@@ -112,7 +112,14 @@ struct player_t {
     bool            cards[NUMCARDS];            // Keycards held
     bool            backpack;                   // Got the backpack?
     uint32_t        attackdown;                 // Held the attack key if > 0
-    uint32_t        usedown;                    // Held the use button down if > 0
     bool            weaponowned[NUMWEAPONS];    // Do I own these weapons?
     bool            refire;                     // refired shots are less accurate
+
+    inline bool isAutomapActive() const noexcept {
+        return ((AutomapFlags & AF_ACTIVE) != 0);
+    }
+
+    inline bool isOptionsMenuActive() const noexcept {
+        return ((AutomapFlags & AF_OPTIONSACTIVE) != 0);
+    }
 };

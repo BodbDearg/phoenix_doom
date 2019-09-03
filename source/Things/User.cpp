@@ -3,9 +3,8 @@
 #include "Audio/Sound.h"
 #include "Audio/Sounds.h"
 #include "Base/FMath.h"
-#include "Base/Macros.h"
 #include "Base/Tables.h"
-#include "Burger.h"
+#include "Game/Controls.h"
 #include "Game/Data.h"
 #include "Info.h"
 #include "Map/Map.h"
@@ -16,8 +15,7 @@
 #include "Slide.h"
 #include "UI/StatusBar_Main.h"
 
-static constexpr Fixed      MAXBOB          = 16 << FRACBITS;   // 16 pixels of bobbing up and down
-static constexpr uint32_t   SLOWTURNTICS    = 10;               // Time before fast turning
+static constexpr Fixed MAXBOB = 16 << FRACBITS;   // 16 pixels of bobbing up and down
 
 static constexpr uint32_t FORWARD_MOVE[2] = {
     0x38000 >> 2,
@@ -32,6 +30,7 @@ static constexpr uint32_t SIDE_MOVE[2] = {
 static constexpr Fixed ANGLE_TURN[] = {
     600 << FRACBITS,
     600 << FRACBITS,
+    600 << FRACBITS,
     1000 << FRACBITS,
     1000 << FRACBITS,
     1200 << FRACBITS,
@@ -44,6 +43,7 @@ static constexpr Fixed ANGLE_TURN[] = {
 
 // Will be mul'd by ElapsedTime
 static constexpr Fixed FAST_ANGLE_TURN[] = {
+    400 << FRACBITS,
     400 << FRACBITS,
     400 << FRACBITS,
     450 << FRACBITS,
@@ -210,69 +210,85 @@ static void P_PlayerMobjThink(mobj_t& mobj) noexcept {
 // Convert joypad inputs into player motion
 //----------------------------------------------------------------------------------------------------------------------
 static void P_BuildMove(player_t& player) noexcept {
-    uint32_t TurnIndex;     // Index to the turn table
+    if (!player.isOptionsMenuActive()) {
+        // Use two stage accelerative turning on the joypad.
+        // If none of the turn keys are pressed then reset acceleration.
+        uint32_t turnIndex = player.turnheld + 1;
+
+        const bool bResetTurnAcceleration = (
+            (!GAME_ACTION(TURN_LEFT)) &&
+            (!GAME_ACTION(TURN_RIGHT))
+        );
+
+        if (bResetTurnAcceleration) {
+            turnIndex = 0;
+        }
     
-
-    const uint32_t buttons = gJoyPadButtons;
-    const uint32_t oldbuttons = gPrevJoyPadButtons;
-    const uint32_t speedIndex = (buttons&gPadSpeed) ? 1 : 0;
-
-    // Use two stage accelerative turning on the joypad
-    TurnIndex = player.turnheld + 1;
-
-    if (((buttons & PadLeft) == 0) || ((oldbuttons & PadLeft) == 0)) {  // Not held?
-        if (((buttons & PadRight) == 0) || ((oldbuttons & PadRight) == 0)) {
-            TurnIndex = 0;  // Reset timer
+        if (turnIndex >= C_ARRAY_SIZE(FAST_ANGLE_TURN)) {   // Detect overflow
+            turnIndex = C_ARRAY_SIZE(FAST_ANGLE_TURN) - 1;
         }
-    }
-    
-    if (TurnIndex >= SLOWTURNTICS) {    // Detect overflow
-        TurnIndex = SLOWTURNTICS - 1;
-    }
 
-    player.turnheld = TurnIndex;    // Save it
-    Fixed motion = 0;               // Assume no side motion
+        player.turnheld = turnIndex;
 
-    if ((buttons & gPadUse) == 0) {                         // Use allows weapon change
-        if (buttons & (PadRightShift|PadLeftShift)) {       // Side motion?
-            motion = SIDE_MOVE[speedIndex];                 // Sidestep to the right
-            if ((buttons & PadLeftShift) != 0) {
-                motion = -motion;                           // Sidestep to the left
+        // Is the player running?
+        const uint32_t speedIndex = GAME_ACTION(RUN) ? 1 : 0;
+
+        // Do side stepping
+        player.sidemove = 0;
+
+        if (GAME_ACTION(STRAFE_LEFT)) {
+            player.sidemove -= SIDE_MOVE[speedIndex];
+        }
+
+        if (GAME_ACTION(STRAFE_RIGHT)) {
+            player.sidemove += SIDE_MOVE[speedIndex];
+        }
+
+        // Do turning
+        player.angleturn = 0;
+
+        if ((speedIndex != 0) && 
+            (!GAME_ACTION(MOVE_FORWARD)) &&
+            (!GAME_ACTION(MOVE_BACKWARD))
+        ) {
+            if (GAME_ACTION(TURN_LEFT)) {
+                player.angleturn += FAST_ANGLE_TURN[turnIndex];
+            }
+
+            if (GAME_ACTION(TURN_RIGHT)) {
+                player.angleturn -= FAST_ANGLE_TURN[turnIndex];
+            }
+        } else {
+            // Don't time adjust, for fine tuning
+            const Fixed turnSpeed = fixedDiv(ANGLE_TURN[turnIndex], intToFixed(4));
+
+            if (GAME_ACTION(TURN_LEFT)) {
+                player.angleturn += turnSpeed;
+            }
+
+            if (GAME_ACTION(TURN_RIGHT)) {
+                player.angleturn -= turnSpeed;
             }
         }
-    }
 
-    player.sidemove = motion;   // Save the result
-    motion = 0;                 // No angle turning
+        // Do move forward and backward
+        player.forwardmove = 0;
 
-    if ((speedIndex != 0) && ((buttons & (PadUp|PadDown)) == 0)) {
-        if ((buttons & (PadRight|PadLeft)) != 0) {
-            motion = FAST_ANGLE_TURN[TurnIndex];
-            if ((buttons & PadRight) != 0) {
-                motion = -motion;
-            }
+        if (GAME_ACTION(MOVE_FORWARD)) {
+            player.forwardmove += FORWARD_MOVE[speedIndex];
         }
-    } else {
-        if ((buttons & (PadRight|PadLeft)) != 0) {
-            motion = ANGLE_TURN[TurnIndex];      // Don't time adjust, for fine tuning
-            motion >>= 2;
-            if ((buttons & PadRight) != 0) {
-                motion = -motion;
-            }
+
+        if (GAME_ACTION(MOVE_BACKWARD)) {
+            player.forwardmove -= FORWARD_MOVE[speedIndex];
         }
     }
-
-    player.angleturn = motion;      // Save the new angle
-    motion = 0;
-
-    if ((buttons & (PadUp|PadDown)) != 0) {
-        motion = FORWARD_MOVE[speedIndex];
-        if ((buttons & PadDown) != 0) {
-            motion = -motion;
-        }
+    else {
+        // In the options menu!
+        player.turnheld = 0;
+        player.angleturn = 0;
+        player.sidemove = 0;
+        player.forwardmove = 0;
     }
-
-    player.forwardmove = motion;    // Save the motion
 
     // If slowed down to a stop, change to a standing frame
     ASSERT(player.mo);
@@ -447,8 +463,12 @@ static void P_DeathThink(player_t& player) noexcept {
         }
     }
 
-    if (((gJoyPadButtons & gPadUse) != 0 ) && player.viewheight < (8 * FRACUNIT) + 1) {
-        player.playerstate = PST_REBORN;    // Restart the player
+    // Respawn keys pressed?
+    if (GAME_ACTION_ENDED(USE) || GAME_ACTION_ENDED(ATTACK) || MENU_ACTION_ENDED(OK)) {
+        // Only allow if the player height is below a certain threshold
+        if (player.viewheight < 8 * FRACUNIT + 1) {
+            player.playerstate = PST_REBORN;    // Restart the player
+        }
     }
 }
 
@@ -478,10 +498,8 @@ static bool WeaponAllowed(player_t& player) noexcept {
 //----------------------------------------------------------------------------------------------------------------------
 void P_PlayerThink(player_t& player) noexcept {
     ASSERT(player.mo);
-
-    const uint32_t buttons = gJoyPadButtons;    // Get the joypad info
-    P_PlayerMobjThink(*player.mo);              // Perform the inertia movement
-    P_BuildMove(player);                        // Convert joypad info to motion
+    P_PlayerMobjThink(*player.mo);      // Perform the inertia movement
+    P_BuildMove(player);                // Convert joypad info to motion
 
     // I use MF_JUSTATTACKED when the chainsaw is being used
     if (player.mo->flags & MF_JUSTATTACKED) {       // Chainsaw attack?
@@ -491,9 +509,9 @@ void P_PlayerThink(player_t& player) noexcept {
         player.mo->flags &= ~MF_JUSTATTACKED;       // Clear the flag
     }
 
-    if (player.playerstate == PST_DEAD) {       // Am I dead?
-        P_DeathThink(player);                   // Just face your killer
-        return;                                 // Exit now
+    if (player.playerstate == PST_DEAD) {   // Am I dead?
+        P_DeathThink(player);               // Just face your killer
+        return;                             // Exit now
     }
 
     // Reactiontime is used to prevent movement for a bit after a teleport
@@ -504,97 +522,104 @@ void P_PlayerThink(player_t& player) noexcept {
     }
 
     PlayerCalcHeight(player);      // Adjust the player's z coord
-
-    {
+    
+    if (!player.isOptionsMenuActive()) {
+        // Handle special sectors
         ASSERT(player.mo->subsector);
         sector_t& sector = *player.mo->subsector->sector;   // Get sector I'm standing on
         if (sector.special) {                               // Am I standing on a special?
             PlayerInSpecialSector(player, sector);          // Process special event
         }
-    }
 
-    // Process use actions
-    if ((buttons & gPadUse) != 0) {
+        // Process weapon changes
         if (player.pendingweapon == wp_nochange) {
-            // Get buttons just pressed
-            const uint32_t justPressed = (buttons ^ gPrevJoyPadButtons) & buttons;  
+            // Next/previous weapon change
+            int8_t weaponCycleDir = 0; 
 
-            if (justPressed & (PadRightShift|PadLeftShift)) {                       // Pressed the shifts?
-                const int8_t cycleDir = (PadRightShift & justPressed) ? 1 : -1;     // Cycle up or down?
-                player.pendingweapon = player.readyweapon;                          // Init the weapon
+            if (GAME_ACTION_ENDED(NEXT_WEAPON)) {
+                weaponCycleDir += 1;
+            }
+
+            if (GAME_ACTION_ENDED(PREV_WEAPON)) {
+                weaponCycleDir -= 1;
+            }
+
+            if (weaponCycleDir != 0) {                          // Pressed the shifts?            
+                player.pendingweapon = player.readyweapon;      // Init the weapon
 
                 // Cycle to next weapon
                 do {
-                    player.pendingweapon = (weapontype_e)(player.pendingweapon + cycleDir);
+                    player.pendingweapon = (weapontype_e)(player.pendingweapon + weaponCycleDir);
                 } while (!WeaponAllowed(player));   // Ok to keep?
             }
         }
 
-        if (!player.usedown) {          // Was use held down?
-            P_UseLines(player);         // Nope, process the use button
-            player.usedown = true;      // Wait until released
+        // Was use just pressed? If so then process.
+        if (GAME_ACTION_ENDED(USE)) {
+            P_UseLines(player);
         }
-    } else {
-        player.usedown = false;     // Use is released
-    }
 
-    // Process weapon attacks
-    if ((buttons & gPadAttack) != 0) {                  // Am I attacking?
-        ++player.attackdown;                            // Add in the timer
-        if (player.attackdown >= TICKSPERSEC * 2) {
-            gStBar.specialFace = f_mowdown;
+        // Process weapon attacks
+        if (GAME_ACTION(ATTACK)) {
+            ++player.attackdown;
+            if (player.attackdown >= TICKSPERSEC * 2) {
+                gStBar.specialFace = f_mowdown;
+            }
+        } else {
+            player.attackdown = 0;
         }
-    } else {
-        player.attackdown = 0;      // Reset the timer
-    }
 
-    MovePSprites(player);   // Process the weapon sprites and shoot
+        // Process the weapon sprites and shoot
+        MovePSprites(player);
+    }
 
     // Timed counters
-    if (player.powers[pw_strength] && player.powers[pw_strength] < 255) {
-        // Strength counts up to diminish fade
-        ++player.powers[pw_strength];               // Add some time
-        if (player.powers[pw_strength] >= 256) {    // Time up?
-            player.powers[pw_strength] = 255;       // Maximum
+    if (!player.isOptionsMenuActive()) {
+        if (player.powers[pw_strength] && player.powers[pw_strength] < 255) {
+            // Strength counts up to diminish fade
+            ++player.powers[pw_strength];               // Add some time
+            if (player.powers[pw_strength] >= 256) {    // Time up?
+                player.powers[pw_strength] = 255;       // Maximum
+            }
         }
-    }
 
-    // Count down timers for powers and screen colors
-    if (player.powers[pw_invulnerability]) {    // God mode
-        --player.powers[pw_invulnerability];
-        if (player.powers[pw_invulnerability] & 0x8000) {
-            player.powers[pw_invulnerability] = 0;
+        // Count down timers for powers and screen colors
+        if (player.powers[pw_invulnerability]) {    // God mode
+            --player.powers[pw_invulnerability];
+            if (player.powers[pw_invulnerability] & 0x8000) {
+                player.powers[pw_invulnerability] = 0;
+            }
         }
-    }
 
-    if (player.powers[pw_invisibility]) {   // Invisible?
-        --player.powers[pw_invisibility];
-        if (player.powers[pw_invisibility] & 0x8000) {
-            player.powers[pw_invisibility] = 0;
+        if (player.powers[pw_invisibility]) {   // Invisible?
+            --player.powers[pw_invisibility];
+            if (player.powers[pw_invisibility] & 0x8000) {
+                player.powers[pw_invisibility] = 0;
+            }
+            if (!player.powers[pw_invisibility]) {
+                player.mo->flags &= ~MF_SHADOW;
+            }
         }
-        if (!player.powers[pw_invisibility]) {
-            player.mo->flags &= ~MF_SHADOW;
-        }
-    }
 
-    if (player.powers[pw_ironfeet]) {   // Radiation suit
-        --player.powers[pw_ironfeet];
-        if (player.powers[pw_ironfeet] & 0x8000) {
-            player.powers[pw_ironfeet] = 0;
+        if (player.powers[pw_ironfeet]) {   // Radiation suit
+            --player.powers[pw_ironfeet];
+            if (player.powers[pw_ironfeet] & 0x8000) {
+                player.powers[pw_ironfeet] = 0;
+            }
         }
-    }
 
-    if (player.damagecount) {   // Red factor
-        --player.damagecount;
-        if (player.damagecount & 0x8000) {
-            player.damagecount = 0;
+        if (player.damagecount) {   // Red factor
+            --player.damagecount;
+            if (player.damagecount & 0x8000) {
+                player.damagecount = 0;
+            }
         }
-    }
 
-    if (player.bonuscount) {    // Gold factor
-        --player.bonuscount;
-        if (player.bonuscount & 0x8000) {
-            player.bonuscount = 0;
+        if (player.bonuscount) {    // Gold factor
+            --player.bonuscount;
+            if (player.bonuscount & 0x8000) {
+                player.bonuscount = 0;
+            }
         }
     }
 }

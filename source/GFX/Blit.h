@@ -679,7 +679,7 @@ namespace Blit {
             );
 
             for (int32_t y = dstYi; y <= dstYiend; ++y) {
-                uint32_t* const pDstRow = pDstPixels + y * dstPixelsPitch;
+                uint32_t* const pDstRow = pDstPixels + (uintptr_t) y * dstPixelsPitch;
 
                 for (int32_t x = dstXi; x <= dstXiend; ++x) {
                     uint32_t& dstPixel = pDstRow[x];
@@ -694,7 +694,7 @@ namespace Blit {
             const float srcB = b * 255.0f;
 
             for (int32_t y = dstYi; y <= dstYiend; ++y) {
-                uint32_t* const pDstRow = pDstPixels + y * dstPixelsPitch;
+                uint32_t* const pDstRow = pDstPixels + (uintptr_t) y * dstPixelsPitch;
 
                 for (int32_t x = dstXi; x <= dstXiend; ++x) {
                     uint32_t& dstPixel = pDstRow[x];

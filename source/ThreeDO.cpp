@@ -6,7 +6,6 @@
 #include "Base/Macros.h"
 #include "Base/Mem.h"
 #include "Base/Tables.h"
-#include "Burger.h"
 #include "Game/Data.h"
 #include "Game/DoomMain.h"
 #include "Game/Prefs.h"
@@ -38,24 +37,27 @@ void initGameSubsystems() noexcept {
         #endif
     #endif
 
-    Prefs::read();
+    Prefs::init();
     Resources::init();
     CelImages::init();
     Video::init();
     Input::init();
     Audio::init();
     Audio::loadAllSounds();
+    Controls::init();
 }
 
 //----------------------------------------------------------------------------------------------------------------------
 // Shut down various game subsystems (audio, video input etc.)
 //----------------------------------------------------------------------------------------------------------------------
 void shutdownGameSubsystems() noexcept {
+    Controls::shutdown();
     Audio::shutdown();
     Input::shutdown();
     Video::shutdown();
     CelImages::shutdown();
     Resources::shutdown();
+    Prefs::shutdown();
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -104,7 +106,9 @@ void WritePrefsFile() noexcept {
         CheckSum += PrefFile[i];        // Make a simple checksum
     } while (++i<10);
     PrefFile[9] = CheckSum;
-    SaveAFile(gPrefsName, &PrefFile, sizeof(PrefFile));    // Save the game file
+
+    // FIXME: SAVE PREFERENCES
+    // SaveAFile(gPrefsName, &PrefFile, sizeof(PrefFile));    // Save the game file
 }
 
 //-------------------------------------------------------------------------------------------------

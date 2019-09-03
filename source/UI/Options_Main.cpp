@@ -3,13 +3,12 @@
 #include "Audio/Audio.h"
 #include "Audio/Sound.h"
 #include "Audio/Sounds.h"
-#include "Burger.h"
+#include "Base/Input.h"
+#include "Game/Controls.h"
 #include "Game/Data.h"
 #include "Game/DoomDefines.h"
 #include "Game/DoomRez.h"
-#include "Game/Resources.h"
 #include "GFX/CelImages.h"
-#include "GFX/Renderer.h"
 #include "GFX/Video.h"
 #include "Intermission_Main.h"
 #include "ThreeDO.h"
@@ -22,17 +21,6 @@ static constexpr uint32_t SFXVOLY       = 60;       // Y coord for SFX volume co
 static constexpr uint32_t MUSICVOLY     = 120;      // Y coord for Music volume control
 static constexpr uint32_t JOYPADY       = 40;       // Y coord for joypad control
 static constexpr uint32_t SIZEY         = 140;      // Y coord for screen size control
-
-// Action buttons can be set to PadA, PadB, or PadC
-enum {     
-    SFU,
-    SUF,
-    FSU,
-    FUS,
-    USF,
-    UFS,
-    NUMCONTROLOPTIONS    // Control option count
-};
 
 // Menu items to select from
 enum {
@@ -54,6 +42,9 @@ static constexpr uint32_t CURSOR_Y_POS[NUMMENUITEMS] = {
     JOYPADY - 2,
     SIZEY - 2
 };
+
+// TODO: REMOVE
+static constexpr uint32_t NUMCONTROLOPTIONS = 6;
 
 static constexpr const char* const SPEED_TEXT = "Speed";       // Local ASCII
 static constexpr const char* const FIRE_TEXT = "Fire";
@@ -86,30 +77,18 @@ static constexpr const char* const BUTTON_C[NUMCONTROLOPTIONS] = {
     SPEED_TEXT
 };
 
-static constexpr uint32_t CONFIGURATION[NUMCONTROLOPTIONS][3] = {
-    { PadA, PadB, PadC },
-    { PadA, PadC, PadB },
-    { PadB, PadA, PadC },
-    { PadC, PadA, PadB },
-    { PadB, PadC, PadA },
-    { PadC, PadB, PadA }
-};
-
 static uint32_t gCursorFrame;       // Skull animation frame
 static uint32_t gCursorCount;       // Time mark to animate the skull
 static uint32_t gCursorPos;         // Y position of the skull
 static uint32_t gMoveCount;         // Time mark to move the skull
 
 //----------------------------------------------------------------------------------------------------------------------
-// Init the button settings from the control type
+// Init the button settings from the control type.
+//
+// TODO: REMOVE THIS!
 //----------------------------------------------------------------------------------------------------------------------
 static void SetButtonsFromControltype() noexcept {
-    const uint32_t* const pTable = &CONFIGURATION[gControlType][0];  // Init table
-
-    gPadSpeed = pTable[0];          // Init the joypad settings
-    gPadAttack = pTable[1];
-    gPadUse = pTable[2];
-    Renderer::initMathTables();     // Handle the math tables
+    Renderer::initMathTables();
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -130,14 +109,16 @@ void O_Init() noexcept {
 // Called by player code.
 //----------------------------------------------------------------------------------------------------------------------
 void O_Control(player_t* const pPlayer) noexcept {
-    const uint32_t buttons = gJoyPadButtons;
-
-    if (gNewJoyPadButtons & PadX) {      // Toggled the option screen?
+    // Toggled the option screen?
+    // Note that this is only allowed if the automap is not showing.
+    if (MENU_ACTION_ENDED(BACK)) { 
         if (pPlayer) {
-            pPlayer->AutomapFlags ^= AF_OPTIONSACTIVE;                  // Toggle the flag
-            if ((pPlayer->AutomapFlags & AF_OPTIONSACTIVE) == 0) {      // Shut down?
-                SetButtonsFromControltype();                            // Set the memory
-                WritePrefsFile();                                       // Save new settings to NVRAM
+            if (!pPlayer->isAutomapActive()) {
+                pPlayer->AutomapFlags ^= AF_OPTIONSACTIVE;      // Toggle the flag
+                if (!pPlayer->isOptionsMenuActive()) {          // Shut down?
+                    SetButtonsFromControltype();                // Set the memory
+                    WritePrefsFile();                           // Save new settings to NVRAM
+                }
             }
         } else {
             SetButtonsFromControltype();        // Set the memory
@@ -146,26 +127,26 @@ void O_Control(player_t* const pPlayer) noexcept {
     }
 
     if (pPlayer) {
-        if ((pPlayer->AutomapFlags & AF_OPTIONSACTIVE) == 0) {      // Can I execute?
-            return;                                                 // Exit NOW!
+        if (!pPlayer->isOptionsMenuActive()) {      // Can I execute?
+            return;                                 // Exit NOW!
         }
     }
 
-    // Clear buttons so game player isn't moving around, but leave option status alone
-    gJoyPadButtons = buttons & PadX;
-
     // Animate skull
     ++gCursorCount;
+
     if (gCursorCount >= TICKSPERSEC / 4) {      // Time up?
         gCursorFrame ^= 1;                      // Toggle the frame
         gCursorCount = 0;                       // Reset the timer
     }
 
     // Check for movement
-    if ((buttons & (PadUp|PadDown|PadLeft|PadRight)) == 0) {
-        gMoveCount = TICKSPERSEC;   // Move immediately on next press
+    if (!Input::areAnyKeysOrButtonsPressed()) {
+        // Move immediately on next press if nothing is pressed
+        gMoveCount = TICKSPERSEC;
     } else {
         ++gMoveCount;
+
         if ((gMoveCount >= TICKSPERSEC / 3) || (    // Allow slow
                 (gCursorPos < controls) && 
                 (gMoveCount >= TICKSPERSEC / 5)     // Fast?
@@ -174,14 +155,14 @@ void O_Control(player_t* const pPlayer) noexcept {
             gMoveCount = 0;      // Reset timer
 
             // Try to move the cursor up or down...
-            if ((buttons & PadDown) != 0) {
+            if (MENU_ACTION(DOWN)) {
                 ++gCursorPos;
                 if (gCursorPos >= NUMMENUITEMS) {
                     gCursorPos = 0;
                 }
             }
 
-            if ((buttons & PadUp) != 0) {
+            if (MENU_ACTION(UP)) {
                 if (gCursorPos <= 0) {
                     gCursorPos = NUMMENUITEMS;
                 }
@@ -191,13 +172,13 @@ void O_Control(player_t* const pPlayer) noexcept {
             switch (gCursorPos) {   // Adjust the control
                 // Joypad?
                 case controls: {
-                    if ((buttons & PadRight) != 0) {
+                    if (MENU_ACTION(RIGHT)) {
                         if (gControlType < NUMCONTROLOPTIONS - 1) {
                             ++gControlType;
                         }
                     }
 
-                    if ((buttons & PadLeft) != 0) {
+                    if (MENU_ACTION(LEFT)) {
                         if (gControlType > 0) {
                             --gControlType;
                         }
@@ -206,7 +187,7 @@ void O_Control(player_t* const pPlayer) noexcept {
 
                 // Sound volume?
                 case soundvol: {
-                    if ((buttons & PadRight) != 0) {
+                    if (MENU_ACTION(RIGHT)) {
                         const uint32_t soundVolume = Audio::getSoundVolume();
                         if (soundVolume < Audio::MAX_VOLUME) {
                             Audio::setSoundVolume(soundVolume + 1);
@@ -214,7 +195,7 @@ void O_Control(player_t* const pPlayer) noexcept {
                         }
                     }
 
-                    if ((buttons & PadLeft) != 0) {
+                    if (MENU_ACTION(LEFT)) {
                         const uint32_t soundVolume = Audio::getSoundVolume();
                         if (soundVolume > 0) {
                             Audio::setSoundVolume(soundVolume - 1);
@@ -225,14 +206,14 @@ void O_Control(player_t* const pPlayer) noexcept {
 
                 // Music volume?
                 case musicvol: {
-                    if ((buttons & PadRight) != 0) {
+                    if (MENU_ACTION(RIGHT)) {
                         const uint32_t musicVolume = Audio::getMusicVolume();
                         if (musicVolume < Audio::MAX_VOLUME) {
                             Audio::setMusicVolume(musicVolume + 1);
                         }
                     }
 
-                    if ((buttons & PadLeft) != 0) {
+                    if (MENU_ACTION(LEFT)) {
                         const uint32_t musicVolume = Audio::getMusicVolume();
                         if (musicVolume > 0) {
                             Audio::setMusicVolume(musicVolume - 1);
@@ -242,18 +223,18 @@ void O_Control(player_t* const pPlayer) noexcept {
 
                 // Screen size
                 case size: {
-                    if ((buttons & PadLeft) != 0)  {
-                        if (gScreenSize < 6 - 1) {
-                            ++gScreenSize;
+                    if (MENU_ACTION(RIGHT)) {
+                        if (gScreenSize > 0) {
+                            --gScreenSize;
                             if (pPlayer) {
                                 Renderer::initMathTables();     // Handle the math tables
                             }
                         }
                     }
 
-                    if ((buttons & PadRight) != 0) {
-                        if (gScreenSize > 0) {
-                            --gScreenSize;
+                    if (MENU_ACTION(LEFT)) {
+                        if (gScreenSize < 6 - 1) {
+                            ++gScreenSize;
                             if (pPlayer) {
                                 Renderer::initMathTables();     // Handle the math tables
                             }

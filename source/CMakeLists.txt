@@ -43,8 +43,6 @@ set(SOURCE_FILES
     "Base/ResourceMgr.h"
     "Base/Tables.cpp"
     "Base/Tables.h"
-    "Burger.cpp"
-    "Burger.h"
     "Game/Controls.cpp"
     "Game/Controls.h"
     "Game/Data.cpp"
