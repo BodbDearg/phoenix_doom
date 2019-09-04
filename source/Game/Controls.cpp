@@ -1,6 +1,6 @@
 #include "Controls.h"
 
-#include "Prefs.h"
+#include "Config.h"
 
 BEGIN_NAMESPACE(Controls)
 
@@ -62,8 +62,8 @@ void update() noexcept {
         const uint32_t scancodeIdx = (uint32_t) scancode;
 
         if (scancodeIdx < Input::NUM_KEYBOARD_KEYS) {
-            gGameActionsActive |= Prefs::gKeyboardGameActions[scancodeIdx];
-            gMenuActionsActive |= Prefs::gKeyboardMenuActions[scancodeIdx];
+            gGameActionsActive |= Config::gKeyboardGameActions[scancodeIdx];
+            gMenuActionsActive |= Config::gKeyboardMenuActions[scancodeIdx];
         }
     }
 
@@ -74,8 +74,8 @@ void update() noexcept {
         const uint32_t scancodeIdx = (uint32_t) scancode;
 
         if (scancodeIdx < Input::NUM_KEYBOARD_KEYS) {
-            gGameActionsJustStarted |= Prefs::gKeyboardGameActions[scancodeIdx];
-            gMenuActionsJustStarted |= Prefs::gKeyboardMenuActions[scancodeIdx];
+            gGameActionsJustStarted |= Config::gKeyboardGameActions[scancodeIdx];
+            gMenuActionsJustStarted |= Config::gKeyboardMenuActions[scancodeIdx];
         }
     }
 
@@ -86,8 +86,8 @@ void update() noexcept {
         const uint32_t scancodeIdx = (uint32_t) scancode;
 
         if (scancodeIdx < Input::NUM_KEYBOARD_KEYS) {
-            gGameActionsJustEnded |= Prefs::gKeyboardGameActions[scancodeIdx];
-            gMenuActionsJustEnded |= Prefs::gKeyboardMenuActions[scancodeIdx];
+            gGameActionsJustEnded |= Config::gKeyboardGameActions[scancodeIdx];
+            gMenuActionsJustEnded |= Config::gKeyboardMenuActions[scancodeIdx];
         }
     }
 }

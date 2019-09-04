@@ -1,4 +1,4 @@
-#include "Prefs.h"
+#include "Config.h"
 
 #include "Base/FileUtils.h"
 #include "Base/Finally.h"
@@ -6,7 +6,7 @@
 #include <filesystem>
 #include <SDL.h>
 
-BEGIN_NAMESPACE(Prefs)
+BEGIN_NAMESPACE(Config)
 
 // Sanity check! These must agree:
 static_assert(Input::NUM_KEYBOARD_KEYS == SDL_NUM_SCANCODES);
@@ -17,15 +17,22 @@ static constexpr char* const DEFAULT_CONFIG_INI = R"(#--------------------------
 # If you want to regenerate this file to the defaults, just delete it and restart the game!
 #---------------------------------------------------------------------------------------------------
 
+[Video]
+
 #---------------------------------------------------------------------------------------------------
-# Changing video resolution:
+# Fullscreen or windowed mode toggle.
+# Set to '1' cause the app to launch in fullscreen mode, and '0' to use windowed mode.
+#---------------------------------------------------------------------------------------------------
+Fullscreen = 1
+
+#---------------------------------------------------------------------------------------------------
+# Game render resolution.
 #
-# Phoenix Doom has an unusual way of specifying render resolution. You specify it via 'RenderScale'
-# as an integer multiple (1x, 2x, 3x etc.) of the original 320x200 resolution. This is done so the
-# original game UI layouts can be maintained, and also so that pixels are never blurred as a result
-# of non-integer scaling.
-#
-# Here is an example list of 'RenderScale' values and resulting game renderer resolutions:
+# This controls the resolution that the game engine renders at internally, before being upscaled
+# to the specified output resolution. It is specified as an integer multiple of the original
+# 320x200 resolution.
+# 
+# Here is an example list of 'RenderScale' values and resulting render resolutions:
 #   1 = 320x200
 #   2 = 640x400
 #   3 = 960x600
@@ -35,25 +42,53 @@ static constexpr char* const DEFAULT_CONFIG_INI = R"(#--------------------------
 #   7 = 2240x1400
 #
 # Please note that higher resolutions will be MUCH slower due to the demands of software rendering
-# on the CPU. I recommend 640x400 as it looks a LOT sharper than the original resolution but still
-# maintains a nice 'chunky' retro feel while performing excellently. It also 'fits' reasonably well
-# into a variety of monitor resolutions nicely (see below).
-#
-# Once the user has determined the renderer resolution, the game will then also attempt to fit that
-# resolution to the desktop resolution of the host machine by performing pixel doubling, tripling
-# etc. where it can. For example if I specify '640x400' as the renderer resolution and my desktop
-# resolution is 2560x1440 then the game will repeat that 3x, for an effective output size of '1920x1200'.
-# Similarly if I specify 320x200 as the game resolution, then that will be repeated 7x to output at
-# '2240x1400'. In windowed mode this final 'output' resolution determines the window size, whereas
-# in fullscreen mode it will determine the size of the display area, around which black empty space
-# (i.e 'letterboxing') will appear. As you can see it is easier to fit the lower resolutions into
-# any screen size, therefore '320x200' or '640x400' often work best as target renderer resolutions.
-#
-# Phew... that was a lot, but hopefully that sort of makes sense?!
+# on the CPU. I recommend '640x400' since it looks a lot sharper than the original resolution but
+# still maintains a nice 'chunky' retro feel while performing excellently. It also 'fits' reasonably
+# well into a variety of output resolutions nicely with not too much space leftover (see settings
+# further below for more details on output scaling).
 #---------------------------------------------------------------------------------------------------
-[Video]
-Fullscreen      = 1
-RenderScale     = 1
+RenderScale = 1
+
+#---------------------------------------------------------------------------------------------------
+# Output resolution, width and height.
+#
+# In windowed mode this is the size of the window.
+# In fullscreen mode this is the actual screen resolution to use.
+# If the values are '0' or less (auto resolution) then this means use the current (desktop)
+# resolution in fullscreen mode, and use as large as possible of a window size in windowed mode.
+#---------------------------------------------------------------------------------------------------
+OutputResolutionW = -1
+OutputResolutionH = -1
+
+#---------------------------------------------------------------------------------------------------
+# Force integer-only scaling of the output image, toggle.
+#
+# Controls how the image produced by the renderer is scaled to fit the output resolution size.
+#
+# If set to '1' (enabled) then the game can only upscale in integer multiples, for example it can
+# only evenly 1x, 2x, or 3x etc. stretch the pixels in order to try and fit the rendered image to
+# the target output area. Any parts of the output area which are leftover in this mode are displayed
+# in black (letterboxed). Note that higher renderer resolutions will be harder to fit to any
+# arbitrarily sized output area without leaving lots of space leftover, therefore '320x200' and
+# '640x400' are often the best renderer resolutions to use with this scaling mode.
+#
+# If set to '0' (disabled) then the game can stretch by any decimal amount to fit the rendered image
+# to the output area, but some rows or columns of pixels may be doubled up while others won't be.
+# Note: in all cases nearest filtering is used so the result will never be blurry.
+#---------------------------------------------------------------------------------------------------
+IntegerOutputScaling = 1
+
+#---------------------------------------------------------------------------------------------------
+# Force aspect correct scaling of the output image, toggle.
+#
+# If '1' (enabled) then the game must preserve the original aspect ratio (1.6) of the images
+# produced by the renderer when scaling them to fit the output area.
+#
+# If '0' (disabled) then the game is free to stretch the images horizontally in order to better fit.
+# Note: disabling aspect correct upscaling might only really take effect if integer output scaling
+# is also disabled, since in many cases integer-only scaling might disallow this kind of strech.
+#---------------------------------------------------------------------------------------------------
+AspectCorrectOutputScaling = 1
 
 #---------------------------------------------------------------------------------------------------
 # Keyboard controls:
@@ -295,6 +330,10 @@ static std::string gTmpActionStr;   // Re-use this buffer during parsing to prev
 
 bool                        gbFullscreen;
 uint32_t                    gRenderScale;
+int32_t                     gOutputResolutionW;
+int32_t                     gOutputResolutionH;
+bool                        gbIntegerOutputScaling;
+bool                        gbAspectCorrectOutputScaling;
 Controls::MenuActionBits    gKeyboardMenuActions[Input::NUM_KEYBOARD_KEYS];
 Controls::GameActionBits    gKeyboardGameActions[Input::NUM_KEYBOARD_KEYS];
 
@@ -332,9 +371,12 @@ static void regenerateDefaultConfigFileIfNotPresent(const std::string& iniFilePa
     if (cfgFileExists)
         return;
     
-    std::string cfgFileMessage = "No config file found on disk!\nThe game will generate a new one at the following location:\n\n";
+    std::string cfgFileMessage = 
+        "No config.ini file found on disk! (probably because this is your first time launching)\n"
+        "The game will generate a new one at the following location:\n\n";
+    
     cfgFileMessage += iniFilePath;
-    cfgFileMessage += "\n\nEdit this file to change preferences.";
+    cfgFileMessage += "\n\nEdit this file to change controls, screen resolution etc.";
 
     SDL_ShowSimpleMessageBox(
         SDL_MESSAGEBOX_INFORMATION,
@@ -477,15 +519,28 @@ static void parseKeyboardKeyActions(const uint16_t keyIdx, const std::string& ac
 }
 
 //----------------------------------------------------------------------------------------------------------------------
-// Handle a prefs file entry.
+// Handle a config file entry.
 // This is not a particularly elegant or fast implementation, but it gets the job done... 
 //----------------------------------------------------------------------------------------------------------------------
-static void handlePrefsEntry(const IniUtils::Entry& entry) noexcept {
+static void handleConfigEntry(const IniUtils::Entry& entry) noexcept {
     if (entry.section == "Video") {
         if (entry.key == "Fullscreen") {
             gbFullscreen = entry.getBoolValue(gbFullscreen);
-        } else if (entry.key == "RenderScale") {
+        }
+        else if (entry.key == "RenderScale") {
             gRenderScale = std::min(std::max(entry.getIntValue(gRenderScale), 1), 1000);
+        }
+        else if (entry.key == "OutputResolutionW") {
+            gOutputResolutionW = entry.getIntValue(gOutputResolutionW);
+        }
+        else if (entry.key == "OutputResolutionH") {
+            gOutputResolutionH = entry.getIntValue(gOutputResolutionH);
+        }
+        else if (entry.key == "IntegerOutputScaling") {
+            gbIntegerOutputScaling = entry.getBoolValue(gbIntegerOutputScaling);
+        }
+        else if (entry.key == "AspectCorrectOutputScaling") {
+            gbAspectCorrectOutputScaling = entry.getBoolValue(gbAspectCorrectOutputScaling);
         }
     }
     else if (entry.section == "KeyboardControls") {
@@ -502,11 +557,15 @@ static void handlePrefsEntry(const IniUtils::Entry& entry) noexcept {
 }
 
 //----------------------------------------------------------------------------------------------------------------------
-// Clears all settings (used prior to reading prefs)
+// Clears all settings (used prior to reading config)
 //----------------------------------------------------------------------------------------------------------------------
 static void clear() noexcept {
     gbFullscreen = true;
     gRenderScale = 1;
+    gOutputResolutionW = -1;
+    gOutputResolutionH = -1;
+    gbIntegerOutputScaling = true;
+    gbAspectCorrectOutputScaling = true;
 
     std::memset(gKeyboardMenuActions, 0, sizeof(gKeyboardMenuActions));
     std::memset(gKeyboardGameActions, 0, sizeof(gKeyboardGameActions));    
@@ -532,7 +591,7 @@ void init() noexcept {
     }
 
     // Parse the ini file
-    IniUtils::parseIniFromString((const char*) pIniFileData, iniFileDataSize, handlePrefsEntry);
+    IniUtils::parseIniFromString((const char*) pIniFileData, iniFileDataSize, handleConfigEntry);
 }
 
 void shutdown() noexcept {
@@ -540,4 +599,4 @@ void shutdown() noexcept {
     gTmpActionStr.shrink_to_fit();
 }
 
-END_NAMESPACE(Prefs)
+END_NAMESPACE(Config)

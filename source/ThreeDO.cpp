@@ -8,7 +8,7 @@
 #include "Base/Tables.h"
 #include "Game/Data.h"
 #include "Game/DoomMain.h"
-#include "Game/Prefs.h"
+#include "Game/Config.h"
 #include "Game/Resources.h"
 #include "GFX/CelImages.h"
 #include "GFX/Renderer.h"
@@ -21,7 +21,7 @@
 // Setup various game subsystems (audio, video input etc.)
 //----------------------------------------------------------------------------------------------------------------------
 void initGameSubsystems() noexcept {
-    Prefs::init();
+    Config::init();
     Resources::init();
     CelImages::init();
     Video::init();
@@ -41,7 +41,7 @@ void shutdownGameSubsystems() noexcept {
     Video::shutdown();
     CelImages::shutdown();
     Resources::shutdown();
-    Prefs::shutdown();
+    Config::shutdown();
 }
 
 //---------------------------------------------------------------------------------------------------------------------
