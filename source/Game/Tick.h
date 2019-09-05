@@ -6,11 +6,13 @@ enum gameaction_e : uint8_t;
 struct mobj_t;
 struct thinker_t;
 
-extern bool     gbTick4;        // True 4 times a second
-extern bool     gbTick2;        // True 2 times a second
-extern bool     gbTick1;        // True 1 time a second
-extern bool     gbGamePaused;   // True if the game is currently paused
-extern mobj_t   gMObjHead;      // Head and tail of mobj list
+extern bool     gbIsPlayingMap;             // True if the player is inside a level rather than on a menu outside the level
+extern bool     gbQuitToMainRequested;      // If true then we are to exit back to the main menu
+extern bool     gbTick4;                    // True 4 times a second
+extern bool     gbTick2;                    // True 2 times a second
+extern bool     gbTick1;                    // True 1 time a second
+extern bool     gbGamePaused;               // True if the game is currently paused
+extern mobj_t   gMObjHead;                  // Head and tail of mobj list
 
 typedef void (*ThinkerFunc)(thinker_t&) noexcept;
 

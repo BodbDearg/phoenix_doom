@@ -30,11 +30,8 @@ enum skill_e : uint8_t {
 
 extern ammotype_e               gWeaponAmmos[NUMWEAPONS];       // Ammo types for all weapons
 extern uint32_t                 gMaxAmmo[NUMAMMO];              // Max ammo for ammo types
-extern uint32_t                 gControlType;                   // Determine settings for PadAttack,Use,Speed
 extern uint32_t                 gTotalGameTicks;                // Total number of ticks since game start
 extern uint32_t                 gMaxLevel;                      // Highest level selectable in menu (1-23)
-extern uint32_t*                gDemoDataPtr;                   // Running pointer to demo data
-extern uint32_t*                gDemoBuffer;                    // Pointer to demo data
 extern skill_e                  gStartSkill;                    // Default skill level
 extern uint32_t                 gStartMap;                      // Default map start
 extern const CelImageArray*     gpBigNumFont;                   // Cached pointer to the big number font (rBIGNUMB)

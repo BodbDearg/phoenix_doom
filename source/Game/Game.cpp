@@ -128,8 +128,15 @@ void G_InitNew(const skill_e skill, const uint32_t map) noexcept {
 //----------------------------------------------------------------------------------------------------------------------
 void G_RunGame() noexcept {
     while (!Input::isQuitRequested()) {
-        MiniLoop(P_Start, P_Stop, P_Ticker, P_Drawer);      // Run a level until death or completion
-        G_PlayerFinishLevel();                              // Take away cards and stuff
+        // Run a level until death or completion
+        MiniLoop(P_Start, P_Stop, P_Ticker, P_Drawer);
+
+        // If quitting to the main menu was requested then don't go any further
+        if (gGameAction == ga_quit)     
+            return;
+        
+        // Take away cards and stuff
+        G_PlayerFinishLevel();
 
         if ((gGameAction == ga_died) ||     // Died, so restart the level
             (gGameAction == ga_warped)      // Skip intermission

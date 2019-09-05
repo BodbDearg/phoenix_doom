@@ -219,15 +219,18 @@ static void RunMenu() {
 }
 
 //----------------------------------------------------------------------------------------------------------------------
-// Run the title page
+// Run the title page, returns 'true' if credits should show after this call
 //----------------------------------------------------------------------------------------------------------------------
-static void RunTitle() noexcept {
+static bool RunTitle() noexcept {
     if (Input::isQuitRequested())
-        return;
+        return false;
 
     // Run the main menu if the user exited out of this screen
     if (MiniLoop(START_Title, STOP_Title, TIC_Abortable, DRAW_Title) == ga_exitdemo) {
         RunMenu();
+        return false;
+    } else {
+        return true;
     }
 }
 
@@ -270,7 +273,10 @@ void D_DoomMain() noexcept {
     IntroMovies::run();
 
     while (!Input::isQuitRequested()) {
-        RunTitle();
-        RunCredits();
+        const bool bDoCreditsNext = RunTitle();
+
+        if (bDoCreditsNext) {
+            RunCredits();
+        }
     }
 }

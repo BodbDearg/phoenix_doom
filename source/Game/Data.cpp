@@ -18,11 +18,8 @@ uint32_t gMaxAmmo[NUMAMMO] = {
     50
 };
 
-uint32_t                gControlType;   // TODO: REMOVE
 uint32_t                gTotalGameTicks;
 uint32_t                gMaxLevel;
-uint32_t*               gDemoDataPtr;
-uint32_t*               gDemoBuffer;
 skill_e                 gStartSkill;
 uint32_t                gStartMap;
 const CelImageArray*    gpBigNumFont;

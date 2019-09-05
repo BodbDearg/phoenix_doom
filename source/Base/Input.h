@@ -24,8 +24,10 @@ void update() noexcept;
 // Discards input events
 void consumeEvents() noexcept;
 
-// Returns true if the user requested that the app be quit (via close button)
+// Returns true if the user requested that the app be quit via close button.
+// Also the ability to quit via code.
 bool isQuitRequested() noexcept;
+void requestQuit() noexcept;
 
 // Returns true if any keys or buttons are pressed
 bool areAnyKeysOrButtonsPressed() noexcept;

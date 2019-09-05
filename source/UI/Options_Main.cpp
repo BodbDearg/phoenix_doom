@@ -8,6 +8,7 @@
 #include "Game/Data.h"
 #include "Game/DoomDefines.h"
 #include "Game/DoomRez.h"
+#include "Game/Tick.h"
 #include "GFX/CelImages.h"
 #include "GFX/Renderer.h"
 #include "GFX/Video.h"
@@ -17,19 +18,18 @@
 static constexpr uint32_t CURSORX       = 45;       // X coord for skulls
 static constexpr uint32_t SLIDERX       = 106;      // X coord for slider bars
 static constexpr uint32_t SLIDESTEP     = 6;        // Adjustment for volume to screen coord
-static constexpr uint32_t JOYPADX       = 90;       // X coord for joypad text
 static constexpr uint32_t SFXVOLY       = 60;       // Y coord for SFX volume control
 static constexpr uint32_t MUSICVOLY     = 120;      // Y coord for Music volume control
-static constexpr uint32_t JOYPADY       = 40;       // Y coord for joypad control
-static constexpr uint32_t SIZEY         = 140;      // Y coord for screen size control
+static constexpr uint32_t SIZEY         = 40;       // Y coord for screen size control
+static constexpr uint32_t QUITY         = 100;      // Y coord for quit menu control
 
 // Menu items to select from
 enum {
-    soundvol,       // Volume
-    musicvol,       // Music volume
-    controls,       // Control settings
-    size,           // Screen size settings
-    NUMMENUITEMS
+    MENU_OPT_SOUND_VOL,     // Volume
+    MENU_OPT_MUSIC_VOL,     // Music volume
+    MENU_OPT_SCREEN_SIZE,   // Screen size settings
+    MENU_OPT_QUIT,          // Quit option
+    NUM_MENU_OPTIONS
 };
 
 enum {
@@ -37,45 +37,11 @@ enum {
     HANDLE
 };
 
-static constexpr uint32_t CURSOR_Y_POS[NUMMENUITEMS] = {
+static constexpr uint32_t CURSOR_Y_POS[NUM_MENU_OPTIONS] = {
     SFXVOLY - 2,
-    MUSICVOLY - 2,
-    JOYPADY - 2,
-    SIZEY - 2
-};
-
-// TODO: REMOVE
-static constexpr uint32_t NUMCONTROLOPTIONS = 6;
-
-static constexpr const char* const SPEED_TEXT = "Speed";       // Local ASCII
-static constexpr const char* const FIRE_TEXT = "Fire";
-static constexpr const char* const USE_TEXT = "Use";
-
-static constexpr const char* const BUTTON_A[NUMCONTROLOPTIONS] = {
-    SPEED_TEXT,
-    SPEED_TEXT,
-    FIRE_TEXT,
-    FIRE_TEXT,
-    USE_TEXT,
-    USE_TEXT
-};
-
-static constexpr const char* const BUTTON_B[NUMCONTROLOPTIONS] = {
-    FIRE_TEXT,
-    USE_TEXT,
-    SPEED_TEXT,
-    USE_TEXT,
-    SPEED_TEXT,
-    FIRE_TEXT
-};
-
-static constexpr const char* const BUTTON_C[NUMCONTROLOPTIONS] = {
-    USE_TEXT,
-    FIRE_TEXT,
-    USE_TEXT,
-    SPEED_TEXT,
-    FIRE_TEXT,
-    SPEED_TEXT
+    MUSICVOLY - 2,    
+    SIZEY - 2,
+    QUITY - 2,
 };
 
 static uint32_t gCursorFrame;       // Skull animation frame
@@ -84,21 +50,9 @@ static uint32_t gCursorPos;         // Y position of the skull
 static uint32_t gMoveCount;         // Time mark to move the skull
 
 //----------------------------------------------------------------------------------------------------------------------
-// Init the button settings from the control type.
-//
-// TODO: REMOVE THIS!
-//----------------------------------------------------------------------------------------------------------------------
-static void SetButtonsFromControltype() noexcept {
-    Renderer::initMathTables();
-}
-
-//----------------------------------------------------------------------------------------------------------------------
 // Init the option screens: called on powerup.
 //----------------------------------------------------------------------------------------------------------------------
 void O_Init() noexcept {
-    // Init the joypad settings: the prefs has set controltype, so set buttons from that
-    SetButtonsFromControltype();
-
     // Init skull cursor state
     gCursorCount = 0;
     gCursorFrame = 0;
@@ -117,13 +71,11 @@ void O_Control(player_t* const pPlayer) noexcept {
             if (!pPlayer->isAutomapActive()) {
                 pPlayer->AutomapFlags ^= AF_OPTIONSACTIVE;      // Toggle the flag
                 if (!pPlayer->isOptionsMenuActive()) {          // Shut down?
-                    SetButtonsFromControltype();                // Set the memory
                     WritePrefsFile();                           // Save new settings to NVRAM
                 }
             }
         } else {
-            SetButtonsFromControltype();        // Set the memory
-            WritePrefsFile();                   // Save new settings to NVRAM
+            WritePrefsFile();   // Save new settings to NVRAM
         }
     }
 
@@ -141,6 +93,17 @@ void O_Control(player_t* const pPlayer) noexcept {
         gCursorCount = 0;                       // Reset the timer
     }
 
+    // Handle the quit option
+    if (gCursorPos == MENU_OPT_QUIT) {
+        if (MENU_ACTION_ENDED(OK)) {
+            if (gbIsPlayingMap) {
+                gbQuitToMainRequested = true;
+            } else {
+                Input::requestQuit();
+            }            
+        }
+    }
+
     // Check for movement
     if (!Input::areAnyKeysOrButtonsPressed()) {
         // Move immediately on next press if nothing is pressed
@@ -148,9 +111,9 @@ void O_Control(player_t* const pPlayer) noexcept {
     } else {
         ++gMoveCount;
 
-        if ((gMoveCount >= TICKSPERSEC / 3) || (    // Allow slow
-                (gCursorPos < controls) && 
-                (gMoveCount >= TICKSPERSEC / 5)     // Fast?
+        if ((gMoveCount >= TICKSPERSEC / 3) || (            // Allow slow
+                (gCursorPos < MENU_OPT_SCREEN_SIZE) &&      // 1st or 2nd page?
+                (gMoveCount >= TICKSPERSEC / 5)             // Fast?
             )
         ) {
             gMoveCount = 0;      // Reset timer
@@ -158,36 +121,22 @@ void O_Control(player_t* const pPlayer) noexcept {
             // Try to move the cursor up or down...
             if (MENU_ACTION(DOWN)) {
                 ++gCursorPos;
-                if (gCursorPos >= NUMMENUITEMS) {
+                if (gCursorPos >= NUM_MENU_OPTIONS) {
                     gCursorPos = 0;
                 }
             }
 
             if (MENU_ACTION(UP)) {
                 if (gCursorPos <= 0) {
-                    gCursorPos = NUMMENUITEMS;
+                    gCursorPos = NUM_MENU_OPTIONS;
                 }
                 --gCursorPos;
             }
 
-            switch (gCursorPos) {   // Adjust the control
-                // Joypad?
-                case controls: {
-                    if (MENU_ACTION(RIGHT)) {
-                        if (gControlType < NUMCONTROLOPTIONS - 1) {
-                            ++gControlType;
-                        }
-                    }
-
-                    if (MENU_ACTION(LEFT)) {
-                        if (gControlType > 0) {
-                            --gControlType;
-                        }
-                    }
-                }   break;
-
+            // Handle inputs for each menu item
+            switch (gCursorPos) {   
                 // Sound volume?
-                case soundvol: {
+                case MENU_OPT_SOUND_VOL: {
                     if (MENU_ACTION(RIGHT)) {
                         const uint32_t soundVolume = Audio::getSoundVolume();
                         if (soundVolume < Audio::MAX_VOLUME) {
@@ -206,7 +155,7 @@ void O_Control(player_t* const pPlayer) noexcept {
                 }   break;
 
                 // Music volume?
-                case musicvol: {
+                case MENU_OPT_MUSIC_VOL: {
                     if (MENU_ACTION(RIGHT)) {
                         const uint32_t musicVolume = Audio::getMusicVolume();
                         if (musicVolume < Audio::MAX_VOLUME) {
@@ -223,7 +172,7 @@ void O_Control(player_t* const pPlayer) noexcept {
                 }   break;
 
                 // Screen size
-                case size: {
+                case MENU_OPT_SCREEN_SIZE: {
                     if (MENU_ACTION(RIGHT)) {
                         if (gScreenSize > 0) {
                             --gScreenSize;
@@ -260,7 +209,7 @@ void O_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
     const CelImageArray& sliderImgs = CelImages::loadImages(rSLIDER, CelLoadFlagBits::MASKED);
     PrintBigFontCenter(160, 10, "Options");
 
-    if (gCursorPos < controls) {
+    if (gCursorPos < MENU_OPT_SCREEN_SIZE) {
         PrintBigFontCenter(160, SFXVOLY, "Sound Volume");
         PrintBigFontCenter(160, MUSICVOLY, "Music Volume");
 
@@ -279,19 +228,18 @@ void O_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
         }
 
     } else {
-        // Draw joypad info
-        PrintBigFontCenter(160, JOYPADY, "Controls");
-        PrintBigFont(JOYPADX + 10, JOYPADY + 20, "A");
-        PrintBigFont(JOYPADX + 10, JOYPADY + 40, "B");
-        PrintBigFont(JOYPADX + 10, JOYPADY + 60, "C");
-        PrintBigFont(JOYPADX + 40, JOYPADY + 20, BUTTON_A[gControlType]);
-        PrintBigFont(JOYPADX + 40, JOYPADY + 40, BUTTON_B[gControlType]);
-        PrintBigFont(JOYPADX + 40, JOYPADY + 60, BUTTON_C[gControlType]);
+        // Draw screen size slider
         PrintBigFontCenter(160, SIZEY, "Screen Size");
         Renderer::drawUISprite(SLIDERX, SIZEY + 20, sliderImgs.getImage(BAR));
 
         const uint32_t offset = (5 - gScreenSize) * 18;
         Renderer::drawUISprite(SLIDERX + 5 + offset, SIZEY + 20, sliderImgs.getImage(HANDLE));
+
+        if (gbIsPlayingMap) {
+            PrintBigFontCenter(160, QUITY, "Quit To Main");
+        } else {
+            PrintBigFontCenter(160, QUITY, "Exit Game");
+        }
     }
 
     CelImages::releaseImages(rSLIDER);

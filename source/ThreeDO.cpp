@@ -79,7 +79,7 @@ void WritePrefsFile() noexcept {
     PrefFile[2] = gStartMap;
     PrefFile[3] = Audio::getSoundVolume();
     PrefFile[4] = Audio::getMusicVolume();
-    PrefFile[5] = gControlType;
+    PrefFile[5] = 0;    // Was control type - now removed!
     PrefFile[6] = gMaxLevel;
     PrefFile[7] = gScreenSize;
     PrefFile[8] = 0;            // Was 'LowDetail' - now unused
@@ -139,13 +139,11 @@ void ReadPrefsFile() noexcept {
     gStartMap = PrefFile[2];
     Audio::setSoundVolume(PrefFile[3]);
     Audio::setMusicVolume(PrefFile[4]);
-    gControlType = PrefFile[5];
     gMaxLevel = PrefFile[6];
     gScreenSize = PrefFile[7];
 
     if ((gStartSkill >= (sk_nightmare+1)) ||
         (gStartMap >= 27) ||
-        (gControlType >= 6) ||
         (gMaxLevel >= 26) ||
         (gScreenSize >= 6)
     ) {

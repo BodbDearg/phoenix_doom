@@ -41,11 +41,13 @@ static uint32_t     gTimeMark4;         // Timer for ticks
 static thinker_t    gThinkerCap;        // Both the head and tail of the thinker list
 static bool         gbRefreshDrawn;     // Used to refresh "Paused"
 
-mobj_t  gMObjHead;
+bool    gbIsPlayingMap;
+bool    gbQuitToMainRequested;
 bool    gbTick4;
 bool    gbTick2;
 bool    gbTick1;
 bool    gbGamePaused;
+mobj_t  gMObjHead;
 
 //----------------------------------------------------------------------------------------------------------------------
 // Remove a thinker structure from the linked list and from memory.
@@ -173,6 +175,12 @@ static void checkForPauseButton() noexcept {
 // Code that gets executed every game frame
 //----------------------------------------------------------------------------------------------------------------------
 gameaction_e P_Ticker() noexcept {
+    // If we are to quit then abort
+    if (gbQuitToMainRequested) {
+        gGameAction = ga_quit;
+        return ga_quit;
+    }
+
     // Wait for refresh to latch all needed data before running the next tick
     gGameAction = ga_nothing;   // Game in progress
     gbTick1 = false;            // Reset the flags
@@ -270,11 +278,14 @@ void P_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
 // Start a game
 //----------------------------------------------------------------------------------------------------------------------
 void P_Start() noexcept {
+    gbIsPlayingMap = true;
+    gbQuitToMainRequested = false;
+
     gTimeMark1 = 0;  // Init the static timers
     gTimeMark2 = 0;
-    gTimeMark4 = 0;
+    gTimeMark4 = 0;    
     gPlayer.AutomapFlags &= (AF_GODMODE|AF_NOCLIP);     // No automapping specials (but preserve godmode and noclip cheats)
-
+    
     AM_Start();                     // Start the automap system
     ST_Start();                     // Init the status bar this level
     G_DoLoadLevel();                // Load a level into memory
@@ -294,7 +305,8 @@ void P_Start() noexcept {
 //----------------------------------------------------------------------------------------------------------------------
 void P_Stop() noexcept {
     S_StopSong();
-    ST_Stop();              // Release the status bar memory
-    ReleaseMapMemory();     // Release all the map's memory
-    PurgeLineSpecials();    // Release the memory for line specials
+    ST_Stop();                  // Release the status bar memory
+    ReleaseMapMemory();         // Release all the map's memory
+    PurgeLineSpecials();        // Release the memory for line specials
+    gbIsPlayingMap = false;
 }

@@ -154,6 +154,10 @@ bool isQuitRequested() noexcept {
     return gbIsQuitRequested;
 }
 
+void requestQuit() noexcept {
+    gbIsQuitRequested = true;
+}
+
 bool areAnyKeysOrButtonsPressed() noexcept {
     return (!gKeyboardKeysPressed.empty());
 }
