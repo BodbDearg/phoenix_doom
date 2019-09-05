@@ -84,7 +84,7 @@ IntegerOutputScaling = 1
 # If '1' (enabled) then the game must preserve the original aspect ratio (1.6) of the images
 # produced by the renderer when scaling them to fit the output area.
 #
-# If '0' (disabled) then the game is free to stretch the images horizontally in order to better fit.
+# If '0' (disabled) then the game is free to stretch/distort the images in any way for a better fit.
 # Note: disabling aspect correct upscaling might only really take effect if integer output scaling
 # is also disabled, since in many cases integer-only scaling might disallow this kind of strech.
 #---------------------------------------------------------------------------------------------------

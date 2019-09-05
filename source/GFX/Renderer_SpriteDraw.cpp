@@ -151,8 +151,8 @@ static void transformSpriteCoordsToScreenSpace(
     float& screenBy
 ) noexcept {
     // Note: have to subtract a bit here because at 100% of the range we don't want to be >= screen width or height!
-    const float screenW = (float) gScreenWidth - 0.5f;
-    const float screenH = (float) gScreenHeight - 0.5f;
+    const float screenW = (float) g3dViewWidth - 0.5f;
+    const float screenH = (float) g3dViewHeight - 0.5f;
 
     // Do perspective division for all the coordinates to transform into normalized device coords
     const float clipInvW = 1.0f / clipW;
@@ -352,8 +352,8 @@ static void emitFragmentsForSprite(const DrawSprite& sprite) noexcept {
     // If we do also cancel any extra columns we might have ordered:
     int32_t endScreenX;
 
-    if (spriteRxInt >= (int32_t) gScreenWidth) {
-        endScreenX = (int32_t) gScreenWidth;
+    if (spriteRxInt >= (int32_t) g3dViewWidth) {
+        endScreenX = (int32_t) g3dViewWidth;
         bDoExtraCol = false;
     } else {
         endScreenX = spriteRxInt + 1;
@@ -370,7 +370,7 @@ static void emitFragmentsForSprite(const DrawSprite& sprite) noexcept {
         }
 
         while (curScreenX < endScreenX) {
-            BLIT_ASSERT(curScreenX >= 0 && curScreenX < (int32_t) gScreenWidth);
+            BLIT_ASSERT(curScreenX >= 0 && curScreenX < (int32_t) g3dViewWidth);
             const uint16_t texX = (uint16_t) texXf;
 
             if (texX >= texW)
@@ -386,7 +386,7 @@ static void emitFragmentsForSprite(const DrawSprite& sprite) noexcept {
             frag.lightMul = sprite.lightMul;
             frag.texYStep = texYStep;
             frag.texYSubPixelAdjust = texSubPixelYAdjust;
-            frag.pSpriteColPixels = sprite.pPixels + texX * texHInt;
+            frag.pSpriteColPixels = sprite.pPixels + (uintptr_t) texX * texHInt;
 
             gSpriteFragments.push_back(frag);
 
@@ -405,7 +405,7 @@ static void emitFragmentsForSprite(const DrawSprite& sprite) noexcept {
     if (bDoExtraCol) {
         curScreenX = spriteRxInt + 1;
 
-        if (curScreenX < (int32_t) gScreenWidth) {
+        if (curScreenX < (int32_t) g3dViewWidth) {
             const uint16_t texX = (FLIP_MODE == SpriteFlipMode::FLIPPED) ? 0 : texWInt - 1;
 
             SpriteFragment frag;
@@ -418,7 +418,7 @@ static void emitFragmentsForSprite(const DrawSprite& sprite) noexcept {
             frag.lightMul = sprite.lightMul;
             frag.texYStep = texYStep;
             frag.texYSubPixelAdjust = texSubPixelYAdjust;
-            frag.pSpriteColPixels = sprite.pPixels + texX * texHInt;
+            frag.pSpriteColPixels = sprite.pPixels + (uintptr_t) texX * texHInt;
 
             gSpriteFragments.push_back(frag);
         }
@@ -429,11 +429,11 @@ static void emitFragmentsForSprite(const DrawSprite& sprite) noexcept {
 // Draws a single sprite fragment
 //----------------------------------------------------------------------------------------------------------------------
 void drawSpriteFragment(const SpriteFragment frag) noexcept {
-    BLIT_ASSERT(frag.x < gScreenWidth);
+    BLIT_ASSERT(frag.x < g3dViewWidth);
 
     // Firstly figure out the top and bottom clip bounds for the sprite fragment
     int16_t yClipT = -1;
-    int16_t yClipB = gScreenHeight;
+    int16_t yClipB = g3dViewHeight;
 
     {
         const OccludingColumns& occludingCols = gOccludingCols[frag.x];
@@ -504,10 +504,10 @@ void drawSpriteFragment(const SpriteFragment frag) noexcept {
             srcTexY,
             0.0f,
             srcTexYSubPixelAdjust,
-            Video::gpFrameBuffer + gScreenYOffset * Video::SCREEN_WIDTH + gScreenXOffset,
-            gScreenWidth,
-            gScreenHeight,
-            Video::SCREEN_WIDTH,
+            Video::gpFrameBuffer + (uintptr_t) g3dViewYOffset * Video::gScreenWidth + g3dViewXOffset,
+            g3dViewWidth,
+            g3dViewHeight,
+            Video::gScreenWidth,
             frag.x,
             dstY,
             dstCount,
@@ -534,10 +534,10 @@ void drawSpriteFragment(const SpriteFragment frag) noexcept {
             srcTexY,
             0.0f,
             srcTexYSubPixelAdjust,
-            Video::gpFrameBuffer + gScreenYOffset * Video::SCREEN_WIDTH + gScreenXOffset,
-            gScreenWidth,
-            gScreenHeight,
-            Video::SCREEN_WIDTH,
+            Video::gpFrameBuffer + (uintptr_t) g3dViewYOffset * Video::gScreenWidth + g3dViewXOffset,
+            g3dViewWidth,
+            g3dViewHeight,
+            Video::gScreenWidth,
             frag.x,
             dstY,
             dstCount,

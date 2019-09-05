@@ -5,8 +5,6 @@ TODO
 - New sprite clipping method that takes into account side of seg sprite is on.
 - Fix BSP check BBOX for high res rendering
 - Cleanup and optimize render code
-- Higher resolution + fullscreen support
-- Screen sizes need to scale with resolution
 - WASD + Mouse support
 - Gamepad support
 - Remove temp function key cheats
@@ -20,6 +18,7 @@ TODO
 - Optimize audio mixing for different channel counts and bit depths
 - Remove old 3DO control options
 - Is the pistol reload speed too slow?
+- Gravity appears to be too much??
 - Ensure last map accessible via menu (wasn't on 3DO version?)
 - Allow exit out of finale back to main menu
 - Allow exit out of app from main menu

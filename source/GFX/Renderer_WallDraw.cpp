@@ -29,11 +29,11 @@ static void drawSkyColumn(const uint32_t viewX, const uint32_t maxColHeight) noe
     const ImageData& texImg = pTex->data;
 
     const uint32_t skyTexH = texImg.height;
-    const Fixed skyScale = fixedDiv(intToFixed(gScreenHeight), intToFixed(Renderer::REFERENCE_3D_VIEW_HEIGHT));
+    const Fixed skyScale = fixedDiv(intToFixed(g3dViewHeight), intToFixed(Renderer::REFERENCE_3D_VIEW_HEIGHT));
     const Fixed scaledColHeight = fixedMul(intToFixed(skyTexH), skyScale);
     const uint32_t roundColHeight = ((scaledColHeight & FRACMASK) != 0) ? 1 : 0;
     const uint32_t colHeight = (uint32_t) fixedToInt(scaledColHeight) + roundColHeight;
-    BLIT_ASSERT(colHeight < gScreenHeight);
+    BLIT_ASSERT(colHeight < g3dViewHeight);
 
     const float texYStep = FMath::doomFixed16ToFloat<float>(Blit::calcTexelStep(skyTexH, colHeight));
 
@@ -48,10 +48,10 @@ static void drawSkyColumn(const uint32_t viewX, const uint32_t maxColHeight) noe
         0.0f,
         0.0f,
         0.0f,
-        Video::gpFrameBuffer + gScreenYOffset * Video::SCREEN_WIDTH + gScreenXOffset,
-        gScreenWidth,
-        gScreenHeight,
-        Video::SCREEN_WIDTH,
+        Video::gpFrameBuffer + (uintptr_t) g3dViewYOffset * Video::gScreenWidth + g3dViewXOffset,
+        g3dViewWidth,
+        g3dViewHeight,
+        Video::gScreenWidth,
         viewX,
         0,
         std::min(colHeight, maxColHeight),
@@ -77,10 +77,10 @@ void drawAllWallFragments() noexcept {
             wallFrag.texcoordY,
             0.0f,
             wallFrag.texcoordYSubPixelAdjust,
-            Video::gpFrameBuffer + gScreenYOffset * Video::SCREEN_WIDTH + gScreenXOffset,
-            gScreenWidth,
-            gScreenHeight,
-            Video::SCREEN_WIDTH,
+            Video::gpFrameBuffer + (uintptr_t) g3dViewYOffset * Video::gScreenWidth + g3dViewXOffset,
+            g3dViewWidth,
+            g3dViewHeight,
+            Video::gScreenWidth,
             wallFrag.x,
             wallFrag.y,
             wallFrag.height,

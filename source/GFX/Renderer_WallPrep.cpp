@@ -408,23 +408,23 @@ static void doPerspectiveDivisionForSeg(DrawSeg& seg) noexcept {
 //----------------------------------------------------------------------------------------------------------------------
 static void transformSegXZToScreenSpace(DrawSeg& seg) noexcept {
     // Note: have to subtract a bit here because at 100% of the range we don't want to be >= screen width or height!
-    const float screenW = (float) gScreenWidth - 0.5f;
-    const float screenH = (float) gScreenHeight - 0.5f;
+    const float viewW = (float) g3dViewWidth - 0.5f;
+    const float viewH = (float) g3dViewHeight - 0.5f;
 
     // All coords are in the range -1 to +1 now.
     // Bring in the range 0-1 and then expand to screen width and height:
-    seg.p1x = (seg.p1x * 0.5f + 0.5f) * screenW;
-    seg.p2x = (seg.p2x * 0.5f + 0.5f) * screenW;
+    seg.p1x = (seg.p1x * 0.5f + 0.5f) * viewW;
+    seg.p2x = (seg.p2x * 0.5f + 0.5f) * viewW;
 
-    seg.p1tz = (seg.p1tz * 0.5f + 0.5f) * screenH;
-    seg.p1bz = (seg.p1bz * 0.5f + 0.5f) * screenH;
-    seg.p2tz = (seg.p2tz * 0.5f + 0.5f) * screenH;
-    seg.p2bz = (seg.p2bz * 0.5f + 0.5f) * screenH;
+    seg.p1tz = (seg.p1tz * 0.5f + 0.5f) * viewH;
+    seg.p1bz = (seg.p1bz * 0.5f + 0.5f) * viewH;
+    seg.p2tz = (seg.p2tz * 0.5f + 0.5f) * viewH;
+    seg.p2bz = (seg.p2bz * 0.5f + 0.5f) * viewH;
 
-    seg.p1tz_back = (seg.p1tz_back * 0.5f + 0.5f) * screenH;
-    seg.p1bz_back = (seg.p1bz_back * 0.5f + 0.5f) * screenH;
-    seg.p2tz_back = (seg.p2tz_back * 0.5f + 0.5f) * screenH;
-    seg.p2bz_back = (seg.p2bz_back * 0.5f + 0.5f) * screenH;
+    seg.p1tz_back = (seg.p1tz_back * 0.5f + 0.5f) * viewH;
+    seg.p1bz_back = (seg.p1bz_back * 0.5f + 0.5f) * viewH;
+    seg.p2tz_back = (seg.p2tz_back * 0.5f + 0.5f) * viewH;
+    seg.p2bz_back = (seg.p2bz_back * 0.5f + 0.5f) * viewH;
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -498,14 +498,14 @@ static uint32_t clipAndEmitWallColumn(
     const float segLightMul,
     const ImageData& texImage
 ) noexcept {
-    ASSERT(x < gScreenWidth);
+    ASSERT(x < g3dViewWidth);
 
     // This fake loop allows us to discard the column due to clipping
     uint32_t numColumnsEmitted = 0;
 
     do {
         // Don't emit anything if size is <= 0, except if a mid wall (occlude everything in that case)
-        if (zt >= zb || zb < 0.0f || zt >= (float) gScreenHeight) {
+        if (zt >= zb || zb < 0.0f || zt >= (float) g3dViewHeight) {
             if constexpr (FLAGS == FragEmitFlags::MID_WALL) {
                 break;
             } else {
@@ -559,10 +559,10 @@ static uint32_t clipAndEmitWallColumn(
         }
 
         // Sanity checks
-        BLIT_ASSERT(x <= (int32_t) gScreenWidth);
+        BLIT_ASSERT(x <= (int32_t) g3dViewWidth);
         BLIT_ASSERT(curZtInt <= curZbInt);
-        BLIT_ASSERT(curZtInt >= 0 && curZtInt < (int32_t) gScreenHeight);
-        BLIT_ASSERT(curZbInt >= 0 && curZbInt < (int32_t) gScreenHeight);
+        BLIT_ASSERT(curZtInt >= 0 && curZtInt < (int32_t) g3dViewHeight);
+        BLIT_ASSERT(curZbInt >= 0 && curZbInt < (int32_t) g3dViewHeight);
 
         // Emit the column fragment
         const int32_t columnHeight = curZbInt - curZtInt + 1;
@@ -607,7 +607,7 @@ static uint32_t clipAndEmitFlatColumn(
     const ImageData& texture
 ) noexcept {
     static_assert(FLAGS == FragEmitFlags::FLOOR || FLAGS == FragEmitFlags::CEILING);
-    ASSERT(x < gScreenWidth);
+    ASSERT(x < g3dViewWidth);
 
     // Only bother emitting wall fragments if the column height would be > 0
     if (zt >= zb)
@@ -698,14 +698,14 @@ static void emitOccluderColumn(
     const float depth
 ) noexcept {
     static_assert(MODE == EmitOccluderMode::TOP || MODE == EmitOccluderMode::BOTTOM);
-    ASSERT(x < gScreenWidth);
+    ASSERT(x < g3dViewWidth);
 
     // Ignore the request if the bound is already offscreen
     if constexpr (MODE == EmitOccluderMode::TOP) {
         if (screenYCoord < 0)
             return;
     } else {
-        if (screenYCoord >= (int32_t) gScreenHeight)
+        if (screenYCoord >= (int32_t) g3dViewHeight)
             return;
     }
 
@@ -727,7 +727,7 @@ static void emitOccluderColumn(
 
         if constexpr (MODE == EmitOccluderMode::TOP) {
             bounds.top = (int16_t) screenYCoord;
-            bounds.bottom = gScreenHeight;
+            bounds.bottom = g3dViewHeight;
         } else {
             bounds.top = -1;
             bounds.bottom = (int16_t) screenYCoord;
@@ -824,9 +824,9 @@ static uint32_t emitDrawSegColumns(const DrawSeg& drawSeg, const seg_t seg) noex
     // Sanity checks: x values should be clipped to be within screen range!
     // x1 should also be >= x2!
     ASSERT(x1 >= 0);
-    ASSERT(x1 < (int32_t) gScreenWidth);
+    ASSERT(x1 < (int32_t) g3dViewWidth);
     ASSERT(x2 >= 0);
-    ASSERT(x2 < (int32_t) gScreenWidth);
+    ASSERT(x2 < (int32_t) g3dViewWidth);
     ASSERT(x1 <= x2);
 
     //-----------------------------------------------------------------------------------------------------------------
@@ -1166,7 +1166,7 @@ static uint32_t emitDrawSegColumns(const DrawSeg& drawSeg, const seg_t seg) noex
     //------------------------------------------------------------------------------------------------------------------
     // Caching some useful stuff
     //------------------------------------------------------------------------------------------------------------------
-    const float viewH = (float) gScreenHeight;
+    const float viewH = (float) g3dViewHeight;
 
     [[maybe_unused]] bool bEmitFloor;
     [[maybe_unused]] bool bEmitCeiling;
@@ -1375,12 +1375,12 @@ static uint32_t emitDrawSegColumns(const DrawSeg& drawSeg, const seg_t seg) noex
 
         if constexpr (EMIT_MID_WALL_OCCLUDER) {
             // A solid wall will gobble up the entire screen and occlude everything!
-            emitOccluderColumn<EmitOccluderMode::TOP>(x, gScreenHeight, depth);
+            emitOccluderColumn<EmitOccluderMode::TOP>(x, g3dViewHeight, depth);
         } else {
             // Even if it's not asked for, if we find the column at this pixel is now
             // fully occluded then mark that as the case with an occluder column:
             if (clipBounds.top >= clipBounds.bottom) {
-                emitOccluderColumn<EmitOccluderMode::TOP>(x, gScreenHeight, depth);
+                emitOccluderColumn<EmitOccluderMode::TOP>(x, g3dViewHeight, depth);
                 continue;
             }
         }

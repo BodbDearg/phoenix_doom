@@ -10,6 +10,7 @@
 #include "DoomDefines.h"
 #include "DoomRez.h"
 #include "Game.h"
+#include "GFX/Renderer.h"
 #include "GFX/Video.h"
 #include "Map/Ceiling.h"
 #include "Map/Platforms.h"

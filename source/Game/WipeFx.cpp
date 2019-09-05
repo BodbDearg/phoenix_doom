@@ -24,7 +24,7 @@ static constexpr float WIPE_SPEED_CONSTANT = WIPE_SPEED_PRE_INTRO * 8.0f;
 // These create the jagged look of the wipe.
 //----------------------------------------------------------------------------------------------------------------------
 static std::unique_ptr<float[]> generateYDeltaTable() noexcept {
-    const uint32_t screenWidth = Video::SCREEN_WIDTH;
+    const uint32_t screenWidth = Video::gScreenWidth;
     const float scaleFactor = gScaleFactor;
     const uint32_t numRepeatedCols = std::max((uint32_t) gScaleFactor, 1u);     // Repeat same deltas according to the scale factor multiplier, so the wipe looks more pixelated
     const float minDelta = -16.0f * scaleFactor;
@@ -60,8 +60,8 @@ static std::unique_ptr<float[]> generateYDeltaTable() noexcept {
 // Returns true if it is time to exit the wipe.
 //----------------------------------------------------------------------------------------------------------------------
 static bool tickWipe(float* const pYDeltas) noexcept {
-    const uint32_t screenWidth = Video::SCREEN_WIDTH;
-    const uint32_t screenHeight = Video::SCREEN_HEIGHT;
+    const uint32_t screenWidth = Video::gScreenWidth;
+    const uint32_t screenHeight = Video::gScreenHeight;
 
     const float screenHeightF = (float) screenHeight;
     const float scaleFactor = gScaleFactor;
@@ -109,8 +109,8 @@ static void drawWipe(
     const uint32_t* const gpNewImg,
     const float* const pYDeltas
 ) noexcept {
-    const uint32_t screenW = Video::SCREEN_WIDTH;
-    const uint32_t screenH = Video::SCREEN_HEIGHT;
+    const uint32_t screenW = Video::gScreenWidth;
+    const uint32_t screenH = Video::gScreenHeight;
     uint32_t* const pDstPixels = Video::gpFrameBuffer;
 
     //------------------------------------------------------------------------------------------------------------------
@@ -171,7 +171,7 @@ static void drawWipe(
 
 void doWipe(const GameLoopDrawFunc drawFunc) noexcept {
     // Firstly make a copy of the current saved framebuffer
-    const uint32_t numFramebufferPixels = Video::SCREEN_WIDTH * Video::SCREEN_HEIGHT;
+    const uint32_t numFramebufferPixels = Video::gScreenWidth * Video::gScreenHeight;
     std::unique_ptr<uint32_t[]> oldFramebuffer(new uint32_t[numFramebufferPixels]);
     std::memcpy(oldFramebuffer.get(), Video::gpSavedFrameBuffer, sizeof(uint32_t) * numFramebufferPixels);
 

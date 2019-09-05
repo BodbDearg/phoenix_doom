@@ -9,6 +9,7 @@
 #include "Game/DoomDefines.h"
 #include "Game/DoomRez.h"
 #include "GFX/CelImages.h"
+#include "GFX/Renderer.h"
 #include "GFX/Video.h"
 #include "Intermission_Main.h"
 #include "ThreeDO.h"

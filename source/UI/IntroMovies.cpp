@@ -141,10 +141,10 @@ static gameaction_e updateMovie() noexcept {
 static void drawMovie(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
     if (!gpVidDecoderState)
         return;
-
+    
     // Figure out the unscaled x and y position of the movie
-    constexpr float MOVIE_X = (float)(Renderer::REFERENCE_SCREEN_WIDTH - MovieDecoder::VIDEO_WIDTH) * 0.5f;
-    constexpr float MOVIE_Y = (float)(Renderer::REFERENCE_SCREEN_HEIGHT - MovieDecoder::VIDEO_HEIGHT) * 0.5f;
+    constexpr float MOVIE_X = (float)(Video::REFERENCE_SCREEN_WIDTH - MovieDecoder::VIDEO_WIDTH) * 0.5f;
+    constexpr float MOVIE_Y = (float)(Video::REFERENCE_SCREEN_HEIGHT - MovieDecoder::VIDEO_HEIGHT) * 0.5f;
 
     // Now figure out the scaled position and size of the movie
     const float xScaled = (float) MOVIE_X * gScaleFactor;
@@ -165,9 +165,9 @@ static void drawMovie(const bool bPresent, const bool bSaveFrameBuffer) noexcept
         (float) MovieDecoder::VIDEO_WIDTH,
         (float) MovieDecoder::VIDEO_HEIGHT,
         Video::gpFrameBuffer,
-        Video::SCREEN_WIDTH,
-        Video::SCREEN_HEIGHT,
-        Video::SCREEN_WIDTH,
+        Video::gScreenWidth,
+        Video::gScreenHeight,
+        Video::gScreenWidth,
         xScaled,
         yScaled,
         wScaled,

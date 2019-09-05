@@ -105,8 +105,8 @@ static inline void drawFlatColumn(const FlatFragment flatFrag) noexcept {
         endDstY = (int32_t)(flatFrag.y - 1);
     }
 
-    const uint32_t startScreenX = gScreenXOffset + flatFrag.x;
-    const uint32_t startScreenY = gScreenYOffset + (uint32_t) curDstY;
+    const uint32_t startScreenX = g3dViewXOffset + flatFrag.x;
+    const uint32_t startScreenY = g3dViewYOffset + (uint32_t) curDstY;
 
     // This is where we store the intersection of a ray going from the view point to the flat plane.
     // The ray passes through whatever near plane pixel on the screen we are rendering and we update
@@ -143,7 +143,8 @@ static inline void drawFlatColumn(const FlatFragment flatFrag) noexcept {
     }
 
     // Draw the column!
-    uint32_t* pDstPixel = Video::gpFrameBuffer + (startScreenY * Video::SCREEN_WIDTH) + startScreenX;
+    const uint32_t screenWidth = Video::gScreenWidth;
+    uint32_t* pDstPixel = Video::gpFrameBuffer + (uintptr_t) startScreenY * screenWidth + startScreenX;
 
     while (true) {
         // Are we done?
@@ -187,10 +188,10 @@ static inline void drawFlatColumn(const FlatFragment flatFrag) noexcept {
         // Move onto the next pixel
         if constexpr (MODE == DrawFlatMode::FLOOR) {
             ++curDstY;
-            pDstPixel += Video::SCREEN_WIDTH;
+            pDstPixel += screenWidth;
         } else {
             --curDstY;
-            pDstPixel -= Video::SCREEN_WIDTH;
+            pDstPixel -= screenWidth;
         }
 
         // Compute the ray/plane intersection for the upcoming pixel to get its texture coordinate

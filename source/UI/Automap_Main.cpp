@@ -88,8 +88,8 @@ void AM_Start() noexcept {
     gUnscaledOldScale = gUnscaledMapScale;    
     updateMapScale();
 
-    gMapPixelsW = std::min((uint32_t) std::ceil(320.0f * gScaleFactor), Video::SCREEN_WIDTH);
-    gMapPixelsH = std::min((uint32_t) std::ceil(160.0f * gScaleFactor), Video::SCREEN_HEIGHT);
+    gMapPixelsW = std::min((uint32_t) std::ceil(320.0f * gScaleFactor), Video::gScreenWidth);
+    gMapPixelsH = std::min((uint32_t) std::ceil(160.0f * gScaleFactor), Video::gScreenHeight);
     gMapClipLx = (int32_t) std::floor(-160.0f * gScaleFactor);
     gMapClipRx = (int32_t) std::ceil(160.0f * gScaleFactor);
     gMapClipTy = (int32_t) std::floor(-80.0f * gScaleFactor);
@@ -129,7 +129,7 @@ static cheat_e AM_CheckCheat() noexcept {
 static void ClipPixel(const uint32_t x, const uint32_t y, const uint16_t color) noexcept {
     if (x < gMapPixelsW && y < gMapPixelsH) {   // On the screen?
         const uint32_t color32 = Video::rgba5551ToScreenCol(color);
-        Video::gpFrameBuffer[y * Video::SCREEN_WIDTH + x] = color32;
+        Video::gpFrameBuffer[y * Video::gScreenWidth + x] = color32;
     }
 }
 
@@ -349,9 +349,9 @@ void AM_Drawer() noexcept {
     // Clear the screen black
     Blit::blitRect(
         Video::gpFrameBuffer,
-        Video::SCREEN_WIDTH,
-        Video::SCREEN_HEIGHT,
-        Video::SCREEN_WIDTH,
+        Video::gScreenWidth,
+        Video::gScreenHeight,
+        Video::gScreenWidth,
         0.0f,
         0.0f,
         320 * gScaleFactor,

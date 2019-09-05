@@ -9,6 +9,7 @@
 #include "DoomRez.h"
 #include "Game.h"
 #include "GFX/CelImages.h"
+#include "GFX/Renderer.h"
 #include "GFX/Video.h"
 #include "Map/Setup.h"
 #include "TickCounter.h"

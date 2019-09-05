@@ -20,10 +20,10 @@ extern int32_t      gViewAngleToX[FINEANGLES / 4];
 extern uint32_t     gIDivTable[8192];                   // 1.0 / 0-5500 for recipocal muls
 extern uint32_t     gCenterX;                           // Center view center X coord (integer)
 extern uint32_t     gCenterY;                           // Center view center Y coord (integer)
-extern uint32_t     gScreenWidth;                       // Width of the view screen
-extern uint32_t     gScreenHeight;                      // Height of the view screen
-extern uint32_t     gScreenXOffset;                     // True X coord for projected screen
-extern uint32_t     gScreenYOffset;                     // True Y coord for projected screen
+extern uint32_t     g3dViewWidth;                       // Width of the 3d view
+extern uint32_t     g3dViewHeight;                      // Height of the 3d view
+extern uint32_t     g3dViewXOffset;                     // The left X coord for the 3d view on the screen
+extern uint32_t     g3dViewYOffset;                     // The top y coord for the 3d view on the screen
 extern float        gScaleFactor;                       // Ratio of current resolution over original 320x200 resolution
 extern float        gInvScaleFactor;                    // Reciprocal ratio of current resolution over original 320x200 resolution
 extern float        gGunXScale;                         // Scale factor for player's weapon for X

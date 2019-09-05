@@ -62,10 +62,10 @@ static void addSubsectorToFrame(subsector_t& sub) noexcept {
 // If I should process this box then return 'true'.
 //----------------------------------------------------------------------------------------------------------------------
 static bool checkBBox(const Fixed bspcoord[BOXCOUNT]) noexcept {
-    // TODO: REMOVE EVENTUALLY!
-    #if HACK_TEST_HIGH_RES_RENDERING
+    // FIXME: This check is BROKEN for high resolutions
+    #if 1
         return true;
-    #endif
+    #else
 
     // Left and right angles for view
     angle_t angle1;
@@ -159,6 +159,8 @@ static bool checkBBox(const Fixed bspcoord[BOXCOUNT]) noexcept {
     #endif
 
     return true;    // Process me!
+
+    #endif
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -176,7 +178,7 @@ static void addBspNodeToFrame(const node_t* const pNode) noexcept {
     }
 
     // If we have filled the screen then exit now - don't traverse the BSP any further
-    if (gNumFullSegCols >= gScreenWidth)
+    if (gNumFullSegCols >= g3dViewWidth)
         return;
 
     // Decide which side the view point is on

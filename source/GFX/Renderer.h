@@ -8,11 +8,6 @@
     #define ENABLE_DEBUG_CAMERA_Z_MOVEMENT 1
 #endif
 
-// TODO: REMOVE EVENTUALLY, once high resolution support is properly implemented.
-// Define to enable a quick hack to test higher resolution rendering.
-#define HACK_TEST_HIGH_RES_RENDERING 0
-#define HACK_TEST_HIGH_RENDER_SCALE 2
-
 struct CelImage;
 
 BEGIN_NAMESPACE(Renderer)
@@ -21,9 +16,7 @@ BEGIN_NAMESPACE(Renderer)
     extern float gDebugCameraZOffset;
 #endif
 
-// Used to compute scale factors
-static constexpr uint32_t REFERENCE_SCREEN_WIDTH = 320;
-static constexpr uint32_t REFERENCE_SCREEN_HEIGHT = 200;
+// The original maximum size of the 3D view
 static constexpr uint32_t REFERENCE_3D_VIEW_WIDTH = 280;
 static constexpr uint32_t REFERENCE_3D_VIEW_HEIGHT = 160;
 

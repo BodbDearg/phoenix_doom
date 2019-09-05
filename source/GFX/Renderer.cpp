@@ -11,35 +11,22 @@
 #include "Video.h"
 #include <algorithm>
 
-static constexpr uint32_t SCREEN_WIDTHS[6] = {
-// TODO: REMOVE
-#if HACK_TEST_HIGH_RES_RENDERING
-    280 * HACK_TEST_HIGH_RENDER_SCALE,
-#else
-    280,
-#endif
-    256,
-    224,
-    192,
-    160,
-    128
-};
-
-static constexpr uint32_t SCREEN_HEIGHTS[6] = {
-// TODO: REMOVE
-#if HACK_TEST_HIGH_RES_RENDERING
-    160 * HACK_TEST_HIGH_RENDER_SCALE,
-#else
-    160,
-#endif
-    144,
-    128,
-    112,
-    96,
-    80
-};
-
 BEGIN_NAMESPACE(Renderer)
+
+// Sizes of the 3D view at the original 320x200 resolution
+struct ScreenSize {
+    uint16_t w;
+    uint16_t h;
+};
+
+static constexpr ScreenSize REFERENCE_SCREEN_SIZES[6] = {
+    { 280, 160 },
+    { 256, 144 },
+    { 224, 128 },
+    { 192, 112 },
+    { 160, 96 },
+    { 128, 80 },
+};
 
 #if ENABLE_DEBUG_CAMERA_Z_MOVEMENT
     float gDebugCameraZOffset;
@@ -122,15 +109,15 @@ static void initData() noexcept {
 
 static void setupSegYClipArrayForDraw() noexcept {
     // Ensure the array is the correct size for the screen
-    if (gSegClip.size() != gScreenWidth) {
-        gSegClip.resize(gScreenWidth);
+    if (gSegClip.size() != g3dViewWidth) {
+        gSegClip.resize(g3dViewWidth);
     }
 
     // Clear 8 entries in the y clip array at a time so the ops can be pipelined
-    const SegClip segClipClearVal = SegClip{ (int16_t) -1, (int16_t) gScreenHeight };
+    const SegClip segClipClearVal = SegClip{ (int16_t) -1, (int16_t) g3dViewHeight };
 
     SegClip* pSegClip = gSegClip.data();
-    SegClip* const pEndClipBounds8 = pSegClip + ((uint32_t(gSegClip.size()) / 8) * 8);
+    SegClip* const pEndClipBounds8 = pSegClip + (uintptr_t)(g3dViewWidth / 8) * 8;
     SegClip* const pEndClipBounds = pSegClip + gSegClip.size();
 
     while (pSegClip < pEndClipBounds8) {
@@ -157,13 +144,13 @@ static void setupSegYClipArrayForDraw() noexcept {
 
 static void setupOccludingColumnsArrayForDraw() noexcept {
     // Ensure the array is the correct size for the screen
-    if (gOccludingCols.size() != gScreenWidth) {
-        gOccludingCols.resize(gScreenWidth);
+    if (gOccludingCols.size() != g3dViewWidth) {
+        gOccludingCols.resize(g3dViewWidth);
     }
 
     // Clear 8 entries in array at a time so the ops can be pipelined
     OccludingColumns* pOccludingCols = gOccludingCols.data();
-    OccludingColumns* const pEndOccludingCols8 = pOccludingCols + ((uint32_t(gOccludingCols.size()) / 8) * 8);
+    OccludingColumns* const pEndOccludingCols8 = pOccludingCols + (uintptr_t)(g3dViewWidth / 8) * 8;
     OccludingColumns* const pEndOccludingCols = pOccludingCols + gOccludingCols.size();
 
     while (pOccludingCols < pEndOccludingCols8) {
@@ -230,9 +217,9 @@ static void preDrawSetup() noexcept {
     gNearPlaneBz = gViewZ - gNearPlaneHalfH;
 
     // World X and Y step per column of screen pixels at the near plane
-    gNearPlaneXStepPerViewCol = (gNearPlaneP2x - gNearPlaneP1x) / ((float) gScreenWidth);
-    gNearPlaneYStepPerViewCol = (gNearPlaneP2y - gNearPlaneP1y) / ((float) gScreenWidth);
-    gNearPlaneZStepPerViewColPixel = (gNearPlaneBz - gNearPlaneTz) / ((float) gScreenHeight);
+    gNearPlaneXStepPerViewCol = (gNearPlaneP2x - gNearPlaneP1x) / ((float) g3dViewWidth);
+    gNearPlaneYStepPerViewCol = (gNearPlaneP2y - gNearPlaneP1y) / ((float) g3dViewWidth);
+    gNearPlaneZStepPerViewColPixel = (gNearPlaneBz - gNearPlaneTz) / ((float) g3dViewHeight);
 
     // Clear render arrays & buffers
     setupSegYClipArrayForDraw();
@@ -265,24 +252,28 @@ void init() noexcept {
 
 void initMathTables() noexcept {
     // Compute stuff based on screen size
-    gScaleFactor = (float) Video::SCREEN_WIDTH / (float) REFERENCE_SCREEN_WIDTH;
+    gScaleFactor = (float) Video::gScreenWidth / (float) Video::REFERENCE_SCREEN_WIDTH;
     gInvScaleFactor = 1.0f / gScaleFactor;
-    gScreenWidth = SCREEN_WIDTHS[gScreenSize];
-    gScreenHeight = SCREEN_HEIGHTS[gScreenSize];
-    gCenterX = gScreenWidth / 2;
-    gCenterY = gScreenHeight / 2;
+    g3dViewWidth = (uint32_t)((float) REFERENCE_SCREEN_SIZES[gScreenSize].w * gScaleFactor);
+    g3dViewHeight = (uint32_t)((float) REFERENCE_SCREEN_SIZES[gScreenSize].h * gScaleFactor);
+    gCenterX = g3dViewWidth / 2;
+    gCenterY = g3dViewHeight / 2;
 
-    // TODO: REMOVE
-    #if HACK_TEST_HIGH_RES_RENDERING
-        gScreenXOffset = (320 * HACK_TEST_HIGH_RENDER_SCALE - gScreenWidth) / 2;
-        gScreenYOffset = (160 * HACK_TEST_HIGH_RENDER_SCALE - gScreenHeight) / 2;
-    #else
-        gScreenXOffset = (320 - gScreenWidth) / 2;
-        gScreenYOffset = (160 - gScreenHeight) / 2;
+    #if ASSERTS_ENABLED == 1
+        // Sanity check the offset calculation will never underflow!
+        for (uint32_t i = 0; i < C_ARRAY_SIZE(REFERENCE_SCREEN_SIZES); ++i) {
+            ASSERT(REFERENCE_SCREEN_SIZES[i].w <= 320);
+            ASSERT(REFERENCE_SCREEN_SIZES[i].h <= 160);
+        }
     #endif
 
-    gGunXScale = (float) gScreenWidth / 320.0f;     // Get the 3DO scale factor for the gun shape and the y scale
-    gGunYScale = (float) gScreenHeight / 160.0f;
+    const uint32_t refScreenOffsetX = (320u - REFERENCE_SCREEN_SIZES[gScreenSize].w) / 2u;
+    const uint32_t refScreenOffsetY = (160u - REFERENCE_SCREEN_SIZES[gScreenSize].h) / 2u;
+    g3dViewXOffset = (uint32_t)((float) refScreenOffsetX * gScaleFactor);
+    g3dViewYOffset = (uint32_t)((float) refScreenOffsetY * gScaleFactor);
+
+    gGunXScale = (float) g3dViewWidth / 320.0f;     // Get the 3DO scale factor for the gun shape and the y scale
+    gGunYScale = (float) g3dViewHeight / 160.0f;
 
     // Near plane width and height
     gNearPlaneW = Z_NEAR * std::tan(FOV * 0.5f) * 2.0f;
@@ -290,8 +281,9 @@ void initMathTables() noexcept {
     gNearPlaneHalfW = gNearPlaneW * 0.5f;
     gNearPlaneHalfH = gNearPlaneH * 0.5f;
 
-    // TODO: REMOVE
-    #if !HACK_TEST_HIGH_RES_RENDERING
+    // FIXME: REMOVE!
+    // DOESN'T WORK FOR HIGH RESOLUTIONS!
+    #if 0
         // Create the 'view angle to x' table
         {
             const Fixed j = fixedDiv(gCenterX << FRACBITS, gFineTangent[FINEANGLES / 4 + FIELDOFVIEW / 2]);
@@ -332,7 +324,7 @@ void initMathTables() noexcept {
                 gViewAngleToX[i] = gScreenWidth;
             }
         }
-    #endif  // #if !HACK_TEST_HIGH_RES_RENDERING
+    #endif
 
     // Compute the partial projection matrix
     {
@@ -348,12 +340,12 @@ void initMathTables() noexcept {
     }
 
     // Compute the screen pixel to view angle table
-    gScreenXToAngleBAM.resize(gScreenWidth);
+    gScreenXToAngleBAM.resize(g3dViewWidth);
 
     {
-        float screenXToT = 1.0f / ((float) gScreenWidth - 1.0f);
+        float screenXToT = 1.0f / ((float) g3dViewWidth - 1.0f);
 
-        for (uint32_t x = 0; x < gScreenWidth; ++x) {
+        for (uint32_t x = 0; x < g3dViewWidth; ++x) {
             const float t = ((float) x + 0.5f) * screenXToT;
             const float nearPlaneX = t * gNearPlaneW - gNearPlaneHalfW;
             const float angleRad = std::atan2(Z_NEAR, nearPlaneX);
@@ -434,9 +426,9 @@ void drawUISprite(const int32_t x, const int32_t y, const CelImage& image) noexc
         (float) image.width,
         (float) image.height,
         Video::gpFrameBuffer,
-        Video::SCREEN_WIDTH,
-        Video::SCREEN_HEIGHT,
-        Video::SCREEN_WIDTH,
+        Video::gScreenWidth,
+        Video::gScreenHeight,
+        Video::gScreenWidth,
         xScaled,
         yScaled,
         wScaled,

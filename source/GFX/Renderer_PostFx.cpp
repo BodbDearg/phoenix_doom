@@ -10,12 +10,12 @@ BEGIN_NAMESPACE(Renderer)
 static void doInvulnerabilityEffect() noexcept {
     // The invunerability effect in 3DO Doom was a simple bit inverse.
     // The 3DO game did not use the palette switching technique that the PC version did because there was no palette...
-    const uint32_t screenH = gScreenHeight;
+    const uint32_t screenH = g3dViewHeight;
 
     for (uint32_t y = 0; y <= screenH; ++y) {
         // Process this row of pixels and invert RGB values
-        uint32_t* pPixel = &Video::gpFrameBuffer[gScreenXOffset + (gScreenYOffset + y) * Video::SCREEN_WIDTH];
-        uint32_t* const pEndPixel = pPixel + gScreenWidth;
+        uint32_t* pPixel = &Video::gpFrameBuffer[g3dViewXOffset + (g3dViewYOffset + y) * g3dViewWidth];
+        uint32_t* const pEndPixel = pPixel + g3dViewWidth;
 
         while (pPixel < pEndPixel) {
             const uint32_t color = *pPixel;
@@ -40,12 +40,12 @@ static void doTintEffect(const uint32_t r5, const uint32_t g5, const uint32_t b5
     const Fixed bMul = FRACUNIT + fixedMul(fixedDiv(intToFixed(b5), COL5_MAX_FRAC), EFFECT_STRENGHT);
 
     // Modulate all of the RGB values in the framebuffer
-    const uint32_t screenH = gScreenHeight;
+    const uint32_t screenH = g3dViewHeight;
 
     for (uint32_t y = 0; y <= screenH; ++y) {
         // Process this row of pixels
-        uint32_t* pPixel = &Video::gpFrameBuffer[gScreenXOffset + (gScreenYOffset + y) * Video::SCREEN_WIDTH];
-        uint32_t* const pEndPixel = pPixel + gScreenWidth;
+        uint32_t* pPixel = &Video::gpFrameBuffer[g3dViewXOffset + (g3dViewYOffset + y) * Video::gScreenWidth];
+        uint32_t* const pEndPixel = pPixel + g3dViewWidth;
 
         while (pPixel < pEndPixel) {
             // Get the old colors from 0-1

@@ -282,7 +282,7 @@ namespace Blit {
         BLIT_ASSERT(dstX >= 0 && dstX < (int32_t) dstW);
         BLIT_ASSERT(dstY >= 0 && dstY < (int32_t) dstH);
 
-        uint32_t* const pFirstDstPixel = pDstPixels + dstY * dstPixelsPitch + dstX;
+        uint32_t* const pFirstDstPixel = pDstPixels + (uintptr_t) dstY * dstPixelsPitch + dstX;
         uint32_t* pDstPixel = pFirstDstPixel;
         uint32_t* pEndDstPixel;
 
@@ -292,7 +292,7 @@ namespace Blit {
         } else {
             static_assert(IS_VERT_COLUMN);
             BLIT_ASSERT(dstY + dstCount <= dstH);
-            pEndDstPixel = pDstPixel + dstCount * dstPixelsPitch;
+            pEndDstPixel = pDstPixel + (uintptr_t) dstCount * dstPixelsPitch;
         }
 
         // Where to start reading from the in the source image; optimize for certain scenarios based on the input flags...
@@ -318,12 +318,12 @@ namespace Blit {
         if constexpr (USE_SRC_ROW_INDEXING) {
             // Stepping in x direction in a row major image.
             // Will index into a row instead of doing 2d indexing.
-            pSrcRowOrCol = pSrcPixels + wrapYCoord<BC_FLAGS>((int32_t) srcY, srcH) * srcW;
+            pSrcRowOrCol = pSrcPixels + (uintptr_t) wrapYCoord<BC_FLAGS>((int32_t) srcY, srcH) * srcW;
         }
         else if constexpr (USE_SRC_COL_INDEXING) {
             // Stepping in y direction in a column major image.
             // Will index into a column instead of doing 2d indexing.
-            pSrcRowOrCol = pSrcPixels + wrapXCoord<BC_FLAGS>((int32_t) srcX, srcW) * srcH;
+            pSrcRowOrCol = pSrcPixels + (uintptr_t) wrapXCoord<BC_FLAGS>((int32_t) srcX, srcW) * srcH;
         }
 
         // Main pixel blitting loop

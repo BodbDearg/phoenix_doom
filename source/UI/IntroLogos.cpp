@@ -123,8 +123,8 @@ static void drawLogo(const bool bPresent, const bool bSaveFrameBuffer) noexcept 
     }
 
     // Figure out positition for the logo (in the original 320x200 resolution)
-    const int32_t logoX = ((int32_t) Renderer::REFERENCE_SCREEN_WIDTH - (int32_t) gLogoImg.width) / 2;
-    const int32_t logoY = ((int32_t) Renderer::REFERENCE_SCREEN_HEIGHT - (int32_t) gLogoImg.height) / 2;
+    const int32_t logoX = ((int32_t) Video::REFERENCE_SCREEN_WIDTH - (int32_t) gLogoImg.width) / 2;
+    const int32_t logoY = ((int32_t) Video::REFERENCE_SCREEN_HEIGHT - (int32_t) gLogoImg.height) / 2;
 
     // Now figure out the scaled position and size of the logo
     const float xScaled = (float) logoX * gScaleFactor;
@@ -146,9 +146,9 @@ static void drawLogo(const bool bPresent, const bool bSaveFrameBuffer) noexcept 
         (float) gLogoImg.width,
         (float) gLogoImg.height,
         Video::gpFrameBuffer,
-        Video::SCREEN_WIDTH,
-        Video::SCREEN_HEIGHT,
-        Video::SCREEN_WIDTH,
+        Video::gScreenWidth,
+        Video::gScreenHeight,
+        Video::gScreenWidth,
         xScaled,
         yScaled,
         wScaled,

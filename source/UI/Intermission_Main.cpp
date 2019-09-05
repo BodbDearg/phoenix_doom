@@ -8,6 +8,7 @@
 #include "Game/DoomRez.h"
 #include "Game/Resources.h"
 #include "GFX/CelImages.h"
+#include "GFX/Renderer.h"
 #include "GFX/Video.h"
 #include <cstring>
 

@@ -7,6 +7,7 @@
 #include "Game/Data.h"
 #include "Game/DoomRez.h"
 #include "GFX/Blit.h"
+#include "GFX/Renderer.h"
 #include "GFX/Sprites.h"
 #include "GFX/Video.h"
 #include "Intermission_Main.h"
@@ -49,7 +50,7 @@ static constexpr uint32_t STARTY        = 8;
 static const mobjinfo_t*    gCastInfo;          // Info for the current cast member
 static uint32_t             gCastNum;           // Which cast member is being displayed
 static uint32_t             gCastTics;          // Speed to animate the cast members
-static const state_t*       gCastState;         // Pointer to current state
+static const state_t*       gpCastState;        // Pointer to current state
 static uint32_t             gCastFrames;        // Number of frames of animation played
 static final_e              gStatus;            // State of the display?
 static bool                 gCastAttacking;     // Currently attacking?
@@ -97,8 +98,8 @@ static void DrawActorCentered(const state_t& actorState) noexcept {
     constexpr float SPRITE_SCALE = 2.0f;
     constexpr float SPRITE_Y_OFFSET = 80.0f;
 
-    const float screenCenterX = Renderer::REFERENCE_SCREEN_WIDTH * 0.5f * gScaleFactor;
-    const float screenCenterY = Renderer::REFERENCE_SCREEN_HEIGHT * 0.5f * gScaleFactor;
+    const float screenCenterX = Video::REFERENCE_SCREEN_WIDTH * 0.5f * gScaleFactor;
+    const float screenCenterY = Video::REFERENCE_SCREEN_HEIGHT * 0.5f * gScaleFactor;
     const float w = spriteAngle.width * gScaleFactor * SPRITE_SCALE;
     const float h = spriteAngle.height * gScaleFactor * SPRITE_SCALE;
     const float lx = screenCenterX - (float) spriteAngle.leftOffset * SPRITE_SCALE * gScaleFactor;
@@ -133,9 +134,9 @@ static void DrawActorCentered(const state_t& actorState) noexcept {
             0.0f,
             0.0f,
             Video::gpFrameBuffer,
-            Video::SCREEN_WIDTH,
-            Video::SCREEN_HEIGHT,
-            Video::SCREEN_WIDTH,
+            Video::gScreenWidth,
+            Video::gScreenHeight,
+            Video::gScreenWidth,
             xInt,
             tyInt,
             hInt,
@@ -202,8 +203,8 @@ void F_Start() noexcept {
     gTextDelay = 0;                         // Init the delay
     gCastNum = 0;                           // Start at the first monster
     gCastInfo = CAST_ORDER[gCastNum];
-    gCastState = gCastInfo->seestate;
-    gCastTics = gCastState->Time;           // Init the time
+    gpCastState = gCastInfo->seestate;
+    gCastTics = gpCastState->Time;          // Init the time
     gCastDeath = false;                     // Not dead
     gCastFrames = 0;                        // No frames shown
     gCastOnMelee = false;
@@ -221,7 +222,7 @@ void F_Stop() noexcept {
 // Handle joypad input etc.
 //----------------------------------------------------------------------------------------------------------------------
 gameaction_e F_Ticker() noexcept {
-    ASSERT(gCastState);
+    ASSERT(gpCastState);
 
     // Check for press a key to kill actor
     if (gStatus == fin_endtext) {   // Am I printing text?
@@ -238,8 +239,8 @@ gameaction_e F_Ticker() noexcept {
             // Enter death state
             S_StartSound(0, gCastInfo->deathsound);
             gCastDeath = true;
-            gCastState = gCastInfo->deathstate;
-            gCastTics = gCastState->Time;
+            gpCastState = gCastInfo->deathstate;
+            gCastTics = gpCastState->Time;
             gCastFrames = 0;
             gCastAttacking = false;
         }
@@ -251,7 +252,7 @@ gameaction_e F_Ticker() noexcept {
         return ga_nothing;  // Not time to change state yet
     }
 
-    if (gCastState->Time == -1 || (!gCastState->nextstate)) {
+    if (gpCastState->Time == -1 || (!gpCastState->nextstate)) {
         // Switch from deathstate to next monster
         ++gCastNum;
         if (gCastNum >= CAST_COUNT) {
@@ -260,21 +261,21 @@ gameaction_e F_Ticker() noexcept {
         gCastDeath = false;
         gCastInfo = CAST_ORDER[gCastNum];
         S_StartSound(0, gCastInfo->seesound);
-        gCastState = gCastInfo->seestate;
+        gpCastState = gCastInfo->seestate;
         gCastFrames = 0;
     } else {
         // Just advance to next state in animation
-        if (gCastState == &gStates[S_PLAY_ATK1]) {
+        if (gpCastState == &gStates[S_PLAY_ATK1]) {
             goto stopattack;    // Oh, gross hack!
         }
 
-        gCastState = gCastState->nextstate;
+        gpCastState = gpCastState->nextstate;
         ++gCastFrames;
 
         // Sound hacks....
         {
             uint32_t soundToPlay = 0;
-            const uint32_t stateNum = (uint32_t)(gCastState - gStates);
+            const uint32_t stateNum = (uint32_t)(gpCastState - gStates);
 
             switch (stateNum) {
                 case S_POSS_ATK2:   soundToPlay = sfx_pistol;   break;
@@ -295,30 +296,32 @@ gameaction_e F_Ticker() noexcept {
         // Go into attack frame
         gCastAttacking = true;
         if (gCastOnMelee) {
-            gCastState=gCastInfo->meleestate;
+            gpCastState = gCastInfo->meleestate;
         } else {
-            gCastState=gCastInfo->missilestate;
+            gpCastState = gCastInfo->missilestate;
         }
         gCastOnMelee ^= true;   // Toggle the melee state
-        if (!gCastState) {
+        if (!gpCastState) {
             if (gCastOnMelee) {
-                gCastState=gCastInfo->meleestate;
+                gpCastState = gCastInfo->meleestate;
             } else {
-                gCastState=gCastInfo->missilestate;
+                gpCastState = gCastInfo->missilestate;
             }
         }
     }
 
     if (gCastAttacking) {
-        if (gCastFrames == 24 || gCastState == gCastInfo->seestate) {
+        if (gCastFrames == 24 || gpCastState == gCastInfo->seestate) {
         stopattack:
             gCastAttacking = false;
             gCastFrames = 0;
-            gCastState = gCastInfo->seestate;
+            gpCastState = gCastInfo->seestate;
         }
     }
 
-    gCastTics = gCastState->Time;           // Get the next time
+    ASSERT(gpCastState);
+    gCastTics = gpCastState->Time;          // Get the next time
+
     if (gCastTics == -1) {
         gCastTics = (TICKSPERSEC / 4);      // 1 second timer
     }
@@ -352,7 +355,7 @@ void F_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
             }
         }
     } else {
-        DrawActorCentered(*gCastState);                         // Draw the sprite
+        DrawActorCentered(*gpCastState);                        // Draw the sprite
         PrintBigFontCenter(160, 20, CAST_NAMES[gCastNum]);      // Print the name
     }
 
