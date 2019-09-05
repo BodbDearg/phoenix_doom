@@ -493,23 +493,103 @@ static void P_DeathThink(player_t& player) noexcept {
 }
 
 //----------------------------------------------------------------------------------------------------------------------
-// Adjust for wraparound since the pending weapon was added with 1 or -1
-// and then check if the requested weapon is present.
+// Function to adjust for wraparound since the pending weapons are added with 1 or -1
 //----------------------------------------------------------------------------------------------------------------------
-static bool WeaponAllowed(player_t& player) noexcept {
-    if ((player.pendingweapon & 0x80) != 0) {                       // Handle wrap around for weapon
-        player.pendingweapon = (weapontype_e)(NUMWEAPONS - 1);      // Highest weapon allowed
-    }
-    
-    if (player.pendingweapon >= NUMWEAPONS) {       // Too high?
-        player.pendingweapon = (weapontype_e) 0;    // Reset to the first
-    }
+static weapontype_e WrapAroundWeaponType(const weapontype_e weapon) noexcept {
+    const int8_t weaponIdx = (int8_t) weapon;
 
-    if (player.weaponowned[player.pendingweapon]) {     // Do I have this?
-        return true;                                    // Yep!
+    if (weaponIdx < 0) {
+        return (weapontype_e)(NUMWEAPONS - 1);
     }
+    else if (weaponIdx >= NUMWEAPONS) {
+        return (weapontype_e) 0;
+    }
+    else {
+        return weapon;
+    }
+}
 
-    return false;   // Nope, don't select this
+//----------------------------------------------------------------------------------------------------------------------
+// Check if the requested weapon is present
+//----------------------------------------------------------------------------------------------------------------------
+static bool WeaponAllowed(player_t& player, const weapontype_e weapon) noexcept {    
+    const uint8_t weaponIdx = (uint8_t) WrapAroundWeaponType(weapon);
+    return (player.weaponowned[weaponIdx]);     // Do I have this?
+}
+
+static bool WeaponAllowedAndDifferent(player_t& player, const weapontype_e weapon) noexcept {    
+    return (
+        (weapon != player.pendingweapon) &&
+        (weapon != player.readyweapon) &&
+        WeaponAllowed(player, weapon)
+    );
+}
+
+static bool PendingWeaponAllowed(player_t& player) noexcept {
+    player.pendingweapon = WrapAroundWeaponType(player.pendingweapon);  // Handle wrap around for weapon
+    return WeaponAllowed(player, player.pendingweapon);
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+// Handle controls that change player weapons
+//----------------------------------------------------------------------------------------------------------------------
+static void doWeaponChangeControls(player_t& player) noexcept {
+    if (player.pendingweapon == wp_nochange) {
+        // Next/previous weapon change
+        int8_t weaponCycleDir = 0; 
+
+        if (GAME_ACTION_ENDED(NEXT_WEAPON)) {
+            weaponCycleDir += 1;
+        }
+
+        if (GAME_ACTION_ENDED(PREV_WEAPON)) {
+            weaponCycleDir -= 1;
+        }
+
+        if (weaponCycleDir != 0) {                          // Pressed the shifts?            
+            player.pendingweapon = player.readyweapon;      // Init the weapon
+
+            // Cycle to next weapon
+            do {
+                player.pendingweapon = (weapontype_e)(player.pendingweapon + weaponCycleDir);
+            } while (!PendingWeaponAllowed(player));    // Ok to keep?
+        }
+        else {
+            // If not cycling then try a specific weapon change.
+            // Note: only allow the change if we are actually changing to a different weapon!
+            if (GAME_ACTION_ENDED(WEAPON_1) && (WeaponAllowedAndDifferent(player, wp_fist) || WeaponAllowedAndDifferent(player, wp_chainsaw))) {
+                // Prefer to switch to the chainsaw first over fist, unless we have beserk...
+                const bool bBeserk = (player.powers[pw_strength] > 0);
+                const weapontype_e firstPref = (bBeserk) ? wp_fist : wp_chainsaw;
+                const weapontype_e secondPref = (bBeserk) ? wp_chainsaw : wp_fist;
+
+                if (WeaponAllowedAndDifferent(player, firstPref)) {
+                    player.pendingweapon = firstPref;
+                }
+                else if (WeaponAllowedAndDifferent(player, secondPref)) {
+                    player.pendingweapon = secondPref;
+                }
+            }
+            else if (GAME_ACTION_ENDED(WEAPON_2) && WeaponAllowedAndDifferent(player, wp_pistol)) {
+                player.pendingweapon = wp_pistol;
+            }
+            else if (GAME_ACTION_ENDED(WEAPON_3) && WeaponAllowedAndDifferent(player, wp_shotgun)) {
+                player.pendingweapon = wp_shotgun;
+            }
+            else if (GAME_ACTION_ENDED(WEAPON_4) && WeaponAllowedAndDifferent(player, wp_chaingun)) {
+                player.pendingweapon = wp_chaingun;
+            }
+            else if (GAME_ACTION_ENDED(WEAPON_5) && WeaponAllowedAndDifferent(player, wp_missile)) {
+                player.pendingweapon = wp_missile;
+            }
+            else if (GAME_ACTION_ENDED(WEAPON_6) && WeaponAllowedAndDifferent(player, wp_plasma)) {
+                player.pendingweapon = wp_plasma;
+            }
+            else if (GAME_ACTION_ENDED(WEAPON_7) && WeaponAllowedAndDifferent(player, wp_bfg)) {
+                player.pendingweapon = wp_bfg;
+            }
+        }
+    }    
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -552,27 +632,7 @@ void P_PlayerThink(player_t& player) noexcept {
         }
 
         // Process weapon changes
-        if (player.pendingweapon == wp_nochange) {
-            // Next/previous weapon change
-            int8_t weaponCycleDir = 0; 
-
-            if (GAME_ACTION_ENDED(NEXT_WEAPON)) {
-                weaponCycleDir += 1;
-            }
-
-            if (GAME_ACTION_ENDED(PREV_WEAPON)) {
-                weaponCycleDir -= 1;
-            }
-
-            if (weaponCycleDir != 0) {                          // Pressed the shifts?            
-                player.pendingweapon = player.readyweapon;      // Init the weapon
-
-                // Cycle to next weapon
-                do {
-                    player.pendingweapon = (weapontype_e)(player.pendingweapon + weaponCycleDir);
-                } while (!WeaponAllowed(player));   // Ok to keep?
-            }
-        }
+        doWeaponChangeControls(player);
 
         // Was use just pressed? If so then process.
         if (GAME_ACTION_ENDED(USE)) {

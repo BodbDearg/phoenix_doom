@@ -23,7 +23,6 @@ TODO
 - Allow exit out of finale back to main menu
 - Allow exit out of app from main menu
 - Allow quit out of level to main menu
-- Get numkeys working for weapon changes
 
 ------------------------------------------------------------------------------------------------------------------------
 Known issues: document
