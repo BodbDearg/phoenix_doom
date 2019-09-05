@@ -30,6 +30,9 @@ Similar in concept to the original PC Doom fake contrast but works with walls of
 Removed the 3DO specific control configurations in the options screen (no longer applicable).
 Replaced control options instead with a 'quit' command that allows quitting back to the main menu or exiting the game entirely.
 
+[] Can exit out of the finale back to the main menu once the end text has shown.
+Use the menu 'back' key to do this (ESC/BACKSPACE in default key bindings).
+
 [] Fixed a bug where punching things made no punch sound.
 Not sure why this happened, there was no code to play the sound in the 3DO version but the sound existed. Now fixed.
 

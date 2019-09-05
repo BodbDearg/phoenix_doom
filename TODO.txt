@@ -18,7 +18,6 @@ TODO
 - Is the pistol reload speed too slow?
 - Gravity appears to be too much??
 - Ensure last map accessible via menu (wasn't on 3DO version?)
-- Allow exit out of finale back to main menu
 
 ------------------------------------------------------------------------------------------------------------------------
 Known issues: document

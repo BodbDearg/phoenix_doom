@@ -246,6 +246,13 @@ gameaction_e F_Ticker() noexcept {
         }
     }
 
+    // Allow exit back to the main menu if the 'abort' key is pressed and if we're not showing the end text
+    if (gStatus != fin_endtext) {
+        if (MENU_ACTION_ENDED(BACK)) {
+            return ga_quit;
+        }
+    }
+
     // Advance state: if there is no transition to do then we can end here
     if (gCastTics > 1) {
         --gCastTics;
@@ -326,7 +333,7 @@ gameaction_e F_Ticker() noexcept {
         gCastTics = (TICKSPERSEC / 4);      // 1 second timer
     }
 
-    return ga_nothing;  // Finale never exits
+    return ga_nothing;
 }
 
 //----------------------------------------------------------------------------------------------------------------------
