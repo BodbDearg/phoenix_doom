@@ -54,7 +54,7 @@ static uint32_t gOptionActive;
 //--------------------------------------------------------------------------------------------------
 // Init memory needed for the main game menu
 //--------------------------------------------------------------------------------------------------
-void M_Start() noexcept {
+void M_Start() noexcept {    
     gCursorCount = 0;               // Init the animation timer
     gCursorFrame = 0;               // Init the animation frame
     gCursorPos = 0;                 // Topmost y position
@@ -114,6 +114,7 @@ gameaction_e M_Ticker() noexcept {
 
     // Switch to options menu?
     if (gCursorPos == options && MENU_ACTION_ENDED(OK)) {
+        O_Init();   // Reset option menu positions
         gOptionActive = true;
     }
 

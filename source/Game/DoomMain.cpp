@@ -224,7 +224,7 @@ static void RunMenu() {
 static bool RunTitle() noexcept {
     if (Input::isQuitRequested())
         return false;
-
+    
     // Run the main menu if the user exited out of this screen
     if (MiniLoop(START_Title, STOP_Title, TIC_Abortable, DRAW_Title) == ga_exitdemo) {
         RunMenu();
@@ -267,7 +267,7 @@ void D_DoomMain() noexcept {
 
     Renderer::init();   // Init refresh system
     P_Init();           // Init main code
-    O_Init();           // Init controls
+    O_Init();           // Init options menu
 
     IntroLogos::run();
     IntroMovies::run();

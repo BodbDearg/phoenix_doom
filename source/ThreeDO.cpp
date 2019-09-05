@@ -103,7 +103,6 @@ void ClearPrefsFile() noexcept {
     gStartMap = 1;                              // Only allow playing from map #1
     Audio::setSoundVolume(Audio::MAX_VOLUME);   // Init the sound effects volume
     Audio::setMusicVolume(Audio::MAX_VOLUME);   // Init the music volume
-    gControlType = 3;                           // Use basic joypad controls
     gMaxLevel = 24;                             // Only allow level 1 to select from
     gScreenSize = 0;                            // Default screen size
     WritePrefsFile();                           // Output the new prefs

@@ -72,6 +72,8 @@ void O_Control(player_t* const pPlayer) noexcept {
                 pPlayer->AutomapFlags ^= AF_OPTIONSACTIVE;      // Toggle the flag
                 if (!pPlayer->isOptionsMenuActive()) {          // Shut down?
                     WritePrefsFile();                           // Save new settings to NVRAM
+                } else {
+                    O_Init();                                   // Reset option menu positions
                 }
             }
         } else {

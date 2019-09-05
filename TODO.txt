@@ -13,7 +13,6 @@ TODO
 - Cheats support
 - FPS counter
 - Fix address sanitizer crash on angle LUT lookup (easy to reproduce on MacOS with Xcode) (might not be applicable anymore)
-- Maybe add menu sounds? (might not be applicable anymore)
 - Optimize audio mixing for different channel counts and bit depths
 - Is the pistol reload speed too slow?
 - Gravity appears to be too much??
