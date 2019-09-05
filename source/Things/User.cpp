@@ -4,8 +4,10 @@
 #include "Audio/Sounds.h"
 #include "Base/FMath.h"
 #include "Base/Tables.h"
+#include "Game/Config.h"
 #include "Game/Controls.h"
 #include "Game/Data.h"
+#include "GFX/Renderer.h"
 #include "Info.h"
 #include "Map/Map.h"
 #include "Map/MapData.h"
@@ -287,6 +289,17 @@ static void P_BuildMove(player_t& player) noexcept {
 
         if (GAME_ACTION(MOVE_BACKWARD)) {
             player.forwardmove -= FORWARD_MOVE[speedIndex];
+        }
+
+        // Debug camera movement
+        if (Config::gbAllowDebugCameraUpDownMovement) {
+            if (GAME_ACTION(DEBUG_MOVE_CAMERA_UP)) {
+                Renderer::gDebugCameraZOffset += 2.0f;
+            }
+
+            if (GAME_ACTION(DEBUG_MOVE_CAMERA_DOWN)) {
+                Renderer::gDebugCameraZOffset -= 2.0f;
+            }
         }
     }
     else {

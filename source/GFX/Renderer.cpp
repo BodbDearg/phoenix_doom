@@ -4,6 +4,7 @@
 #include "Base/Tables.h"
 #include "Blit.h"
 #include "CelImages.h"
+#include "Game/Config.h"
 #include "Game/Data.h"
 #include "Sprites.h"
 #include "Textures.h"
@@ -28,13 +29,10 @@ static constexpr ScreenSize REFERENCE_SCREEN_SIZES[6] = {
     { 128, 80 },
 };
 
-#if ENABLE_DEBUG_CAMERA_Z_MOVEMENT
-    float gDebugCameraZOffset;
-#endif
-
 //----------------------------------------------------------------------------------------------------------------------
 // Internal renderer cross module globals
 //----------------------------------------------------------------------------------------------------------------------
+float                           gDebugCameraZOffset;
 Fixed                           gViewXFrac;
 Fixed                           gViewYFrac;
 Fixed                           gViewZFrac;
@@ -186,12 +184,10 @@ static void preDrawSetup() noexcept {
     gViewAngleBAM = mapObj.angle;
     gViewAngle = FMath::doomAngleToRadians<float>(mapObj.angle);
 
-    #if ENABLE_DEBUG_CAMERA_Z_MOVEMENT
-    {
+    if (Config::gbAllowDebugCameraUpDownMovement) {
         gViewZFrac += FMath::floatToDoomFixed16(gDebugCameraZOffset);
         gViewZ += gDebugCameraZOffset;
     }
-    #endif
 
     // Precompute sine and cosine of view angle
     {

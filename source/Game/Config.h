@@ -17,6 +17,9 @@ extern bool         gbAspectCorrectOutputScaling;
 extern Controls::MenuActionBits gKeyboardMenuActions[Input::NUM_KEYBOARD_KEYS];
 extern Controls::GameActionBits gKeyboardGameActions[Input::NUM_KEYBOARD_KEYS];
 
+// Debug stuff
+extern bool gbAllowDebugCameraUpDownMovement;
+
 // Startup and shutdown the prefs module
 void init() noexcept;
 void shutdown() noexcept;

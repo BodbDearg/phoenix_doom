@@ -17,7 +17,9 @@ static constexpr char* const DEFAULT_CONFIG_INI = R"(#--------------------------
 # If you want to regenerate this file to the defaults, just delete it and restart the game!
 #---------------------------------------------------------------------------------------------------
 
+####################################################################################################
 [Video]
+####################################################################################################
 
 #---------------------------------------------------------------------------------------------------
 # Fullscreen or windowed mode toggle.
@@ -90,12 +92,14 @@ IntegerOutputScaling = 1
 #---------------------------------------------------------------------------------------------------
 AspectCorrectOutputScaling = 1
 
+####################################################################################################
+[KeyboardControls]
+####################################################################################################
+
 #---------------------------------------------------------------------------------------------------
-# Keyboard controls:
-# Hopefully these are all self explanatory...
+# Hopefully these actions are fairly self explanatory...
 # See the end of this file for a full list of available keyboard keys etc. that can be assigned.
 #---------------------------------------------------------------------------------------------------
-[KeyboardControls]
 Up              = move_forward,     menu_up
 Down            = move_backward,    menu_down
 Left            = turn_left,        menu_left
@@ -115,6 +119,8 @@ Left Shift      = run
 Right Shift     = run
 \[              = prev_weapon
 \]              = next_weapon
+,               = prev_weapon
+.               = next_weapon
 P               = pause
 Pause           = pause
 1               = weapon_1
@@ -131,6 +137,22 @@ X               = automap_free_cam_toggle
 \=              = automap_free_cam_zoom_in
 Keypad -        = automap_free_cam_zoom_out
 Keypad +        = automap_free_cam_zoom_in
+PageUp          = debug_move_camera_up
+PageDown        = debug_move_camera_down
+
+####################################################################################################
+[Debug]
+####################################################################################################
+
+#---------------------------------------------------------------------------------------------------
+# If set to '1' then the camera can be moved up and down with the 'debug_cam_move_up' and
+# 'debug_cam_move_down' key actions. This is useful for testing the renderer at different heights.
+#---------------------------------------------------------------------------------------------------
+AllowCameraUpDownMovement = 0
+
+
+####################################################################################################
+####################################################################################################
 
 #---------------------------------------------------------------------------------------------------
 # Available keyboard keys:
@@ -336,6 +358,7 @@ bool                        gbIntegerOutputScaling;
 bool                        gbAspectCorrectOutputScaling;
 Controls::MenuActionBits    gKeyboardMenuActions[Input::NUM_KEYBOARD_KEYS];
 Controls::GameActionBits    gKeyboardGameActions[Input::NUM_KEYBOARD_KEYS];
+bool                        gbAllowDebugCameraUpDownMovement;
 
 //----------------------------------------------------------------------------------------------------------------------
 // Determines the path to the config .ini for the game
@@ -380,7 +403,7 @@ static void regenerateDefaultConfigFileIfNotPresent(const std::string& iniFilePa
 
     SDL_ShowSimpleMessageBox(
         SDL_MESSAGEBOX_INFORMATION,
-        "Configuring Phoenix Doom",
+        "How to configure Phoenix Doom",
         cfgFileMessage.c_str(),
         nullptr
     );
@@ -439,6 +462,8 @@ static void parseSingleActionString(
     handleGameAction("automap_free_cam_toggle",     Controls::GameActions::AUTOMAP_FREE_CAM_TOGGLE);
     handleGameAction("automap_free_cam_zoom_out",   Controls::GameActions::AUTOMAP_FREE_CAM_ZOOM_OUT);
     handleGameAction("automap_free_cam_zoom_in",    Controls::GameActions::AUTOMAP_FREE_CAM_ZOOM_IN);
+    handleGameAction("debug_move_camera_up",        Controls::GameActions::DEBUG_MOVE_CAMERA_UP);
+    handleGameAction("debug_move_camera_down",      Controls::GameActions::DEBUG_MOVE_CAMERA_DOWN);
 
     handleMenuAction("menu_up",     Controls::MenuActions::UP);
     handleMenuAction("menu_down",   Controls::MenuActions::DOWN);
@@ -554,6 +579,11 @@ static void handleConfigEntry(const IniUtils::Entry& entry) noexcept {
             }
         }
     }
+    else if (entry.section == "Debug") {
+        if (entry.key == "AllowCameraUpDownMovement") {
+            gbAllowDebugCameraUpDownMovement = entry.getBoolValue(gbAllowDebugCameraUpDownMovement);
+        }
+    }
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -569,6 +599,8 @@ static void clear() noexcept {
 
     std::memset(gKeyboardMenuActions, 0, sizeof(gKeyboardMenuActions));
     std::memset(gKeyboardGameActions, 0, sizeof(gKeyboardGameActions));    
+
+    gbAllowDebugCameraUpDownMovement = false;
 }
 
 void init() noexcept {
