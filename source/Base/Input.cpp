@@ -11,6 +11,11 @@ std::vector<uint16_t>   gKeyboardKeysPressed;
 std::vector<uint16_t>   gKeyboardKeysJustPressed;
 std::vector<uint16_t>   gKeyboardKeysJustReleased;
 
+static SDL_GameController* gpGameController;
+
+//----------------------------------------------------------------------------------------------------------------------
+// Updates the list of pressed keys
+//----------------------------------------------------------------------------------------------------------------------
 static void updatePressedKeyboardKeys() noexcept {
     // Check all keys and do 8 at a time
     gKeyboardKeysPressed.clear();
@@ -68,6 +73,9 @@ static void updatePressedKeyboardKeys() noexcept {
     }
 }
 
+//----------------------------------------------------------------------------------------------------------------------
+// Utility functions for querying if a value is in a vector and removing it
+//----------------------------------------------------------------------------------------------------------------------
 template <class T>
 static inline bool vectorContainsValue(const std::vector<T>& vec, const T val) noexcept {
     const auto endIter = vec.end();
@@ -87,11 +95,56 @@ static inline void removeValueFromVector(const T val, std::vector<T>& vec) noexc
     }
 }
 
+//----------------------------------------------------------------------------------------------------------------------
+// Close the currently open game controller (if any)
+//----------------------------------------------------------------------------------------------------------------------
+static void closeCurrentGameController() noexcept {
+    if (gpGameController) {
+        SDL_GameControllerClose(gpGameController);
+        gpGameController = nullptr;
+    }
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+// Rescans for the SDL game controllers to use: just uses the first available game controller.
+// This may choose wrong in a multi-gamepad situation but the user can always disconnect one to clarify what is wanted.
+// Most computer users would probably only want one gamepad at a time anyway?
+//----------------------------------------------------------------------------------------------------------------------
+static void rescanGameControllers() noexcept {
+    // If we already have a gamepad then just re-check that it is still connected
+    if (gpGameController) {
+        if (!SDL_GameControllerGetAttached(gpGameController)) {
+            closeCurrentGameController();
+        }
+    }
+
+    // See if there are any joysticks connected.
+    // Note: a return of < 0 means an error, which we will ignore:
+    const int numJoysticks = SDL_NumJoysticks();
+
+    for (int joyIdx = 0; joyIdx < numJoysticks; ++joyIdx) {
+        // If we find a valid game controller then try to open it.
+        // If we succeed then our work is done!
+        if (SDL_IsGameController(joyIdx)) {           
+            gpGameController = SDL_GameControllerOpen(joyIdx);
+
+            if (gpGameController)
+                break;
+        }
+    }
+}
+
 void init() noexcept {
+    if (SDL_InitSubSystem(SDL_INIT_JOYSTICK) != 0) {
+        FATAL_ERROR("Failed to initialize the SDL joystick input subsystem!");
+    }
+
     gbIsQuitRequested = false;
     gpKeyboardState = SDL_GetKeyboardState(&gNumKeyboardStateKeys);
     gKeyboardKeysJustPressed.reserve(16);
     gKeyboardKeysJustReleased.reserve(16);
+
+    rescanGameControllers();
 }
 
 void shutdown() noexcept {
@@ -106,6 +159,9 @@ void shutdown() noexcept {
 
     gpKeyboardState = nullptr;
     gbIsQuitRequested = false;
+
+    closeCurrentGameController();
+    SDL_QuitSubSystem(SDL_INIT_JOYSTICK);
 }
 
 void update() noexcept {
@@ -141,6 +197,14 @@ void update() noexcept {
                     gKeyboardKeysJustReleased.push_back(scancode);
                 }
             }   break;
+
+            case SDL_JOYDEVICEADDED:
+            case SDL_JOYDEVICEREMOVED:
+            case SDL_CONTROLLERDEVICEADDED:
+            case SDL_CONTROLLERDEVICEREMOVED:
+            case SDL_CONTROLLERDEVICEREMAPPED:
+                rescanGameControllers();
+                break;
         }
     }
 }
