@@ -1,17 +1,25 @@
 #include "Input.h"
 
+#include "ControllerInput.h"
+#include "Game/Config.h"
 #include <SDL.h>
 
 BEGIN_NAMESPACE(Input)
 
-bool                    gbIsQuitRequested;
-const Uint8*            gpKeyboardState;
-int                     gNumKeyboardStateKeys;
-std::vector<uint16_t>   gKeyboardKeysPressed;
-std::vector<uint16_t>   gKeyboardKeysJustPressed;
-std::vector<uint16_t>   gKeyboardKeysJustReleased;
+bool                            gbIsQuitRequested;
+const Uint8*                    gpKeyboardState;
+int                             gNumKeyboardStateKeys;
+std::vector<uint16_t>           gKeyboardKeysPressed;
+std::vector<uint16_t>           gKeyboardKeysJustPressed;
+std::vector<uint16_t>           gKeyboardKeysJustReleased;
+float                           gControllerInputs[NUM_CONTROLLER_INPUTS];
+std::vector<ControllerInput>    gControllerInputsPressed;
+std::vector<ControllerInput>    gControllerInputsJustPressed;
+std::vector<ControllerInput>    gControllerInputsJustReleased;
 
-static SDL_GameController* gpGameController;
+static SDL_GameController*  gpGameController;
+static SDL_Joystick*        gpJoystick;             // Note: this is managed by game controller, not freed by this code!
+static SDL_JoystickID       gJoystickId;
 
 //----------------------------------------------------------------------------------------------------------------------
 // Updates the list of pressed keys
@@ -96,13 +104,72 @@ static inline void removeValueFromVector(const T val, std::vector<T>& vec) noexc
 }
 
 //----------------------------------------------------------------------------------------------------------------------
-// Close the currently open game controller (if any)
+// Functions to convert SDL controller buttons and axes into inputs
+//----------------------------------------------------------------------------------------------------------------------
+static ControllerInput sdlControllerButtonToInput(const SDL_GameControllerButton button) noexcept {
+    switch (button) {
+        case SDL_CONTROLLER_BUTTON_A:               return ControllerInput::BTN_A;
+        case SDL_CONTROLLER_BUTTON_B:               return ControllerInput::BTN_B;
+        case SDL_CONTROLLER_BUTTON_X:               return ControllerInput::BTN_X;
+        case SDL_CONTROLLER_BUTTON_Y:               return ControllerInput::BTN_Y;
+        case SDL_CONTROLLER_BUTTON_BACK:            return ControllerInput::BTN_BACK;
+        case SDL_CONTROLLER_BUTTON_GUIDE:           return ControllerInput::BTN_GUIDE;
+        case SDL_CONTROLLER_BUTTON_START:           return ControllerInput::BTN_START;
+        case SDL_CONTROLLER_BUTTON_LEFTSTICK:       return ControllerInput::BTN_LEFT_STICK;
+        case SDL_CONTROLLER_BUTTON_RIGHTSTICK:      return ControllerInput::BTN_RIGHT_STICK;
+        case SDL_CONTROLLER_BUTTON_LEFTSHOULDER:    return ControllerInput::BTN_LEFT_SHOULDER;
+        case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:   return ControllerInput::BTN_RIGHT_SHOULDER;
+        case SDL_CONTROLLER_BUTTON_DPAD_UP:         return ControllerInput::BTN_DPAD_UP;
+        case SDL_CONTROLLER_BUTTON_DPAD_DOWN:       return ControllerInput::BTN_DPAD_DOWN;
+        case SDL_CONTROLLER_BUTTON_DPAD_LEFT:       return ControllerInput::BTN_DPAD_LEFT;
+        case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:      return ControllerInput::BTN_DPAD_RIGHT;
+
+        default:
+            return ControllerInput::INVALID;
+    }
+}
+
+static ControllerInput sdlControllerAxisToInput(const SDL_GameControllerAxis axis) noexcept {
+    switch (axis) {
+        case SDL_CONTROLLER_AXIS_LEFTX:             return ControllerInput::AXIS_LEFT_X;
+        case SDL_CONTROLLER_AXIS_LEFTY:             return ControllerInput::AXIS_LEFT_Y;
+        case SDL_CONTROLLER_AXIS_RIGHTX:            return ControllerInput::AXIS_RIGHT_X;
+        case SDL_CONTROLLER_AXIS_RIGHTY:            return ControllerInput::AXIS_RIGHT_Y;
+        case SDL_CONTROLLER_AXIS_TRIGGERLEFT:       return ControllerInput::AXIS_TRIG_LEFT;
+        case SDL_CONTROLLER_AXIS_TRIGGERRIGHT:      return ControllerInput::AXIS_TRIG_RIGHT;
+
+        default:
+            return ControllerInput::INVALID;
+    }
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+// Convert an SDL axis value to a -1 to + 1 range float.
+//----------------------------------------------------------------------------------------------------------------------
+static float sdlAxisValueToFloat(const int16_t axis) noexcept {
+    if (axis >= 0) {
+        return (float) axis / 32767.0f;
+    } else {
+        return (float) axis / 32768.0f;
+    }
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+// Close the currently open game controller (if any).
+// Also clears up any related inputs.
 //----------------------------------------------------------------------------------------------------------------------
 static void closeCurrentGameController() noexcept {
+    std::memset(gControllerInputs, 0, sizeof(gControllerInputs));
+    gControllerInputsJustPressed.clear();
+    gControllerInputsJustReleased.clear();
+
     if (gpGameController) {
         SDL_GameControllerClose(gpGameController);
         gpGameController = nullptr;
     }
+
+    gpJoystick = nullptr;
+    gJoystickId = {};
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -128,50 +195,19 @@ static void rescanGameControllers() noexcept {
         if (SDL_IsGameController(joyIdx)) {           
             gpGameController = SDL_GameControllerOpen(joyIdx);
 
-            if (gpGameController)
+            if (gpGameController) {
+                gpJoystick = SDL_GameControllerGetJoystick(gpGameController);
+                gJoystickId = SDL_JoystickInstanceID(gpJoystick);
                 break;
+            }       
         }
     }
 }
 
-void init() noexcept {
-    if (SDL_InitSubSystem(SDL_INIT_JOYSTICK) != 0) {
-        FATAL_ERROR("Failed to initialize the SDL joystick input subsystem!");
-    }
-
-    gbIsQuitRequested = false;
-    gpKeyboardState = SDL_GetKeyboardState(&gNumKeyboardStateKeys);
-    gKeyboardKeysJustPressed.reserve(16);
-    gKeyboardKeysJustReleased.reserve(16);
-
-    rescanGameControllers();
-}
-
-void shutdown() noexcept {
-    gKeyboardKeysPressed.clear();
-    gKeyboardKeysPressed.shrink_to_fit();
-
-    gKeyboardKeysJustReleased.clear();
-    gKeyboardKeysJustReleased.shrink_to_fit();
-    
-    gKeyboardKeysJustPressed.clear();
-    gKeyboardKeysJustPressed.shrink_to_fit();
-
-    gpKeyboardState = nullptr;
-    gbIsQuitRequested = false;
-
-    closeCurrentGameController();
-    SDL_QuitSubSystem(SDL_INIT_JOYSTICK);
-}
-
-void update() noexcept {
-    // Released/pressed events are now cleared
-    consumeEvents();
-
-    // Update polled key state
-    updatePressedKeyboardKeys();
-
-    // Poll for input events
+//----------------------------------------------------------------------------------------------------------------------
+// Handle events sent by SDL (keypresses and such)
+//----------------------------------------------------------------------------------------------------------------------
+static void handleSdlEvents() noexcept {
     SDL_Event sdlEvent;
 
     while (SDL_PollEvent(&sdlEvent) != 0) {
@@ -198,6 +234,64 @@ void update() noexcept {
                 }
             }   break;
 
+            case SDL_CONTROLLERAXISMOTION: {
+                if (sdlEvent.cbutton.which == gJoystickId) {
+                    const ControllerInput input = sdlControllerAxisToInput((SDL_GameControllerAxis) sdlEvent.caxis.axis);
+
+                    if (input != ControllerInput::INVALID) {
+                        const float pressedThreshold = Config::gGamepadAnalogToDigitalThreshold;
+                        const uint8_t inputIdx = (uint8_t) input;
+
+                        // See if there is a change in the 'pressed' status
+                        const bool bPrevPressed = (std::abs(gControllerInputs[inputIdx]) >= pressedThreshold);
+                        const float inputF = sdlAxisValueToFloat(sdlEvent.caxis.value);
+                        const float inputFAbs = std::abs(inputF);
+                        const bool bNowPressed = (inputFAbs >= pressedThreshold);
+                        const bool bPassedDeadZone  = (inputFAbs >= Config::gGamepadDeadZone);
+
+                        // Update input value
+                        gControllerInputs[inputIdx] = (bPassedDeadZone) ? inputF : 0.0f;
+
+                        // Generate events for the analog input
+                        if (bPrevPressed != bNowPressed) {
+                            if (bNowPressed) {
+                                gControllerInputsJustPressed.push_back(input);
+                                gControllerInputsPressed.push_back(input);
+                                removeValueFromVector(input, gControllerInputsJustReleased);    // Prevent contradictions!
+                            } else {
+                                gControllerInputsJustReleased.push_back(input);
+                                removeValueFromVector(input, gControllerInputsPressed);
+                                removeValueFromVector(input, gControllerInputsJustPressed);     // Prevent contradictions!
+                            }
+                        }
+                    }
+                }
+            }   break;
+
+            case SDL_CONTROLLERBUTTONDOWN: {
+                if (sdlEvent.cbutton.which == gJoystickId) {
+                    const ControllerInput input = sdlControllerButtonToInput((SDL_GameControllerButton) sdlEvent.cbutton.button);
+
+                    if (input != ControllerInput::INVALID) {
+                        gControllerInputsJustPressed.push_back(input);
+                        removeValueFromVector(input, gControllerInputsJustReleased);    // Prevent contradictions!
+                        gControllerInputs[(uint8_t) input] = 1.0f;
+                    }
+                }
+            }   break;
+
+            case SDL_CONTROLLERBUTTONUP: {
+                if (sdlEvent.cbutton.which == gJoystickId) {
+                    const ControllerInput input = sdlControllerButtonToInput((SDL_GameControllerButton) sdlEvent.cbutton.button);
+
+                    if (input != ControllerInput::INVALID) {
+                        gControllerInputsJustReleased.push_back(input);
+                        removeValueFromVector(input, gControllerInputsJustPressed);     // Prevent contradictions!
+                        gControllerInputs[(uint8_t) input] = 0.0f;
+                    }
+                }
+            }   break;
+
             case SDL_JOYDEVICEADDED:
             case SDL_JOYDEVICEREMOVED:
             case SDL_CONTROLLERDEVICEADDED:
@@ -209,9 +303,55 @@ void update() noexcept {
     }
 }
 
+void init() noexcept {
+    if (SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER) != 0) {
+        FATAL_ERROR("Failed to initialize the SDL joystick input subsystem!");
+    }
+
+    SDL_GameControllerEventState(SDL_ENABLE);   // Want game controller events
+
+    gbIsQuitRequested = false;
+    gpKeyboardState = SDL_GetKeyboardState(&gNumKeyboardStateKeys);
+    gKeyboardKeysJustPressed.reserve(16);
+    gKeyboardKeysJustReleased.reserve(16);
+    gControllerInputsJustPressed.reserve(16);
+    gControllerInputsJustReleased.reserve(16);
+
+    rescanGameControllers();
+}
+
+void shutdown() noexcept {
+    closeCurrentGameController();
+
+    gControllerInputsJustReleased.clear();
+    gControllerInputsJustReleased.shrink_to_fit();
+    gControllerInputsJustPressed.clear();
+    gControllerInputsJustPressed.shrink_to_fit();
+
+    gKeyboardKeysJustReleased.clear();
+    gKeyboardKeysJustReleased.shrink_to_fit();
+    gKeyboardKeysJustPressed.clear();
+    gKeyboardKeysJustPressed.shrink_to_fit();
+    gKeyboardKeysPressed.clear();
+    gKeyboardKeysPressed.shrink_to_fit();
+
+    gpKeyboardState = nullptr;
+    gbIsQuitRequested = false;
+
+    SDL_QuitSubSystem(SDL_INIT_JOYSTICK);
+}
+
+void update() noexcept {    
+    consumeEvents();                    // Released/pressed events are now cleared
+    handleSdlEvents();                  // Process events that SDL is sending to us
+    updatePressedKeyboardKeys();        // Update polled key state
+}
+
 void consumeEvents() noexcept {
     gKeyboardKeysJustPressed.clear();
     gKeyboardKeysJustReleased.clear();
+    gControllerInputsJustPressed.clear();
+    gControllerInputsJustReleased.clear();
 }
 
 bool isQuitRequested() noexcept {
@@ -252,6 +392,35 @@ bool isKeyboardKeyReleased(const uint16_t key) noexcept {
 
 bool isKeyboardKeyJustReleased(const uint16_t key) noexcept {
     return vectorContainsValue(gKeyboardKeysJustReleased, key);
+}
+
+const std::vector<ControllerInput>& getControllerInputsPressed() noexcept {
+    return gControllerInputsPressed;
+}
+
+const std::vector<ControllerInput>& getControllerInputsJustPressed() noexcept {
+    return gControllerInputsJustPressed;
+}
+
+const std::vector<ControllerInput>& getControllerInputsJustReleased() noexcept {
+    return gControllerInputsJustReleased;
+}
+
+bool isControllerInputPressed(const ControllerInput input) noexcept {
+    return vectorContainsValue(gControllerInputsPressed, input);
+}
+
+bool isControllerInputJustPressed(const ControllerInput input) noexcept {
+    return vectorContainsValue(gControllerInputsJustPressed, input);
+}
+
+bool isControllerInputJustReleased(const ControllerInput input) noexcept {
+    return vectorContainsValue(gControllerInputsJustReleased, input);
+}
+
+float getControllerInputValue(const ControllerInput input) noexcept {
+    const uint8_t inputIdx = (uint8_t) input;
+    return (inputIdx < NUM_CONTROLLER_INPUTS) ? gControllerInputs[inputIdx] : 0.0f;
 }
 
 END_NAMESPACE(Input)

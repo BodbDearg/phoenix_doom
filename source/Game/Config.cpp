@@ -141,6 +141,24 @@ PageUp          = debug_move_camera_up
 PageDown        = debug_move_camera_down
 
 ####################################################################################################
+[GameController]
+####################################################################################################
+
+#---------------------------------------------------------------------------------------------------
+# 0-1 range: controls when minor controller inputs are discarded.
+# The default of '0.15' only registers movement if the stick is at least 15% moved.
+# Setting too low may result in unwanted jitter and movement.
+#---------------------------------------------------------------------------------------------------
+DeadZone = 0.15
+
+#---------------------------------------------------------------------------------------------------
+# 0-1 range: controls the point at which an analogue axis like a trigger, stick etc. is regarded
+# as 'pressed' when treated as a digital input (e.g trigger used for 'shoot' action).
+# The default of '0.5' (halfway depressed) is probably reasonable for most users.
+#---------------------------------------------------------------------------------------------------
+AnalogToDigitalThreshold = 0.5
+
+####################################################################################################
 [Debug]
 ####################################################################################################
 
@@ -358,6 +376,8 @@ bool                        gbIntegerOutputScaling;
 bool                        gbAspectCorrectOutputScaling;
 Controls::MenuActionBits    gKeyboardMenuActions[Input::NUM_KEYBOARD_KEYS];
 Controls::GameActionBits    gKeyboardGameActions[Input::NUM_KEYBOARD_KEYS];
+float                       gGamepadDeadZone;
+float                       gGamepadAnalogToDigitalThreshold;
 bool                        gbAllowDebugCameraUpDownMovement;
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -579,6 +599,14 @@ static void handleConfigEntry(const IniUtils::Entry& entry) noexcept {
             }
         }
     }
+    else if (entry.section == "GameController") {
+        if (entry.key == "DeadZone") {
+            gGamepadDeadZone = entry.getFloatValue(gGamepadDeadZone);
+        }
+        else if (entry.key == "AnalogToDigitalThreshold") {
+            gGamepadAnalogToDigitalThreshold = entry.getFloatValue(gGamepadAnalogToDigitalThreshold);
+        }
+    }
     else if (entry.section == "Debug") {
         if (entry.key == "AllowCameraUpDownMovement") {
             gbAllowDebugCameraUpDownMovement = entry.getBoolValue(gbAllowDebugCameraUpDownMovement);
@@ -598,7 +626,10 @@ static void clear() noexcept {
     gbAspectCorrectOutputScaling = true;
 
     std::memset(gKeyboardMenuActions, 0, sizeof(gKeyboardMenuActions));
-    std::memset(gKeyboardGameActions, 0, sizeof(gKeyboardGameActions));    
+    std::memset(gKeyboardGameActions, 0, sizeof(gKeyboardGameActions));
+
+    gGamepadDeadZone = 0.15f;
+    gGamepadAnalogToDigitalThreshold = 0.5f;
 
     gbAllowDebugCameraUpDownMovement = false;
 }

@@ -1,8 +1,9 @@
 #pragma once
 
-#include "Base/Macros.h"
-#include <vector>
+#include "ControllerInput.h"
+#include "Macros.h"
 #include <cstdint>
+#include <vector>
 
 //----------------------------------------------------------------------------------------------------------------------
 // Helper that manages user events and inputs received from the SDL library
@@ -36,11 +37,18 @@ bool areAnyKeysOrButtonsPressed() noexcept;
 const std::vector<uint16_t>& getKeyboardKeysPressed() noexcept;
 const std::vector<uint16_t>& getKeyboardKeysJustPressed() noexcept;
 const std::vector<uint16_t>& getKeyboardKeysJustReleased() noexcept;
+const std::vector<ControllerInput>& getControllerInputsPressed() noexcept;
+const std::vector<ControllerInput>& getControllerInputsJustPressed() noexcept;
+const std::vector<ControllerInput>& getControllerInputsJustReleased() noexcept;
 
 // Query input state and whether something is just pressed or released
 bool isKeyboardKeyPressed(const uint16_t key) noexcept;
 bool isKeyboardKeyJustPressed(const uint16_t key) noexcept;
 bool isKeyboardKeyReleased(const uint16_t key) noexcept;
 bool isKeyboardKeyJustReleased(const uint16_t key) noexcept;
+bool isControllerInputPressed(const ControllerInput input) noexcept;
+bool isControllerInputJustPressed(const ControllerInput input) noexcept;
+bool isControllerInputJustReleased(const ControllerInput input) noexcept;
+float getControllerInputValue(const ControllerInput input) noexcept;
 
 END_NAMESPACE(Input)
