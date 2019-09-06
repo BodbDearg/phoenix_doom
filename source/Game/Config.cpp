@@ -141,7 +141,7 @@ PageUp          = debug_move_camera_up
 PageDown        = debug_move_camera_down
 
 ####################################################################################################
-[GameController]
+[GameControllerControls]
 ####################################################################################################
 
 #---------------------------------------------------------------------------------------------------
@@ -158,6 +158,32 @@ DeadZone = 0.15
 #---------------------------------------------------------------------------------------------------
 AnalogToDigitalThreshold = 0.5
 
+#---------------------------------------------------------------------------------------------------
+# The actual Button bindings for the game controller.
+# These are all the buttons and axes available.
+#---------------------------------------------------------------------------------------------------
+Button_A                = use,                      menu_ok
+Button_B                = menu_back
+Button_X                = automap_free_cam_toggle
+Button_Y                = automap_toggle
+Button_Back             = options
+Button_Guide            = 
+Button_Start            = pause
+Button_LeftStick        = 
+Button_Rightstick       = 
+Button_Leftshoulder     = prev_weapon
+Button_Rightshoulder    = next_weapon
+Button_DpUp             = move_forward,             menu_up
+Button_DpDown           = move_backward,            menu_down
+Button_DpLeft           = turn_left,                menu_left
+Button_DpRight          = turn_right,               menu_right
+Axis_LeftX              = 
+Axis_LeftY              =
+Axis_RightX             =
+Axis_RightY             =
+Axis_LeftTrigger        = run
+Axis_RightTrigger       = attack
+
 ####################################################################################################
 [Debug]
 ####################################################################################################
@@ -168,8 +194,10 @@ AnalogToDigitalThreshold = 0.5
 #---------------------------------------------------------------------------------------------------
 AllowCameraUpDownMovement = 0
 
-
 ####################################################################################################
+#
+# Appendix
+#
 ####################################################################################################
 
 #---------------------------------------------------------------------------------------------------
@@ -378,6 +406,8 @@ Controls::MenuActionBits    gKeyboardMenuActions[Input::NUM_KEYBOARD_KEYS];
 Controls::GameActionBits    gKeyboardGameActions[Input::NUM_KEYBOARD_KEYS];
 float                       gGamepadDeadZone;
 float                       gGamepadAnalogToDigitalThreshold;
+Controls::MenuActionBits    gGamepadMenuActions[NUM_CONTROLLER_INPUTS];
+Controls::GameActionBits    gGamepadGameActions[NUM_CONTROLLER_INPUTS];
 bool                        gbAllowDebugCameraUpDownMovement;
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -564,6 +594,69 @@ static void parseKeyboardKeyActions(const uint16_t keyIdx, const std::string& ac
 }
 
 //----------------------------------------------------------------------------------------------------------------------
+// Tells if a string is prefixed by another string, case insensitive
+//----------------------------------------------------------------------------------------------------------------------
+static bool strHasPrefixCaseInsensitive(const char* pStr, const char* pPrefix) noexcept {
+    ASSERT(pStr);
+    ASSERT(pPrefix);
+
+    while (pPrefix[0]) {
+        const char c1 = (char) std::toupper(pStr[0]);
+        const char c2 = (char) std::toupper(pPrefix[0]);
+
+        if (c1 == c2) {
+            ++pStr;
+            ++pPrefix;
+        } else {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+// Figures out what controller input a button or axis name in the .ini corresponds to.
+// Returns an invalid controller input if not recognized.
+//----------------------------------------------------------------------------------------------------------------------
+static constexpr char* CONTROLLER_BTN_NAME_PREFIX = "Button_";
+static constexpr char* CONTROLLER_AXIS_NAME_PREFIX = "Axis_";
+
+static ControllerInput getControllerInputFromName(const std::string name) noexcept {
+    const char* const pStr = name.c_str();
+    
+    if (strHasPrefixCaseInsensitive(pStr, CONTROLLER_BTN_NAME_PREFIX)) {
+        const uint8_t button = (uint8_t) SDL_GameControllerGetButtonFromString(pStr + std::strlen(CONTROLLER_BTN_NAME_PREFIX));
+        return sdlControllerButtonToInput(button);
+    }
+    else if (strHasPrefixCaseInsensitive(pStr, CONTROLLER_AXIS_NAME_PREFIX)) {
+        const uint8_t axis = (uint8_t) SDL_GameControllerGetAxisFromString(pStr + std::strlen(CONTROLLER_AXIS_NAME_PREFIX));
+        return sdlControllerAxisToInput(axis);
+    }
+    else {
+        return ControllerInput::INVALID;
+    }
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+// Parse the bindings/actions for a particular controller input
+//----------------------------------------------------------------------------------------------------------------------
+static void parseControllerInputActions(const std::string controllerInputName, const std::string& actionsStr) noexcept {    
+    ControllerInput input = getControllerInputFromName(controllerInputName);
+    const uint8_t inputIdx = (uint8_t) input;
+
+    if (inputIdx >= NUM_CONTROLLER_INPUTS)
+        return;
+    
+    Controls::GameActionBits gameActions = Controls::GameActions::NONE;
+    Controls::MenuActionBits menuActions = Controls::MenuActions::NONE;
+    parseActionsString(actionsStr, gameActions, menuActions);
+
+    gGamepadGameActions[inputIdx] = gameActions;
+    gGamepadMenuActions[inputIdx] = menuActions;
+}
+
+//----------------------------------------------------------------------------------------------------------------------
 // Handle a config file entry.
 // This is not a particularly elegant or fast implementation, but it gets the job done... 
 //----------------------------------------------------------------------------------------------------------------------
@@ -595,16 +688,19 @@ static void handleConfigEntry(const IniUtils::Entry& entry) noexcept {
             const uint16_t scancodeIdx = (uint16_t) scancode;
 
             if (scancodeIdx < Input::NUM_KEYBOARD_KEYS) {
-                parseKeyboardKeyActions(scancodeIdx, entry.value.c_str());
+                parseKeyboardKeyActions(scancodeIdx, entry.value);
             }
         }
     }
-    else if (entry.section == "GameController") {
+    else if (entry.section == "GameControllerControls") {
         if (entry.key == "DeadZone") {
             gGamepadDeadZone = entry.getFloatValue(gGamepadDeadZone);
         }
         else if (entry.key == "AnalogToDigitalThreshold") {
             gGamepadAnalogToDigitalThreshold = entry.getFloatValue(gGamepadAnalogToDigitalThreshold);
+        }
+        else {
+            parseControllerInputActions(entry.key, entry.value);
         }
     }
     else if (entry.section == "Debug") {
@@ -631,6 +727,9 @@ static void clear() noexcept {
     gGamepadDeadZone = 0.15f;
     gGamepadAnalogToDigitalThreshold = 0.5f;
 
+    std::memset(gGamepadMenuActions, 0, sizeof(gGamepadMenuActions));
+    std::memset(gGamepadGameActions, 0, sizeof(gGamepadGameActions));
+    
     gbAllowDebugCameraUpDownMovement = false;
 }
 

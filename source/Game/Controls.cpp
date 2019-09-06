@@ -20,6 +20,94 @@ static void clearAllActionBits() noexcept {
     gMenuActionsJustEnded    = MenuActions::NONE;
 }
 
+static void updateActionsFromKeyboardInput() noexcept {
+    // Add to actions currently active
+    {
+        const std::vector<uint16_t>& keyboardKeysPressed = Input::getKeyboardKeysPressed();
+
+        for (uint16_t scancode : keyboardKeysPressed) {
+            const uint32_t scancodeIdx = (uint32_t) scancode;
+
+            if (scancodeIdx < Input::NUM_KEYBOARD_KEYS) {
+                gGameActionsActive |= Config::gKeyboardGameActions[scancodeIdx];
+                gMenuActionsActive |= Config::gKeyboardMenuActions[scancodeIdx];
+            }
+        }
+    }
+
+    // Add to actions just started
+    {
+        const std::vector<uint16_t>& keyboardKeysJustPressed = Input::getKeyboardKeysJustPressed();
+
+        for (uint16_t scancode : keyboardKeysJustPressed) {
+            const uint32_t scancodeIdx = (uint32_t) scancode;
+
+            if (scancodeIdx < Input::NUM_KEYBOARD_KEYS) {
+                gGameActionsJustStarted |= Config::gKeyboardGameActions[scancodeIdx];
+                gMenuActionsJustStarted |= Config::gKeyboardMenuActions[scancodeIdx];
+            }
+        }
+    }
+
+    // Add to actions just ended
+    {
+        const std::vector<uint16_t>& keyboardKeysJustReleased = Input::getKeyboardKeysJustReleased();
+
+        for (uint16_t scancode : keyboardKeysJustReleased) {
+            const uint32_t scancodeIdx = (uint32_t) scancode;
+
+            if (scancodeIdx < Input::NUM_KEYBOARD_KEYS) {
+                gGameActionsJustEnded |= Config::gKeyboardGameActions[scancodeIdx];
+                gMenuActionsJustEnded |= Config::gKeyboardMenuActions[scancodeIdx];
+            }
+        }
+    }
+}
+
+static void updateActionsFromControllerInput() noexcept {
+    // Add to actions currently active
+    {
+        const std::vector<ControllerInput>& inputsPressed = Input::getControllerInputsPressed();
+
+        for (ControllerInput input : inputsPressed) {
+            const uint8_t inputIdx = (uint8_t) input;
+
+            if (inputIdx < NUM_CONTROLLER_INPUTS) {
+                gGameActionsActive |= Config::gGamepadGameActions[inputIdx];
+                gMenuActionsActive |= Config::gGamepadMenuActions[inputIdx];
+            }
+        }
+    }
+
+    // Add to actions just started
+    {
+        const std::vector<ControllerInput>& inputsJustPressed = Input::getControllerInputsJustPressed();
+
+        for (ControllerInput input : inputsJustPressed) {
+            const uint8_t inputIdx = (uint8_t) input;
+
+            if (inputIdx < NUM_CONTROLLER_INPUTS) {
+                gGameActionsJustStarted |= Config::gGamepadGameActions[inputIdx];
+                gMenuActionsJustStarted |= Config::gGamepadMenuActions[inputIdx];
+            }
+        }
+    }
+
+    // Add to actions just ended
+    {
+        const std::vector<ControllerInput>& inputsJustReleased = Input::getControllerInputsJustReleased();
+
+        for (ControllerInput input : inputsJustReleased) {
+            const uint8_t inputIdx = (uint8_t) input;
+
+            if (inputIdx < NUM_CONTROLLER_INPUTS) {
+                gGameActionsJustEnded |= Config::gGamepadGameActions[inputIdx];
+                gMenuActionsJustEnded |= Config::gGamepadMenuActions[inputIdx];
+            }
+        }
+    }
+}
+
 bool GameActions::areActive(const GameActionBits gameActions) noexcept {
     return ((gGameActionsActive & gameActions) == gameActions);
 }
@@ -54,42 +142,8 @@ void shutdown() noexcept {
 
 void update() noexcept {
     clearAllActionBits();
-
-    // Keyboard input: actions currently active
-    const std::vector<uint16_t>& keyboardKeysPressed = Input::getKeyboardKeysPressed();
-
-    for (uint16_t scancode : keyboardKeysPressed) {
-        const uint32_t scancodeIdx = (uint32_t) scancode;
-
-        if (scancodeIdx < Input::NUM_KEYBOARD_KEYS) {
-            gGameActionsActive |= Config::gKeyboardGameActions[scancodeIdx];
-            gMenuActionsActive |= Config::gKeyboardMenuActions[scancodeIdx];
-        }
-    }
-
-    // Keyboard input: actions just started
-    const std::vector<uint16_t>& keyboardKeysJustPressed = Input::getKeyboardKeysJustPressed();
-
-    for (uint16_t scancode : keyboardKeysJustPressed) {
-        const uint32_t scancodeIdx = (uint32_t) scancode;
-
-        if (scancodeIdx < Input::NUM_KEYBOARD_KEYS) {
-            gGameActionsJustStarted |= Config::gKeyboardGameActions[scancodeIdx];
-            gMenuActionsJustStarted |= Config::gKeyboardMenuActions[scancodeIdx];
-        }
-    }
-
-    // Keyboard input: actions just ended
-    const std::vector<uint16_t>& keyboardKeysJustReleased = Input::getKeyboardKeysJustReleased();
-
-    for (uint16_t scancode : keyboardKeysJustReleased) {
-        const uint32_t scancodeIdx = (uint32_t) scancode;
-
-        if (scancodeIdx < Input::NUM_KEYBOARD_KEYS) {
-            gGameActionsJustEnded |= Config::gKeyboardGameActions[scancodeIdx];
-            gMenuActionsJustEnded |= Config::gKeyboardMenuActions[scancodeIdx];
-        }
-    }
+    updateActionsFromKeyboardInput();
+    updateActionsFromControllerInput();
 }
 
 END_NAMESPACE(Controls)

@@ -17,9 +17,12 @@ extern bool         gbAspectCorrectOutputScaling;
 extern Controls::MenuActionBits gKeyboardMenuActions[Input::NUM_KEYBOARD_KEYS];
 extern Controls::GameActionBits gKeyboardGameActions[Input::NUM_KEYBOARD_KEYS];
 
-// Game controller
+// Game controller and bindings
 extern float gGamepadDeadZone;
 extern float gGamepadAnalogToDigitalThreshold;
+
+extern Controls::MenuActionBits gGamepadMenuActions[NUM_CONTROLLER_INPUTS];
+extern Controls::GameActionBits gGamepadGameActions[NUM_CONTROLLER_INPUTS];
 
 // Debug stuff
 extern bool gbAllowDebugCameraUpDownMovement;

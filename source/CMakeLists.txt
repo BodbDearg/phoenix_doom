@@ -21,6 +21,7 @@ set(SOURCE_FILES
     "Base/Angle.h"
     "Base/BitStream.h"
     "Base/ByteStream.h"
+    "Base/ControllerInput.cpp"
     "Base/ControllerInput.h"
     "Base/Endian.h"
     "Base/FatalErrors.cpp"
