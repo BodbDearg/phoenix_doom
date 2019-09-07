@@ -31,6 +31,25 @@ extern Controls::AxisBits       gGamepadAxisBindings[NUM_CONTROLLER_INPUTS];
 // Debug stuff
 extern bool gbAllowDebugCameraUpDownMovement;
 
+// Cheat key sequences: an array of up to 16 SDL scan codes.
+// Unused key slots in the sequence will be set to '0'.
+struct CheatKeySequence {
+    uint8_t keys[16];
+    static constexpr uint32_t MAX_KEYS = (uint32_t) C_ARRAY_SIZE(keys);
+};
+
+extern CheatKeySequence gCheatKeys_GodMode;
+extern CheatKeySequence gCheatKeys_NoClip;
+extern CheatKeySequence gCheatKeys_MapAndThingsRevealToggle;
+extern CheatKeySequence gCheatKeys_AllWeaponsAndAmmo;
+extern CheatKeySequence gCheatKeys_AllWeaponsAmmoAndKeys;
+extern CheatKeySequence gCheatKeys_WarpToMap;
+extern CheatKeySequence gCheatKeys_ChangeMusic;
+extern CheatKeySequence gCheatKeys_GrantInvisibility;
+extern CheatKeySequence gCheatKeys_GrantRadSuit;
+extern CheatKeySequence gCheatKeys_GrantBeserk;
+extern CheatKeySequence gCheatKeys_GrantInvulnerability;
+
 // Startup and shutdown the prefs module
 void init() noexcept;
 void shutdown() noexcept;

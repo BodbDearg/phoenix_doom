@@ -421,6 +421,76 @@ Controls::MenuActionBits    gGamepadMenuActions[NUM_CONTROLLER_INPUTS];
 Controls::GameActionBits    gGamepadGameActions[NUM_CONTROLLER_INPUTS];
 Controls::AxisBits          gGamepadAxisBindings[NUM_CONTROLLER_INPUTS];
 bool                        gbAllowDebugCameraUpDownMovement;
+CheatKeySequence            gCheatKeys_GodMode;
+CheatKeySequence            gCheatKeys_NoClip;
+CheatKeySequence            gCheatKeys_MapAndThingsRevealToggle;
+CheatKeySequence            gCheatKeys_AllWeaponsAndAmmo;
+CheatKeySequence            gCheatKeys_AllWeaponsAmmoAndKeys;
+CheatKeySequence            gCheatKeys_WarpToMap;
+CheatKeySequence            gCheatKeys_ChangeMusic;
+CheatKeySequence            gCheatKeys_GrantInvisibility;
+CheatKeySequence            gCheatKeys_GrantRadSuit;
+CheatKeySequence            gCheatKeys_GrantBeserk;
+CheatKeySequence            gCheatKeys_GrantInvulnerability;
+
+//----------------------------------------------------------------------------------------------------------------------
+// Tells if a string is prefixed by another string, case insensitive
+//----------------------------------------------------------------------------------------------------------------------
+static bool strHasPrefixCaseInsensitive(const char* pStr, const char* pPrefix) noexcept {
+    ASSERT(pStr);
+    ASSERT(pPrefix);
+
+    while (pPrefix[0]) {
+        const char c1 = (char) std::toupper(pStr[0]);
+        const char c2 = (char) std::toupper(pPrefix[0]);
+
+        if (c1 == c2) {
+            ++pStr;
+            ++pPrefix;
+        } else {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+// Assign a cheat key sequence a value from a string.
+// Only alpha and numeric characters are allowed and the maximum sequence length is 16.
+//----------------------------------------------------------------------------------------------------------------------
+static void setCheatKeySequence(CheatKeySequence& sequence, const char* const pKeysStr) noexcept {
+    // Handle all of the chars in the string, up to 16 chars
+    ASSERT(pKeysStr);    
+    uint32_t keyIdx = 0;
+    const char* pCurChar = pKeysStr;
+
+    do {
+        const char c = (char) std::toupper(pCurChar[0]);
+        ++pCurChar;
+
+        if (c == 0) {
+            break;
+        }
+
+        if (c >= 'A' && c <= 'Z') {
+            const uint8_t key = (uint8_t) SDL_SCANCODE_A + (uint8_t) c - 'A';
+            sequence.keys[keyIdx] = key;
+            ++keyIdx;
+        }
+        else if (c >= '0' && c <= '9') {
+            const uint8_t key = (uint8_t) SDL_SCANCODE_0 + (uint8_t) c - '0';
+            sequence.keys[keyIdx] = key;
+            ++keyIdx;
+        }
+    } while (keyIdx < CheatKeySequence::MAX_KEYS);
+
+    // If we did not complete the sequence then null the rest of the chars
+    while (keyIdx < CheatKeySequence::MAX_KEYS) {
+        sequence.keys[keyIdx] = 0;
+        ++keyIdx;
+    }
+}
 
 //----------------------------------------------------------------------------------------------------------------------
 // Determines the path to the config .ini for the game
@@ -629,28 +699,6 @@ static void parseKeyboardKeyActions(const uint16_t keyIdx, const std::string& ac
 }
 
 //----------------------------------------------------------------------------------------------------------------------
-// Tells if a string is prefixed by another string, case insensitive
-//----------------------------------------------------------------------------------------------------------------------
-static bool strHasPrefixCaseInsensitive(const char* pStr, const char* pPrefix) noexcept {
-    ASSERT(pStr);
-    ASSERT(pPrefix);
-
-    while (pPrefix[0]) {
-        const char c1 = (char) std::toupper(pStr[0]);
-        const char c2 = (char) std::toupper(pPrefix[0]);
-
-        if (c1 == c2) {
-            ++pStr;
-            ++pPrefix;
-        } else {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-//----------------------------------------------------------------------------------------------------------------------
 // Figures out what controller input a button or axis name in the .ini corresponds to.
 // Returns an invalid controller input if not recognized.
 //----------------------------------------------------------------------------------------------------------------------
@@ -692,6 +740,32 @@ static void parseControllerInputActions(const std::string controllerInputName, c
     gGamepadGameActions[inputIdx] = gameActions;
     gGamepadMenuActions[inputIdx] = menuActions;
     gGamepadAxisBindings[inputIdx] = axisBindings;
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+// Parse a cheat key sequence
+//----------------------------------------------------------------------------------------------------------------------
+static void parseCheatKeySequence(const std::string& name, const char* const pSequenceKeys) noexcept {
+    if (!pSequenceKeys)
+        return;
+    
+    auto parseSequence = [&](const char* pExpectedName, CheatKeySequence& sequence) noexcept {
+        if (name == pExpectedName) {
+            setCheatKeySequence(sequence, pSequenceKeys);
+        }
+    };
+
+    parseSequence("GodMode",                    gCheatKeys_GodMode);
+    parseSequence("NoClip",                     gCheatKeys_NoClip);
+    parseSequence("MapAndThingsRevealToggle",   gCheatKeys_MapAndThingsRevealToggle);
+    parseSequence("AllWeaponsAndAmmo",          gCheatKeys_AllWeaponsAndAmmo);
+    parseSequence("AllWeaponsAmmoAndKeys",      gCheatKeys_AllWeaponsAmmoAndKeys);
+    parseSequence("WarpToMap",                  gCheatKeys_WarpToMap);
+    parseSequence("ChangeMusic",                gCheatKeys_ChangeMusic);
+    parseSequence("GrantInvisibility",          gCheatKeys_GrantInvisibility);
+    parseSequence("GrantRadSuit",               gCheatKeys_GrantRadSuit);
+    parseSequence("GrantBeserk",                gCheatKeys_GrantBeserk);
+    parseSequence("GrantInvulnerability",       gCheatKeys_GrantInvulnerability);
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -751,6 +825,9 @@ static void handleConfigEntry(const IniUtils::Entry& entry) noexcept {
             gbAllowDebugCameraUpDownMovement = entry.getBoolValue(gbAllowDebugCameraUpDownMovement);
         }
     }
+    else if (entry.section == "CheatKeySequences") {
+        parseCheatKeySequence(entry.key, entry.value.c_str());
+    }
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -777,6 +854,18 @@ static void clear() noexcept {
     std::memset(gGamepadGameActions, 0, sizeof(gGamepadAxisBindings));
     
     gbAllowDebugCameraUpDownMovement = false;
+
+    setCheatKeySequence(gCheatKeys_GodMode,                     "IDDQD");
+    setCheatKeySequence(gCheatKeys_NoClip,                      "IDCLIP");
+    setCheatKeySequence(gCheatKeys_MapAndThingsRevealToggle,    "IDDT");
+    setCheatKeySequence(gCheatKeys_AllWeaponsAndAmmo,           "IDFA");
+    setCheatKeySequence(gCheatKeys_AllWeaponsAmmoAndKeys,       "IDKFA");
+    setCheatKeySequence(gCheatKeys_WarpToMap,                   "IDCLEV");
+    setCheatKeySequence(gCheatKeys_ChangeMusic,                 "IDMUS");
+    setCheatKeySequence(gCheatKeys_GrantInvisibility,           "IDBEHOLDI");
+    setCheatKeySequence(gCheatKeys_GrantRadSuit,                "IDBEHOLDR");
+    setCheatKeySequence(gCheatKeys_GrantBeserk,                 "IDBEHOLDS");
+    setCheatKeySequence(gCheatKeys_GrantInvulnerability,        "IDBEHOLDV");
 }
 
 void init() noexcept {
