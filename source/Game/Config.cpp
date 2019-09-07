@@ -100,21 +100,21 @@ AspectCorrectOutputScaling = 1
 # Hopefully these actions are fairly self explanatory...
 # See the end of this file for a full list of available keyboard keys etc. that can be assigned.
 #---------------------------------------------------------------------------------------------------
-Up              = move_forward,     menu_up
-Down            = move_backward,    menu_down
-Left            = turn_left,        menu_left
-Right           = turn_right,       menu_right
-A               = strafe_left,      menu_left
-D               = strafe_right,     menu_right
-W               = move_forward,     menu_up
-S               = move_backward,    menu_down
+Up              = move_forward, menu_up
+Down            = move_backward, menu_down
+Left            = turn_left, menu_left
+Right           = turn_right, menu_right
+A               = strafe_left, menu_left
+D               = strafe_right, menu_right
+W               = move_forward, menu_up
+S               = move_backward, menu_down
 Left Ctrl       = attack
 Right Ctrl      = attack
-Space           = use,              menu_ok
-Return          = use,              menu_ok
+Space           = use, menu_ok
+Return          = use, menu_ok
 E               = use
-Escape          = options,          menu_back
-Backspace       = options,          menu_back
+Escape          = options, menu_back
+Backspace       = options, menu_back
 Left Shift      = run
 Right Shift     = run
 \[              = prev_weapon
@@ -146,10 +146,10 @@ PageDown        = debug_move_camera_down
 
 #---------------------------------------------------------------------------------------------------
 # 0-1 range: controls when minor controller inputs are discarded.
-# The default of '0.15' only registers movement if the stick is at least 15% moved.
+# The default of '0.05' only registers movement if the stick is at least 10% moved.
 # Setting too low may result in unwanted jitter and movement.
 #---------------------------------------------------------------------------------------------------
-DeadZone = 0.15
+DeadZone = 0.10
 
 #---------------------------------------------------------------------------------------------------
 # 0-1 range: controls the point at which an analogue axis like a trigger, stick etc. is regarded
@@ -161,8 +161,11 @@ AnalogToDigitalThreshold = 0.5
 #---------------------------------------------------------------------------------------------------
 # The actual Button bindings for the game controller.
 # These are all the buttons and axes available.
+#
+# Note: these default bindings are optimized for the Xbox One/360 controllers.
+# They'll probably work well on a PS4 controller too.
 #---------------------------------------------------------------------------------------------------
-Button_A                = use,                      menu_ok
+Button_A                = use, menu_ok
 Button_B                = menu_back
 Button_X                = automap_free_cam_toggle
 Button_Y                = automap_toggle
@@ -173,14 +176,14 @@ Button_LeftStick        =
 Button_Rightstick       = 
 Button_Leftshoulder     = prev_weapon
 Button_Rightshoulder    = next_weapon
-Button_DpUp             = move_forward,             menu_up
-Button_DpDown           = move_backward,            menu_down
-Button_DpLeft           = turn_left,                menu_left
-Button_DpRight          = turn_right,               menu_right
-Axis_LeftX              = 
-Axis_LeftY              =
-Axis_RightX             =
-Axis_RightY             =
+Button_DpUp             = move_forward, menu_up
+Button_DpDown           = move_backward, menu_down
+Button_DpLeft           = turn_left, menu_left
+Button_DpRight          = turn_right, menu_right
+Axis_LeftX              = strafe_left_right
+Axis_LeftY              = move_forward_backward
+Axis_RightX             = turn_left_right, menu_left_right
+Axis_RightY             = automap_free_cam_zoom_in_out, menu_up_down
 Axis_LeftTrigger        = run
 Axis_RightTrigger       = attack
 
@@ -408,6 +411,7 @@ float                       gGamepadDeadZone;
 float                       gGamepadAnalogToDigitalThreshold;
 Controls::MenuActionBits    gGamepadMenuActions[NUM_CONTROLLER_INPUTS];
 Controls::GameActionBits    gGamepadGameActions[NUM_CONTROLLER_INPUTS];
+Controls::AxisBits          gGamepadAxisBindings[NUM_CONTROLLER_INPUTS];
 bool                        gbAllowDebugCameraUpDownMovement;
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -468,12 +472,13 @@ static void regenerateDefaultConfigFileIfNotPresent(const std::string& iniFilePa
 }
 
 //----------------------------------------------------------------------------------------------------------------------
-// Parse a single game or menu action string
+// Parse a single game or menu action or axis string
 //----------------------------------------------------------------------------------------------------------------------
-static void parseSingleActionString(
+static void parseSingleActionOrAxisString(
     const std::string& actionStr,
     Controls::GameActionBits& gameActionsOut,
-    Controls::MenuActionBits& menuActionsOut
+    Controls::MenuActionBits& menuActionsOut,
+    Controls::AxisBits& axisBindingsOut
 ) noexcept {
     // These cut down on repetivie code
     auto handleGameAction = [&](const char* const pName, const Controls::GameActionBits actionBits) noexcept {
@@ -485,6 +490,12 @@ static void parseSingleActionString(
     auto handleMenuAction = [&](const char* const pName, const Controls::MenuActionBits actionBits) noexcept {
         if (actionStr == pName) {
             menuActionsOut |= actionBits;
+        }
+    };
+
+    auto handleAxis = [&](const char* const pName, const Controls::AxisBits axisBits) noexcept {
+        if (actionStr == pName) {
+            axisBindingsOut |= axisBits;
         }
     };
 
@@ -521,18 +532,27 @@ static void parseSingleActionString(
     handleMenuAction("menu_right",  Controls::MenuActions::RIGHT);
     handleMenuAction("menu_ok",     Controls::MenuActions::OK);
     handleMenuAction("menu_back",   Controls::MenuActions::BACK);
+
+    handleAxis("turn_left_right",               Controls::Axis::TURN_LEFT_RIGHT);
+    handleAxis("move_forward_backward",         Controls::Axis::MOVE_FORWARD_BACK);
+    handleAxis("strafe_left_right",             Controls::Axis::STRAFE_LEFT_RIGHT);
+    handleAxis("automap_free_cam_zoom_in_out",  Controls::Axis::AUTOMAP_FREE_CAM_ZOOM_IN_OUT);
+    handleAxis("menu_up_down",                  Controls::Axis::MENU_UP_DOWN);
+    handleAxis("menu_left_right",               Controls::Axis::MENU_LEFT_RIGHT);
 }
 
 //----------------------------------------------------------------------------------------------------------------------
 // Parse a game and menu actions bindings string
 //----------------------------------------------------------------------------------------------------------------------
-static void parseActionsString(
+static void parseActionsAndAxesString(
     const std::string& actionsStr,
     Controls::GameActionBits& gameActionsOut,
-    Controls::MenuActionBits& menuActionsOut
+    Controls::MenuActionBits& menuActionsOut,
+    Controls::AxisBits& axisBindingsOut
 ) noexcept {
     gameActionsOut = Controls::GameActions::NONE;
     menuActionsOut = Controls::MenuActions::NONE;
+    axisBindingsOut = Controls::Axis::NONE;
 
     const char* pActionStart = actionsStr.c_str();
     const char* const pActionsStrEnd = actionsStr.c_str() + actionsStr.size();
@@ -571,7 +591,7 @@ static void parseActionsString(
         gTmpActionStr.clear();
         gTmpActionStr.assign(pActionStart, actionLen);
 
-        parseSingleActionString(gTmpActionStr, gameActionsOut, menuActionsOut);
+        parseSingleActionOrAxisString(gTmpActionStr, gameActionsOut, menuActionsOut, axisBindingsOut);
 
         // Move on to the next action in the string (if any)
         pActionStart = pActionEnd + 1;
@@ -587,7 +607,14 @@ static void parseKeyboardKeyActions(const uint16_t keyIdx, const std::string& ac
     
     Controls::GameActionBits gameActions = Controls::GameActions::NONE;
     Controls::MenuActionBits menuActions = Controls::MenuActions::NONE;
-    parseActionsString(actionsStr, gameActions, menuActions);
+    Controls::AxisBits axisBindings = Controls::Axis::NONE;
+
+    parseActionsAndAxesString(actionsStr, gameActions, menuActions, axisBindings);
+    
+    // Note: for the keyboard we ignore any attempts to bind analogue axes to keyboard keys!
+    // It doesn't make sense because we can only get a '0' or a '1' from the keyboard, and
+    // not the -1 to +1 range that an axis requires.
+    MARK_UNUSED(axisBindings);
 
     gKeyboardGameActions[keyIdx] = gameActions;
     gKeyboardMenuActions[keyIdx] = menuActions;
@@ -650,10 +677,13 @@ static void parseControllerInputActions(const std::string controllerInputName, c
     
     Controls::GameActionBits gameActions = Controls::GameActions::NONE;
     Controls::MenuActionBits menuActions = Controls::MenuActions::NONE;
-    parseActionsString(actionsStr, gameActions, menuActions);
+    Controls::AxisBits axisBindings = Controls::Axis::NONE;
+
+    parseActionsAndAxesString(actionsStr, gameActions, menuActions, axisBindings);
 
     gGamepadGameActions[inputIdx] = gameActions;
     gGamepadMenuActions[inputIdx] = menuActions;
+    gGamepadAxisBindings[inputIdx] = axisBindings;
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -729,6 +759,7 @@ static void clear() noexcept {
 
     std::memset(gGamepadMenuActions, 0, sizeof(gGamepadMenuActions));
     std::memset(gGamepadGameActions, 0, sizeof(gGamepadGameActions));
+    std::memset(gGamepadGameActions, 0, sizeof(gGamepadAxisBindings));
     
     gbAllowDebugCameraUpDownMovement = false;
 }

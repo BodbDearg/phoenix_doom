@@ -23,6 +23,7 @@ extern float gGamepadAnalogToDigitalThreshold;
 
 extern Controls::MenuActionBits gGamepadMenuActions[NUM_CONTROLLER_INPUTS];
 extern Controls::GameActionBits gGamepadGameActions[NUM_CONTROLLER_INPUTS];
+extern Controls::AxisBits       gGamepadAxisBindings[NUM_CONTROLLER_INPUTS];
 
 // Debug stuff
 extern bool gbAllowDebugCameraUpDownMovement;

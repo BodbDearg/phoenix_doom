@@ -6,7 +6,7 @@
 BEGIN_NAMESPACE(Controls)
 
 //----------------------------------------------------------------------------------------------------------------------
-// Available actions in the menu
+// Available digital (on/off) actions in the menu
 //----------------------------------------------------------------------------------------------------------------------
 typedef uint32_t MenuActionBits;
 
@@ -31,7 +31,7 @@ namespace MenuActions {
 }
 
 //----------------------------------------------------------------------------------------------------------------------
-// Available actions in the game, except for analogue movement via a gamepad (that is hardcoded)
+// Available digital (on/off) actions in the game
 //----------------------------------------------------------------------------------------------------------------------
 typedef uint32_t GameActionBits;
 
@@ -73,6 +73,28 @@ namespace GameActions {
     #define GAME_ACTION(NAME)           Controls::GameActions::areActive(Controls::GameActions::NAME)
     #define GAME_ACTION_STARTED(NAME)   Controls::GameActions::areJustStarted(Controls::GameActions::NAME)
     #define GAME_ACTION_ENDED(NAME)     Controls::GameActions::areJustEnded(Controls::GameActions::NAME)
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+// Available axes for analog input
+//----------------------------------------------------------------------------------------------------------------------
+typedef uint32_t AxisBits;
+
+namespace Axis {
+    static constexpr uint32_t NONE                          = 0x00000000u;
+    static constexpr uint32_t TURN_LEFT_RIGHT               = 0x00000001u;
+    static constexpr uint32_t MOVE_FORWARD_BACK             = 0x00000002u;
+    static constexpr uint32_t STRAFE_LEFT_RIGHT             = 0x00000004u;
+    static constexpr uint32_t AUTOMAP_FREE_CAM_ZOOM_IN_OUT  = 0x00000008u;
+    static constexpr uint32_t MENU_UP_DOWN                  = 0x00000010u;
+    static constexpr uint32_t MENU_LEFT_RIGHT               = 0x00000020u;
+
+    // Get the value of one axis.
+    // Note: can query only one axis at a time, otherwise will return 0!
+    float getValue(const AxisBits axis) noexcept;
+
+    // Convenience macros to shorten things
+    #define CONTROLLER_AXIS(NAME) Controls::Axis::getValue(Controls::Axis::NAME)
 }
 
 // Startup and shutdown control processing

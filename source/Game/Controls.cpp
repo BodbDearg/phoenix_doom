@@ -4,12 +4,19 @@
 
 BEGIN_NAMESPACE(Controls)
 
-static GameActionBits gGameActionsActive;
-static GameActionBits gGameActionsJustStarted;
-static GameActionBits gGameActionsJustEnded;
-static MenuActionBits gMenuActionsActive;
-static MenuActionBits gMenuActionsJustStarted;
-static MenuActionBits gMenuActionsJustEnded;
+static GameActionBits   gGameActionsActive;
+static GameActionBits   gGameActionsJustStarted;
+static GameActionBits   gGameActionsJustEnded;
+static MenuActionBits   gMenuActionsActive;
+static MenuActionBits   gMenuActionsJustStarted;
+static MenuActionBits   gMenuActionsJustEnded;
+
+static float gAxis_TurnLeftRight;
+static float gAxis_MoveForwardBack;
+static float gAxis_StrafeLeftRight;
+static float gAxis_AutomapFreeCamZoomInOut;
+static float gAxis_MenuUpDown;
+static float gAxis_MenuLeftRight;
 
 static void clearAllActionBits() noexcept {
     gGameActionsActive       = GameActions::NONE;
@@ -18,6 +25,20 @@ static void clearAllActionBits() noexcept {
     gMenuActionsActive       = MenuActions::NONE;
     gMenuActionsJustStarted  = MenuActions::NONE;
     gMenuActionsJustEnded    = MenuActions::NONE;
+}
+
+static void clearAllAxes() noexcept {
+    gAxis_TurnLeftRight             = 0.0f;
+    gAxis_MoveForwardBack           = 0.0f;
+    gAxis_StrafeLeftRight           = 0.0f;
+    gAxis_AutomapFreeCamZoomInOut   = 0.0f;
+    gAxis_MenuUpDown                = 0.0f;
+    gAxis_MenuLeftRight             = 0.0f;
+}
+
+static void clearAllInputs() noexcept {
+    clearAllActionBits();
+    clearAllAxes();
 }
 
 static void updateActionsFromKeyboardInput() noexcept {
@@ -108,6 +129,47 @@ static void updateActionsFromControllerInput() noexcept {
     }
 }
 
+static void handleAnalogInput(const float inputValue, const Controls::AxisBits bindings) noexcept {
+    if ((bindings & Controls::Axis::TURN_LEFT_RIGHT) != 0) {
+        gAxis_TurnLeftRight += inputValue;
+    }
+
+    if ((bindings & Controls::Axis::MOVE_FORWARD_BACK) != 0) {
+        gAxis_MoveForwardBack += inputValue;
+    }
+
+    if ((bindings & Controls::Axis::STRAFE_LEFT_RIGHT) != 0) {
+        gAxis_StrafeLeftRight += inputValue;
+    }
+
+    if ((bindings & Controls::Axis::AUTOMAP_FREE_CAM_ZOOM_IN_OUT) != 0) {
+        gAxis_AutomapFreeCamZoomInOut += inputValue;
+    }
+
+    if ((bindings & Controls::Axis::MENU_UP_DOWN) != 0) {
+        gAxis_MenuUpDown += inputValue;
+    }
+
+    if ((bindings & Controls::Axis::MENU_LEFT_RIGHT) != 0) {
+        gAxis_MenuLeftRight += inputValue;
+    }
+}
+
+static void updateAxesFromControllerInput() noexcept {    
+    auto handleGamepadAnalogInput = [&](const ControllerInput input) noexcept {
+        const float inputValue = Input::getControllerInputValue(input);
+        const Controls::AxisBits bindings = Config::gGamepadAxisBindings[(uint8_t) input];
+        handleAnalogInput(inputValue, bindings);
+    };
+
+    handleGamepadAnalogInput(ControllerInput::AXIS_LEFT_X);
+    handleGamepadAnalogInput(ControllerInput::AXIS_LEFT_Y);
+    handleGamepadAnalogInput(ControllerInput::AXIS_RIGHT_X);
+    handleGamepadAnalogInput(ControllerInput::AXIS_RIGHT_Y);
+    handleGamepadAnalogInput(ControllerInput::AXIS_TRIG_LEFT);
+    handleGamepadAnalogInput(ControllerInput::AXIS_TRIG_RIGHT);
+}
+
 bool GameActions::areActive(const GameActionBits gameActions) noexcept {
     return ((gGameActionsActive & gameActions) == gameActions);
 }
@@ -132,18 +194,43 @@ bool MenuActions::areJustEnded(const MenuActionBits menuActions) noexcept {
     return ((gMenuActionsJustEnded & menuActions) == menuActions);
 }
 
+float Axis::getValue(const AxisBits axis) noexcept {
+    if (axis == TURN_LEFT_RIGHT) {
+        return gAxis_TurnLeftRight;
+    }
+    else if (axis == MOVE_FORWARD_BACK) {
+        return gAxis_MoveForwardBack;
+    }
+    else if (axis == STRAFE_LEFT_RIGHT) {
+        return gAxis_StrafeLeftRight;
+    }
+    else if (axis == AUTOMAP_FREE_CAM_ZOOM_IN_OUT) {
+        return gAxis_AutomapFreeCamZoomInOut;
+    }
+    else if (axis == MENU_UP_DOWN) {
+        return gAxis_MenuUpDown;
+    }
+    else if (axis == MENU_LEFT_RIGHT) {
+        return gAxis_MenuLeftRight;
+    }
+    else {
+        return 0.0f;
+    }
+}
+
 void init() noexcept {
-    clearAllActionBits();
+    clearAllInputs();
 }
 
 void shutdown() noexcept {
-    clearAllActionBits();
+    clearAllInputs();    
 }
 
 void update() noexcept {
-    clearAllActionBits();
+    clearAllInputs();
     updateActionsFromKeyboardInput();
     updateActionsFromControllerInput();
+    updateAxesFromControllerInput();
 }
 
 END_NAMESPACE(Controls)

@@ -16,6 +16,7 @@
 #include "MapObj.h"
 #include "Slide.h"
 #include "UI/StatusBar_Main.h"
+#include <algorithm>
 
 static constexpr Fixed MAXBOB = 16 << FRACBITS;   // 16 pixels of bobbing up and down
 
@@ -29,33 +30,32 @@ static constexpr uint32_t SIDE_MOVE[2] = {
     0x58000 >> 2
 };
 
-static constexpr Fixed ANGLE_TURN[] = {
+static constexpr Fixed FAST_ANGLE_TURN[] = {
     600 << FRACBITS,
     600 << FRACBITS,
-    600 << FRACBITS,
-    1000 << FRACBITS,
-    1000 << FRACBITS,
-    1200 << FRACBITS,
-    1400 << FRACBITS,
-    1600 << FRACBITS,
-    1800 << FRACBITS,
-    1800 << FRACBITS,
-    2000 << FRACBITS
+    650 << FRACBITS,
+    700 << FRACBITS,
+    700 << FRACBITS,
+    750 << FRACBITS,
+    750 << FRACBITS,
+    800 << FRACBITS,
+    850 << FRACBITS,
+    850 << FRACBITS,
+    900 << FRACBITS
 };
 
-// Will be mul'd by ElapsedTime
-static constexpr Fixed FAST_ANGLE_TURN[] = {
+static constexpr Fixed ANGLE_TURN[] = {
+    300 << FRACBITS,
+    300 << FRACBITS,
+    350 << FRACBITS,
     400 << FRACBITS,
-    400 << FRACBITS,
-    400 << FRACBITS,
+    450 << FRACBITS,
     450 << FRACBITS,
     500 << FRACBITS,
     500 << FRACBITS,
-    600 << FRACBITS,
-    600 << FRACBITS,
-    650 << FRACBITS,
-    650 << FRACBITS,
-    700 << FRACBITS
+    550 << FRACBITS,
+    550 << FRACBITS,
+    600 << FRACBITS
 };
 
 static bool gbOnGround;     // True if the player is on the ground
@@ -226,7 +226,8 @@ static void P_BuildMove(player_t& player) noexcept {
 
         const bool bResetTurnAcceleration = (
             (!GAME_ACTION(TURN_LEFT)) &&
-            (!GAME_ACTION(TURN_RIGHT))
+            (!GAME_ACTION(TURN_RIGHT)) &&
+            (CONTROLLER_AXIS(TURN_LEFT_RIGHT) == 0.0f)
         );
 
         if (bResetTurnAcceleration) {
@@ -243,53 +244,62 @@ static void P_BuildMove(player_t& player) noexcept {
         const uint32_t speedIndex = GAME_ACTION(RUN) ? 1 : 0;
 
         // Do side stepping
-        player.sidemove = 0;
-
+        float sideMoveFracF = CONTROLLER_AXIS(STRAFE_LEFT_RIGHT);
+        
         if (GAME_ACTION(STRAFE_LEFT)) {
-            player.sidemove -= SIDE_MOVE[speedIndex];
+            sideMoveFracF -= 1.0f;
         }
 
         if (GAME_ACTION(STRAFE_RIGHT)) {
-            player.sidemove += SIDE_MOVE[speedIndex];
+            sideMoveFracF += 1.0f;
         }
 
+        sideMoveFracF = std::max(sideMoveFracF, -1.0f);
+        sideMoveFracF = std::min(sideMoveFracF, 1.0f);
+
+        const Fixed sideMoveFrac = floatToFixed(sideMoveFracF);
+        player.sidemove = fixedMul(sideMoveFrac, SIDE_MOVE[speedIndex]);
+
         // Do turning
-        player.angleturn = 0;
+        float angleTurnFracF = -CONTROLLER_AXIS(TURN_LEFT_RIGHT);
+
+        if (GAME_ACTION(TURN_LEFT)) {
+            angleTurnFracF += 1.0f;
+        }
+
+        if (GAME_ACTION(TURN_RIGHT)) {
+            angleTurnFracF -= 1.0f;
+        }
+
+        const Fixed angleTurnFrac = floatToFixed(angleTurnFracF);
 
         if ((speedIndex != 0) && 
             (!GAME_ACTION(MOVE_FORWARD)) &&
-            (!GAME_ACTION(MOVE_BACKWARD))
+            (!GAME_ACTION(MOVE_BACKWARD)) &&
+            (CONTROLLER_AXIS(MOVE_FORWARD_BACK) == 0.0f) &&
+            (CONTROLLER_AXIS(STRAFE_LEFT_RIGHT) == 0.0f)
         ) {
-            if (GAME_ACTION(TURN_LEFT)) {
-                player.angleturn += FAST_ANGLE_TURN[turnIndex];
-            }
-
-            if (GAME_ACTION(TURN_RIGHT)) {
-                player.angleturn -= FAST_ANGLE_TURN[turnIndex];
-            }
+            player.angleturn = fixedMul(angleTurnFrac, FAST_ANGLE_TURN[turnIndex]);
         } else {
-            // Don't time adjust, for fine tuning
-            const Fixed turnSpeed = fixedDiv(ANGLE_TURN[turnIndex], intToFixed(4));
-
-            if (GAME_ACTION(TURN_LEFT)) {
-                player.angleturn += turnSpeed;
-            }
-
-            if (GAME_ACTION(TURN_RIGHT)) {
-                player.angleturn -= turnSpeed;
-            }
+            player.angleturn = fixedMul(angleTurnFrac, ANGLE_TURN[turnIndex]);
         }
 
         // Do move forward and backward
-        player.forwardmove = 0;
-
+        float forwardMoveFracF = -CONTROLLER_AXIS(MOVE_FORWARD_BACK);
+        
         if (GAME_ACTION(MOVE_FORWARD)) {
-            player.forwardmove += FORWARD_MOVE[speedIndex];
+            forwardMoveFracF += 1.0f;
         }
 
         if (GAME_ACTION(MOVE_BACKWARD)) {
-            player.forwardmove -= FORWARD_MOVE[speedIndex];
+            forwardMoveFracF -= 1.0f;
         }
+
+        forwardMoveFracF = std::max(forwardMoveFracF, -1.0f);
+        forwardMoveFracF = std::min(forwardMoveFracF, 1.0f);
+
+        const Fixed forwardMoveFrac = floatToFixed(forwardMoveFracF);
+        player.forwardmove = fixedMul(forwardMoveFrac, FORWARD_MOVE[speedIndex]);
 
         // Debug camera movement
         if (Config::gbAllowDebugCameraUpDownMovement) {
