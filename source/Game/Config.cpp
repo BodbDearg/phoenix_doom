@@ -93,6 +93,17 @@ IntegerOutputScaling = 1
 AspectCorrectOutputScaling = 1
 
 ####################################################################################################
+[InputGeneral]
+####################################################################################################
+
+#---------------------------------------------------------------------------------------------------
+# 0-1 range: controls the point at which an analogue axis like a trigger, stick etc. is regarded
+# as 'pressed' when treated as a digital input (e.g trigger used for 'shoot' action).
+# The default of '0.5' (halfway depressed) is probably reasonable for most users.
+#---------------------------------------------------------------------------------------------------
+AnalogToDigitalThreshold = 0.5
+
+####################################################################################################
 [KeyboardControls]
 ####################################################################################################
 
@@ -146,29 +157,19 @@ PageDown        = debug_move_camera_down
 
 #---------------------------------------------------------------------------------------------------
 # 0-1 range: controls when minor controller inputs are discarded.
-# The default of '0.05' only registers movement if the stick is at least 10% moved.
+# The default of '0.125' only registers movement if the stick is at least 12.5% moved.
 # Setting too low may result in unwanted jitter and movement.
 #---------------------------------------------------------------------------------------------------
-DeadZone = 0.10
-
-#---------------------------------------------------------------------------------------------------
-# 0-1 range: controls the point at which an analogue axis like a trigger, stick etc. is regarded
-# as 'pressed' when treated as a digital input (e.g trigger used for 'shoot' action).
-# The default of '0.5' (halfway depressed) is probably reasonable for most users.
-#---------------------------------------------------------------------------------------------------
-AnalogToDigitalThreshold = 0.5
+DeadZone = 0.125
 
 #---------------------------------------------------------------------------------------------------
 # Sensitivity multiplier that affects how sensitive the gamepad is for left/right turning
 #---------------------------------------------------------------------------------------------------
-TurnSensitivity = 2.0
+TurnSensitivity = 1.0
 
 #---------------------------------------------------------------------------------------------------
 # The actual Button bindings for the game controller.
 # These are all the buttons and axes available.
-#
-# Note: these default bindings are optimized for the Xbox One/360 controllers.
-# They'll probably work well on a PS4 controller too.
 #---------------------------------------------------------------------------------------------------
 Button_A                = use, menu_ok
 Button_B                = menu_back
@@ -185,8 +186,8 @@ Button_DpUp             = move_forward, menu_up
 Button_DpDown           = move_backward, menu_down
 Button_DpLeft           = turn_left, menu_left
 Button_DpRight          = turn_right, menu_right
-Axis_LeftX              = strafe_left_right
-Axis_LeftY              = move_forward_backward
+Axis_LeftX              = strafe_left_right, menu_left_right
+Axis_LeftY              = move_forward_backward, menu_up_down
 Axis_RightX             = turn_left_right, menu_left_right
 Axis_RightY             = automap_free_cam_zoom_in_out, menu_up_down
 Axis_LeftTrigger        = run
@@ -410,10 +411,10 @@ int32_t                     gOutputResolutionW;
 int32_t                     gOutputResolutionH;
 bool                        gbIntegerOutputScaling;
 bool                        gbAspectCorrectOutputScaling;
+float                       gInputAnalogToDigitalThreshold;
 Controls::MenuActionBits    gKeyboardMenuActions[Input::NUM_KEYBOARD_KEYS];
 Controls::GameActionBits    gKeyboardGameActions[Input::NUM_KEYBOARD_KEYS];
 float                       gGamepadDeadZone;
-float                       gGamepadAnalogToDigitalThreshold;
 float                       gGamepadTurnSensitivity;
 Controls::MenuActionBits    gGamepadMenuActions[NUM_CONTROLLER_INPUTS];
 Controls::GameActionBits    gGamepadGameActions[NUM_CONTROLLER_INPUTS];
@@ -717,6 +718,11 @@ static void handleConfigEntry(const IniUtils::Entry& entry) noexcept {
             gbAspectCorrectOutputScaling = entry.getBoolValue(gbAspectCorrectOutputScaling);
         }
     }
+    else if (entry.section == "InputGeneral") {
+        if (entry.key == "AnalogToDigitalThreshold") {
+            gInputAnalogToDigitalThreshold = entry.getFloatValue(gInputAnalogToDigitalThreshold);
+        }        
+    }
     else if (entry.section == "KeyboardControls") {
         const SDL_Scancode scancode = SDL_GetScancodeFromName(entry.key.c_str());
 
@@ -731,9 +737,6 @@ static void handleConfigEntry(const IniUtils::Entry& entry) noexcept {
     else if (entry.section == "GameControllerControls") {
         if (entry.key == "DeadZone") {
             gGamepadDeadZone = entry.getFloatValue(gGamepadDeadZone);
-        }
-        else if (entry.key == "AnalogToDigitalThreshold") {
-            gGamepadAnalogToDigitalThreshold = entry.getFloatValue(gGamepadAnalogToDigitalThreshold);
         }
         else if (entry.key == "TurnSensitivity") {
             gGamepadTurnSensitivity = entry.getFloatValue(gGamepadTurnSensitivity);
@@ -760,11 +763,12 @@ static void clear() noexcept {
     gbIntegerOutputScaling = true;
     gbAspectCorrectOutputScaling = true;
 
+    gInputAnalogToDigitalThreshold = 0.5f;
+
     std::memset(gKeyboardMenuActions, 0, sizeof(gKeyboardMenuActions));
     std::memset(gKeyboardGameActions, 0, sizeof(gKeyboardGameActions));
 
-    gGamepadDeadZone = 0.15f;
-    gGamepadAnalogToDigitalThreshold = 0.5f;
+    gGamepadDeadZone = 0.15f;    
     gGamepadTurnSensitivity = 1.0f;
 
     std::memset(gGamepadMenuActions, 0, sizeof(gGamepadMenuActions));

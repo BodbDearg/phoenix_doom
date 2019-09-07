@@ -120,15 +120,19 @@ void O_Control(player_t* const pPlayer) noexcept {
         ) {
             gMoveCount = 0;      // Reset timer
 
+            // Gather up/down and left/right menu movements
+            int menuMoveX = 0;
+            int menuMoveY = 0;
+            Controls::gatherAnalogAndDigitalMenuMovements(menuMoveX, menuMoveY);
+
             // Try to move the cursor up or down...
-            if (MENU_ACTION(DOWN)) {
+            if (menuMoveY >= 1) {
                 ++gCursorPos;
                 if (gCursorPos >= NUM_MENU_OPTIONS) {
                     gCursorPos = 0;
                 }
             }
-
-            if (MENU_ACTION(UP)) {
+            else if (menuMoveY <= -1) {
                 if (gCursorPos <= 0) {
                     gCursorPos = NUM_MENU_OPTIONS;
                 }
@@ -139,15 +143,14 @@ void O_Control(player_t* const pPlayer) noexcept {
             switch (gCursorPos) {   
                 // Sound volume?
                 case MENU_OPT_SOUND_VOL: {
-                    if (MENU_ACTION(RIGHT)) {
+                    if (menuMoveX >= 1) {
                         const uint32_t soundVolume = Audio::getSoundVolume();
                         if (soundVolume < Audio::MAX_VOLUME) {
                             Audio::setSoundVolume(soundVolume + 1);
                             S_StartSound(0, sfx_pistol);
                         }
                     }
-
-                    if (MENU_ACTION(LEFT)) {
+                    else if (menuMoveX <= -1) {
                         const uint32_t soundVolume = Audio::getSoundVolume();
                         if (soundVolume > 0) {
                             Audio::setSoundVolume(soundVolume - 1);
@@ -158,14 +161,13 @@ void O_Control(player_t* const pPlayer) noexcept {
 
                 // Music volume?
                 case MENU_OPT_MUSIC_VOL: {
-                    if (MENU_ACTION(RIGHT)) {
+                    if (menuMoveX >= 1) {
                         const uint32_t musicVolume = Audio::getMusicVolume();
                         if (musicVolume < Audio::MAX_VOLUME) {
                             Audio::setMusicVolume(musicVolume + 1);
                         }
                     }
-
-                    if (MENU_ACTION(LEFT)) {
+                    else if (menuMoveX <= -1) {
                         const uint32_t musicVolume = Audio::getMusicVolume();
                         if (musicVolume > 0) {
                             Audio::setMusicVolume(musicVolume - 1);
@@ -175,7 +177,7 @@ void O_Control(player_t* const pPlayer) noexcept {
 
                 // Screen size
                 case MENU_OPT_SCREEN_SIZE: {
-                    if (MENU_ACTION(RIGHT)) {
+                    if (menuMoveX >= 1) {
                         if (gScreenSize > 0) {
                             --gScreenSize;
                             if (pPlayer) {
@@ -183,8 +185,7 @@ void O_Control(player_t* const pPlayer) noexcept {
                             }
                         }
                     }
-
-                    if (MENU_ACTION(LEFT)) {
+                    else if (menuMoveX <= -1) {
                         if (gScreenSize < 6 - 1) {
                             ++gScreenSize;
                             if (pPlayer) {

@@ -233,4 +233,49 @@ void update() noexcept {
     updateAxesFromControllerInput();
 }
 
+void gatherAnalogAndDigitalMenuMovements(int32_t& menuMoveX, int32_t& menuMoveY) noexcept {
+    // Gather the inputs
+    float menuMoveXF = CONTROLLER_AXIS(MENU_LEFT_RIGHT);
+    float menuMoveYF = CONTROLLER_AXIS(MENU_UP_DOWN);
+
+    if (MENU_ACTION(UP)) {
+        menuMoveYF -= 1.0f;
+    }
+
+    if (MENU_ACTION(DOWN)) {
+        menuMoveYF += 1.0f;
+    }
+
+    if (MENU_ACTION(LEFT)) {
+        menuMoveXF -= 1.0f;
+    }
+
+    if (MENU_ACTION(RIGHT)) {
+        menuMoveXF += 1.0f;
+    }
+
+    // Convert to digital
+    const float analogToDigitalThreshold = Config::gInputAnalogToDigitalThreshold;
+
+    if (menuMoveXF >= analogToDigitalThreshold) {
+        menuMoveX = 1;
+    } 
+    else if (menuMoveXF <= -analogToDigitalThreshold) {
+        menuMoveX = -1;
+    }
+    else {
+        menuMoveX = 0;
+    }
+
+    if (menuMoveYF >= analogToDigitalThreshold) {
+        menuMoveY = 1;
+    } 
+    else if (menuMoveYF <= -analogToDigitalThreshold) {
+        menuMoveY = -1;
+    }
+    else {
+        menuMoveY = 0;
+    }
+}
+
 END_NAMESPACE(Controls)

@@ -199,7 +199,7 @@ static void handleSdlEvents() noexcept {
                     const ControllerInput input = sdlControllerAxisToInput(sdlEvent.caxis.axis);
 
                     if (input != ControllerInput::INVALID) {
-                        const float pressedThreshold = Config::gGamepadAnalogToDigitalThreshold;
+                        const float pressedThreshold = Config::gInputAnalogToDigitalThreshold;
                         const uint8_t inputIdx = (uint8_t) input;
 
                         // See if there is a change in the 'pressed' status
@@ -333,13 +333,6 @@ bool areAnyKeysOrButtonsPressed() noexcept {
     if (gpGameController) {
         if (!gControllerInputsPressed.empty())
             return true;
-    
-        const float deadZone = Config::gGamepadDeadZone;
-
-        for (float inputValue : gControllerInputs) {
-            if (std::abs(inputValue) >= deadZone)
-                return true;
-        }
     }
 
     return false;

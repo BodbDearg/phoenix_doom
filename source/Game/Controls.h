@@ -104,4 +104,8 @@ void shutdown() noexcept;
 // Updates what actions are currently active, have just been activated or deactivated
 void update() noexcept;
 
+// Helper that gathers menu movements (up/down, left/right) from digital and analog sources.
+// The X and Y movement values returned will range from -1 to +1.
+void gatherAnalogAndDigitalMenuMovements(int32_t& menuMoveX, int32_t& menuMoveY) noexcept;
+
 END_NAMESPACE(Controls)

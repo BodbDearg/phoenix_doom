@@ -1,6 +1,7 @@
 #include "Menu_Main.h"
 
 #include "Base/Input.h"
+#include "Game/Config.h"
 #include "Game/Controls.h"
 #include "Game/Data.h"
 #include "Game/DoomDefines.h"
@@ -131,15 +132,19 @@ gameaction_e M_Ticker() noexcept {
             // Reset the timer
             gMoveCount = 0;
 
+            // Gather up/down and left/right menu movements
+            int menuMoveX = 0;
+            int menuMoveY = 0;
+            Controls::gatherAnalogAndDigitalMenuMovements(menuMoveX, menuMoveY);
+
             // Up and down menu movement
-            if (MENU_ACTION(DOWN)) {
+            if (menuMoveY >= 1) {
                 ++gCursorPos;
                 if (gCursorPos >= NUMMENUITEMS) {
                     gCursorPos = 0;
                 }
             }
-
-            if (MENU_ACTION(UP)) {
+            else if (menuMoveY <= -1) {
                 if (gCursorPos == 0) {
                     gCursorPos = NUMMENUITEMS;
                 }
@@ -150,13 +155,12 @@ gameaction_e M_Ticker() noexcept {
             switch (gCursorPos) {
                 // Select level to start with
                 case level: {
-                    if (MENU_ACTION(RIGHT)) {
+                    if (menuMoveX >= 1) {
                         if (gPlayerMap < gMaxLevel) {
                             ++gPlayerMap;
                         }
                     }
-
-                    if (MENU_ACTION(LEFT)) {
+                    else if (menuMoveX <= -1) {
                         if (gPlayerMap != 1) {
                             --gPlayerMap;
                         }
@@ -165,13 +169,12 @@ gameaction_e M_Ticker() noexcept {
 
                 // Select game difficulty
                 case difficulty: {
-                    if (MENU_ACTION(RIGHT)) {
+                    if (menuMoveX >= 1) {
                         if (gPlayerSkill < sk_nightmare) {
                             ++gPlayerSkill;
                         }
                     }
-
-                    if (MENU_ACTION(LEFT)) {
+                    else if (menuMoveX <= -1) {
                         if (gPlayerSkill > 0) {
                             --gPlayerSkill;
                         }
