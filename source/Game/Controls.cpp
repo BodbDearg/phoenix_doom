@@ -131,7 +131,7 @@ static void updateActionsFromControllerInput() noexcept {
 
 static void handleAnalogInput(const float inputValue, const Controls::AxisBits bindings) noexcept {
     if ((bindings & Controls::Axis::TURN_LEFT_RIGHT) != 0) {
-        gAxis_TurnLeftRight += inputValue;
+        gAxis_TurnLeftRight += inputValue * Config::gGamepadTurnSensitivity;
     }
 
     if ((bindings & Controls::Axis::MOVE_FORWARD_BACK) != 0) {

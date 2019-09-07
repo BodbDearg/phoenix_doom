@@ -20,6 +20,7 @@ extern Controls::GameActionBits gKeyboardGameActions[Input::NUM_KEYBOARD_KEYS];
 // Game controller and bindings
 extern float gGamepadDeadZone;
 extern float gGamepadAnalogToDigitalThreshold;
+extern float gGamepadTurnSensitivity;
 
 extern Controls::MenuActionBits gGamepadMenuActions[NUM_CONTROLLER_INPUTS];
 extern Controls::GameActionBits gGamepadGameActions[NUM_CONTROLLER_INPUTS];

@@ -159,6 +159,11 @@ DeadZone = 0.10
 AnalogToDigitalThreshold = 0.5
 
 #---------------------------------------------------------------------------------------------------
+# Sensitivity multiplier that affects how sensitive the gamepad is for left/right turning
+#---------------------------------------------------------------------------------------------------
+TurnSensitivity = 2.0
+
+#---------------------------------------------------------------------------------------------------
 # The actual Button bindings for the game controller.
 # These are all the buttons and axes available.
 #
@@ -409,6 +414,7 @@ Controls::MenuActionBits    gKeyboardMenuActions[Input::NUM_KEYBOARD_KEYS];
 Controls::GameActionBits    gKeyboardGameActions[Input::NUM_KEYBOARD_KEYS];
 float                       gGamepadDeadZone;
 float                       gGamepadAnalogToDigitalThreshold;
+float                       gGamepadTurnSensitivity;
 Controls::MenuActionBits    gGamepadMenuActions[NUM_CONTROLLER_INPUTS];
 Controls::GameActionBits    gGamepadGameActions[NUM_CONTROLLER_INPUTS];
 Controls::AxisBits          gGamepadAxisBindings[NUM_CONTROLLER_INPUTS];
@@ -729,6 +735,9 @@ static void handleConfigEntry(const IniUtils::Entry& entry) noexcept {
         else if (entry.key == "AnalogToDigitalThreshold") {
             gGamepadAnalogToDigitalThreshold = entry.getFloatValue(gGamepadAnalogToDigitalThreshold);
         }
+        else if (entry.key == "TurnSensitivity") {
+            gGamepadTurnSensitivity = entry.getFloatValue(gGamepadTurnSensitivity);
+        }
         else {
             parseControllerInputActions(entry.key, entry.value);
         }
@@ -756,6 +765,7 @@ static void clear() noexcept {
 
     gGamepadDeadZone = 0.15f;
     gGamepadAnalogToDigitalThreshold = 0.5f;
+    gGamepadTurnSensitivity = 1.0f;
 
     std::memset(gGamepadMenuActions, 0, sizeof(gGamepadMenuActions));
     std::memset(gGamepadGameActions, 0, sizeof(gGamepadGameActions));
