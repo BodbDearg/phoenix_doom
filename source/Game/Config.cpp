@@ -143,6 +143,7 @@ Pause           = pause
 7               = weapon_7
 Tab             = automap_toggle
 M               = automap_toggle
+F               = automap_free_cam_toggle
 X               = automap_free_cam_toggle
 -               = automap_free_cam_zoom_out
 \=              = automap_free_cam_zoom_in

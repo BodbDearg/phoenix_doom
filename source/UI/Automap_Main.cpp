@@ -17,8 +17,8 @@
 static constexpr Fixed STEPVALUE    = (2 << FRACBITS);      // Speed to move around in the map (Fixed) For non-follow mode
 static constexpr Fixed MAXSCALES    = 0x10000;              // Maximum scale factor (Largest)
 static constexpr Fixed MINSCALES    = 0x00800;              // Minimum scale factor (Smallest)
-static constexpr Fixed ZOOMIN       = 66816;                // Fixed 1.02 * FRACUNIT
-static constexpr Fixed ZOOMOUT      = 64222;                // Fixed (1/1.02) * FRACUNIT
+static constexpr float ZOOMIN       = 1.02f;
+static constexpr float ZOOMOUT      = 1 / 1.02f;
 
 // RGBA5551 colors
 static constexpr uint16_t COLOR_BLACK       = 0x0001u;
@@ -302,38 +302,65 @@ void AM_Control(player_t& player) noexcept {
         Fixed step = STEPVALUE;                         // Multiplier for joypad motion: mul by integer
         step = fixedDiv(step, gUnscaledMapScale);       // Adjust for scale factor
 
+        // Gather inputs (both analog and digital)
+        float moveFracX = CONTROLLER_AXIS(TURN_LEFT_RIGHT) + CONTROLLER_AXIS(STRAFE_LEFT_RIGHT);
+        float moveFracY = -CONTROLLER_AXIS(MOVE_FORWARD_BACK);
+
         if (GAME_ACTION(TURN_RIGHT) || GAME_ACTION(STRAFE_RIGHT)) {
-            player.automapx += step;    // Step to the right
+            moveFracX += 1.0f;
         }
 
         if (GAME_ACTION(TURN_LEFT) || GAME_ACTION(STRAFE_LEFT)) {
-            player.automapx -= step;    // Step to the left
+            moveFracX -= 1.0f;
         }
 
         if (GAME_ACTION(MOVE_FORWARD)) {
-            player.automapy += step;    // Step up
+            moveFracY += 1.0f;
         }
 
         if (GAME_ACTION(MOVE_BACKWARD)) {
-            player.automapy -= step;    // Step down
+            moveFracY -= 1.0f;
         }
 
-        // Scaling is tricky, I cannot use a simple multiply to adjust the scale factor to the
-        // timebase since the formula is ZOOM to the ElapsedTime power times scale.
+        moveFracX = std::max(moveFracX, -1.0f);
+        moveFracX = std::min(moveFracX, +1.0f);
+        moveFracY = std::max(moveFracY, -1.0f);
+        moveFracY = std::min(moveFracY, +1.0f);
+
+        float zoomFrac = CONTROLLER_AXIS(AUTOMAP_FREE_CAM_ZOOM_IN_OUT);
+
         if (GAME_ACTION(AUTOMAP_FREE_CAM_ZOOM_OUT)) {
-            gUnscaledMapScale = fixedMul(gUnscaledMapScale, ZOOMOUT);   // Perform the scale
-            if (gUnscaledMapScale < MINSCALES) {                        // Too small?
-                gUnscaledMapScale = MINSCALES;                          // Set to smallest allowable
+            zoomFrac -= 1.0f;
+        }
+
+        if (GAME_ACTION(AUTOMAP_FREE_CAM_ZOOM_IN)) {
+            zoomFrac += 1.0f;
+        }
+
+        zoomFrac = std::max(zoomFrac, -1.0f);
+        zoomFrac = std::min(zoomFrac, +1.0f);
+
+        // Do movement
+        player.automapx += fixedMul(floatToFixed(moveFracX), step);
+        player.automapy += fixedMul(floatToFixed(moveFracY), step);
+
+        // Do scaling
+        if (zoomFrac < 0.0f) {
+            const float zoomMulF = (1.0f + zoomFrac) - zoomFrac * ZOOMIN;
+            gUnscaledMapScale = fixedMul(gUnscaledMapScale, floatToFixed(zoomMulF));    // Perform the scale
+
+            if (gUnscaledMapScale < MINSCALES) {    // Too small?
+                gUnscaledMapScale = MINSCALES;      // Set to smallest allowable
                 updateMapScale();
             } else {
                 updateMapScale();
             }
-        }
+        } else {
+            const float zoomMulF = (1.0f - zoomFrac) + zoomFrac * ZOOMOUT;
+            gUnscaledMapScale = fixedMul(gUnscaledMapScale, floatToFixed(zoomMulF));    // Perform the scale
 
-        if (GAME_ACTION(AUTOMAP_FREE_CAM_ZOOM_IN)) {
-            gUnscaledMapScale = fixedMul(gUnscaledMapScale, ZOOMIN);    // Perform the scale
-            if (gUnscaledMapScale >= MAXSCALES) {                       // Too large?
-                gUnscaledMapScale = MAXSCALES;                          // Set to maximum
+            if (gUnscaledMapScale >= MAXSCALES) {   // Too large?
+                gUnscaledMapScale = MAXSCALES;      // Set to maximum
                 updateMapScale();
             } else {
                 updateMapScale();

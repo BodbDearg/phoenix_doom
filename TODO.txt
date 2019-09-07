@@ -6,7 +6,6 @@ TODO
 - Fix BSP check BBOX for high res rendering
 - Cleanup and optimize render code
 - WASD + Mouse support
-- Gamepad support
 - Remove temp function key cheats
 - Reading the game files from an IMG (+ reading 3D0 Opera Filesystem)
 - Loading and saving the save file with preferences and map reached.
