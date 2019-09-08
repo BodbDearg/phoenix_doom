@@ -63,7 +63,7 @@ state_t gStates[NUMSTATES] = {
     state_t{Spr(rSPR_BIGSHOTGUN,        1),                 2*4,       NO_PSP_ACTION,   &gStates[S_SGUN8]         },  // S_SGUN7
     state_t{Spr(rSPR_BIGSHOTGUN,        0),                 2*4,       NO_PSP_ACTION,   &gStates[S_SGUN9]         },  // S_SGUN8
     state_t{Spr(rSPR_BIGSHOTGUN,        0),                 3*4,       A_ReFire,        &gStates[S_SGUN]          },  // S_SGUN9
-    state_t{Spr(rSPR_BIGSHOTGUN,        4|FF_FULLBRIGHT),   2*4,       A_Light1,        &gStates[S_SGUNFLASH2]    },  // S_SGUNFLASH1
+    state_t{Spr(rSPR_BIGSHOTGUN,        4|FF_FULLBRIGHT),   1*4,       A_Light1,        &gStates[S_SGUNFLASH2]    },  // S_SGUNFLASH1
     state_t{Spr(rSPR_BIGSHOTGUN,        5|FF_FULLBRIGHT),   1*4,       A_Light2,        &gStates[S_LIGHTDONE]     },  // S_SGUNFLASH2
     state_t{Spr(rSPR_BIGCHAINGUN,       0),                 1*4,       A_WeaponReady,   &gStates[S_CHAIN]         },  // S_CHAIN
     state_t{Spr(rSPR_BIGCHAINGUN,       0),                 1*4,       A_Lower,         &gStates[S_CHAINDOWN]     },  // S_CHAINDOWN

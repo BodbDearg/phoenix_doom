@@ -12,6 +12,7 @@ TODO
 - Fix address sanitizer crash on angle LUT lookup (easy to reproduce on MacOS with Xcode) (might not be applicable anymore)
 - Optimize audio mixing for different channel counts and bit depths
 - Fix a bug where monsters can open keycard doors
+- Fix sounds cutting out on level end.
 
 ------------------------------------------------------------------------------------------------------------------------
 Known issues: document
