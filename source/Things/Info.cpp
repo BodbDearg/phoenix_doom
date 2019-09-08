@@ -35,14 +35,14 @@ static constexpr state_t*           NULL_STATE      = nullptr;
 state_t gStates[NUMSTATES] = {
     state_t{Spr(rSPR_HEALTHBONUS,       0),                 TIME_INF,  NO_PSP_ACTION,   NULL_STATE                },  // S_NULL - Dummy entry
     state_t{Spr(rSPR_BIGFISTS,          0),                 0*4,       A_Light0,        NULL_STATE                },  // S_LIGHTDONE
-    state_t{Spr(rSPR_BIGFISTS,          0),                 1*4,       A_WeaponReady,   &gStates[S_PUNCH]         },  // S_PUNCH
-    state_t{Spr(rSPR_BIGFISTS,          0),                 1*4,       A_Lower,         &gStates[S_PUNCHDOWN]     },  // S_PUNCHDOWN
-    state_t{Spr(rSPR_BIGFISTS,          0),                 1*4,       A_Raise,         &gStates[S_PUNCHUP]       },  // S_PUNCHUP
-    state_t{Spr(rSPR_BIGFISTS,          1),                 2*4,       NO_PSP_ACTION,   &gStates[S_PUNCH2]        },  // S_PUNCH1
-    state_t{Spr(rSPR_BIGFISTS,          2),                 2*4,       A_Punch,         &gStates[S_PUNCH3]        },  // S_PUNCH2
-    state_t{Spr(rSPR_BIGFISTS,          3),                 2*4,       NO_PSP_ACTION,   &gStates[S_PUNCH4]        },  // S_PUNCH3
-    state_t{Spr(rSPR_BIGFISTS,          2),                 2*4,       NO_PSP_ACTION,   &gStates[S_PUNCH5]        },  // S_PUNCH4
-    state_t{Spr(rSPR_BIGFISTS,          1),                 2*4,       A_ReFire,        &gStates[S_PUNCH]         },  // S_PUNCH5
+    state_t{Spr(rSPR_BIGFISTS,          0),                 2,         A_WeaponReady,   &gStates[S_PUNCH]         },  // S_PUNCH
+    state_t{Spr(rSPR_BIGFISTS,          0),                 2,         A_Lower,         &gStates[S_PUNCHDOWN]     },  // S_PUNCHDOWN
+    state_t{Spr(rSPR_BIGFISTS,          0),                 2,         A_Raise,         &gStates[S_PUNCHUP]       },  // S_PUNCHUP
+    state_t{Spr(rSPR_BIGFISTS,          1),                 7,         NO_PSP_ACTION,   &gStates[S_PUNCH2]        },  // S_PUNCH1
+    state_t{Spr(rSPR_BIGFISTS,          2),                 7,         A_Punch,         &gStates[S_PUNCH3]        },  // S_PUNCH2
+    state_t{Spr(rSPR_BIGFISTS,          3),                 8,         NO_PSP_ACTION,   &gStates[S_PUNCH4]        },  // S_PUNCH3
+    state_t{Spr(rSPR_BIGFISTS,          2),                 7,         NO_PSP_ACTION,   &gStates[S_PUNCH5]        },  // S_PUNCH4
+    state_t{Spr(rSPR_BIGFISTS,          1),                 7,         A_ReFire,        &gStates[S_PUNCH]         },  // S_PUNCH5
     state_t{Spr(rSPR_BIGPISTOL,         0),                 2,         A_WeaponReady,   &gStates[S_PISTOL]        },  // S_PISTOL
     state_t{Spr(rSPR_BIGPISTOL,         0),                 2,         A_Lower,         &gStates[S_PISTOLDOWN]    },  // S_PISTOLDOWN
     state_t{Spr(rSPR_BIGPISTOL,         0),                 2,         A_Raise,         &gStates[S_PISTOLUP]      },  // S_PISTOLUP

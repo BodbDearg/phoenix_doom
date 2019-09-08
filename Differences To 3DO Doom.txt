@@ -42,6 +42,9 @@ Cheats can now also be done both in-game and on the automap.
 [] Fixed the pistol reload speed being far too slow vs the pc version and other ports like PSX.
 The pistol in 3DO Doom should have been firing quicker than it did.
 
+[] Fixed other more minor weapon speed issues:
+    [] Punch a small bit slower on 3DO version.    
+
 [] Fixed a bug where punching things made no punch sound.
 Not sure why this happened, there was no code to play the sound in the 3DO version but the sound existed. Now fixed.
 
