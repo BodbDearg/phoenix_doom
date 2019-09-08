@@ -157,7 +157,7 @@ static void P_PlayerZMovement(mobj_t& mo) noexcept {
     // Clip movement
     if (mo.z <= mo.floorz) {                                    // Hit the floor
         if (mo.momz < 0) {                                      // Going down?
-            if (mo.momz < -GRAVITY * 4) {                       // Squat down (Hit hard!)
+            if (mo.momz < - GRAVITY * 14) {                     // Squat down (Hit hard!)
                 mo.player->deltaviewheight = mo.momz >> 3;
                 S_StartSound(&mo.x, sfx_oof);                   // Ouch!
             }

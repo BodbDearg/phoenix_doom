@@ -12,9 +12,7 @@ TODO
 - Fix address sanitizer crash on angle LUT lookup (easy to reproduce on MacOS with Xcode) (might not be applicable anymore)
 - Optimize audio mixing for different channel counts and bit depths
 - Is the pistol reload speed too slow?
-- Gravity appears to be too much??
 - Fix a bug where monsters can open keycard doors
-- Ensure last map accessible via menu (wasn't on 3DO version?)
 
 ------------------------------------------------------------------------------------------------------------------------
 Known issues: document

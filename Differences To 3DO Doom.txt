@@ -24,6 +24,8 @@ Similar in concept to the original PC Doom fake contrast but works with walls of
         [] Observed this first with the imp, with its super fast fireballs! (much faster than PC Doom)
         [] There was also oddness sometimes when corpses slid down stairs far too quickly.
         [] Both these (and possibly other momentum related issues) are now fixed.
+    [] Gravity being far too strong (fall speed too quick) vs the PC version.
+        [] This made it almost impossible for instance to collect all the bonus items in a secret room on the 'Military Base' map. This room is located past the blue door, and has a series of high up platforms that have to be jumped across in order to get the bonus items.
     [] Pulsing lights cycling up and down too fast.
 
 [] Updated the 2nd page of the options screen.
