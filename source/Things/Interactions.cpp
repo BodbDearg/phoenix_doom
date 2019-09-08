@@ -171,7 +171,7 @@ static void GiveCard(player_t& player, const card_e card) noexcept {
 //----------------------------------------------------------------------------------------------------------------------
 // Award a powerup
 //----------------------------------------------------------------------------------------------------------------------
-static uint32_t GivePower(player_t& player, const powertype_e power) noexcept {
+uint32_t GivePower(player_t& player, const powertype_e power) noexcept {
     switch (power) {
         case pw_invulnerability:                    // God mode?
             player.powers[power] = INVULNTICS;      // Set the time
@@ -339,6 +339,22 @@ static uint32_t TouchSpecialThing2(mobj_t& toucher, const uint32_t sprite) noexc
     return sfx_itemup;  // Return the sound effect
 }
 
+void givePlayerABackpack(player_t& player) noexcept {
+    // Double the ammo capacity if we haven't already got a backpack
+    if (!player.backpack) {
+        player.backpack = true;
+
+        for (uint32_t i = 0; i < NUMAMMO; ++i) {
+            player.maxammo[i] *= 2;
+        }
+    }
+
+    // Give the player 1 clip of everything
+    for (uint32_t i = 0; i < NUMAMMO; ++i) {
+        GiveAmmo(player, (ammotype_e) i, 1);
+    }
+}
+
 //----------------------------------------------------------------------------------------------------------------------
 // Award the item to the player if needed
 //----------------------------------------------------------------------------------------------------------------------
@@ -451,17 +467,7 @@ void TouchSpecialThing(mobj_t& special, mobj_t& toucher) noexcept {
         }   break;
 
         case rSPR_BACKPACK: {
-            if (!player.backpack) {     // Already got a backpack?
-                i = 0;
-                do {
-                    player.maxammo[i] *= 2;     // Double the max ammo
-                } while (++i < NUMAMMO);
-                player.backpack = true;         // I have a backpack now
-            }
-            i = 0;
-            do {
-                GiveAmmo(player, (ammotype_e) i, 1);    // 1 clip of everything
-            } while (++i < NUMAMMO);
+            givePlayerABackpack(player);
             player.message = "Picked up a backpack full of ammo!";
         }   break;
 

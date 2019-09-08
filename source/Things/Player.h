@@ -105,6 +105,7 @@ struct player_t {
     uint32_t        turnheld;                   // For accelerative turning
     uint32_t        damagecount;                // Redness factor
     uint32_t        bonuscount;                 // Goldness factor
+    uint32_t        cheatFxTicksLeft;           // Cheat confirmation
     uint32_t        powers[NUMPOWERS];          // invinc and invis are tic counters
     uint32_t        AutomapFlags;               // Bit flags for options and automap
     weapontype_e    readyweapon;                // Weapon being used

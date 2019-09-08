@@ -117,6 +117,10 @@ void doPostFx() noexcept {
         redFx += color;     // Feeling good!
     }
 
+    if (player.cheatFxTicksLeft > 0) {
+        blueFx += player.cheatFxTicksLeft;
+    }
+
     redFx = std::min(redFx, 31u);
     greenFx = std::min(greenFx, 31u);
     blueFx = std::min(blueFx, 31u);

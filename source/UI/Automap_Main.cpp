@@ -1,6 +1,5 @@
 #include "Automap_Main.h"
 
-#include "Base/Input.h"
 #include "Base/Tables.h"
 #include "Game/Controls.h"
 #include "Game/Data.h"
@@ -9,10 +8,6 @@
 #include "GFX/Video.h"
 #include "Map/MapData.h"
 #include "Things/MapObj.h"
-#include "ThreeDO.h"
-
-// FIXME: TEMP
-#include <SDL.h>
 
 static constexpr Fixed STEPVALUE    = (2 << FRACBITS);      // Speed to move around in the map (Fixed) For non-follow mode
 static constexpr Fixed MAXSCALES    = 0x10000;              // Maximum scale factor (Largest)
@@ -30,6 +25,9 @@ static constexpr uint16_t COLOR_GREEN       = 0x0380u;
 static constexpr uint16_t COLOR_LILAC       = 0x6A9Eu;
 static constexpr uint16_t COLOR_LIGHTGREY   = 0x6318u;
 
+bool gShowAllAutomapThings;
+bool gShowAllAutomapLines;
+
 // Used to restore the view if the screen goes blank
 static Fixed        gOldPlayerX;            // X coord of the player previously
 static Fixed        gOldPlayerY;            // Y coord of the player previously
@@ -42,22 +40,9 @@ static int32_t      gMapClipLx;             // Line clip bounds: left x (inclusi
 static int32_t      gMapClipRx;             // Line clip bounds: right x (inclusive)
 static int32_t      gMapClipTy;             // Line clip bounds: top y (inclusive)
 static int32_t      gMapClipBy;             // Line clip bounds: bottom y (inclusive)
-static bool         gShowAllThings;         // If true, show all objects
-static bool         gShowAllLines;          // If true, show all lines
 
 static constexpr Fixed NOSELENGTH = 0x200000;   // Player's triangle
 static constexpr Fixed MOBJLENGTH = 0x100000;   // Object's triangle
-
-// Cheat enum
-enum cheat_e {
-    ch_allmap,          // Show the map
-    ch_things,          // Show the items
-    ch_godmode,
-    ch_idkfa,
-    ch_levelaccess,
-    ch_noclip,
-    ch_maxcheats
-};
 
 //--------------------------------------------------------------------------------------------------
 // Multiply a map coord and a fixed point scale value and return the INTEGER result.
@@ -95,31 +80,10 @@ void AM_Start() noexcept {
     gMapClipTy = (int32_t) std::floor(-80.0f * gScaleFactor);
     gMapClipBy = (int32_t) std::ceil(80.0f * gScaleFactor);
 
-    gShowAllThings = false;                     // Turn off the cheat
-    gShowAllLines = false;                      // Turn off the cheat
+    gShowAllAutomapThings = false;              // Turn off the cheat
+    gShowAllAutomapLines = false;               // Turn off the cheat
     gPlayer.AutomapFlags &= ~AF_FREE_CAM;       // Follow the player
     gPlayer.AutomapFlags &= ~AF_ACTIVE;         // Automap off
-}
-
-//--------------------------------------------------------------------------------------------------
-// Check for cheat codes for automap fun stuff!
-// Pass to me all the new joypad downs.
-//--------------------------------------------------------------------------------------------------
-static cheat_e AM_CheckCheat() noexcept {
-    // FIXME: DC - TEMP
-    cheat_e cheat = ch_maxcheats;
-
-    if (Input::isKeyboardKeyJustPressed(SDL_SCANCODE_F1)) {
-        cheat = cheat_e::ch_godmode;
-    }
-    else if (Input::isKeyboardKeyJustPressed(SDL_SCANCODE_F2)) {
-        cheat = cheat_e::ch_idkfa;
-    }
-    else if (Input::isKeyboardKeyJustPressed(SDL_SCANCODE_F3)) {
-        cheat = cheat_e::ch_noclip;
-    }
-
-    return cheat;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -207,11 +171,7 @@ static void DrawLine(
 }
 
 //--------------------------------------------------------------------------------------------------
-// Called by P_PlayerThink before any other player processing.
-// Button bits can be eaten by clearing them in JoyPadButtons.
-//
-// Since I am making joypad events disappear and I want to track joypad downs, I need to cache
-// the UNFILTERED JoyPadButtons and pass through a filtered NewPadButtons and JoyPadButtons.
+// Called by P_PlayerThink before any other player processing
 //--------------------------------------------------------------------------------------------------
 void AM_Control(player_t& player) noexcept {    
     if (GAME_ACTION_ENDED(AUTOMAP_TOGGLE)) {        // Toggle event?
@@ -222,64 +182,6 @@ void AM_Control(player_t& player) noexcept {
 
     if (!player.isAutomapActive()) {    // Is the automap is off?
         return;                         // Exit now!
-    }
-
-    // Check cheat events
-    switch (AM_CheckCheat()) {
-        case ch_allmap:
-            gShowAllLines ^= true;      // Toggle lines
-            break;
-
-        case ch_things:
-            gShowAllThings ^= true;     // Toggle things
-            break;
-
-        case ch_godmode:
-            player.health = 100;
-            player.mo->MObjHealth = 100;
-            player.AutomapFlags ^= AF_GODMODE;      // Toggle god mode
-            break;
-
-        case ch_noclip:
-            // DC: reimplementing noclip cheat
-            player.mo->flags ^= MF_NOCLIP;
-            player.mo->flags ^= MF_SOLID;
-            player.AutomapFlags ^= AF_NOCLIP;
-            break;
-
-        case ch_idkfa: {
-            uint32_t i = 0;
-            uint32_t j = true;
-
-            do {
-                if (i == 3) {               // 0-2 are keys, 3-5 are skulls
-                    j = false;
-                }
-                player.cards[i] = j;        // Award all keycards
-            } while (++i < NUMCARDS);
-
-            player.armorpoints = 200;       // Full armor
-            player.armortype = 2;           // Mega armor
-            i = 0;
-
-            do {
-                player.weaponowned[i] = true;   // Give all weapons
-            } while (++i<NUMWEAPONS);
-
-            i = 0;
-
-            do {
-                player.ammo[i] = player.maxammo[i] = 500;   // Full ammo!
-            } while (++i<NUMAMMO);
-        }   break;
-
-        case ch_levelaccess:
-            gMaxLevel = 23;
-            WritePrefsFile();
-            break;
-
-        case ch_maxcheats:
-            break;
     }
 
     if (player.isAutomapFollowModeActive()) {   // Test here to make SURE I get called at least once
@@ -327,7 +229,7 @@ void AM_Control(player_t& player) noexcept {
         moveFracY = std::max(moveFracY, -1.0f);
         moveFracY = std::min(moveFracY, +1.0f);
 
-        float zoomFrac = CONTROLLER_AXIS(AUTOMAP_FREE_CAM_ZOOM_IN_OUT);
+        float zoomFrac = -CONTROLLER_AXIS(AUTOMAP_FREE_CAM_ZOOM_IN_OUT);
 
         if (GAME_ACTION(AUTOMAP_FREE_CAM_ZOOM_OUT)) {
             zoomFrac -= 1.0f;
@@ -346,7 +248,7 @@ void AM_Control(player_t& player) noexcept {
 
         // Do scaling
         if (zoomFrac < 0.0f) {
-            const float zoomMulF = (1.0f + zoomFrac) - zoomFrac * ZOOMIN;
+            const float zoomMulF = (1.0f + zoomFrac) - zoomFrac * ZOOMOUT;
             gUnscaledMapScale = fixedMul(gUnscaledMapScale, floatToFixed(zoomMulF));    // Perform the scale
 
             if (gUnscaledMapScale < MINSCALES) {    // Too small?
@@ -356,7 +258,7 @@ void AM_Control(player_t& player) noexcept {
                 updateMapScale();
             }
         } else {
-            const float zoomMulF = (1.0f - zoomFrac) + zoomFrac * ZOOMOUT;
+            const float zoomMulF = (1.0f - zoomFrac) + zoomFrac * ZOOMIN;
             gUnscaledMapScale = fixedMul(gUnscaledMapScale, floatToFixed(zoomMulF));    // Perform the scale
 
             if (gUnscaledMapScale >= MAXSCALES) {   // Too large?
@@ -373,7 +275,19 @@ void AM_Control(player_t& player) noexcept {
 // Draws the current frame to workingscreen
 //--------------------------------------------------------------------------------------------------
 void AM_Drawer() noexcept {
-    // Clear the screen black
+    // Clear the screen: normally clear it black but if we are doing cheat confirm fx clear it white!
+    float clearColor[3];
+
+    if (gPlayer.cheatFxTicksLeft > 0) {
+        clearColor[0] = (float) gPlayer.cheatFxTicksLeft / 60.0f;
+        clearColor[1] = (float) gPlayer.cheatFxTicksLeft / 60.0f;
+        clearColor[2] = (float) gPlayer.cheatFxTicksLeft / 30.0f;
+    } else {
+        clearColor[0] = 0.0f;
+        clearColor[1] = 0.0f;
+        clearColor[2] = 0.0f;
+    }
+
     Blit::blitRect(
         Video::gpFrameBuffer,
         Video::gScreenWidth,
@@ -383,9 +297,9 @@ void AM_Drawer() noexcept {
         0.0f,
         320 * gScaleFactor,
         160 * gScaleFactor,
-        0.0f,
-        0.0f,
-        0.0f,
+        clearColor[0],
+        clearColor[1],
+        clearColor[2],
         1.0f
     );
 
@@ -397,9 +311,9 @@ void AM_Drawer() noexcept {
     uint32_t i = gNumLines;                 // Init the line count
 
     do {
-        if (gShowAllLines ||                    // Cheat?
-            pPlayer->powers[pw_allmap] || (     // Automap enabled?
-                (pLine->flags & ML_MAPPED) &&   // If not mapped or don't draw
+        if (gShowAllAutomapLines ||                 // Cheat?
+            pPlayer->powers[pw_allmap] || (         // Automap enabled?
+                (pLine->flags & ML_MAPPED) &&       // If not mapped or don't draw
                 !(pLine->flags & ML_DONTDRAW)
             )
          ) {
@@ -421,7 +335,7 @@ void AM_Drawer() noexcept {
             // Figure out color
             uint16_t color;
 
-            if ((gShowAllLines ||
+            if ((gShowAllAutomapLines ||
                 pPlayer->powers[pw_allmap]) &&      // If compmap && !Mapped yet
                 (!(pLine->flags & ML_MAPPED))
             ) {
@@ -473,7 +387,7 @@ void AM_Drawer() noexcept {
     }
 
     // Show all map things (cheat)
-    if (gShowAllThings) {
+    if (gShowAllAutomapThings) {
         const int32_t objScale = MulByMapScale(MOBJLENGTH);   // Get the triangle size
         mobj_t* pMapObj = gMObjHead.next;
         const mobj_t* const pPlayerMapObj = pPlayer->mo;

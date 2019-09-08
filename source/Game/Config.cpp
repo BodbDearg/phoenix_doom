@@ -132,7 +132,6 @@ Right Shift     = run
 \]              = next_weapon
 ,               = prev_weapon
 .               = next_weapon
-P               = pause
 Pause           = pause
 1               = weapon_1
 2               = weapon_2
@@ -203,6 +202,33 @@ Axis_RightTrigger       = attack
 # 'debug_cam_move_down' key actions. This is useful for testing the renderer at different heights.
 #---------------------------------------------------------------------------------------------------
 AllowCameraUpDownMovement = 0
+
+####################################################################################################
+[CheatKeySequences]
+####################################################################################################
+
+#---------------------------------------------------------------------------------------------------
+# These are cheat key sequences that can be typed in game to activate cheats.
+# 
+# Notes:
+#   - Key sequences can be at most 16 characters (excluding level numbers).
+#     Any characters more than this will be ignored.
+#   - Only alpha (A-Z) and numeric (0-9) characters are allowed in the key sequences.
+#   - Warp and music cheats must be followed by two digits specifying a level number.
+#       E.G: IDCLEV05 and IDMUS12
+#     Special: enter IDMUS00 to hear the unused bunny music from the 3DO version of the game :P
+#---------------------------------------------------------------------------------------------------
+GodMode                     = IDDQD
+NoClip                      = IDCLIP
+MapAndThingsRevealToggle    = IDDT
+AllWeaponsAndAmmo           = IDFA
+AllWeaponsAmmoAndKeys       = IDKFA
+WarpToMap                   = IDCLEV
+ChangeMusic                 = IDMUS
+GrantInvisibility           = IDBEHOLDI
+GrantRadSuit                = IDBEHOLDR
+GrantBeserk                 = IDBEHOLDS
+GrantInvulnerability        = IDBEHOLDV
 
 ####################################################################################################
 #

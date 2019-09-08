@@ -5,6 +5,7 @@
 #include "Audio/Sounds.h"
 #include "Base/Mem.h"
 #include "Base/Random.h"
+#include "Cheats.h"
 #include "Controls.h"
 #include "Data.h"
 #include "DoomDefines.h"
@@ -206,6 +207,7 @@ gameaction_e P_Ticker() noexcept {
         gbTick4 = true;
     }
 
+    Cheats::update();           // Handle cheat codes
     checkForPauseButton();
 
     // If in pause mode, then don't do any game logic
@@ -219,7 +221,7 @@ gameaction_e P_Ticker() noexcept {
     if (player.playerstate == PST_REBORN) {     // Restart player?
         G_DoReborn();                           // Poof!!
     }
-
+    
     AM_Control(player);         // Handle automap controls
     O_Control(&player);         // Handle option controls
     P_PlayerThink(player);      // Process player in the game
@@ -230,7 +232,8 @@ gameaction_e P_Ticker() noexcept {
     }
 
     P_UpdateSpecials();     // Handle wall and floor animations
-    ST_Ticker();            // Update status bar
+    ST_Ticker();            // Update status bar    
+
     return gGameAction;     // May have been set to 'ga_died', 'ga_completed', or 'ga_secretexit'
 }
 
@@ -290,6 +293,7 @@ void P_Start() noexcept {
     ST_Start();                     // Init the status bar this level
     G_DoLoadLevel();                // Load a level into memory
     Random::init();                 // Reset the random number generator
+    Cheats::init();                 // Cheat keypress checking
     PlayerCalcHeight(gPlayer);      // Required for the view to be at the right height for the screen wipe
 
     // Reapply the noclip cheat to the player map object if that cheat was enabled in the previous level
@@ -304,6 +308,7 @@ void P_Start() noexcept {
 // Shut down a game
 //----------------------------------------------------------------------------------------------------------------------
 void P_Stop() noexcept {
+    Cheats::shutdown();
     S_StopSong();
     ST_Stop();                  // Release the status bar memory
     ReleaseMapMemory();         // Release all the map's memory

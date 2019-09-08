@@ -45,6 +45,8 @@ set(SOURCE_FILES
     "Base/ResourceMgr.h"
     "Base/Tables.cpp"
     "Base/Tables.h"
+    "Game/Cheats.cpp"
+    "Game/Cheats.h"
     "Game/Config.cpp"
     "Game/Config.h"
     "Game/Controls.cpp"
