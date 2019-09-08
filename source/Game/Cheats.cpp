@@ -216,6 +216,7 @@ static void updateWarpToMapCheat() noexcept {
 
             if (gWarpToMapCheatNumDigitsEntered >= 2) {
                 if (gWarpToMapCheatNum >= 1 && gWarpToMapCheatNum <= 24) {
+                    doCheatConfirmedFx();
                     gGameMap = gWarpToMapCheatNum;
                     gNextMap = gWarpToMapCheatNum;
                     gGameAction = ga_warped;
