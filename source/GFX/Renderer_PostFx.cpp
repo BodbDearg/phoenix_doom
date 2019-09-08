@@ -10,11 +10,12 @@ BEGIN_NAMESPACE(Renderer)
 static void doInvulnerabilityEffect() noexcept {
     // The invunerability effect in 3DO Doom was a simple bit inverse.
     // The 3DO game did not use the palette switching technique that the PC version did because there was no palette...
-    const uint32_t screenH = g3dViewHeight;
+    const uint32_t viewH = g3dViewHeight;
+    const uint32_t screenH = Video::gScreenWidth;
 
-    for (uint32_t y = 0; y <= screenH; ++y) {
+    for (uint32_t y = 0; y <= viewH; ++y) {
         // Process this row of pixels and invert RGB values
-        uint32_t* pPixel = &Video::gpFrameBuffer[g3dViewXOffset + (g3dViewYOffset + y) * g3dViewWidth];
+        uint32_t* pPixel = &Video::gpFrameBuffer[g3dViewXOffset + (g3dViewYOffset + y) * screenH];
         uint32_t* const pEndPixel = pPixel + g3dViewWidth;
 
         while (pPixel < pEndPixel) {
