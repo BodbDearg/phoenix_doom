@@ -244,26 +244,12 @@ uint32_t getNumFlatTextures() noexcept {
     return (uint32_t) gFlatTextures.size();
 }
 
-uint32_t getSky1TexNum() noexcept {
-    return (uint32_t) rSKY1 - gFirstWallTexResourceNum;
+uint32_t getFirstWallTexResourceNum() noexcept {
+    return gFirstWallTexResourceNum;
 }
 
-uint32_t getSky2TexNum() noexcept {
-    return (uint32_t) rSKY2 - gFirstWallTexResourceNum;
-}
-
-uint32_t getSky3TexNum() noexcept {
-    return (uint32_t) rSKY3 - gFirstWallTexResourceNum;
-}
-
-uint32_t getCurrentSkyTexNum() noexcept {
-    if (gGameMap < 9 || gGameMap == 24) {
-        return getSky1TexNum();
-    } else if (gGameMap < 18) {
-        return getSky2TexNum();
-    } else {
-        return getSky3TexNum();
-    }
+uint32_t getFirstFlatTexResourceNum() noexcept {
+    return gFirstFlatTexResourceNum;
 }
 
 const Texture* getWall(const uint32_t num) noexcept {

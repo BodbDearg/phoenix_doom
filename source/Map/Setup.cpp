@@ -47,6 +47,7 @@ static line_t** gppLineArrayBuffer;     // Pointer to array of line_t pointers u
 mapthing_t      gDeathmatchStarts[10];      // Deathmatch starts
 mapthing_t*     gpDeathmatch;
 mapthing_t      gPlayerStarts;              // Starting position for players
+uint32_t        gSkyTextureNum;
 
 //----------------------------------------------------------------------------------------------------------------------
 // Builds sector line lists and subsector sector numbers.
@@ -204,6 +205,11 @@ static void PreloadWalls() noexcept {
         }
     }
 
+    // Load in the sky texture (that is a wall too).
+    // Expect the sky texture number to be determined at this point!
+    ASSERT(gSkyTextureNum > 0);
+    Textures::loadWall(gSkyTextureNum);
+
     // Reset the portion of the flags we will use for flats.
     // Then scan all flats for what textures we need to load:
     memset(bLoadTexFlags, 0, numFlatTex * sizeof(bool));
@@ -266,6 +272,19 @@ static void PreloadWalls() noexcept {
 }
 
 //----------------------------------------------------------------------------------------------------------------------
+// Set the sky texture number for the map
+//----------------------------------------------------------------------------------------------------------------------
+static void setSkyTextureNum() noexcept {
+    if (gGameMap < 9 || gGameMap == 24) {
+        gSkyTextureNum = (uint32_t) rSKY1 - Textures::getFirstWallTexResourceNum();
+    } else if (gGameMap < 18) {
+        gSkyTextureNum = (uint32_t) rSKY2 - Textures::getFirstWallTexResourceNum();
+    } else {
+        gSkyTextureNum = (uint32_t) rSKY3 - Textures::getFirstWallTexResourceNum();
+    }
+}
+
+//----------------------------------------------------------------------------------------------------------------------
 // Load and prepare the game level
 //----------------------------------------------------------------------------------------------------------------------
 void SetupLevel(uint32_t map) noexcept {
@@ -287,7 +306,8 @@ void SetupLevel(uint32_t map) noexcept {
 
     LoadThings(getMapStartLump(map) + ML_THINGS);   // Spawn all the items
     SpawnSpecials();                                // Spawn all sector specials
-    PreloadWalls();                                 // Load all the wall textures and sprites
+    setSkyTextureNum();                             // Figure out which sky to use
+    PreloadWalls();                                 // Load all the wall textures and sprites (also does sky texture)
     gbGamePaused = false;                           // Game in progress
 }
 

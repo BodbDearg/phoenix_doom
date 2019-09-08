@@ -13,11 +13,6 @@
 #include "UI/Finale_Main.h"
 #include "UI/Intermission_Main.h"
 
-static void loadSkyTexture() {
-    const uint32_t skyTexNum = Textures::getCurrentSkyTexNum();
-    Textures::loadWall(skyTexNum);
-}
-
 //---------------------------------------------------------------------------------------------------------------------
 // Prepare to load a game level
 //---------------------------------------------------------------------------------------------------------------------
@@ -26,7 +21,6 @@ void G_DoLoadLevel() noexcept {
         gPlayer.playerstate = PST_REBORN;   // Force rebirth
     }
 
-    loadSkyTexture();
     SetupLevel(gGameMap);       // Load the level into memory
     gGameAction = ga_nothing;   // Game in progress
 }

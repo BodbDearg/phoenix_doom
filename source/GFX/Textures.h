@@ -26,11 +26,8 @@ void freeAll() noexcept;
 
 uint32_t getNumWallTextures() noexcept;
 uint32_t getNumFlatTextures() noexcept;
-
-uint32_t getSky1TexNum() noexcept;
-uint32_t getSky2TexNum() noexcept;
-uint32_t getSky3TexNum() noexcept;
-uint32_t getCurrentSkyTexNum() noexcept;
+uint32_t getFirstWallTexResourceNum() noexcept;
+uint32_t getFirstFlatTexResourceNum() noexcept;
 
 // N.B: Texture numbers must all be in range!
 // If safety is required, check against the texture counts.

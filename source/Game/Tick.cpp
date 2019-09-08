@@ -207,13 +207,18 @@ gameaction_e P_Ticker() noexcept {
         gbTick4 = true;
     }
 
-    Cheats::update();           // Handle cheat codes
+    // Handle cheat codes
+    Cheats::update();
+
+    // If warping then don't do any other logic
+    if (gGameAction == ga_warped)
+        return gGameAction;
+    
+    // If in pause mode, then don't do any game logic
     checkForPauseButton();
 
-    // If in pause mode, then don't do any game logic
-    if (gbGamePaused) {
+    if (gbGamePaused)
         return gGameAction;
-    }
 
     // Run player actions
     player_t& player = gPlayer;
