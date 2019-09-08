@@ -43,14 +43,14 @@ state_t gStates[NUMSTATES] = {
     state_t{Spr(rSPR_BIGFISTS,          3),                 2*4,       NO_PSP_ACTION,   &gStates[S_PUNCH4]        },  // S_PUNCH3
     state_t{Spr(rSPR_BIGFISTS,          2),                 2*4,       NO_PSP_ACTION,   &gStates[S_PUNCH5]        },  // S_PUNCH4
     state_t{Spr(rSPR_BIGFISTS,          1),                 2*4,       A_ReFire,        &gStates[S_PUNCH]         },  // S_PUNCH5
-    state_t{Spr(rSPR_BIGPISTOL,         0),                 1*4,       A_WeaponReady,   &gStates[S_PISTOL]        },  // S_PISTOL
-    state_t{Spr(rSPR_BIGPISTOL,         0),                 1*4,       A_Lower,         &gStates[S_PISTOLDOWN]    },  // S_PISTOLDOWN
-    state_t{Spr(rSPR_BIGPISTOL,         0),                 1*4,       A_Raise,         &gStates[S_PISTOLUP]      },  // S_PISTOLUP
-    state_t{Spr(rSPR_BIGPISTOL,         0),                 2*4,       NO_PSP_ACTION,   &gStates[S_PISTOL2]       },  // S_PISTOL1
-    state_t{Spr(rSPR_BIGPISTOL,         1),                 3*4,       A_FirePistol,    &gStates[S_PISTOL3]       },  // S_PISTOL2
-    state_t{Spr(rSPR_BIGPISTOL,         2),                 3*4,       NO_PSP_ACTION,   &gStates[S_PISTOL4]       },  // S_PISTOL3
-    state_t{Spr(rSPR_BIGPISTOL,         1),                 2*4,       A_ReFire,        &gStates[S_PISTOL]        },  // S_PISTOL4
-    state_t{Spr(rSPR_BIGPISTOL,         3|FF_FULLBRIGHT),   3*4,       A_Light1,        &gStates[S_LIGHTDONE]     },  // S_PISTOLFLASH
+    state_t{Spr(rSPR_BIGPISTOL,         0),                 2,         A_WeaponReady,   &gStates[S_PISTOL]        },  // S_PISTOL
+    state_t{Spr(rSPR_BIGPISTOL,         0),                 2,         A_Lower,         &gStates[S_PISTOLDOWN]    },  // S_PISTOLDOWN
+    state_t{Spr(rSPR_BIGPISTOL,         0),                 2,         A_Raise,         &gStates[S_PISTOLUP]      },  // S_PISTOLUP
+    state_t{Spr(rSPR_BIGPISTOL,         0),                 7,         NO_PSP_ACTION,   &gStates[S_PISTOL2]       },  // S_PISTOL1
+    state_t{Spr(rSPR_BIGPISTOL,         1),                 10,        A_FirePistol,    &gStates[S_PISTOL3]       },  // S_PISTOL2
+    state_t{Spr(rSPR_BIGPISTOL,         2),                 7,         NO_PSP_ACTION,   &gStates[S_PISTOL4]       },  // S_PISTOL3
+    state_t{Spr(rSPR_BIGPISTOL,         1),                 9,         A_ReFire,        &gStates[S_PISTOL]        },  // S_PISTOL4
+    state_t{Spr(rSPR_BIGPISTOL,         3|FF_FULLBRIGHT),   11,        A_Light1,        &gStates[S_LIGHTDONE]     },  // S_PISTOLFLASH
     state_t{Spr(rSPR_BIGSHOTGUN,        0),                 1*4,       A_WeaponReady,   &gStates[S_SGUN]          },  // S_SGUN
     state_t{Spr(rSPR_BIGSHOTGUN,        0),                 1*4,       A_Lower,         &gStates[S_SGUNDOWN]      },  // S_SGUNDOWN
     state_t{Spr(rSPR_BIGSHOTGUN,        0),                 1*4,       A_Raise,         &gStates[S_SGUNUP]        },  // S_SGUNUP

@@ -603,12 +603,12 @@ void MovePSprites(player_t& player) noexcept {
     pspdef_t* psp = player.psprites;
 
     for (uint32_t i = 0; i < NUMPSPRITES; ++i) {
-        while (psp->Time != -1) {   // Never change state?
+        if (psp->Time != -1) {      // Never change state?
             if (psp->Time > 1) {    // Has enough time elapsed?
-                --psp->Time;        // Remove time and exit
-                break;
+                --psp->Time;
+            } else {
+                SetPlayerSprite(player, (psprnum_e) i, psp->StatePtr->nextstate);   // Next state
             }
-            SetPlayerSprite(player, (psprnum_e) i, psp->StatePtr->nextstate);   // Next state
         }
         ++psp;
     }
