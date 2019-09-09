@@ -2,6 +2,7 @@
 
 #include "ControllerInput.h"
 #include "Game/Config.h"
+#include "GFX/Video.h"
 #include <SDL.h>
 
 BEGIN_NAMESPACE(Input)
@@ -12,6 +13,9 @@ int                             gNumKeyboardStateKeys;
 std::vector<uint16_t>           gKeyboardKeysPressed;
 std::vector<uint16_t>           gKeyboardKeysJustPressed;
 std::vector<uint16_t>           gKeyboardKeysJustReleased;
+std::vector<MouseButton>        gMouseButtonsPressed;
+std::vector<MouseButton>        gMouseButtonsJustPressed;
+std::vector<MouseButton>        gMouseButtonsJustReleased;
 float                           gControllerInputs[NUM_CONTROLLER_INPUTS];
 std::vector<ControllerInput>    gControllerInputsPressed;
 std::vector<ControllerInput>    gControllerInputsJustPressed;
@@ -20,66 +24,8 @@ std::vector<ControllerInput>    gControllerInputsJustReleased;
 static SDL_GameController*  gpGameController;
 static SDL_Joystick*        gpJoystick;             // Note: this is managed by game controller, not freed by this code!
 static SDL_JoystickID       gJoystickId;
-
-//----------------------------------------------------------------------------------------------------------------------
-// Updates the list of pressed keys
-//----------------------------------------------------------------------------------------------------------------------
-static void updatePressedKeyboardKeys() noexcept {
-    // Check all keys and do 8 at a time
-    gKeyboardKeysPressed.clear();
-
-    // Process 8 keys at a time to try and speed this up; most WON'T be pressed!
-    ASSERT(gpKeyboardState);
-    const uint8_t* const pKbState = gpKeyboardState;
-    const uint32_t numKeys = gNumKeyboardStateKeys;
-    const uint32_t numKeys8 = (numKeys & 0xFFFFFFF8);
-
-    for (uint32_t keyIdx = 0; keyIdx < numKeys8; keyIdx += 8) {
-        // Quick reject of 8 keys at a time:
-        // Read the current batch of keys as a u64 and ignore if all bits are zero:
-        const uint64_t keyVector = ((const uint64_t*) &pKbState[keyIdx])[0];
-
-        if (keyVector == 0)
-            continue;
-        
-        // This batch of keys needs more examination, see which keys are pressed
-        const uint32_t keyIdx1 = keyIdx + 0;
-        const uint32_t keyIdx2 = keyIdx + 1;
-        const uint32_t keyIdx3 = keyIdx + 2;
-        const uint32_t keyIdx4 = keyIdx + 3;
-        const uint32_t keyIdx5 = keyIdx + 4;
-        const uint32_t keyIdx6 = keyIdx + 5;
-        const uint32_t keyIdx7 = keyIdx + 6;
-        const uint32_t keyIdx8 = keyIdx + 7;
-
-        const bool bKey1Pressed = (pKbState[keyIdx1] > 0);
-        const bool bKey2Pressed = (pKbState[keyIdx2] > 0);
-        const bool bKey3Pressed = (pKbState[keyIdx3] > 0);
-        const bool bKey4Pressed = (pKbState[keyIdx4] > 0);
-        const bool bKey5Pressed = (pKbState[keyIdx5] > 0);
-        const bool bKey6Pressed = (pKbState[keyIdx6] > 0);
-        const bool bKey7Pressed = (pKbState[keyIdx7] > 0);
-        const bool bKey8Pressed = (pKbState[keyIdx8] > 0);
-
-        if (bKey1Pressed) { gKeyboardKeysPressed.push_back((SDL_Scancode) keyIdx1); }
-        if (bKey2Pressed) { gKeyboardKeysPressed.push_back((SDL_Scancode) keyIdx2); }
-        if (bKey3Pressed) { gKeyboardKeysPressed.push_back((SDL_Scancode) keyIdx3); }
-        if (bKey4Pressed) { gKeyboardKeysPressed.push_back((SDL_Scancode) keyIdx4); }
-        if (bKey5Pressed) { gKeyboardKeysPressed.push_back((SDL_Scancode) keyIdx5); }
-        if (bKey6Pressed) { gKeyboardKeysPressed.push_back((SDL_Scancode) keyIdx6); }
-        if (bKey7Pressed) { gKeyboardKeysPressed.push_back((SDL_Scancode) keyIdx7); }
-        if (bKey8Pressed) { gKeyboardKeysPressed.push_back((SDL_Scancode) keyIdx8); }
-    }
-
-    // Process the remaining keyboard keys
-    for (uint32_t keyIdx = numKeys8; keyIdx < numKeys; ++keyIdx) {
-        const bool bKeyPressed = (pKbState[keyIdx] > 0);
-
-        if (bKeyPressed) {
-            gKeyboardKeysPressed.push_back(keyIdx);
-        }
-    }
-}
+static float                gMouseMovementX;        // Mouse movement this frame
+static float                gMouseMovementY;
 
 //----------------------------------------------------------------------------------------------------------------------
 // Utility functions for querying if a value is in a vector and removing it
@@ -165,6 +111,24 @@ static void rescanGameControllers() noexcept {
 }
 
 //----------------------------------------------------------------------------------------------------------------------
+// Tells if the window is currently focused
+//----------------------------------------------------------------------------------------------------------------------
+static bool windowHasFocus() noexcept {
+    return ((SDL_GetWindowFlags(Video::getWindow()) & SDL_WINDOW_MOUSE_FOCUS) != 0);
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+// Centers the mouse in the window
+//----------------------------------------------------------------------------------------------------------------------
+static void centerMouse() noexcept {
+    if (windowHasFocus()) {
+        SDL_EventState(SDL_MOUSEMOTION, SDL_IGNORE);
+        SDL_WarpMouseInWindow(Video::getWindow(), Video::gVideoOutputWidth / 2, Video::gVideoOutputHeight / 2);
+        SDL_EventState(SDL_MOUSEMOTION, SDL_ENABLE);
+    }
+}
+
+//----------------------------------------------------------------------------------------------------------------------
 // Handle events sent by SDL (keypresses and such)
 //----------------------------------------------------------------------------------------------------------------------
 static void handleSdlEvents() noexcept {
@@ -176,11 +140,22 @@ static void handleSdlEvents() noexcept {
                 gbIsQuitRequested = true;
                 break;
 
+            case SDL_WINDOWEVENT_FOCUS_GAINED:
+                SDL_ShowCursor(SDL_DISABLE);
+                SDL_SetWindowGrab(Video::getWindow(), SDL_TRUE);
+                break;
+
+            case SDL_WINDOWEVENT_FOCUS_LOST:
+                SDL_ShowCursor(SDL_ENABLE);
+                SDL_SetWindowGrab(Video::getWindow(), SDL_FALSE);
+                break;
+
             case SDL_KEYDOWN: {
                 const uint16_t scancode = (uint16_t) sdlEvent.key.keysym.scancode;
 
                 if (scancode < NUM_KEYBOARD_KEYS) {
-                    removeValueFromVector(scancode, gKeyboardKeysJustReleased); // Prevent contradictions!
+                    removeValueFromVector(scancode, gKeyboardKeysJustReleased);
+                    gKeyboardKeysPressed.push_back(scancode);
                     gKeyboardKeysJustPressed.push_back(scancode);
                 }
             }   break;
@@ -189,10 +164,41 @@ static void handleSdlEvents() noexcept {
                 const uint16_t scancode = (uint16_t) sdlEvent.key.keysym.scancode;
 
                 if (scancode < NUM_KEYBOARD_KEYS) {
-                    removeValueFromVector(scancode, gKeyboardKeysJustPressed);  // Prevent contradictions!
+                    removeValueFromVector(scancode, gKeyboardKeysPressed);
+                    removeValueFromVector(scancode, gKeyboardKeysJustPressed);
                     gKeyboardKeysJustReleased.push_back(scancode);
                 }
             }   break;
+
+            case SDL_MOUSEBUTTONDOWN: {
+                const MouseButton button = (MouseButton)(sdlEvent.button.button - 1);
+
+                if ((uint8_t) button < NUM_MOUSE_BUTTONS) {
+                    removeValueFromVector(button, gMouseButtonsJustReleased);
+                    gMouseButtonsPressed.push_back(button);
+                    gMouseButtonsJustPressed.push_back(button);
+                }
+            } break;
+
+            case SDL_MOUSEBUTTONUP: {
+                const MouseButton button = (MouseButton)(sdlEvent.button.button - 1);
+
+                if ((uint8_t) button < NUM_MOUSE_BUTTONS) {
+                    removeValueFromVector(button, gMouseButtonsPressed);
+                    removeValueFromVector(button, gMouseButtonsJustPressed);
+                    gMouseButtonsJustReleased.push_back(button);
+                }
+            } break;
+
+            case SDL_MOUSEMOTION: {
+                if (windowHasFocus()) {
+                    gMouseMovementX = (float)(sdlEvent.motion.x - (int32_t) Video::gVideoOutputWidth / 2);
+                    gMouseMovementY = (float)(sdlEvent.motion.y - (int32_t) Video::gVideoOutputHeight / 2);
+                } else {
+                    gMouseMovementX = 0.0f;
+                    gMouseMovementY = 0.0f;
+                }
+            } break;
 
             case SDL_CONTROLLERAXISMOTION: {
                 if (sdlEvent.cbutton.which == gJoystickId) {
@@ -215,13 +221,13 @@ static void handleSdlEvents() noexcept {
                         // Generate events for the analog input
                         if (bPrevPressed != bNowPressed) {
                             if (bNowPressed) {
-                                gControllerInputsJustPressed.push_back(input);
+                                removeValueFromVector(input, gControllerInputsJustReleased);
                                 gControllerInputsPressed.push_back(input);
-                                removeValueFromVector(input, gControllerInputsJustReleased);    // Prevent contradictions!
+                                gControllerInputsJustPressed.push_back(input);
                             } else {
-                                gControllerInputsJustReleased.push_back(input);
                                 removeValueFromVector(input, gControllerInputsPressed);
-                                removeValueFromVector(input, gControllerInputsJustPressed);     // Prevent contradictions!
+                                removeValueFromVector(input, gControllerInputsJustPressed);
+                                gControllerInputsJustReleased.push_back(input);
                             }
                         }
                     }
@@ -233,9 +239,9 @@ static void handleSdlEvents() noexcept {
                     const ControllerInput input = sdlControllerButtonToInput(sdlEvent.cbutton.button);
 
                     if (input != ControllerInput::INVALID) {
-                        gControllerInputsJustPressed.push_back(input);
+                        removeValueFromVector(input, gControllerInputsJustReleased);
                         gControllerInputsPressed.push_back(input);
-                        removeValueFromVector(input, gControllerInputsJustReleased);    // Prevent contradictions!
+                        gControllerInputsJustPressed.push_back(input);
                         gControllerInputs[(uint8_t) input] = 1.0f;
                     }
                 }
@@ -247,8 +253,8 @@ static void handleSdlEvents() noexcept {
 
                     if (input != ControllerInput::INVALID) {
                         gControllerInputsJustReleased.push_back(input);
-                        removeValueFromVector(input, gControllerInputsJustPressed);     // Prevent contradictions!
                         removeValueFromVector(input, gControllerInputsPressed);
+                        removeValueFromVector(input, gControllerInputsJustPressed);
                         gControllerInputs[(uint8_t) input] = 0.0f;
                     }
                 }
@@ -276,8 +282,14 @@ void init() noexcept {
     gpKeyboardState = SDL_GetKeyboardState(&gNumKeyboardStateKeys);
     gKeyboardKeysJustPressed.reserve(16);
     gKeyboardKeysJustReleased.reserve(16);
-    gControllerInputsJustPressed.reserve(16);
-    gControllerInputsJustReleased.reserve(16);
+    gMouseButtonsPressed.reserve(NUM_MOUSE_BUTTONS);
+    gMouseButtonsJustPressed.reserve(NUM_MOUSE_BUTTONS);
+    gMouseButtonsJustReleased.reserve(NUM_MOUSE_BUTTONS);
+    gControllerInputsJustPressed.reserve(NUM_CONTROLLER_INPUTS);
+    gControllerInputsJustReleased.reserve(NUM_CONTROLLER_INPUTS);
+
+    gMouseMovementX = 0.0f;
+    gMouseMovementY = 0.0f;
 
     rescanGameControllers();
 }
@@ -285,10 +297,20 @@ void init() noexcept {
 void shutdown() noexcept {
     closeCurrentGameController();
 
+    gMouseMovementX = 0.0f;
+    gMouseMovementY = 0.0f;
+
     gControllerInputsJustReleased.clear();
     gControllerInputsJustReleased.shrink_to_fit();
     gControllerInputsJustPressed.clear();
     gControllerInputsJustPressed.shrink_to_fit();
+
+    gMouseButtonsJustReleased.clear();
+    gMouseButtonsJustReleased.shrink_to_fit();
+    gMouseButtonsJustPressed.clear();
+    gMouseButtonsJustPressed.shrink_to_fit();
+    gMouseButtonsPressed.clear();
+    gMouseButtonsPressed.shrink_to_fit();
 
     gKeyboardKeysJustReleased.clear();
     gKeyboardKeysJustReleased.shrink_to_fit();
@@ -304,14 +326,16 @@ void shutdown() noexcept {
 }
 
 void update() noexcept {    
-    consumeEvents();                    // Released/pressed events are now cleared
-    handleSdlEvents();                  // Process events that SDL is sending to us
-    updatePressedKeyboardKeys();        // Update polled key state
+    consumeEvents();        // Released/pressed events are now cleared
+    handleSdlEvents();      // Process events that SDL is sending to us
+    centerMouse();          // Ensure the mouse remains centered
 }
 
 void consumeEvents() noexcept {
     gKeyboardKeysJustPressed.clear();
     gKeyboardKeysJustReleased.clear();
+    gMouseButtonsJustPressed.clear();
+    gMouseButtonsJustReleased.clear();
     gControllerInputsJustPressed.clear();
     gControllerInputsJustReleased.clear();
 }
@@ -325,11 +349,14 @@ void requestQuit() noexcept {
 }
 
 bool areAnyKeysOrButtonsPressed() noexcept {
-    // Check keyboard for input
+    // Check keyboard and mouse for any button pressed
     if (!gKeyboardKeysPressed.empty())
         return true;
     
-    // Check game controller for any input
+    if (!gMouseButtonsPressed.empty())
+        return true;
+    
+    // Check game controller for any digital (or converted to digital) input
     if (gpGameController) {
         if (!gControllerInputsPressed.empty())
             return true;
@@ -350,6 +377,30 @@ const std::vector<uint16_t>& getKeyboardKeysJustReleased() noexcept {
     return gKeyboardKeysJustReleased;
 }
 
+const std::vector<MouseButton>& getMouseButtonsPressed() noexcept {
+    return gMouseButtonsPressed;
+}
+
+const std::vector<MouseButton>& getMouseButtonsJustPressed() noexcept {
+    return gMouseButtonsJustPressed;
+}
+
+const std::vector<MouseButton>& getMouseButtonsJustReleased() noexcept {
+    return gMouseButtonsJustReleased;
+}
+
+const std::vector<ControllerInput>& getControllerInputsPressed() noexcept {
+    return gControllerInputsPressed;
+}
+
+const std::vector<ControllerInput>& getControllerInputsJustPressed() noexcept {
+    return gControllerInputsJustPressed;
+}
+
+const std::vector<ControllerInput>& getControllerInputsJustReleased() noexcept {
+    return gControllerInputsJustReleased;
+}
+
 bool isKeyboardKeyPressed(const uint16_t key) noexcept {
     return vectorContainsValue(gKeyboardKeysPressed, key);
 }
@@ -366,16 +417,20 @@ bool isKeyboardKeyJustReleased(const uint16_t key) noexcept {
     return vectorContainsValue(gKeyboardKeysJustReleased, key);
 }
 
-const std::vector<ControllerInput>& getControllerInputsPressed() noexcept {
-    return gControllerInputsPressed;
+bool isMouseButtonPressed(const MouseButton button) noexcept {
+    return vectorContainsValue(gMouseButtonsPressed, button);
 }
 
-const std::vector<ControllerInput>& getControllerInputsJustPressed() noexcept {
-    return gControllerInputsJustPressed;
+bool isMouseButtonJustPressed(const MouseButton button) noexcept {
+    return vectorContainsValue(gMouseButtonsJustPressed, button);
 }
 
-const std::vector<ControllerInput>& getControllerInputsJustReleased() noexcept {
-    return gControllerInputsJustReleased;
+bool isMouseButtonReleased(const MouseButton button) noexcept {
+    return (!vectorContainsValue(gMouseButtonsPressed, button));
+}
+
+bool isMouseButtonJustReleased(const MouseButton button) noexcept {
+    return vectorContainsValue(gMouseButtonsJustReleased, button);
 }
 
 bool isControllerInputPressed(const ControllerInput input) noexcept {
@@ -393,6 +448,14 @@ bool isControllerInputJustReleased(const ControllerInput input) noexcept {
 float getControllerInputValue(const ControllerInput input) noexcept {
     const uint8_t inputIdx = (uint8_t) input;
     return (inputIdx < NUM_CONTROLLER_INPUTS) ? gControllerInputs[inputIdx] : 0.0f;
+}
+
+float getMouseXMovement() noexcept {
+    return gMouseMovementX;
+}
+
+float getMouseYMovement() noexcept {
+    return gMouseMovementY;
 }
 
 END_NAMESPACE(Input)

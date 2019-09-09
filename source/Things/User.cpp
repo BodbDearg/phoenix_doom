@@ -3,6 +3,7 @@
 #include "Audio/Sound.h"
 #include "Audio/Sounds.h"
 #include "Base/FMath.h"
+#include "Base/Input.h"
 #include "Base/Tables.h"
 #include "Game/Config.h"
 #include "Game/Controls.h"
@@ -18,7 +19,8 @@
 #include "UI/StatusBar_Main.h"
 #include <algorithm>
 
-static constexpr Fixed MAXBOB = 16 << FRACBITS;   // 16 pixels of bobbing up and down
+static constexpr Fixed MAXBOB           = 16 << FRACBITS;   // 16 pixels of bobbing up and down
+static constexpr float MOUSE_TURN_SCALE = 1.0f / 11.0f;     // Controls how much mouse movement translates into turning (can be multiplied by the user through config also)
 
 static constexpr uint32_t FORWARD_MOVE[2] = {
     0x38000 >> 2,
@@ -262,6 +264,7 @@ static void P_BuildMove(player_t& player) noexcept {
 
         // Do turning
         float angleTurnFracF = -CONTROLLER_AXIS(TURN_LEFT_RIGHT);
+        angleTurnFracF -= Input::getMouseXMovement() * MOUSE_TURN_SCALE * Config::gMouseTurnSensitivity;
 
         if (GAME_ACTION(TURN_LEFT)) {
             angleTurnFracF += 1.0f;

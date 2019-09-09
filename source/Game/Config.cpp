@@ -152,6 +152,25 @@ PageUp          = debug_move_camera_up
 PageDown        = debug_move_camera_down
 
 ####################################################################################################
+[MouseControls]
+####################################################################################################
+
+#---------------------------------------------------------------------------------------------------
+# How sensitive the mouse is for turning.
+# Note: the x axis is the only part of mouse movement that is used, and it is hardcoded to turning!
+#---------------------------------------------------------------------------------------------------
+TurnSensitivity = 1.0
+
+#---------------------------------------------------------------------------------------------------
+# These are all of the mouse buttons available
+#---------------------------------------------------------------------------------------------------
+Button_Left     = attack    menu_ok
+Button_Right    = use
+Button_Middle   =
+Button_X1       =
+Button_X2       =
+
+####################################################################################################
 [GameControllerControls]
 ####################################################################################################
 
@@ -441,6 +460,9 @@ bool                        gbAspectCorrectOutputScaling;
 float                       gInputAnalogToDigitalThreshold;
 Controls::MenuActionBits    gKeyboardMenuActions[Input::NUM_KEYBOARD_KEYS];
 Controls::GameActionBits    gKeyboardGameActions[Input::NUM_KEYBOARD_KEYS];
+float                       gMouseTurnSensitivity;
+Controls::MenuActionBits    gMouseMenuActions[NUM_MOUSE_BUTTONS];
+Controls::GameActionBits    gMouseGameActions[NUM_MOUSE_BUTTONS];
 float                       gGamepadDeadZone;
 float                       gGamepadTurnSensitivity;
 Controls::MenuActionBits    gGamepadMenuActions[NUM_CONTROLLER_INPUTS];
@@ -476,6 +498,30 @@ static bool strHasPrefixCaseInsensitive(const char* pStr, const char* pPrefix) n
         } else {
             return false;
         }
+    }
+
+    return true;
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+// Tells if two strings are equal using case insensitive comparison (assumes ASCII)
+//----------------------------------------------------------------------------------------------------------------------
+static bool strsMatchCaseInsensitive(const char* pStr1, const char* pStr2) noexcept {
+    ASSERT(pStr1);
+    ASSERT(pStr2);
+
+    while (true) {
+        const char c1 = (char) std::toupper(pStr1[0]);
+        const char c2 = (char) std::toupper(pStr2[0]);
+
+        if (c1 != c2)
+            return false;
+        
+        if (c1 == 0)
+            break;
+        
+        ++pStr1;
+        ++pStr2;
     }
 
     return true;
@@ -646,6 +692,21 @@ static void parseSingleActionOrAxisString(
 }
 
 //----------------------------------------------------------------------------------------------------------------------
+// Tells if a character is an actions string delimiter character
+//----------------------------------------------------------------------------------------------------------------------
+static inline bool isActionsStrDelimiterChar(const char c) noexcept {
+    return (
+        (c == ' ') ||
+        (c == '\t') ||
+        (c == '\n') ||
+        (c == '\r') ||
+        (c == '\f') ||
+        (c == '\v') ||
+        (c == ',')
+    );
+}
+
+//----------------------------------------------------------------------------------------------------------------------
 // Parse a game and menu actions bindings string
 //----------------------------------------------------------------------------------------------------------------------
 static void parseActionsAndAxesString(
@@ -662,17 +723,9 @@ static void parseActionsAndAxesString(
     const char* const pActionsStrEnd = actionsStr.c_str() + actionsStr.size();
 
     while (pActionStart < pActionsStrEnd) {
-        // Skip over commas and whitespace
+        // Skip over commas and whitespace etc.
         const char firstChar = pActionStart[0];
-        const bool bSkipFirstChar = (
-            (firstChar == ' ') ||
-            (firstChar == '\t') ||
-            (firstChar == '\n') ||
-            (firstChar == '\r') ||
-            (firstChar == '\f') ||
-            (firstChar == '\v') ||
-            (firstChar == ',')
-        );
+        const bool bSkipFirstChar = isActionsStrDelimiterChar(firstChar);
 
         if (bSkipFirstChar) {
             ++pActionStart;
@@ -683,7 +736,7 @@ static void parseActionsAndAxesString(
         const char* pActionEnd = pActionStart + 1;
 
         while (pActionEnd < pActionsStrEnd) {
-            if (pActionEnd[0] == ',') {
+            if (isActionsStrDelimiterChar(pActionEnd[0])) {
                 break;
             } else {
                 ++pActionEnd;
@@ -725,6 +778,39 @@ static void parseKeyboardKeyActions(const uint16_t keyIdx, const std::string& ac
 }
 
 //----------------------------------------------------------------------------------------------------------------------
+// Parse the bindings/actions for a particular mouse button
+//----------------------------------------------------------------------------------------------------------------------
+static void parseMouseButtonActions(const std::string buttonName, const std::string& actionsStr) noexcept {
+    // Get what button we are dealing with
+    MouseButton button = MouseButton::INVALID;
+
+    if (strsMatchCaseInsensitive(buttonName.c_str(), "Button_Left")) {
+        button = MouseButton::LEFT;
+    } else if (strsMatchCaseInsensitive(buttonName.c_str(), "Button_Right")) {
+        button = MouseButton::RIGHT;
+    } else if (strsMatchCaseInsensitive(buttonName.c_str(), "Button_Middle")) {
+        button = MouseButton::MIDDLE;
+    } else if (strsMatchCaseInsensitive(buttonName.c_str(), "Button_X1")) {
+        button = MouseButton::X1;
+    } else if (strsMatchCaseInsensitive(buttonName.c_str(), "Button_X2")) {
+        button = MouseButton::X2;
+    } else {
+        return;
+    }
+
+    // Note: for the mouse we ignore any attempts to bind analogue axes to mouse buttons (same as keyboard)
+    Controls::GameActionBits gameActions = Controls::GameActions::NONE;
+    Controls::MenuActionBits menuActions = Controls::MenuActions::NONE;
+    Controls::AxisBits axisBindings = Controls::Axis::NONE;
+
+    parseActionsAndAxesString(actionsStr, gameActions, menuActions, axisBindings);
+
+    const uint8_t buttonIdx = (uint8_t) button;
+    gMouseGameActions[buttonIdx] = gameActions;
+    gMouseMenuActions[buttonIdx] = menuActions;
+}
+
+//----------------------------------------------------------------------------------------------------------------------
 // Figures out what controller input a button or axis name in the .ini corresponds to.
 // Returns an invalid controller input if not recognized.
 //----------------------------------------------------------------------------------------------------------------------
@@ -750,7 +836,7 @@ static ControllerInput getControllerInputFromName(const std::string name) noexce
 //----------------------------------------------------------------------------------------------------------------------
 // Parse the bindings/actions for a particular controller input
 //----------------------------------------------------------------------------------------------------------------------
-static void parseControllerInputActions(const std::string controllerInputName, const std::string& actionsStr) noexcept {    
+static void parseControllerInputActions(const std::string controllerInputName, const std::string& actionsStr) noexcept {
     ControllerInput input = getControllerInputFromName(controllerInputName);
     const uint8_t inputIdx = (uint8_t) input;
 
@@ -835,6 +921,13 @@ static void handleConfigEntry(const IniUtils::Entry& entry) noexcept {
             }
         }
     }
+    else if (entry.section == "MouseControls") {
+        if (entry.key == "TurnSensitivity") {
+            gMouseTurnSensitivity = entry.getFloatValue(gMouseTurnSensitivity);
+        } else {
+            parseMouseButtonActions(entry.key, entry.value);
+        }
+    }
     else if (entry.section == "GameControllerControls") {
         if (entry.key == "DeadZone") {
             gGamepadDeadZone = entry.getFloatValue(gGamepadDeadZone);
@@ -872,9 +965,12 @@ static void clear() noexcept {
     std::memset(gKeyboardMenuActions, 0, sizeof(gKeyboardMenuActions));
     std::memset(gKeyboardGameActions, 0, sizeof(gKeyboardGameActions));
 
+    gMouseTurnSensitivity = 1.0f;
+    std::memset(gMouseMenuActions, 0, sizeof(gMouseMenuActions));
+    std::memset(gMouseGameActions, 0, sizeof(gMouseGameActions));
+
     gGamepadDeadZone = 0.15f;    
     gGamepadTurnSensitivity = 1.0f;
-
     std::memset(gGamepadMenuActions, 0, sizeof(gGamepadMenuActions));
     std::memset(gGamepadGameActions, 0, sizeof(gGamepadGameActions));
     std::memset(gGamepadGameActions, 0, sizeof(gGamepadAxisBindings));

@@ -20,6 +20,11 @@ extern float gInputAnalogToDigitalThreshold;
 extern Controls::MenuActionBits gKeyboardMenuActions[Input::NUM_KEYBOARD_KEYS];
 extern Controls::GameActionBits gKeyboardGameActions[Input::NUM_KEYBOARD_KEYS];
 
+// Mouse controls and bindings
+extern float gMouseTurnSensitivity;
+extern Controls::MenuActionBits gMouseMenuActions[NUM_MOUSE_BUTTONS];
+extern Controls::GameActionBits gMouseGameActions[NUM_MOUSE_BUTTONS];
+
 // Game controller and bindings
 extern float gGamepadDeadZone;
 extern float gGamepadTurnSensitivity;

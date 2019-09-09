@@ -1,8 +1,8 @@
 #pragma once
 
 #include "ControllerInput.h"
+#include "MouseButton.h"
 #include "Macros.h"
-#include <cstdint>
 #include <vector>
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -37,6 +37,11 @@ bool areAnyKeysOrButtonsPressed() noexcept;
 const std::vector<uint16_t>& getKeyboardKeysPressed() noexcept;
 const std::vector<uint16_t>& getKeyboardKeysJustPressed() noexcept;
 const std::vector<uint16_t>& getKeyboardKeysJustReleased() noexcept;
+
+const std::vector<MouseButton>& getMouseButtonsPressed() noexcept;
+const std::vector<MouseButton>& getMouseButtonsJustPressed() noexcept;
+const std::vector<MouseButton>& getMouseButtonsJustReleased() noexcept;
+
 const std::vector<ControllerInput>& getControllerInputsPressed() noexcept;
 const std::vector<ControllerInput>& getControllerInputsJustPressed() noexcept;
 const std::vector<ControllerInput>& getControllerInputsJustReleased() noexcept;
@@ -46,9 +51,19 @@ bool isKeyboardKeyPressed(const uint16_t key) noexcept;
 bool isKeyboardKeyJustPressed(const uint16_t key) noexcept;
 bool isKeyboardKeyReleased(const uint16_t key) noexcept;
 bool isKeyboardKeyJustReleased(const uint16_t key) noexcept;
+
+bool isMouseButtonPressed(const MouseButton button) noexcept;
+bool isMouseButtonJustPressed(const MouseButton button) noexcept;
+bool isMouseButtonReleased(const MouseButton button) noexcept;
+bool isMouseButtonJustReleased(const MouseButton button) noexcept;
+
 bool isControllerInputPressed(const ControllerInput input) noexcept;
 bool isControllerInputJustPressed(const ControllerInput input) noexcept;
 bool isControllerInputJustReleased(const ControllerInput input) noexcept;
 float getControllerInputValue(const ControllerInput input) noexcept;
+
+// Get the amount of mouse movement this frame on the x and y axes
+float getMouseXMovement() noexcept;
+float getMouseYMovement() noexcept;
 
 END_NAMESPACE(Input)

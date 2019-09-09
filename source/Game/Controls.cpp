@@ -85,6 +85,50 @@ static void updateActionsFromKeyboardInput() noexcept {
     }
 }
 
+static void updateActionsFromMouseInput() noexcept {
+    // Add to actions currently active
+    {
+        const std::vector<MouseButton>& mouseButtonsPressed = Input::getMouseButtonsPressed();
+
+        for (MouseButton button : mouseButtonsPressed) {
+            const uint8_t buttonIdx = (uint8_t) button;
+
+            if (buttonIdx < NUM_MOUSE_BUTTONS) {
+                gGameActionsActive |= Config::gMouseGameActions[buttonIdx];
+                gMenuActionsActive |= Config::gMouseMenuActions[buttonIdx];
+            }
+        }
+    }
+
+    // Add to actions just started
+    {
+        const std::vector<MouseButton>& mouseButtonsJustPressed = Input::getMouseButtonsJustPressed();
+
+        for (MouseButton button : mouseButtonsJustPressed) {
+            const uint8_t buttonIdx = (uint8_t) button;
+
+            if (buttonIdx < NUM_MOUSE_BUTTONS) {
+                gGameActionsJustStarted |= Config::gMouseGameActions[buttonIdx];
+                gMenuActionsJustStarted |= Config::gMouseMenuActions[buttonIdx];
+            }
+        }
+    }
+
+    // Add to actions just ended
+    {
+        const std::vector<MouseButton>& mouseButtonsJustReleased = Input::getMouseButtonsJustReleased();
+
+        for (MouseButton button : mouseButtonsJustReleased) {
+            const uint8_t buttonIdx = (uint8_t) button;
+
+            if (buttonIdx < NUM_MOUSE_BUTTONS) {
+                gGameActionsJustEnded |= Config::gMouseGameActions[buttonIdx];
+                gMenuActionsJustEnded |= Config::gMouseMenuActions[buttonIdx];
+            }
+        }
+    }    
+}
+
 static void updateActionsFromControllerInput() noexcept {
     // Add to actions currently active
     {
@@ -229,6 +273,7 @@ void shutdown() noexcept {
 void update() noexcept {
     clearAllInputs();
     updateActionsFromKeyboardInput();
+    updateActionsFromMouseInput();
     updateActionsFromControllerInput();
     updateAxesFromControllerInput();
 }

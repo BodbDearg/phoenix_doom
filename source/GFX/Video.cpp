@@ -114,7 +114,6 @@ static void determineTargetVideoMode() noexcept {
         outputScaleY = std::trunc(outputScaleY);
     }
 
-    
     if (!gbIsFullscreen) {
         // Trim the window sizes in windowed mode if auto size is enabled
         if (Config::gOutputResolutionW <= 0) {
@@ -189,16 +188,28 @@ void init() noexcept {
 
     // This can be used to take a screenshot for the screen wipe effect
     gpSavedFrameBuffer = new uint32_t[(size_t) gScreenWidth * gScreenHeight];
+
+    // Grab input and hide the cursor
+    SDL_SetWindowGrab(gWindow, SDL_TRUE);
+    SDL_ShowCursor(SDL_DISABLE);
 }
 
 void shutdown() noexcept {
     delete[] gpSavedFrameBuffer;
     gpSavedFrameBuffer = nullptr;
     gpFrameBuffer = nullptr;
-    SDL_DestroyRenderer(gRenderer);
-    gRenderer = nullptr;
-    SDL_DestroyWindow(gWindow);
-    gWindow = nullptr;
+    
+    if (gRenderer) {
+        SDL_DestroyRenderer(gRenderer);
+        gRenderer = nullptr;
+    }
+
+    if (gWindow) {
+        SDL_SetWindowGrab(gWindow, SDL_FALSE);
+        SDL_DestroyWindow(gWindow);
+        gWindow = nullptr;
+    }
+
     SDL_QuitSubSystem(SDL_INIT_VIDEO);
 
     gScreenWidth = 0;
