@@ -102,7 +102,7 @@ static bool PB_BoxCrossLine(line_t& ld) noexcept {
 
     Fixed x1;
     Fixed x2;
-
+    
     if (ld.slopetype == ST_POSITIVE) {
         x1 = gTestBBox[BOXLEFT];
         x2 = gTestBBox[BOXRIGHT];
@@ -364,24 +364,26 @@ static bool PB_TryMove(const Fixed tryx, const Fixed tryy, mobj_t& mo) noexcept 
 static constexpr Fixed STOPSPEED    = 0x1000;
 static constexpr Fixed FRICTION     = 0xd240;
 
-static bool P_XYMovement(mobj_t& mo) noexcept {
-    // Cut the move into chunks if too large
-    Fixed xuse;
-    Fixed yuse;
-    Fixed xleft = xuse = mo.momx & ~7;
-    Fixed yleft = yuse = mo.momy & ~7;
+static Fixed capMoveAmountToMax(const Fixed moveAmount) noexcept {
+    if (moveAmount < 0) {
+        return (moveAmount >= -MAXMOVE) ? moveAmount : -MAXMOVE;
+    } else {
+        return (moveAmount <= MAXMOVE) ? moveAmount : MAXMOVE;
+    }
+}
 
+static bool P_XYMovement(mobj_t& mo) noexcept {   
     // DC: Note: added a division by 2 here to account for the move from a 35Hz timebase (PC) to a 60Hz timebase (3DO).
     // This fixes issues in the 3DO version with certain projectiles like imps fireballs moving too quickly.
-    xleft = xuse = fixedDiv(mo.momx, 2 * FRACUNIT);
-    yleft = yuse = fixedDiv(mo.momy, 2 * FRACUNIT);
-
-    while ((xuse > MAXMOVE) || (xuse < -MAXMOVE) || (yuse > MAXMOVE) || (yuse < -MAXMOVE)) {
-        xuse >>= 1;
-        yuse >>= 1;
-    }
+    Fixed xleft = mo.momx & ~7;
+    Fixed yleft = mo.momy & ~7;
+    xleft = fixedDiv(mo.momx, 2 * FRACUNIT);
+    yleft = fixedDiv(mo.momy, 2 * FRACUNIT);
 
     while ((xleft != 0) || (yleft != 0)) {
+        // Cut the move into chunks if too large
+        Fixed xuse = capMoveAmountToMax(xleft);
+        Fixed yuse = capMoveAmountToMax(yleft);
         xleft -= xuse;
         yleft -= yuse;
 
@@ -398,6 +400,7 @@ static bool P_XYMovement(mobj_t& mo) noexcept {
                     P_RemoveMobj(mo);
                     return true;
                 }
+
                 L_MissileHit(mo, gpHitThing);
                 return true;
             }
