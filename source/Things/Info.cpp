@@ -34,7 +34,7 @@ static constexpr state_t*           NULL_STATE      = nullptr;
 
 state_t gStates[NUMSTATES] = {
     state_t{Spr(rSPR_HEALTHBONUS,       0),                 TIME_INF,  NO_PSP_ACTION,   NULL_STATE                },  // S_NULL - Dummy entry
-    state_t{Spr(rSPR_BIGFISTS,          0),                 0*4,       A_Light0,        NULL_STATE                },  // S_LIGHTDONE
+    state_t{Spr(rSPR_BIGFISTS,          0),                 0,         A_Light0,        NULL_STATE                },  // S_LIGHTDONE
     state_t{Spr(rSPR_BIGFISTS,          0),                 2,         A_WeaponReady,   &gStates[S_PUNCH]         },  // S_PUNCH
     state_t{Spr(rSPR_BIGFISTS,          0),                 2,         A_Lower,         &gStates[S_PUNCHDOWN]     },  // S_PUNCHDOWN
     state_t{Spr(rSPR_BIGFISTS,          0),                 2,         A_Raise,         &gStates[S_PUNCHUP]       },  // S_PUNCHUP
@@ -51,28 +51,28 @@ state_t gStates[NUMSTATES] = {
     state_t{Spr(rSPR_BIGPISTOL,         2),                 7,         NO_PSP_ACTION,   &gStates[S_PISTOL4]       },  // S_PISTOL3
     state_t{Spr(rSPR_BIGPISTOL,         1),                 9,         A_ReFire,        &gStates[S_PISTOL]        },  // S_PISTOL4
     state_t{Spr(rSPR_BIGPISTOL,         3|FF_FULLBRIGHT),   11,        A_Light1,        &gStates[S_LIGHTDONE]     },  // S_PISTOLFLASH
-    state_t{Spr(rSPR_BIGSHOTGUN,        0),                 1*4,       A_WeaponReady,   &gStates[S_SGUN]          },  // S_SGUN
-    state_t{Spr(rSPR_BIGSHOTGUN,        0),                 1*4,       A_Lower,         &gStates[S_SGUNDOWN]      },  // S_SGUNDOWN
-    state_t{Spr(rSPR_BIGSHOTGUN,        0),                 1*4,       A_Raise,         &gStates[S_SGUNUP]        },  // S_SGUNUP
-    state_t{Spr(rSPR_BIGSHOTGUN,        0),                 2*4,       NO_PSP_ACTION,   &gStates[S_SGUN2]         },  // S_SGUN1
-    state_t{Spr(rSPR_BIGSHOTGUN,        0),                 2*4,       A_FireShotgun,   &gStates[S_SGUN3]         },  // S_SGUN2
-    state_t{Spr(rSPR_BIGSHOTGUN,        1),                 3*4,       NO_PSP_ACTION,   &gStates[S_SGUN4]         },  // S_SGUN3
-    state_t{Spr(rSPR_BIGSHOTGUN,        2),                 2*4,       NO_PSP_ACTION,   &gStates[S_SGUN5]         },  // S_SGUN4
-    state_t{Spr(rSPR_BIGSHOTGUN,        3),                 2*4,       NO_PSP_ACTION,   &gStates[S_SGUN6]         },  // S_SGUN5
-    state_t{Spr(rSPR_BIGSHOTGUN,        2),                 2*4,       NO_PSP_ACTION,   &gStates[S_SGUN7]         },  // S_SGUN6
-    state_t{Spr(rSPR_BIGSHOTGUN,        1),                 2*4,       NO_PSP_ACTION,   &gStates[S_SGUN8]         },  // S_SGUN7
-    state_t{Spr(rSPR_BIGSHOTGUN,        0),                 2*4,       NO_PSP_ACTION,   &gStates[S_SGUN9]         },  // S_SGUN8
-    state_t{Spr(rSPR_BIGSHOTGUN,        0),                 3*4,       A_ReFire,        &gStates[S_SGUN]          },  // S_SGUN9
-    state_t{Spr(rSPR_BIGSHOTGUN,        4|FF_FULLBRIGHT),   1*4,       A_Light1,        &gStates[S_SGUNFLASH2]    },  // S_SGUNFLASH1
-    state_t{Spr(rSPR_BIGSHOTGUN,        5|FF_FULLBRIGHT),   1*4,       A_Light2,        &gStates[S_LIGHTDONE]     },  // S_SGUNFLASH2
-    state_t{Spr(rSPR_BIGCHAINGUN,       0),                 1*4,       A_WeaponReady,   &gStates[S_CHAIN]         },  // S_CHAIN
-    state_t{Spr(rSPR_BIGCHAINGUN,       0),                 1*4,       A_Lower,         &gStates[S_CHAINDOWN]     },  // S_CHAINDOWN
-    state_t{Spr(rSPR_BIGCHAINGUN,       0),                 1*4,       A_Raise,         &gStates[S_CHAINUP]       },  // S_CHAINUP
-    state_t{Spr(rSPR_BIGCHAINGUN,       0),                 2*4,       A_FireCGun,      &gStates[S_CHAIN2]        },  // S_CHAIN1
-    state_t{Spr(rSPR_BIGCHAINGUN,       1),                 2*4,       A_FireCGun,      &gStates[S_CHAIN3]        },  // S_CHAIN2
-    state_t{Spr(rSPR_BIGCHAINGUN,       1),                 0*4,       A_ReFire,        &gStates[S_CHAIN]         },  // S_CHAIN3
-    state_t{Spr(rSPR_BIGCHAINGUN,       2|FF_FULLBRIGHT),   3*4,       A_Light1,        &gStates[S_LIGHTDONE]     },  // S_CHAINFLASH1
-    state_t{Spr(rSPR_BIGCHAINGUN,       3|FF_FULLBRIGHT),   2*4,       A_Light2,        &gStates[S_LIGHTDONE]     },  // S_CHAINFLASH2
+    state_t{Spr(rSPR_BIGSHOTGUN,        0),                 2,         A_WeaponReady,   &gStates[S_SGUN]          },  // S_SGUN
+    state_t{Spr(rSPR_BIGSHOTGUN,        0),                 2,         A_Lower,         &gStates[S_SGUNDOWN]      },  // S_SGUNDOWN
+    state_t{Spr(rSPR_BIGSHOTGUN,        0),                 2,         A_Raise,         &gStates[S_SGUNUP]        },  // S_SGUNUP
+    state_t{Spr(rSPR_BIGSHOTGUN,        0),                 5,         NO_PSP_ACTION,   &gStates[S_SGUN2]         },  // S_SGUN1
+    state_t{Spr(rSPR_BIGSHOTGUN,        0),                 12,        A_FireShotgun,   &gStates[S_SGUN3]         },  // S_SGUN2
+    state_t{Spr(rSPR_BIGSHOTGUN,        1),                 9,         NO_PSP_ACTION,   &gStates[S_SGUN4]         },  // S_SGUN3
+    state_t{Spr(rSPR_BIGSHOTGUN,        2),                 9,         NO_PSP_ACTION,   &gStates[S_SGUN5]         },  // S_SGUN4
+    state_t{Spr(rSPR_BIGSHOTGUN,        3),                 7,         NO_PSP_ACTION,   &gStates[S_SGUN6]         },  // S_SGUN5
+    state_t{Spr(rSPR_BIGSHOTGUN,        2),                 9,         NO_PSP_ACTION,   &gStates[S_SGUN7]         },  // S_SGUN6
+    state_t{Spr(rSPR_BIGSHOTGUN,        1),                 9,         NO_PSP_ACTION,   &gStates[S_SGUN8]         },  // S_SGUN7
+    state_t{Spr(rSPR_BIGSHOTGUN,        0),                 5,         NO_PSP_ACTION,   &gStates[S_SGUN9]         },  // S_SGUN8
+    state_t{Spr(rSPR_BIGSHOTGUN,        0),                 12,        A_ReFire,        &gStates[S_SGUN]          },  // S_SGUN9
+    state_t{Spr(rSPR_BIGSHOTGUN,        4|FF_FULLBRIGHT),   7,         A_Light1,        &gStates[S_SGUNFLASH2]    },  // S_SGUNFLASH1
+    state_t{Spr(rSPR_BIGSHOTGUN,        5|FF_FULLBRIGHT),   5,         A_Light2,        &gStates[S_LIGHTDONE]     },  // S_SGUNFLASH2
+    state_t{Spr(rSPR_BIGCHAINGUN,       0),                 2,         A_WeaponReady,   &gStates[S_CHAIN]         },  // S_CHAIN
+    state_t{Spr(rSPR_BIGCHAINGUN,       0),                 2,         A_Lower,         &gStates[S_CHAINDOWN]     },  // S_CHAINDOWN
+    state_t{Spr(rSPR_BIGCHAINGUN,       0),                 2,         A_Raise,         &gStates[S_CHAINUP]       },  // S_CHAINUP
+    state_t{Spr(rSPR_BIGCHAINGUN,       0),                 7,         A_FireCGun,      &gStates[S_CHAIN2]        },  // S_CHAIN1
+    state_t{Spr(rSPR_BIGCHAINGUN,       1),                 7,         A_FireCGun,      &gStates[S_CHAIN3]        },  // S_CHAIN2
+    state_t{Spr(rSPR_BIGCHAINGUN,       1),                 0,         A_ReFire,        &gStates[S_CHAIN]         },  // S_CHAIN3
+    state_t{Spr(rSPR_BIGCHAINGUN,       2|FF_FULLBRIGHT),   9,         A_Light1,        &gStates[S_LIGHTDONE]     },  // S_CHAINFLASH1
+    state_t{Spr(rSPR_BIGCHAINGUN,       3|FF_FULLBRIGHT),   9,         A_Light2,        &gStates[S_LIGHTDONE]     },  // S_CHAINFLASH2
     state_t{Spr(rSPR_BIGROCKET,         0),                 1*4,       A_WeaponReady,   &gStates[S_MISSILE]       },  // S_MISSILE
     state_t{Spr(rSPR_BIGROCKET,         0),                 1*4,       A_Lower,         &gStates[S_MISSILEDOWN]   },  // S_MISSILEDOWN
     state_t{Spr(rSPR_BIGROCKET,         0),                 1*4,       A_Raise,         &gStates[S_MISSILEUP]     },  // S_MISSILEUP
