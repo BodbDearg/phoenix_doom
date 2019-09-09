@@ -844,7 +844,7 @@ mobjinfo_t gMObjInfo[NUMMOBJTYPES] = {
         0,                                                        // Pain chance
         100,                                                      // Mass
         MF_NOBLOCKMAP|MF_MISSILE|MF_DROPOFF|MF_NOGRAVITY,         // Flags
-        50,                                                       // Speed
+        42,                                                       // Speed
         8,                                                        // Reaction
         5,                                                        // Damage amount
         sfx_plasma,
