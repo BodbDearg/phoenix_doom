@@ -45,8 +45,11 @@ Cheats can now also be done both in-game and on the automap.
     [] Rocket launcher
 
 [] Fixed the following weapons being slightly slower to fire vs the pc version.
-    [] Punch/fists
+    [] Fists
+    [] Chainsaw
     [] Shotgun
+    [] Plasma Rifle
+    [] BFG
 
 [] Fixed a bug where punching things made no punch sound.
 Not sure why this happened, there was no code to play the sound in the 3DO version but the sound existed. Now fixed.

@@ -90,22 +90,22 @@ state_t gStates[NUMSTATES] = {
     state_t{Spr(rSPR_BIGCHAINSAW,       0),                 7,         A_Saw,           &gStates[S_SAW2]          },  // S_SAW1
     state_t{Spr(rSPR_BIGCHAINSAW,       1),                 7,         A_Saw,           &gStates[S_SAW3]          },  // S_SAW2
     state_t{Spr(rSPR_BIGCHAINSAW,       1),                 0,         A_ReFire,        &gStates[S_SAW]           },  // S_SAW3
-    state_t{Spr(rSPR_BIGPLASMA,         0),                 1*4,       A_WeaponReady,   &gStates[S_PLASMA]        },  // S_PLASMA
-    state_t{Spr(rSPR_BIGPLASMA,         0),                 1*4,       A_Lower,         &gStates[S_PLASMADOWN]    },  // S_PLASMADOWN
-    state_t{Spr(rSPR_BIGPLASMA,         0),                 1*4,       A_Raise,         &gStates[S_PLASMAUP]      },  // S_PLASMAUP
-    state_t{Spr(rSPR_BIGPLASMA,         0),                 2*4,       A_FirePlasma,    &gStates[S_PLASMA2]       },  // S_PLASMA1
-    state_t{Spr(rSPR_BIGPLASMA,         1),                 10*4,      A_ReFire,        &gStates[S_PLASMA]        },  // S_PLASMA2
-    state_t{Spr(rSPR_BIGPLASMA,         2|FF_FULLBRIGHT),   2*4,       A_Light1,        &gStates[S_LIGHTDONE]     },  // S_PLASMAFLASH1
-    state_t{Spr(rSPR_BIGPLASMA,         3|FF_FULLBRIGHT),   2*4,       A_Light1,        &gStates[S_LIGHTDONE]     },  // S_PLASMAFLASH2
-    state_t{Spr(rSPR_BIGBFG,            0),                 1*4,       A_WeaponReady,   &gStates[S_BFG]           },  // S_BFG
-    state_t{Spr(rSPR_BIGBFG,            0),                 1*4,       A_Lower,         &gStates[S_BFGDOWN]       },  // S_BFGDOWN
-    state_t{Spr(rSPR_BIGBFG,            0),                 1*4,       A_Raise,         &gStates[S_BFGUP]         },  // S_BFGUP
-    state_t{Spr(rSPR_BIGBFG,            0),                 10*4,      A_BFGsound,      &gStates[S_BFG2]          },  // S_BFG1
-    state_t{Spr(rSPR_BIGBFG,            1),                 5*4,       A_GunFlash,      &gStates[S_BFG3]          },  // S_BFG2
-    state_t{Spr(rSPR_BIGBFG,            1),                 5*4,       A_FireBFG,       &gStates[S_BFG4]          },  // S_BFG3
-    state_t{Spr(rSPR_BIGBFG,            1),                 10*4,      A_ReFire,        &gStates[S_BFG]           },  // S_BFG4
-    state_t{Spr(rSPR_BIGBFG,            2|FF_FULLBRIGHT),   5*4,       A_Light1,        &gStates[S_BFGFLASH2]     },  // S_BFGFLASH1
-    state_t{Spr(rSPR_BIGBFG,            3|FF_FULLBRIGHT),   3*4,       A_Light2,        &gStates[S_LIGHTDONE]     },  // S_BFGFLASH2
+    state_t{Spr(rSPR_BIGPLASMA,         0),                 2,         A_WeaponReady,   &gStates[S_PLASMA]        },  // S_PLASMA
+    state_t{Spr(rSPR_BIGPLASMA,         0),                 2,         A_Lower,         &gStates[S_PLASMADOWN]    },  // S_PLASMADOWN
+    state_t{Spr(rSPR_BIGPLASMA,         0),                 2,         A_Raise,         &gStates[S_PLASMAUP]      },  // S_PLASMAUP
+    state_t{Spr(rSPR_BIGPLASMA,         0),                 5,         A_FirePlasma,    &gStates[S_PLASMA2]       },  // S_PLASMA1
+    state_t{Spr(rSPR_BIGPLASMA,         1),                 34,        A_ReFire,        &gStates[S_PLASMA]        },  // S_PLASMA2
+    state_t{Spr(rSPR_BIGPLASMA,         2|FF_FULLBRIGHT),   7,         A_Light1,        &gStates[S_LIGHTDONE]     },  // S_PLASMAFLASH1
+    state_t{Spr(rSPR_BIGPLASMA,         3|FF_FULLBRIGHT),   7,         A_Light1,        &gStates[S_LIGHTDONE]     },  // S_PLASMAFLASH2
+    state_t{Spr(rSPR_BIGBFG,            0),                 2,         A_WeaponReady,   &gStates[S_BFG]           },  // S_BFG
+    state_t{Spr(rSPR_BIGBFG,            0),                 2,         A_Lower,         &gStates[S_BFGDOWN]       },  // S_BFGDOWN
+    state_t{Spr(rSPR_BIGBFG,            0),                 2,         A_Raise,         &gStates[S_BFGUP]         },  // S_BFGUP
+    state_t{Spr(rSPR_BIGBFG,            0),                 34,        A_BFGsound,      &gStates[S_BFG2]          },  // S_BFG1
+    state_t{Spr(rSPR_BIGBFG,            1),                 17,        A_GunFlash,      &gStates[S_BFG3]          },  // S_BFG2
+    state_t{Spr(rSPR_BIGBFG,            1),                 17,        A_FireBFG,       &gStates[S_BFG4]          },  // S_BFG3
+    state_t{Spr(rSPR_BIGBFG,            1),                 34,        A_ReFire,        &gStates[S_BFG]           },  // S_BFG4
+    state_t{Spr(rSPR_BIGBFG,            2|FF_FULLBRIGHT),   19,        A_Light1,        &gStates[S_BFGFLASH2]     },  // S_BFGFLASH1
+    state_t{Spr(rSPR_BIGBFG,            3|FF_FULLBRIGHT),   10,        A_Light2,        &gStates[S_LIGHTDONE]     },  // S_BFGFLASH2
     state_t{Spr(rSPR_BLUD,              2),                 4*4,       NO_MOBJ_ACTION,  &gStates[S_BLOOD2]        },  // S_BLOOD1
     state_t{Spr(rSPR_BLUD,              1),                 4*4,       NO_MOBJ_ACTION,  &gStates[S_BLOOD3]        },  // S_BLOOD2
     state_t{Spr(rSPR_BLUD,              0),                 4*4,       NO_MOBJ_ACTION,  NULL_STATE                },  // S_BLOOD3
