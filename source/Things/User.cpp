@@ -20,7 +20,7 @@
 #include <algorithm>
 
 static constexpr Fixed MAXBOB           = 16 << FRACBITS;   // 16 pixels of bobbing up and down
-static constexpr float MOUSE_TURN_SCALE = 1.0f / 11.0f;     // Controls how much mouse movement translates into turning (can be multiplied by the user through config also)
+static constexpr float MOUSE_TURN_SCALE = 1.0f / 15.0f;     // Controls how much mouse movement translates into turning (can be multiplied by the user through config also)
 
 static constexpr uint32_t FORWARD_MOVE[2] = {
     0x38000 >> 2,
@@ -221,6 +221,8 @@ static void P_BuildMove(player_t& player) noexcept {
         )
     );
 
+    const bool bIsRunning = (gAlwaysRun || GAME_ACTION(RUN));
+
     if (bCanMoveAndTurn) {
         // Use two stage accelerative turning on the joypad.
         // If none of the turn keys are pressed then reset acceleration.
@@ -243,7 +245,7 @@ static void P_BuildMove(player_t& player) noexcept {
         player.turnheld = turnIndex;
 
         // Is the player running?
-        const uint32_t speedIndex = GAME_ACTION(RUN) ? 1 : 0;
+        const uint32_t speedIndex = bIsRunning ? 1 : 0;
 
         // Do side stepping
         float sideMoveFracF = CONTROLLER_AXIS(STRAFE_LEFT_RIGHT);
@@ -613,6 +615,11 @@ void P_PlayerThink(player_t& player) noexcept {
     ASSERT(player.mo);
     P_PlayerMobjThink(*player.mo);      // Perform the inertia movement
     P_BuildMove(player);                // Convert joypad info to motion
+
+    // Toggle always run if the right key is pressed
+    if (GAME_ACTION_ENDED(TOGGLE_ALWAYS_RUN)) {
+        gAlwaysRun = (!gAlwaysRun);
+    }
 
     // I use MF_JUSTATTACKED when the chainsaw is being used
     if (player.mo->flags & MF_JUSTATTACKED) {       // Chainsaw attack?

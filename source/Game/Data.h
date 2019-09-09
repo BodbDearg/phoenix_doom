@@ -44,5 +44,6 @@ extern skill_e                  gGameSkill;                     // Current skill
 extern uint32_t                 gGameMap;                       // Current game map #
 extern uint32_t                 gNextMap;                       // The map to go to after the stats
 extern uint32_t                 gScreenSize;                    // Screen size to use
+extern bool                     gAlwaysRun;                     // If enabled player always runs
 extern bool                     gDoWipe;                        // True if I should do the DOOM wipe
 extern uint32_t                 gValidCount;                    // Increment every time a check is made (used for sort of unique ids)

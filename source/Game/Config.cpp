@@ -97,6 +97,13 @@ AspectCorrectOutputScaling = 1
 ####################################################################################################
 
 #---------------------------------------------------------------------------------------------------
+# Default setting for always run.
+# Note: can be toggled in game with the right keys.
+# This is best left OFF for game controller input and ON for mouse controls.
+#---------------------------------------------------------------------------------------------------
+DefaultAlwaysRun = 0
+
+#---------------------------------------------------------------------------------------------------
 # 0-1 range: controls the point at which an analogue axis like a trigger, stick etc. is regarded
 # as 'pressed' when treated as a digital input (e.g trigger used for 'shoot' action).
 # The default of '0.5' (halfway depressed) is probably reasonable for most users.
@@ -150,6 +157,7 @@ Keypad -        = automap_free_cam_zoom_out
 Keypad +        = automap_free_cam_zoom_in
 PageUp          = debug_move_camera_up
 PageDown        = debug_move_camera_down
+R               = toggle_always_run
 
 ####################################################################################################
 [MouseControls]
@@ -198,7 +206,7 @@ Button_Back             = options
 Button_Guide            = 
 Button_Start            = pause
 Button_LeftStick        = 
-Button_Rightstick       = 
+Button_Rightstick       = toggle_always_run
 Button_Leftshoulder     = prev_weapon
 Button_Rightshoulder    = next_weapon
 Button_DpUp             = move_forward, menu_up
@@ -458,6 +466,7 @@ int32_t                     gOutputResolutionH;
 bool                        gbIntegerOutputScaling;
 bool                        gbAspectCorrectOutputScaling;
 float                       gInputAnalogToDigitalThreshold;
+bool                        gDefaultAlwaysRun;
 Controls::MenuActionBits    gKeyboardMenuActions[Input::NUM_KEYBOARD_KEYS];
 Controls::GameActionBits    gKeyboardGameActions[Input::NUM_KEYBOARD_KEYS];
 float                       gMouseTurnSensitivity;
@@ -675,6 +684,7 @@ static void parseSingleActionOrAxisString(
     handleGameAction("automap_free_cam_zoom_in",    Controls::GameActions::AUTOMAP_FREE_CAM_ZOOM_IN);
     handleGameAction("debug_move_camera_up",        Controls::GameActions::DEBUG_MOVE_CAMERA_UP);
     handleGameAction("debug_move_camera_down",      Controls::GameActions::DEBUG_MOVE_CAMERA_DOWN);
+    handleGameAction("toggle_always_run",           Controls::GameActions::TOGGLE_ALWAYS_RUN);
 
     handleMenuAction("menu_up",     Controls::MenuActions::UP);
     handleMenuAction("menu_down",   Controls::MenuActions::DOWN);
@@ -908,7 +918,10 @@ static void handleConfigEntry(const IniUtils::Entry& entry) noexcept {
     else if (entry.section == "InputGeneral") {
         if (entry.key == "AnalogToDigitalThreshold") {
             gInputAnalogToDigitalThreshold = entry.getFloatValue(gInputAnalogToDigitalThreshold);
-        }        
+        }
+        else if (entry.key == "DefaultAlwaysRun") {
+            gDefaultAlwaysRun = entry.getBoolValue(gDefaultAlwaysRun);
+        }
     }
     else if (entry.section == "KeyboardControls") {
         const SDL_Scancode scancode = SDL_GetScancodeFromName(entry.key.c_str());
@@ -961,6 +974,7 @@ static void clear() noexcept {
     gbAspectCorrectOutputScaling = true;
 
     gInputAnalogToDigitalThreshold = 0.5f;
+    gDefaultAlwaysRun = false;
 
     std::memset(gKeyboardMenuActions, 0, sizeof(gKeyboardMenuActions));
     std::memset(gKeyboardGameActions, 0, sizeof(gKeyboardGameActions));

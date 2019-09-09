@@ -1,6 +1,7 @@
 #include "Controls.h"
 
 #include "Config.h"
+#include "Data.h"
 
 BEGIN_NAMESPACE(Controls)
 
@@ -264,6 +265,7 @@ float Axis::getValue(const AxisBits axis) noexcept {
 
 void init() noexcept {
     clearAllInputs();
+    gAlwaysRun = Config::gDefaultAlwaysRun;
 }
 
 void shutdown() noexcept {

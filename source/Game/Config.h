@@ -14,7 +14,8 @@ extern bool         gbIntegerOutputScaling;
 extern bool         gbAspectCorrectOutputScaling;
 
 // Input general settings
-extern float gInputAnalogToDigitalThreshold;
+extern float    gInputAnalogToDigitalThreshold;
+extern bool     gDefaultAlwaysRun;
 
 // Keyboard key bindings
 extern Controls::MenuActionBits gKeyboardMenuActions[Input::NUM_KEYBOARD_KEYS];

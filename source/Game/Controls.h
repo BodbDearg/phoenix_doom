@@ -63,6 +63,7 @@ namespace GameActions {
     static constexpr uint32_t OPTIONS                       = 0x00800000u;
     static constexpr uint32_t DEBUG_MOVE_CAMERA_UP          = 0x01000000u;
     static constexpr uint32_t DEBUG_MOVE_CAMERA_DOWN        = 0x02000000u;
+    static constexpr uint32_t TOGGLE_ALWAYS_RUN             = 0x04000000u;
 
     // N.B: the condition must be true for ALL actions given, else 'false' is returned
     bool areActive(const GameActionBits gameActions) noexcept;

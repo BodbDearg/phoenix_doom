@@ -32,5 +32,6 @@ skill_e                 gGameSkill;
 uint32_t                gGameMap;
 uint32_t                gNextMap;
 uint32_t                gScreenSize;
+bool                    gAlwaysRun;
 bool                    gDoWipe;
 uint32_t                gValidCount;
