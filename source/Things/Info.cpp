@@ -73,16 +73,16 @@ state_t gStates[NUMSTATES] = {
     state_t{Spr(rSPR_BIGCHAINGUN,       1),                 0,         A_ReFire,        &gStates[S_CHAIN]         },  // S_CHAIN3
     state_t{Spr(rSPR_BIGCHAINGUN,       2|FF_FULLBRIGHT),   9,         A_Light1,        &gStates[S_LIGHTDONE]     },  // S_CHAINFLASH1
     state_t{Spr(rSPR_BIGCHAINGUN,       3|FF_FULLBRIGHT),   9,         A_Light2,        &gStates[S_LIGHTDONE]     },  // S_CHAINFLASH2
-    state_t{Spr(rSPR_BIGROCKET,         0),                 1*4,       A_WeaponReady,   &gStates[S_MISSILE]       },  // S_MISSILE
-    state_t{Spr(rSPR_BIGROCKET,         0),                 1*4,       A_Lower,         &gStates[S_MISSILEDOWN]   },  // S_MISSILEDOWN
-    state_t{Spr(rSPR_BIGROCKET,         0),                 1*4,       A_Raise,         &gStates[S_MISSILEUP]     },  // S_MISSILEUP
-    state_t{Spr(rSPR_BIGROCKET,         1),                 4*4,       A_GunFlash,      &gStates[S_MISSILE2]      },  // S_MISSILE1
-    state_t{Spr(rSPR_BIGROCKET,         1),                 6*4,       A_FireMissile,   &gStates[S_MISSILE3]      },  // S_MISSILE2
-    state_t{Spr(rSPR_BIGROCKET,         1),                 0*4,       A_ReFire,        &gStates[S_MISSILE]       },  // S_MISSILE3
-    state_t{Spr(rSPR_BIGROCKET,         2|FF_FULLBRIGHT),   2*4,       A_Light1,        &gStates[S_MISSILEFLASH2] },  // S_MISSILEFLASH1
-    state_t{Spr(rSPR_BIGROCKET,         3|FF_FULLBRIGHT),   2*4,       NO_PSP_ACTION,   &gStates[S_MISSILEFLASH3] },  // S_MISSILEFLASH2
-    state_t{Spr(rSPR_BIGROCKET,         4|FF_FULLBRIGHT),   2*4,       A_Light2,        &gStates[S_MISSILEFLASH4] },  // S_MISSILEFLASH3
-    state_t{Spr(rSPR_BIGROCKET,         5|FF_FULLBRIGHT),   2*4,       A_Light2,        &gStates[S_LIGHTDONE]     },  // S_MISSILEFLASH4
+    state_t{Spr(rSPR_BIGROCKET,         0),                 2,         A_WeaponReady,   &gStates[S_MISSILE]       },  // S_MISSILE
+    state_t{Spr(rSPR_BIGROCKET,         0),                 2,         A_Lower,         &gStates[S_MISSILEDOWN]   },  // S_MISSILEDOWN
+    state_t{Spr(rSPR_BIGROCKET,         0),                 2,         A_Raise,         &gStates[S_MISSILEUP]     },  // S_MISSILEUP
+    state_t{Spr(rSPR_BIGROCKET,         1),                 14,        A_GunFlash,      &gStates[S_MISSILE2]      },  // S_MISSILE1
+    state_t{Spr(rSPR_BIGROCKET,         1),                 21,        A_FireMissile,   &gStates[S_MISSILE3]      },  // S_MISSILE2
+    state_t{Spr(rSPR_BIGROCKET,         1),                 0,         A_ReFire,        &gStates[S_MISSILE]       },  // S_MISSILE3
+    state_t{Spr(rSPR_BIGROCKET,         2|FF_FULLBRIGHT),   5,         A_Light1,        &gStates[S_MISSILEFLASH2] },  // S_MISSILEFLASH1
+    state_t{Spr(rSPR_BIGROCKET,         3|FF_FULLBRIGHT),   7,         NO_PSP_ACTION,   &gStates[S_MISSILEFLASH3] },  // S_MISSILEFLASH2
+    state_t{Spr(rSPR_BIGROCKET,         4|FF_FULLBRIGHT),   7,         A_Light2,        &gStates[S_MISSILEFLASH4] },  // S_MISSILEFLASH3
+    state_t{Spr(rSPR_BIGROCKET,         5|FF_FULLBRIGHT),   7,         A_Light2,        &gStates[S_LIGHTDONE]     },  // S_MISSILEFLASH4
     state_t{Spr(rSPR_BIGCHAINSAW,       2),                 2*4,       A_WeaponReady,   &gStates[S_SAWB]          },  // S_SAW
     state_t{Spr(rSPR_BIGCHAINSAW,       3),                 2*4,       A_WeaponReady,   &gStates[S_SAW]           },  // S_SAWB
     state_t{Spr(rSPR_BIGCHAINSAW,       2),                 1*4,       A_Lower,         &gStates[S_SAWDOWN]       },  // S_SAWDOWN

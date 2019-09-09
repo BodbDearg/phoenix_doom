@@ -26,7 +26,9 @@ static void DrawAWeapon(const pspdef_t& psp, const bool bShadow) noexcept {
         resourceNum,
         CelLoadFlagBits::MASKED | CelLoadFlagBits::HAS_OFFSETS
     );
-    const CelImage& img = weaponImgs.getImage(playerSpriteState.SpriteFrame & FF_FRAMEMASK);
+
+    const uint32_t spriteNum =playerSpriteState.SpriteFrame & FF_FRAMEMASK;
+    const CelImage& img = weaponImgs.getImage(spriteNum);
 
     // Figure out what light level to draw the gun at
     float lightMul;
@@ -41,6 +43,14 @@ static void DrawAWeapon(const pspdef_t& psp, const bool bShadow) noexcept {
     // Decide where to draw the gun sprite part
     float gunX = (float)(img.offsetX + psp.WeaponX);
     float gunY = (float)(img.offsetY + psp.WeaponY + SCREEN_GUN_Y);
+
+    // HACK: Fixes slight wiggle in one of the rocket launcher frames. Not sure how that error got added?
+    // This bug was in the original 3DO version so maybe some of the toolchains that built the data somehow
+    // got this slightly wrong...
+    if (resourceNum == rSPR_BIGROCKET && spriteNum == 5) {
+        gunX -= 0.75f;
+    }
+
     gunX *= gGunXScale;
     gunY *= gGunYScale;
 
