@@ -155,9 +155,9 @@ bool P_UseSpecialLine(mobj_t& thing, line_t& line) noexcept {
             return false;
         }
 
-        // TODO: DC - there used to be commented out logic here for key doors that did nothing - so I removed.
-        // Do we want to prevent monsters from being able to open key doors?
-        // Does that situation even occur on the 3DO version?
+        // Monsters are only allowed to open ordinary doors
+        if (line.special != 1)
+            return false;
     }
 
     // Do something
