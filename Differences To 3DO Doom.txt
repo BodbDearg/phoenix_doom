@@ -57,6 +57,9 @@ The issue was most noticeble on the chaingun but also occurred on other weapons 
 [] Post processing FX is applied to the player's weapon in addition to the 3D environment.
 In the original 3DO version the player's weapon was exempt from the invulnerability effect and screen tints. I added this change to help improve the immersiveness of the effect; looked odd that the weapon was excluded!
 
+[] Transparent sprites no longer look like a single flat color.
+I believe the 3DO version may have been trying to do transparency that didn't just look like a single flat color but ultimately couldn't due to the limited color precision of the framebuffer. This is now easy to fix given that the framebuffer has been moved to 32-bit.
+
 [] Screen tint FX method changed and minor tweaks applied. I switched from the 3DO technique of doing a blend with a solid color to doing a color multiply instead. The intent with this change is to hopefully help preserve color detail and prevent the 3D display from looking washed out when heavy amounts of FX are applied.
 
 [] Removed the maximum screen size restriction.

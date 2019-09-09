@@ -83,13 +83,13 @@ state_t gStates[NUMSTATES] = {
     state_t{Spr(rSPR_BIGROCKET,         3|FF_FULLBRIGHT),   7,         NO_PSP_ACTION,   &gStates[S_MISSILEFLASH3] },  // S_MISSILEFLASH2
     state_t{Spr(rSPR_BIGROCKET,         4|FF_FULLBRIGHT),   7,         A_Light2,        &gStates[S_MISSILEFLASH4] },  // S_MISSILEFLASH3
     state_t{Spr(rSPR_BIGROCKET,         5|FF_FULLBRIGHT),   7,         A_Light2,        &gStates[S_LIGHTDONE]     },  // S_MISSILEFLASH4
-    state_t{Spr(rSPR_BIGCHAINSAW,       2),                 2*4,       A_WeaponReady,   &gStates[S_SAWB]          },  // S_SAW
-    state_t{Spr(rSPR_BIGCHAINSAW,       3),                 2*4,       A_WeaponReady,   &gStates[S_SAW]           },  // S_SAWB
-    state_t{Spr(rSPR_BIGCHAINSAW,       2),                 1*4,       A_Lower,         &gStates[S_SAWDOWN]       },  // S_SAWDOWN
-    state_t{Spr(rSPR_BIGCHAINSAW,       2),                 1*4,       A_Raise,         &gStates[S_SAWUP]         },  // S_SAWUP
-    state_t{Spr(rSPR_BIGCHAINSAW,       0),                 2*4,       A_Saw,           &gStates[S_SAW2]          },  // S_SAW1
-    state_t{Spr(rSPR_BIGCHAINSAW,       1),                 2*4,       A_Saw,           &gStates[S_SAW3]          },  // S_SAW2
-    state_t{Spr(rSPR_BIGCHAINSAW,       1),                 0*4,       A_ReFire,        &gStates[S_SAW]           },  // S_SAW3
+    state_t{Spr(rSPR_BIGCHAINSAW,       2),                 7,         A_WeaponReady,   &gStates[S_SAWB]          },  // S_SAW
+    state_t{Spr(rSPR_BIGCHAINSAW,       3),                 7,         A_WeaponReady,   &gStates[S_SAW]           },  // S_SAWB
+    state_t{Spr(rSPR_BIGCHAINSAW,       2),                 2,         A_Lower,         &gStates[S_SAWDOWN]       },  // S_SAWDOWN
+    state_t{Spr(rSPR_BIGCHAINSAW,       2),                 2,         A_Raise,         &gStates[S_SAWUP]         },  // S_SAWUP
+    state_t{Spr(rSPR_BIGCHAINSAW,       0),                 7,         A_Saw,           &gStates[S_SAW2]          },  // S_SAW1
+    state_t{Spr(rSPR_BIGCHAINSAW,       1),                 7,         A_Saw,           &gStates[S_SAW3]          },  // S_SAW2
+    state_t{Spr(rSPR_BIGCHAINSAW,       1),                 0,         A_ReFire,        &gStates[S_SAW]           },  // S_SAW3
     state_t{Spr(rSPR_BIGPLASMA,         0),                 1*4,       A_WeaponReady,   &gStates[S_PLASMA]        },  // S_PLASMA
     state_t{Spr(rSPR_BIGPLASMA,         0),                 1*4,       A_Lower,         &gStates[S_PLASMADOWN]    },  // S_PLASMADOWN
     state_t{Spr(rSPR_BIGPLASMA,         0),                 1*4,       A_Raise,         &gStates[S_PLASMAUP]      },  // S_PLASMAUP

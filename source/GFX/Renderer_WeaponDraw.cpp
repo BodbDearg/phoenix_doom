@@ -44,9 +44,9 @@ static void DrawAWeapon(const pspdef_t& psp, const bool bShadow) noexcept {
     float gunX = (float)(img.offsetX + psp.WeaponX);
     float gunY = (float)(img.offsetY + psp.WeaponY + SCREEN_GUN_Y);
 
-    // HACK: Fixes slight wiggle in one of the rocket launcher frames. Not sure how that error got added?
-    // This bug was in the original 3DO version so maybe some of the toolchains that built the data somehow
-    // got this slightly wrong...
+    // HACK: Fixes somewhat (not completely though, due to the asset) a slight wiggle in one of the rocket
+    // launcher frames. Not sure how this error got added, but the bug was in the original 3DO version.
+    // Maybe some of the toolchains that built the data got this slightly wrong somehow?
     if (resourceNum == rSPR_BIGROCKET && spriteNum == 5) {
         gunX -= 0.75f;
     }
