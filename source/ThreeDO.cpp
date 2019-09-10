@@ -149,16 +149,3 @@ void ReadPrefsFile() noexcept {
         ClearPrefsFile();
     }
 }
-
-/**********************************
-
-    Draw a shape centered on the screen
-    Used for "Loading or Paused" pics
-
-**********************************/
-// TODO: MOVE ELSEWHERE
-void DrawPlaque(uint32_t RezNum) noexcept  {
-    const CelImage& img = CelImages::loadImage(RezNum);
-    Renderer::drawUISprite(160 - img.width / 2, 80, img);
-    CelImages::releaseImages(RezNum);
-}

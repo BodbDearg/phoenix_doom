@@ -7,11 +7,11 @@
 #include "Game/DoomDefines.h"
 #include "Game/DoomRez.h"
 #include "GFX/CelImages.h"
-#include "GFX/Renderer.h"
 #include "GFX/Video.h"
 #include "Intermission_Main.h"
 #include "Options_Main.h"
 #include "ThreeDO.h"
+#include "UIUtils.h"
 
 static constexpr int32_t CURSORX        = 50;       // X coord of skull cursor
 static constexpr int32_t AREAY          = 66;
@@ -192,7 +192,7 @@ gameaction_e M_Ticker() noexcept {
 //--------------------------------------------------------------------------------------------------
 void M_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
     Video::debugClearScreen();
-    Renderer::drawUISprite(0, 0, rMAINDOOM);
+    UIUtils::drawUISprite(0, 0, rMAINDOOM);
 
     if (gOptionActive) {
         O_Drawer(bPresent, bSaveFrameBuffer);
@@ -202,7 +202,7 @@ void M_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
 
         // Draw new skull
         const CelImageArray& skullImgs = CelImages::loadImages(rSKULLS, CelLoadFlagBits::MASKED);
-        Renderer::drawUISprite(CURSORX, gCursorYs[gCursorPos], skullImgs.getImage(gCursorFrame));
+        UIUtils::drawUISprite(CURSORX, gCursorYs[gCursorPos], skullImgs.getImage(gCursorFrame));
         CelImages::releaseImages(rSKULLS);
 
         // Draw start level information
@@ -210,8 +210,8 @@ void M_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
         PrintNumber(CURSORX + 40, AREAY + 20, gPlayerMap, 0);
 
         // Draw difficulty information
-        Renderer::drawUISprite(CURSORX + 24, DIFFICULTYY, shapes.getImage(DIFFSHAPE));
-        Renderer::drawUISprite(CURSORX + 40, DIFFICULTYY + 20, shapes.getImage(gPlayerSkill));
+        UIUtils::drawUISprite(CURSORX + 24, DIFFICULTYY, shapes.getImage(DIFFSHAPE));
+        UIUtils::drawUISprite(CURSORX + 40, DIFFICULTYY + 20, shapes.getImage(gPlayerSkill));
 
         // Draw the options screen
         PrintBigFont(CURSORX + 24, OPTIONSY, "Options Menu");

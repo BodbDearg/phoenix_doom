@@ -14,6 +14,7 @@
 #include "GFX/Video.h"
 #include "Intermission_Main.h"
 #include "ThreeDO.h"
+#include "UIUtils.h"
 
 static constexpr uint32_t CURSORX       = 45;       // X coord for skulls
 static constexpr uint32_t SLIDERX       = 106;      // X coord for slider bars
@@ -205,7 +206,7 @@ void O_Control(player_t* const pPlayer) noexcept {
 void O_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
     // Erase old and Draw new cursor frame
     const CelImageArray& skullImgs = CelImages::loadImages(rSKULLS, CelLoadFlagBits::MASKED);
-    Renderer::drawUISprite(CURSORX, CURSOR_Y_POS[gCursorPos], skullImgs.getImage(gCursorFrame));
+    UIUtils::drawUISprite(CURSORX, CURSOR_Y_POS[gCursorPos], skullImgs.getImage(gCursorFrame));
     CelImages::releaseImages(rSKULLS);
 
     // Draw menu text
@@ -217,26 +218,26 @@ void O_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
         PrintBigFontCenter(160, MUSICVOLY, "Music Volume");
 
         // Draw scroll bars
-        Renderer::drawUISprite(SLIDERX, SFXVOLY + 20, sliderImgs.getImage(BAR));
-        Renderer::drawUISprite(SLIDERX, MUSICVOLY + 20, sliderImgs.getImage(BAR));
+        UIUtils::drawUISprite(SLIDERX, SFXVOLY + 20, sliderImgs.getImage(BAR));
+        UIUtils::drawUISprite(SLIDERX, MUSICVOLY + 20, sliderImgs.getImage(BAR));
 
         {
             const uint32_t offset = Audio::getSoundVolume() * SLIDESTEP;
-            Renderer::drawUISprite(SLIDERX + 5 + offset, SFXVOLY + 20, sliderImgs.getImage(HANDLE));
+            UIUtils::drawUISprite(SLIDERX + 5 + offset, SFXVOLY + 20, sliderImgs.getImage(HANDLE));
         }
 
         {
             const uint32_t offset = Audio::getMusicVolume() * SLIDESTEP;
-            Renderer::drawUISprite(SLIDERX + 5 + offset, MUSICVOLY + 20, sliderImgs.getImage(HANDLE));
+            UIUtils::drawUISprite(SLIDERX + 5 + offset, MUSICVOLY + 20, sliderImgs.getImage(HANDLE));
         }
 
     } else {
         // Draw screen size slider
         PrintBigFontCenter(160, SIZEY, "Screen Size");
-        Renderer::drawUISprite(SLIDERX, SIZEY + 20, sliderImgs.getImage(BAR));
+        UIUtils::drawUISprite(SLIDERX, SIZEY + 20, sliderImgs.getImage(BAR));
 
         const uint32_t offset = (5 - gScreenSize) * 18;
-        Renderer::drawUISprite(SLIDERX + 5 + offset, SIZEY + 20, sliderImgs.getImage(HANDLE));
+        UIUtils::drawUISprite(SLIDERX + 5 + offset, SIZEY + 20, sliderImgs.getImage(HANDLE));
 
         if (gbIsPlayingMap) {
             PrintBigFontCenter(160, QUITY, "Quit To Main");

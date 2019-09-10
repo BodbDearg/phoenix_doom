@@ -17,6 +17,7 @@
 #include "UI/IntroMovies.h"
 #include "UI/Menu_Main.h"
 #include "UI/Options_Main.h"
+#include "UI/UIUtils.h"
 #include "WipeFx.h"
 #include <thread>
 
@@ -166,7 +167,7 @@ static void STOP_Title() noexcept {
 //----------------------------------------------------------------------------------------------------------------------
 static void DRAW_Title(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
     Video::debugClearScreen();
-    Renderer::drawUISprite(0, 0, rTITLE);           // Draw the doom logo
+    UIUtils::drawUISprite(0, 0, rTITLE);           // Draw the doom logo
     Video::endFrame(bPresent, bSaveFrameBuffer);
 }
 
@@ -187,7 +188,7 @@ static gameaction_e TIC_Credits() noexcept {
 //----------------------------------------------------------------------------------------------------------------------
 static void DRAW_Credits(const bool bPresent, const bool bSaveFrameBuffer, const uint32_t creditsPageResourceNum) noexcept {
     Video::debugClearScreen();
-    Renderer::drawUISprite(0, 0, creditsPageResourceNum);
+    UIUtils::drawUISprite(0, 0, creditsPageResourceNum);
     Video::endFrame(bPresent, bSaveFrameBuffer);
 }
 

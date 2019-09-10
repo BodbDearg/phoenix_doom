@@ -7,11 +7,11 @@
 #include "Game/Data.h"
 #include "Game/DoomRez.h"
 #include "GFX/Blit.h"
-#include "GFX/Renderer.h"
 #include "GFX/Sprites.h"
 #include "GFX/Video.h"
 #include "Intermission_Main.h"
 #include "Things/Info.h"
+#include "UIUtils.h"
 
 enum final_e {
     fin_endtext,
@@ -341,7 +341,7 @@ gameaction_e F_Ticker() noexcept {
 //----------------------------------------------------------------------------------------------------------------------
 void F_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
     Video::debugClearScreen();
-    Renderer::drawUISprite(0, 0, rBACKGRNDBROWN);       // Draw the background
+    UIUtils::drawUISprite(0, 0, rBACKGRNDBROWN);    // Draw the background
 
     if (gStatus == fin_endtext) {
         // Print the string portion

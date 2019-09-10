@@ -7,8 +7,8 @@
 #include "Game/DoomDefines.h"
 #include "Game/DoomRez.h"
 #include "GFX/CelImages.h"
-#include "GFX/Renderer.h"
 #include "Intermission_Main.h"
+#include "UIUtils.h"
 #include <cstring>
 
 static constexpr uint32_t FLASHDELAY = TICKSPERSEC / 4;     // # of tics delay (1/60 sec)
@@ -209,7 +209,7 @@ void ST_Drawer() noexcept {
     player_t *p;
     sbflash_t *FlashPtr;
 
-    Renderer::drawUISprite(0, 160, *gpStatusBarShape);
+    UIUtils::drawUISprite(0, 160, *gpStatusBarShape);
 
     // TODO: REIMPLEMENT FPS COUNT
     #if VBLTIMER
@@ -249,7 +249,7 @@ void ST_Drawer() noexcept {
     do {
         // Flashing?
         if (p->cards[ind] || FlashPtr->doDraw) {
-            Renderer::drawUISprite(CARD_X[ind], CARD_Y[ind], gpSBObj->getImage(sb_card_b + ind));
+            UIUtils::drawUISprite(CARD_X[ind], CARD_Y[ind], gpSBObj->getImage(sb_card_b + ind));
         }
         ++FlashPtr;
     } while (++ind < NUMCARDS);
@@ -258,7 +258,7 @@ void ST_Drawer() noexcept {
     ind = 0;
     do {
         if (p->weaponowned[ind+1]) {
-            Renderer::drawUISprite(MICRO_NUMS_X[ind], MICRO_NUMS_Y[ind], gpSBObj->getImage(sb_micro+ind));
+            UIUtils::drawUISprite(MICRO_NUMS_X[ind], MICRO_NUMS_Y[ind], gpSBObj->getImage(sb_micro+ind));
         }
     } while (++ind < NUMMICROS);
 
@@ -298,5 +298,5 @@ void ST_Drawer() noexcept {
         i = i + gNewFace;  // Get shape requested
     }
 
-    Renderer::drawUISprite(FACEX, FACEY, gpFaces->getImage(i));     // Dead man
+    UIUtils::drawUISprite(FACEX, FACEY, gpFaces->getImage(i));     // Dead man
 }

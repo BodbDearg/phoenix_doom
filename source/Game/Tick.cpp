@@ -24,6 +24,7 @@
 #include "UI/Automap_Main.h"
 #include "UI/Options_Main.h"
 #include "UI/StatusBar_Main.h"
+#include "UI/UIUtils.h"
 #include <cstring>
 #include <SDL.h>
 
@@ -252,7 +253,7 @@ void P_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
     #endif
 
     if (gbGamePaused && gbRefreshDrawn) {
-        DrawPlaque(rPAUSED);            // Draw 'Paused' plaque
+        UIUtils::drawPlaque(rPAUSED);                   // Draw 'Paused' plaque
         Video::endFrame(bPresent, bSaveFrameBuffer);
     } else if (gPlayer.isOptionsMenuActive()) {
         Video::debugClearScreen();

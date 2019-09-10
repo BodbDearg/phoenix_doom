@@ -8,6 +8,7 @@
 #include "Map/MapData.h"
 #include "Things/Info.h"
 #include "Things/MapObj.h"
+#include "UI/UIUtils.h"
 #include "Video.h"
 
 BEGIN_NAMESPACE(Renderer)
@@ -147,7 +148,7 @@ void drawWeapons() noexcept {
 
     // Draw the border
     const uint32_t borderRezNum = gScreenSize + rBACKGROUNDMASK;
-    drawMaskedUISprite(0, 0, borderRezNum);
+    UIUtils::drawMaskedUISprite(0, 0, borderRezNum);
 }
 
 END_NAMESPACE(Renderer)

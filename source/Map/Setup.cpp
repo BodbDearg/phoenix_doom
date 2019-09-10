@@ -15,7 +15,7 @@
 #include "Specials.h"
 #include "Switch.h"
 #include "Things/MapObj.h"
-#include "ThreeDO.h"
+#include "UI/UIUtils.h"
 #include <cstring>
 
 static constexpr uint32_t PRELOAD_TABLE[] = {
@@ -154,7 +154,7 @@ static void LoadThings(const uint32_t lumpResourceNum) {
 // Draw the word "Loading" on the screen
 //----------------------------------------------------------------------------------------------------------------------
 static void LoadingPlaque() noexcept {
-    DrawPlaque(rLOADING);
+    UIUtils::drawPlaque(rLOADING);
 }
 
 //----------------------------------------------------------------------------------------------------------------------

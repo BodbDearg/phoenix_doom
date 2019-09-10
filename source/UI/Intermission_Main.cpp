@@ -8,8 +8,8 @@
 #include "Game/DoomRez.h"
 #include "Game/Resources.h"
 #include "GFX/CelImages.h"
-#include "GFX/Renderer.h"
 #include "GFX/Video.h"
+#include "UIUtils.h"
 #include <cstring>
 
 static constexpr int32_t KVALX      = 232;
@@ -122,7 +122,7 @@ void PrintBigFont(const int32_t x, const int32_t y, const char* const pString) n
         }
 
         const CelImage& shape = gpCurrent->getImage(c);     // Get the shape pointer
-        Renderer::drawUISprite(curX, y2, shape);            // Draw the char
+        UIUtils::drawUISprite(curX, y2, shape);             // Draw the char
         curX += shape.width + 1;                            // Get the width to tab
 
     } while ((c = pCurChar[0]) != 0);   // Next index
@@ -314,7 +314,7 @@ gameaction_e IN_Ticker() noexcept {
 //----------------------------------------------------------------------------------------------------------------------
 void IN_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
     Video::debugClearScreen();
-    Renderer::drawUISprite(0, 0, rBACKGRNDBROWN);   // Load and draw the skulls
+    UIUtils::drawUISprite(0, 0, rBACKGRNDBROWN);    // Load and draw the skulls
 
     const CelImageArray& intermisShapes = CelImages::loadImages(rINTERMIS, CelLoadFlagBits::MASKED);
 
@@ -326,9 +326,9 @@ void IN_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
         PrintBigFontCenter(160, 182, MAP_NAMES[gNextMap - 1]);
     }
 
-    Renderer::drawUISprite(71, KVALY, intermisShapes.getImage(KillShape));   // Draw the shapes
-    Renderer::drawUISprite(65, IVALY, intermisShapes.getImage(ItemsShape));
-    Renderer::drawUISprite(27, SVALY, intermisShapes.getImage(SecretsShape));
+    UIUtils::drawUISprite(71, KVALY, intermisShapes.getImage(KillShape));   // Draw the shapes
+    UIUtils::drawUISprite(65, IVALY, intermisShapes.getImage(ItemsShape));
+    UIUtils::drawUISprite(27, SVALY, intermisShapes.getImage(SecretsShape));
 
     PrintNumber(KVALX, KVALY, gKillValue, PNFLAGS_PERCENT|PNFLAGS_RIGHT);   // Print the numbers
     PrintNumber(IVALX, IVALY, gItemValue, PNFLAGS_PERCENT|PNFLAGS_RIGHT);
