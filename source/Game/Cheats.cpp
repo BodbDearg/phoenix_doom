@@ -8,9 +8,9 @@
 #include "DoomDefines.h"
 #include "Things/Interactions.h"
 #include "Things/MapObj.h"
-#include "UI/Automap_Main.h"
-#include <vector>
+#include "UI/Automap.h"
 #include <SDL.h>
+#include <vector>
 
 BEGIN_NAMESPACE(Cheats)
 

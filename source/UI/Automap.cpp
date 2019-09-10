@@ -1,4 +1,4 @@
-#include "Automap_Main.h"
+#include "Automap.h"
 
 #include "Base/Tables.h"
 #include "Game/Controls.h"

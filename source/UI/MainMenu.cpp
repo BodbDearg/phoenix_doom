@@ -1,4 +1,4 @@
-#include "Menu_Main.h"
+#include "MainMenu.h"
 
 #include "Base/Input.h"
 #include "Game/Config.h"
@@ -8,8 +8,8 @@
 #include "Game/DoomRez.h"
 #include "GFX/CelImages.h"
 #include "GFX/Video.h"
-#include "Intermission_Main.h"
-#include "Options_Main.h"
+#include "IntermissionScreen.h"
+#include "OptionsMenu.h"
 #include "ThreeDO.h"
 #include "UIUtils.h"
 

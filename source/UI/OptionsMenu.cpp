@@ -1,4 +1,4 @@
-#include "Options_Main.h"
+#include "OptionsMenu.h"
 
 #include "Audio/Audio.h"
 #include "Audio/Sound.h"
@@ -12,7 +12,7 @@
 #include "GFX/CelImages.h"
 #include "GFX/Renderer.h"
 #include "GFX/Video.h"
-#include "Intermission_Main.h"
+#include "IntermissionScreen.h"
 #include "ThreeDO.h"
 #include "UIUtils.h"
 

@@ -1,4 +1,4 @@
-#include "Finale_Main.h"
+#include "FinaleScreen.h"
 
 #include "Audio/Sound.h"
 #include "Audio/Sounds.h"
@@ -9,7 +9,7 @@
 #include "GFX/Blit.h"
 #include "GFX/Sprites.h"
 #include "GFX/Video.h"
-#include "Intermission_Main.h"
+#include "IntermissionScreen.h"
 #include "Things/Info.h"
 #include "UIUtils.h"
 

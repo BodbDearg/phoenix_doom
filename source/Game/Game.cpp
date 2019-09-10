@@ -10,8 +10,8 @@
 #include "Things/MapObj.h"
 #include "ThreeDO.h"
 #include "Tick.h"
-#include "UI/Finale_Main.h"
-#include "UI/Intermission_Main.h"
+#include "UI/FinaleScreen.h"
+#include "UI/IntermissionScreen.h"
 
 //---------------------------------------------------------------------------------------------------------------------
 // Prepare to load a game level

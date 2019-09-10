@@ -16,7 +16,7 @@
 #include "Map/Specials.h"
 #include "MapObj.h"
 #include "Slide.h"
-#include "UI/StatusBar_Main.h"
+#include "UI/StatusBarUI.h"
 #include <algorithm>
 
 static constexpr Fixed MAXBOB           = 16 << FRACBITS;   // 16 pixels of bobbing up and down

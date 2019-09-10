@@ -1,4 +1,4 @@
-#include "Intermission_Main.h"
+#include "IntermissionScreen.h"
 
 #include "Audio/Sound.h"
 #include "Audio/Sounds.h"

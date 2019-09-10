@@ -9,7 +9,7 @@
 #include "MapData.h"
 #include "Specials.h"
 #include "Things/MapObj.h"
-#include "UI/StatusBar_Main.h"
+#include "UI/StatusBarUI.h"
 
 static constexpr Fixed      VDOORSPEED  = 6 << FRACBITS;                // Speed to open a vertical door
 static constexpr uint32_t   VDOORWAIT   = ((TICKSPERSEC * 14) / 3);     // Door time to wait before closing 4.6 seconds

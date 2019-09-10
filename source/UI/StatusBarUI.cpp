@@ -1,4 +1,4 @@
-#include "StatusBar_Main.h"
+#include "StatusBarUI.h"
 
 #include "Audio/Sound.h"
 #include "Audio/Sounds.h"
@@ -7,7 +7,7 @@
 #include "Game/DoomDefines.h"
 #include "Game/DoomRez.h"
 #include "GFX/CelImages.h"
-#include "Intermission_Main.h"
+#include "IntermissionScreen.h"
 #include "UIUtils.h"
 #include <cstring>
 
