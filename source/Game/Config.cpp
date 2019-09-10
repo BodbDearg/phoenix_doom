@@ -12,13 +12,18 @@ BEGIN_NAMESPACE(Config)
 static_assert(Input::NUM_KEYBOARD_KEYS == SDL_NUM_SCANCODES);   // Must agree!
 static_assert(Input::NUM_MOUSE_WHEEL_AXES == 2);
 
-static constexpr char* const DEFAULT_CONFIG_INI = R"(#---------------------------------------------------------------------------------------------------
+// Note: these had to be split up into sections because I hit the maximum string limit size of MSVC!
+static constexpr char* const DEFAULT_CONFIG_INI_SECTION_1 = 
+R"(#---------------------------------------------------------------------------------------------------
 # === Phoenix Doom config file ===
 #
 # If you want to regenerate this file to the defaults, just delete it and restart the game!
 #---------------------------------------------------------------------------------------------------
 
-####################################################################################################
+)";
+
+static constexpr char* const DEFAULT_CONFIG_INI_SECTION_2 =
+R"(####################################################################################################
 [Video]
 ####################################################################################################
 
@@ -93,7 +98,24 @@ IntegerOutputScaling = 1
 #---------------------------------------------------------------------------------------------------
 AspectCorrectOutputScaling = 1
 
+)";
+
+static constexpr char* const DEFAULT_CONFIG_INI_SECTION_3 = 
+R"(####################################################################################################
+[Graphics]
 ####################################################################################################
+
+#---------------------------------------------------------------------------------------------------
+# When set to '1' the game will simulate an RGB555 style (16 bit) framebuffer similar to what the
+# original 3DO hardware used. Color precision is lost in this mode and there will be much more
+# banding artifacts, however the result will be much closer to the original 3DO Doom visually.
+#---------------------------------------------------------------------------------------------------
+Simulate16BitFramebuffer = 0
+
+)";
+
+static constexpr char* const DEFAULT_CONFIG_INI_SECTION_4 =
+R"(####################################################################################################
 [InputGeneral]
 ####################################################################################################
 
@@ -111,7 +133,10 @@ DefaultAlwaysRun = 0
 #---------------------------------------------------------------------------------------------------
 AnalogToDigitalThreshold = 0.5
 
-####################################################################################################
+)";
+
+static constexpr char* const DEFAULT_CONFIG_INI_SECTION_5 = 
+R"(####################################################################################################
 [KeyboardControls]
 ####################################################################################################
 
@@ -160,7 +185,10 @@ PageUp          = debug_move_camera_up
 PageDown        = debug_move_camera_down
 R               = toggle_always_run
 
-####################################################################################################
+)";
+
+static constexpr char* const DEFAULT_CONFIG_INI_SECTION_6 =
+R"(####################################################################################################
 [MouseControls]
 ####################################################################################################
 
@@ -179,7 +207,7 @@ InvertMWheelYAxis = 0
 #---------------------------------------------------------------------------------------------------
 # These are all of the mouse buttons and mouse wheel axes available
 #---------------------------------------------------------------------------------------------------
-Button_Left     = attack    menu_ok
+Button_Left     = attack, menu_ok
 Button_Right    = use
 Button_Middle   =
 Button_X1       =
@@ -187,7 +215,10 @@ Button_X2       =
 Axis_X          =
 Axis_Y          = weapon_next_prev
 
-####################################################################################################
+)";
+
+static constexpr char* const DEFAULT_CONFIG_INI_SECTION_7 =
+R"(####################################################################################################
 [GameControllerControls]
 ####################################################################################################
 
@@ -229,7 +260,10 @@ Axis_RightY             = automap_free_cam_zoom_in_out, menu_up_down
 Axis_LeftTrigger        = run
 Axis_RightTrigger       = attack
 
-####################################################################################################
+)";
+
+static constexpr char* const DEFAULT_CONFIG_INI_SECTION_8 =
+R"(####################################################################################################
 [Debug]
 ####################################################################################################
 
@@ -266,7 +300,10 @@ GrantRadSuit                = IDBEHOLDR
 GrantBeserk                 = IDBEHOLDS
 GrantInvulnerability        = IDBEHOLDV
 
-####################################################################################################
+)";
+
+static constexpr char* const DEFAULT_CONFIG_INI_SECTION_9 = 
+R"(####################################################################################################
 #
 # Appendix
 #
@@ -474,6 +511,7 @@ int32_t                     gOutputResolutionW;
 int32_t                     gOutputResolutionH;
 bool                        gbIntegerOutputScaling;
 bool                        gbAspectCorrectOutputScaling;
+bool                        gbSimulate16BitFramebuffer;
 float                       gInputAnalogToDigitalThreshold;
 bool                        gDefaultAlwaysRun;
 Controls::MenuActionBits    gKeyboardMenuActions[Input::NUM_KEYBOARD_KEYS];
@@ -632,7 +670,19 @@ static void regenerateDefaultConfigFileIfNotPresent(const std::string& iniFilePa
         nullptr
     );
 
-    if (!FileUtils::writeDataToFile(iniFilePath.c_str(), (const std::byte*) DEFAULT_CONFIG_INI, std::strlen(DEFAULT_CONFIG_INI))) {
+    std::string configFile;
+    configFile.reserve(1024 * 64);
+    configFile.append(DEFAULT_CONFIG_INI_SECTION_1);
+    configFile.append(DEFAULT_CONFIG_INI_SECTION_2);
+    configFile.append(DEFAULT_CONFIG_INI_SECTION_3);
+    configFile.append(DEFAULT_CONFIG_INI_SECTION_4);
+    configFile.append(DEFAULT_CONFIG_INI_SECTION_5);
+    configFile.append(DEFAULT_CONFIG_INI_SECTION_6);
+    configFile.append(DEFAULT_CONFIG_INI_SECTION_7);
+    configFile.append(DEFAULT_CONFIG_INI_SECTION_8);
+    configFile.append(DEFAULT_CONFIG_INI_SECTION_9);
+
+    if (!FileUtils::writeDataToFile(iniFilePath.c_str(), (const std::byte*) configFile.data(), configFile.length())) {
         FATAL_ERROR_F(
             "Failed to generate/write the default config file for the game to path '%s'! "
             "Is there write access to this location, or is the disk full?",
@@ -944,6 +994,11 @@ static void handleConfigEntry(const IniUtils::Entry& entry) noexcept {
             gbAspectCorrectOutputScaling = entry.getBoolValue(gbAspectCorrectOutputScaling);
         }
     }
+    else if (entry.section == "Graphics") {
+        if (entry.key == "Simulate16BitFramebuffer") {
+            gbSimulate16BitFramebuffer = entry.getBoolValue(gbSimulate16BitFramebuffer);
+        }        
+    }
     else if (entry.section == "InputGeneral") {
         if (entry.key == "AnalogToDigitalThreshold") {
             gInputAnalogToDigitalThreshold = entry.getFloatValue(gInputAnalogToDigitalThreshold);
@@ -1008,6 +1063,8 @@ static void clear() noexcept {
     gOutputResolutionH = -1;
     gbIntegerOutputScaling = true;
     gbAspectCorrectOutputScaling = true;
+
+    gbSimulate16BitFramebuffer = false;
 
     gInputAnalogToDigitalThreshold = 0.5f;
     gDefaultAlwaysRun = false;

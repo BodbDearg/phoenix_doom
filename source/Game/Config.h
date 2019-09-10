@@ -13,6 +13,9 @@ extern int32_t      gOutputResolutionH;
 extern bool         gbIntegerOutputScaling;
 extern bool         gbAspectCorrectOutputScaling;
 
+// Graphics settings
+extern bool     gbSimulate16BitFramebuffer;
+
 // Input general settings
 extern float    gInputAnalogToDigitalThreshold;
 extern bool     gDefaultAlwaysRun;

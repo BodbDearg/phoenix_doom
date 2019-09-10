@@ -131,6 +131,51 @@ static void determineTargetVideoMode() noexcept {
     gOutputRect.y = (gVideoOutputHeight - gOutputRect.h) / 2;
 }
 
+//----------------------------------------------------------------------------------------------------------------------
+// Truncates an XRGB8888 color as if it were stored as an XRGB1555 color, and converts back to XRGB8888.
+// Used for 16-bit framebuffer simulation.
+//----------------------------------------------------------------------------------------------------------------------
+static inline uint32_t truncateFramebufferColorTo16Bit(const uint32_t colorIn) noexcept {
+    uint32_t r = (colorIn & 0x00F80000);
+    uint32_t g = (colorIn & 0x0000F800);
+    uint32_t b = (colorIn & 0x000000F8);
+    r = ((r * 255) / 248) & 0x00F80000;
+    g = ((g * 255) / 248) & 0x0000F800;
+    b = ((b * 255) / 248) & 0x000000F8;
+    return (r | g | b);
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+// Truncates framebuffer colors to RGB555 - similar to the framebuffer format used by the original 3DO game
+//----------------------------------------------------------------------------------------------------------------------
+static void do16BitFramebufferSimulation() noexcept {
+    // Truncate 8 pixels at a time first
+    const uint32_t numPixels = gScreenWidth * gScreenHeight;
+    const uint32_t numPixels8 = (numPixels / 8u) * 8u;
+
+    uint32_t* pCurPixel = gpFrameBuffer;
+    uint32_t* const pEndPixel = gpFrameBuffer + numPixels;
+    uint32_t* const pEndPixel8 = gpFrameBuffer + numPixels8;
+
+    while (pCurPixel < pEndPixel8) {
+        pCurPixel[0] = truncateFramebufferColorTo16Bit(pCurPixel[0]);
+        pCurPixel[1] = truncateFramebufferColorTo16Bit(pCurPixel[1]);
+        pCurPixel[2] = truncateFramebufferColorTo16Bit(pCurPixel[2]);
+        pCurPixel[3] = truncateFramebufferColorTo16Bit(pCurPixel[3]);
+        pCurPixel[4] = truncateFramebufferColorTo16Bit(pCurPixel[4]);
+        pCurPixel[5] = truncateFramebufferColorTo16Bit(pCurPixel[5]);
+        pCurPixel[6] = truncateFramebufferColorTo16Bit(pCurPixel[6]);
+        pCurPixel[7] = truncateFramebufferColorTo16Bit(pCurPixel[7]);
+        pCurPixel += 8;
+    }
+
+    // Do the rest
+    while (pCurPixel < pEndPixel) {
+        pCurPixel[0] = truncateFramebufferColorTo16Bit(pCurPixel[0]);
+        ++pCurPixel;
+    }
+}
+
 void init() noexcept {
     // Initialize SDL subsystems
     if (SDL_InitSubSystem(SDL_INIT_VIDEO) != 0) {
@@ -322,6 +367,10 @@ void saveFrameBuffer() noexcept {
 }
 
 void present() noexcept {
+    if (Config::gbSimulate16BitFramebuffer) {
+        do16BitFramebufferSimulation();
+    }
+
     unlockFramebufferTexture();
     SDL_RenderCopy(gRenderer, gFramebufferTexture, NULL, &gOutputRect);
     SDL_RenderPresent(gRenderer);
