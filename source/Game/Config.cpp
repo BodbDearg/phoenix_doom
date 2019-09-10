@@ -8,8 +8,9 @@
 
 BEGIN_NAMESPACE(Config)
 
-// Sanity check! These must agree:
-static_assert(Input::NUM_KEYBOARD_KEYS == SDL_NUM_SCANCODES);
+// Sanity checks!
+static_assert(Input::NUM_KEYBOARD_KEYS == SDL_NUM_SCANCODES);   // Must agree!
+static_assert(Input::NUM_MOUSE_WHEEL_AXES == 2);
 
 static constexpr char* const DEFAULT_CONFIG_INI = R"(#---------------------------------------------------------------------------------------------------
 # === Phoenix Doom config file ===
@@ -170,13 +171,21 @@ R               = toggle_always_run
 TurnSensitivity = 1.0
 
 #---------------------------------------------------------------------------------------------------
-# These are all of the mouse buttons available
+# Whether to invert the mouse wheel x and y axis
+#---------------------------------------------------------------------------------------------------
+InvertMWheelXAxis = 0
+InvertMWheelYAxis = 0
+
+#---------------------------------------------------------------------------------------------------
+# These are all of the mouse buttons and mouse wheel axes available
 #---------------------------------------------------------------------------------------------------
 Button_Left     = attack    menu_ok
 Button_Right    = use
 Button_Middle   =
 Button_X1       =
 Button_X2       =
+Axis_X          =
+Axis_Y          = weapon_next_prev
 
 ####################################################################################################
 [GameControllerControls]
@@ -470,8 +479,10 @@ bool                        gDefaultAlwaysRun;
 Controls::MenuActionBits    gKeyboardMenuActions[Input::NUM_KEYBOARD_KEYS];
 Controls::GameActionBits    gKeyboardGameActions[Input::NUM_KEYBOARD_KEYS];
 float                       gMouseTurnSensitivity;
+bool                        gInvertMouseWheelAxis[Input::NUM_MOUSE_WHEEL_AXES];
 Controls::MenuActionBits    gMouseMenuActions[NUM_MOUSE_BUTTONS];
 Controls::GameActionBits    gMouseGameActions[NUM_MOUSE_BUTTONS];
+Controls::AxisBits          gMouseWheelAxisBindings[Input::NUM_MOUSE_WHEEL_AXES];
 float                       gGamepadDeadZone;
 float                       gGamepadTurnSensitivity;
 Controls::MenuActionBits    gGamepadMenuActions[NUM_CONTROLLER_INPUTS];
@@ -699,6 +710,7 @@ static void parseSingleActionOrAxisString(
     handleAxis("automap_free_cam_zoom_in_out",  Controls::Axis::AUTOMAP_FREE_CAM_ZOOM_IN_OUT);
     handleAxis("menu_up_down",                  Controls::Axis::MENU_UP_DOWN);
     handleAxis("menu_left_right",               Controls::Axis::MENU_LEFT_RIGHT);
+    handleAxis("weapon_next_prev",              Controls::Axis::WEAPON_NEXT_PREV);
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -790,34 +802,51 @@ static void parseKeyboardKeyActions(const uint16_t keyIdx, const std::string& ac
 //----------------------------------------------------------------------------------------------------------------------
 // Parse the bindings/actions for a particular mouse button
 //----------------------------------------------------------------------------------------------------------------------
-static void parseMouseButtonActions(const std::string buttonName, const std::string& actionsStr) noexcept {
-    // Get what button we are dealing with
-    MouseButton button = MouseButton::INVALID;
-
-    if (strsMatchCaseInsensitive(buttonName.c_str(), "Button_Left")) {
-        button = MouseButton::LEFT;
-    } else if (strsMatchCaseInsensitive(buttonName.c_str(), "Button_Right")) {
-        button = MouseButton::RIGHT;
-    } else if (strsMatchCaseInsensitive(buttonName.c_str(), "Button_Middle")) {
-        button = MouseButton::MIDDLE;
-    } else if (strsMatchCaseInsensitive(buttonName.c_str(), "Button_X1")) {
-        button = MouseButton::X1;
-    } else if (strsMatchCaseInsensitive(buttonName.c_str(), "Button_X2")) {
-        button = MouseButton::X2;
-    } else {
-        return;
-    }
-
-    // Note: for the mouse we ignore any attempts to bind analogue axes to mouse buttons (same as keyboard)
+static void parseMouseButtonOrWheelActions(const std::string buttonOrAxisName, const std::string& actionsStr) noexcept {
+    // Parse the actions string
     Controls::GameActionBits gameActions = Controls::GameActions::NONE;
     Controls::MenuActionBits menuActions = Controls::MenuActions::NONE;
     Controls::AxisBits axisBindings = Controls::Axis::NONE;
 
     parseActionsAndAxesString(actionsStr, gameActions, menuActions, axisBindings);
 
-    const uint8_t buttonIdx = (uint8_t) button;
-    gMouseGameActions[buttonIdx] = gameActions;
-    gMouseMenuActions[buttonIdx] = menuActions;
+    // Get what button or wheel we are dealing with
+    if (strHasPrefixCaseInsensitive(buttonOrAxisName.c_str(), "Button_")) {
+        MouseButton button = MouseButton::INVALID;
+
+        if (strsMatchCaseInsensitive(buttonOrAxisName.c_str(), "Button_Left")) {
+            button = MouseButton::LEFT;
+        } else if (strsMatchCaseInsensitive(buttonOrAxisName.c_str(), "Button_Right")) {
+            button = MouseButton::RIGHT;
+        } else if (strsMatchCaseInsensitive(buttonOrAxisName.c_str(), "Button_Middle")) {
+            button = MouseButton::MIDDLE;
+        } else if (strsMatchCaseInsensitive(buttonOrAxisName.c_str(), "Button_X1")) {
+            button = MouseButton::X1;
+        } else if (strsMatchCaseInsensitive(buttonOrAxisName.c_str(), "Button_X2")) {
+            button = MouseButton::X2;
+        } else {
+            return;
+        }
+
+        // Note: for the mouse buttons we ignore any attempts to bind analogue axes (same as keyboard)
+        const uint8_t buttonIdx = (uint8_t) button;
+        gMouseGameActions[buttonIdx] = gameActions;
+        gMouseMenuActions[buttonIdx] = menuActions;
+    }
+    else if (strHasPrefixCaseInsensitive(buttonOrAxisName.c_str(), "Axis_")) {
+        uint8_t axisIdx = 0;
+
+        if (strsMatchCaseInsensitive(buttonOrAxisName.c_str(), "Axis_X")) {
+            axisIdx = 0;
+        } else if (strsMatchCaseInsensitive(buttonOrAxisName.c_str(), "Axis_Y")) {
+            axisIdx = 1;
+        } else {
+            return;
+        }
+
+        // Note: the mouse wheel can only be bound to an axis!
+        gMouseWheelAxisBindings[axisIdx] = axisBindings;
+    }
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -937,8 +966,15 @@ static void handleConfigEntry(const IniUtils::Entry& entry) noexcept {
     else if (entry.section == "MouseControls") {
         if (entry.key == "TurnSensitivity") {
             gMouseTurnSensitivity = entry.getFloatValue(gMouseTurnSensitivity);
-        } else {
-            parseMouseButtonActions(entry.key, entry.value);
+        }
+        else if (entry.key == "InvertMWheelXAxis") {
+            gInvertMouseWheelAxis[0] = entry.getBoolValue(gInvertMouseWheelAxis[0]);
+        }
+        else if (entry.key == "InvertMWheelYAxis") {
+            gInvertMouseWheelAxis[1] = entry.getBoolValue(gInvertMouseWheelAxis[1]);
+        }
+        else {
+            parseMouseButtonOrWheelActions(entry.key, entry.value);
         }
     }
     else if (entry.section == "GameControllerControls") {
@@ -980,6 +1016,8 @@ static void clear() noexcept {
     std::memset(gKeyboardGameActions, 0, sizeof(gKeyboardGameActions));
 
     gMouseTurnSensitivity = 1.0f;
+    gInvertMouseWheelAxis[0] = false;
+    gInvertMouseWheelAxis[1] = false;
     std::memset(gMouseMenuActions, 0, sizeof(gMouseMenuActions));
     std::memset(gMouseGameActions, 0, sizeof(gMouseGameActions));
 

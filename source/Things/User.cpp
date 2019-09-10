@@ -231,7 +231,7 @@ static void P_BuildMove(player_t& player) noexcept {
         const bool bResetTurnAcceleration = (
             (!GAME_ACTION(TURN_LEFT)) &&
             (!GAME_ACTION(TURN_RIGHT)) &&
-            (CONTROLLER_AXIS(TURN_LEFT_RIGHT) == 0.0f)
+            (INPUT_AXIS(TURN_LEFT_RIGHT) == 0.0f)
         );
 
         if (bResetTurnAcceleration) {
@@ -248,7 +248,7 @@ static void P_BuildMove(player_t& player) noexcept {
         const uint32_t speedIndex = bIsRunning ? 1 : 0;
 
         // Do side stepping
-        float sideMoveFracF = CONTROLLER_AXIS(STRAFE_LEFT_RIGHT);
+        float sideMoveFracF = INPUT_AXIS(STRAFE_LEFT_RIGHT);
         
         if (GAME_ACTION(STRAFE_LEFT)) {
             sideMoveFracF -= 1.0f;
@@ -265,7 +265,7 @@ static void P_BuildMove(player_t& player) noexcept {
         player.sidemove = fixedMul(sideMoveFrac, SIDE_MOVE[speedIndex]);
 
         // Do turning
-        float angleTurnFracF = -CONTROLLER_AXIS(TURN_LEFT_RIGHT);
+        float angleTurnFracF = -INPUT_AXIS(TURN_LEFT_RIGHT);
         angleTurnFracF -= Input::getMouseXMovement() * MOUSE_TURN_SCALE * Config::gMouseTurnSensitivity;
 
         if (GAME_ACTION(TURN_LEFT)) {
@@ -281,8 +281,8 @@ static void P_BuildMove(player_t& player) noexcept {
         if ((speedIndex != 0) && 
             (!GAME_ACTION(MOVE_FORWARD)) &&
             (!GAME_ACTION(MOVE_BACKWARD)) &&
-            (CONTROLLER_AXIS(MOVE_FORWARD_BACK) == 0.0f) &&
-            (CONTROLLER_AXIS(STRAFE_LEFT_RIGHT) == 0.0f)
+            (INPUT_AXIS(MOVE_FORWARD_BACK) == 0.0f) &&
+            (INPUT_AXIS(STRAFE_LEFT_RIGHT) == 0.0f)
         ) {
             player.angleturn = fixedMul(angleTurnFrac, FAST_ANGLE_TURN[turnIndex]);
         } else {
@@ -290,7 +290,7 @@ static void P_BuildMove(player_t& player) noexcept {
         }
 
         // Do move forward and backward
-        float forwardMoveFracF = -CONTROLLER_AXIS(MOVE_FORWARD_BACK);
+        float forwardMoveFracF = -INPUT_AXIS(MOVE_FORWARD_BACK);
         
         if (GAME_ACTION(MOVE_FORWARD)) {
             forwardMoveFracF += 1.0f;
@@ -550,7 +550,7 @@ static bool PendingWeaponAllowed(player_t& player) noexcept {
 //----------------------------------------------------------------------------------------------------------------------
 static void doWeaponChangeControls(player_t& player) noexcept {
     if (player.pendingweapon == wp_nochange) {
-        // Next/previous weapon change
+        // Next/previous weapon change both from buttons and the next/prev weapon axis
         int8_t weaponCycleDir = 0; 
 
         if (GAME_ACTION_ENDED(NEXT_WEAPON)) {
@@ -559,6 +559,16 @@ static void doWeaponChangeControls(player_t& player) noexcept {
 
         if (GAME_ACTION_ENDED(PREV_WEAPON)) {
             weaponCycleDir -= 1;
+        }
+
+        {
+            float weaponUpDownAxis = INPUT_AXIS(WEAPON_NEXT_PREV);
+
+            if (weaponUpDownAxis <= -Config::gInputAnalogToDigitalThreshold) {
+                weaponCycleDir = -1;
+            } else if (weaponUpDownAxis >= Config::gInputAnalogToDigitalThreshold) {
+                weaponCycleDir = +1;
+            }
         }
 
         if (weaponCycleDir != 0) {                          // Pressed the shifts?            

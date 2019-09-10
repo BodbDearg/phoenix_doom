@@ -89,13 +89,14 @@ namespace Axis {
     static constexpr uint32_t AUTOMAP_FREE_CAM_ZOOM_IN_OUT  = 0x00000008u;
     static constexpr uint32_t MENU_UP_DOWN                  = 0x00000010u;
     static constexpr uint32_t MENU_LEFT_RIGHT               = 0x00000020u;
+    static constexpr uint32_t WEAPON_NEXT_PREV              = 0x00000040u;
 
     // Get the value of one axis.
     // Note: can query only one axis at a time, otherwise will return 0!
     float getValue(const AxisBits axis) noexcept;
 
     // Convenience macros to shorten things
-    #define CONTROLLER_AXIS(NAME) Controls::Axis::getValue(Controls::Axis::NAME)
+    #define INPUT_AXIS(NAME) Controls::Axis::getValue(Controls::Axis::NAME)
 }
 
 // Startup and shutdown control processing

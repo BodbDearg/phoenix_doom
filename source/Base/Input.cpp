@@ -26,6 +26,7 @@ static SDL_Joystick*        gpJoystick;             // Note: this is managed by 
 static SDL_JoystickID       gJoystickId;
 static float                gMouseMovementX;        // Mouse movement this frame
 static float                gMouseMovementY;
+static float                gMouseWheelAxisMovements[NUM_MOUSE_WHEEL_AXES];
 
 //----------------------------------------------------------------------------------------------------------------------
 // Utility functions for querying if a value is in a vector and removing it
@@ -200,6 +201,18 @@ static void handleSdlEvents() noexcept {
                 }
             } break;
 
+            case SDL_MOUSEWHEEL: {
+                static_assert(NUM_MOUSE_WHEEL_AXES == 2);
+
+                if (windowHasFocus()) {
+                    gMouseWheelAxisMovements[0] = (float) sdlEvent.wheel.x;
+                    gMouseWheelAxisMovements[1] = (float) sdlEvent.wheel.y;
+                } else {
+                    gMouseWheelAxisMovements[0] = 0.0f;
+                    gMouseWheelAxisMovements[1] = 0.0f;
+                }
+            } break;
+
             case SDL_CONTROLLERAXISMOTION: {
                 if (sdlEvent.cbutton.which == gJoystickId) {
                     const ControllerInput input = sdlControllerAxisToInput(sdlEvent.caxis.axis);
@@ -295,6 +308,7 @@ void init() noexcept {
 }
 
 void shutdown() noexcept {
+    consumeEvents();
     closeCurrentGameController();
 
     gMouseMovementX = 0.0f;
@@ -338,6 +352,10 @@ void consumeEvents() noexcept {
     gMouseButtonsJustReleased.clear();
     gControllerInputsJustPressed.clear();
     gControllerInputsJustReleased.clear();
+
+    static_assert(NUM_MOUSE_WHEEL_AXES == 2);
+    gMouseWheelAxisMovements[0] = 0.0f;
+    gMouseWheelAxisMovements[1] = 0.0f;
 }
 
 bool isQuitRequested() noexcept {
@@ -456,6 +474,10 @@ float getMouseXMovement() noexcept {
 
 float getMouseYMovement() noexcept {
     return gMouseMovementY;
+}
+
+float getMouseWheelAxisMovement(const uint8_t axis) noexcept {
+    return (axis < 2) ? gMouseWheelAxisMovements[axis] : 0.0f;
 }
 
 END_NAMESPACE(Input)

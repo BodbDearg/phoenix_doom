@@ -205,8 +205,8 @@ void AM_Control(player_t& player) noexcept {
         step = fixedDiv(step, gUnscaledMapScale);       // Adjust for scale factor
 
         // Gather inputs (both analog and digital)
-        float moveFracX = CONTROLLER_AXIS(TURN_LEFT_RIGHT) + CONTROLLER_AXIS(STRAFE_LEFT_RIGHT);
-        float moveFracY = -CONTROLLER_AXIS(MOVE_FORWARD_BACK);
+        float moveFracX = INPUT_AXIS(TURN_LEFT_RIGHT) + INPUT_AXIS(STRAFE_LEFT_RIGHT);
+        float moveFracY = -INPUT_AXIS(MOVE_FORWARD_BACK);
 
         if (GAME_ACTION(TURN_RIGHT) || GAME_ACTION(STRAFE_RIGHT)) {
             moveFracX += 1.0f;
@@ -229,7 +229,7 @@ void AM_Control(player_t& player) noexcept {
         moveFracY = std::max(moveFracY, -1.0f);
         moveFracY = std::min(moveFracY, +1.0f);
 
-        float zoomFrac = -CONTROLLER_AXIS(AUTOMAP_FREE_CAM_ZOOM_IN_OUT);
+        float zoomFrac = -INPUT_AXIS(AUTOMAP_FREE_CAM_ZOOM_IN_OUT);
 
         if (GAME_ACTION(AUTOMAP_FREE_CAM_ZOOM_OUT)) {
             zoomFrac -= 1.0f;

@@ -18,6 +18,7 @@ static float gAxis_StrafeLeftRight;
 static float gAxis_AutomapFreeCamZoomInOut;
 static float gAxis_MenuUpDown;
 static float gAxis_MenuLeftRight;
+static float gAxis_WeaponNextPrev;
 
 static void clearAllActionBits() noexcept {
     gGameActionsActive       = GameActions::NONE;
@@ -35,6 +36,7 @@ static void clearAllAxes() noexcept {
     gAxis_AutomapFreeCamZoomInOut   = 0.0f;
     gAxis_MenuUpDown                = 0.0f;
     gAxis_MenuLeftRight             = 0.0f;
+    gAxis_WeaponNextPrev            = 0.0f;
 }
 
 static void clearAllInputs() noexcept {
@@ -127,7 +129,7 @@ static void updateActionsFromMouseInput() noexcept {
                 gMenuActionsJustEnded |= Config::gMouseMenuActions[buttonIdx];
             }
         }
-    }    
+    }
 }
 
 static void updateActionsFromControllerInput() noexcept {
@@ -198,6 +200,28 @@ static void handleAnalogInput(const float inputValue, const Controls::AxisBits b
     if ((bindings & Controls::Axis::MENU_LEFT_RIGHT) != 0) {
         gAxis_MenuLeftRight += inputValue;
     }
+
+    if ((bindings & Controls::Axis::WEAPON_NEXT_PREV) != 0) {
+        gAxis_WeaponNextPrev += inputValue;
+    }
+}
+
+static void updateAxesFromMouseInput() noexcept {    
+    const Controls::AxisBits xAxisBindings = Config::gMouseWheelAxisBindings[0];
+    const Controls::AxisBits yAxisBindings = Config::gMouseWheelAxisBindings[1];    
+    float xAxisMovement = Input::getMouseWheelAxisMovement(0);
+    float yAxisMovement = Input::getMouseWheelAxisMovement(1);
+
+    if (Config::gInvertMouseWheelAxis[0]) {
+        xAxisMovement = -xAxisMovement;
+    }
+
+    if (Config::gInvertMouseWheelAxis[1]) {
+        yAxisMovement = -yAxisMovement;
+    }
+
+    handleAnalogInput(xAxisMovement, xAxisBindings);
+    handleAnalogInput(yAxisMovement, yAxisBindings);
 }
 
 static void updateAxesFromControllerInput() noexcept {    
@@ -258,6 +282,9 @@ float Axis::getValue(const AxisBits axis) noexcept {
     else if (axis == MENU_LEFT_RIGHT) {
         return gAxis_MenuLeftRight;
     }
+    else if (axis == WEAPON_NEXT_PREV) {
+        return gAxis_WeaponNextPrev;
+    }
     else {
         return 0.0f;
     }
@@ -274,16 +301,19 @@ void shutdown() noexcept {
 
 void update() noexcept {
     clearAllInputs();
+    
     updateActionsFromKeyboardInput();
-    updateActionsFromMouseInput();
+    updateActionsFromMouseInput();    
     updateActionsFromControllerInput();
+
+    updateAxesFromMouseInput();
     updateAxesFromControllerInput();
 }
 
 void gatherAnalogAndDigitalMenuMovements(int32_t& menuMoveX, int32_t& menuMoveY) noexcept {
     // Gather the inputs
-    float menuMoveXF = CONTROLLER_AXIS(MENU_LEFT_RIGHT);
-    float menuMoveYF = CONTROLLER_AXIS(MENU_UP_DOWN);
+    float menuMoveXF = INPUT_AXIS(MENU_LEFT_RIGHT);
+    float menuMoveYF = INPUT_AXIS(MENU_UP_DOWN);
 
     if (MENU_ACTION(UP)) {
         menuMoveYF -= 1.0f;
