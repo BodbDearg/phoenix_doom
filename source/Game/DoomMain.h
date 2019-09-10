@@ -4,9 +4,6 @@
 
 enum gameaction_e : uint8_t;
 
-// TODO: MOVE ELSEWHERE
-void AddToBox(Fixed* box, Fixed x, Fixed y) noexcept;
-
 // Function types for the game mini loop
 typedef void (*GameLoopStartFunc)() noexcept;
 typedef void (*GameLoopStopFunc)() noexcept;

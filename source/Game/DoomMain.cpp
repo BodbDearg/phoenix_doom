@@ -22,26 +22,6 @@
 #include <thread>
 
 //----------------------------------------------------------------------------------------------------------------------
-// Grow a box if needed to encompass a point
-//
-// DC: TODO: Should this be elsewhere?
-// Was here in the original source, but 'dmain' does not seem appropriate.
-//----------------------------------------------------------------------------------------------------------------------
-void AddToBox(Fixed* box, Fixed x, Fixed y) noexcept {
-    if (x < box[BOXLEFT]) {             // Off the left side?
-        box[BOXLEFT] = x;               // Increase the left
-    } else if (x > box[BOXRIGHT]) {     // Off the right side?
-        box[BOXRIGHT] = x;              // Increase the right
-    }
-
-    if (y < box[BOXBOTTOM]) {           // Off the top of the box?
-        box[BOXBOTTOM] = y;             // Move the top
-    } else if (y > box[BOXTOP]) {       // Off the bottom of the box?
-        box[BOXTOP] = y;
-    }
-}
-
-//----------------------------------------------------------------------------------------------------------------------
 // Main loop processing for the game system.
 // Each callback is optional, though should probably always have a ticker and drawer.
 //----------------------------------------------------------------------------------------------------------------------

@@ -50,6 +50,23 @@ mapthing_t      gPlayerStarts;              // Starting position for players
 uint32_t        gSkyTextureNum;
 
 //----------------------------------------------------------------------------------------------------------------------
+// Grow a box if needed to encompass a point
+//----------------------------------------------------------------------------------------------------------------------
+static void AddToBox(Fixed* box, Fixed x, Fixed y) noexcept {
+    if (x < box[BOXLEFT]) {             // Off the left side?
+        box[BOXLEFT] = x;               // Increase the left
+    } else if (x > box[BOXRIGHT]) {     // Off the right side?
+        box[BOXRIGHT] = x;              // Increase the right
+    }
+
+    if (y < box[BOXBOTTOM]) {           // Off the top of the box?
+        box[BOXBOTTOM] = y;             // Move the top
+    } else if (y > box[BOXTOP]) {       // Off the bottom of the box?
+        box[BOXTOP] = y;
+    }
+}
+
+//----------------------------------------------------------------------------------------------------------------------
 // Builds sector line lists and subsector sector numbers.
 // Finds block bounding boxes for sectors.
 //----------------------------------------------------------------------------------------------------------------------
