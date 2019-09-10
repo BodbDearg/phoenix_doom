@@ -15,6 +15,7 @@ extern bool         gbAspectCorrectOutputScaling;
 
 // Graphics settings
 extern bool     gbSimulate16BitFramebuffer;
+extern bool     gbDoFakeContrast;
 
 // Input general settings
 extern float    gInputAnalogToDigitalThreshold;

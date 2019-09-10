@@ -5,6 +5,7 @@
 #include "Base/Macros.h"
 #include "Base/Resource.h"
 #include "Base/Tables.h"
+#include "Game/Config.h"
 #include "Game/DoomRez.h"
 #include "Game/Resources.h"
 #include <vector>
@@ -508,16 +509,24 @@ static void loadBlockMap(const uint32_t lumpResourceNum) noexcept {
 // This multiplier is used to achieve so called 'fake contrast'.
 //----------------------------------------------------------------------------------------------------------------------
 static void calcSegLightMultipliers() noexcept {
-    constexpr float MIN_LIGHT_MUL = 0.75f;
-    constexpr float MAX_LIGHT_MUL = 1.05f;
+    if (Config::gbDoFakeContrast) {
+        // Applying fake contrast (normal case)
+        constexpr float MIN_LIGHT_MUL = 0.75f;
+        constexpr float MAX_LIGHT_MUL = 1.05f;
 
-    for (seg_t& seg : gLineSegs) {
-        const float segDirX = FMath::doomFixed16ToFloat<float>(seg.v2.x - seg.v1.x);
-        const float segDirY = FMath::doomFixed16ToFloat<float>(seg.v2.y - seg.v1.y);
-        const float segAngle = std::atan2(segDirY, segDirX) + FMath::ANGLE_90<float>;
-        const float lerpFactor = std::abs(std::cos(segAngle));
+        for (seg_t& seg : gLineSegs) {
+            const float segDirX = FMath::doomFixed16ToFloat<float>(seg.v2.x - seg.v1.x);
+            const float segDirY = FMath::doomFixed16ToFloat<float>(seg.v2.y - seg.v1.y);
+            const float segAngle = std::atan2(segDirY, segDirX) + FMath::ANGLE_90<float>;
+            const float lerpFactor = std::abs(std::cos(segAngle));
 
-        seg.lightMul = MIN_LIGHT_MUL * lerpFactor + MAX_LIGHT_MUL * (1.0f - lerpFactor);
+            seg.lightMul = MIN_LIGHT_MUL * lerpFactor + MAX_LIGHT_MUL * (1.0f - lerpFactor);
+        }
+    } else {
+        // No fake contrast - use a light multiplier of 1.0 for all segs
+        for (seg_t& seg : gLineSegs) {
+            seg.lightMul = 1.0f;
+        }
     }
 }
 

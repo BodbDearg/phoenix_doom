@@ -112,6 +112,13 @@ R"(#############################################################################
 #---------------------------------------------------------------------------------------------------
 Simulate16BitFramebuffer = 0
 
+#---------------------------------------------------------------------------------------------------
+# If set to '0' then the game will NOT apply so called 'fake contrast', a technique which darkens
+# walls at certain orientations in order to make corners stand out more. The original 3DO Doom did
+# not do fake contrast (unlike the PC version) so this makes the game look more '3DO like'.
+#---------------------------------------------------------------------------------------------------
+DoFakeContrast = 1
+
 )";
 
 static constexpr char* const DEFAULT_CONFIG_INI_SECTION_4 =
@@ -512,6 +519,7 @@ int32_t                     gOutputResolutionH;
 bool                        gbIntegerOutputScaling;
 bool                        gbAspectCorrectOutputScaling;
 bool                        gbSimulate16BitFramebuffer;
+bool                        gbDoFakeContrast;
 float                       gInputAnalogToDigitalThreshold;
 bool                        gDefaultAlwaysRun;
 Controls::MenuActionBits    gKeyboardMenuActions[Input::NUM_KEYBOARD_KEYS];
@@ -997,7 +1005,10 @@ static void handleConfigEntry(const IniUtils::Entry& entry) noexcept {
     else if (entry.section == "Graphics") {
         if (entry.key == "Simulate16BitFramebuffer") {
             gbSimulate16BitFramebuffer = entry.getBoolValue(gbSimulate16BitFramebuffer);
-        }        
+        }
+        else if (entry.key == "DoFakeContrast") {
+            gbDoFakeContrast = entry.getBoolValue(gbDoFakeContrast);
+        }
     }
     else if (entry.section == "InputGeneral") {
         if (entry.key == "AnalogToDigitalThreshold") {
@@ -1065,6 +1076,7 @@ static void clear() noexcept {
     gbAspectCorrectOutputScaling = true;
 
     gbSimulate16BitFramebuffer = false;
+    gbDoFakeContrast = true;
 
     gInputAnalogToDigitalThreshold = 0.5f;
     gDefaultAlwaysRun = false;
