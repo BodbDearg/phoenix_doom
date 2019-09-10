@@ -15,8 +15,8 @@
 #include "TickCounter.h"
 #include "UI/IntroLogos.h"
 #include "UI/IntroMovies.h"
-#include "UI/Menu_Main.h"
-#include "UI/Options_Main.h"
+#include "UI/MainMenu.h"
+#include "UI/OptionsMenu.h"
 #include "UI/UIUtils.h"
 #include "WipeFx.h"
 #include <thread>

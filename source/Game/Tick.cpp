@@ -21,9 +21,9 @@
 #include "Things/MapObj.h"
 #include "Things/User.h"
 #include "ThreeDO.h"
-#include "UI/Automap_Main.h"
-#include "UI/Options_Main.h"
-#include "UI/StatusBar_Main.h"
+#include "UI/Automap.h"
+#include "UI/OptionsMenu.h"
+#include "UI/StatusBarUI.h"
 #include "UI/UIUtils.h"
 #include <cstring>
 #include <SDL.h>

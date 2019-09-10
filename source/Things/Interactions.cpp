@@ -10,7 +10,7 @@
 #include "Info.h"
 #include "Map/MapUtil.h"
 #include "MapObj.h"
-#include "UI/StatusBar_Main.h"
+#include "UI/StatusBarUI.h"
 
 static constexpr uint32_t   INVULNTICS      = 30 * TICKSPERSEC;         // Time for invulnerability
 static constexpr uint32_t   INVISTICS       = 60 * TICKSPERSEC;         // Time for invisibility
