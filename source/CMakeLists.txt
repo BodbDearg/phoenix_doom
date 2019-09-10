@@ -164,6 +164,8 @@ set(SOURCE_FILES
     "UI/OptionsMenu.h"
     "UI/StatusBarUI.cpp"
     "UI/StatusBarUI.h"
+    "UI/TitleScreens.cpp"
+    "UI/TitleScreens.h"
     "UI/UIUtils.cpp"
     "UI/UIUtils.h"
 )
