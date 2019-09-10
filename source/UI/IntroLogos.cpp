@@ -165,10 +165,10 @@ void run() noexcept {
     if (Input::isQuitRequested())
         return;
 
-    if (MiniLoop(on3doLogoStarting, onLogoStopping, updateLogo, drawLogo) == ga_quit)
+    if (RunGameLoop(on3doLogoStarting, onLogoStopping, updateLogo, drawLogo) == ga_quit)
         return;
     
-    MiniLoop(onIdLogoStarting, onLogoStopping, updateLogo, drawLogo);
+    RunGameLoop(onIdLogoStarting, onLogoStopping, updateLogo, drawLogo);
 }
 
 END_NAMESPACE(IntroLogos)

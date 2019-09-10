@@ -181,10 +181,10 @@ void run() noexcept {
     if (Input::isQuitRequested())
         return;
 
-    if (MiniLoop(onLogicwareMovieStarting, onMovieStopping, updateMovie, drawMovie) == ga_quit)
+    if (RunGameLoop(onLogicwareMovieStarting, onMovieStopping, updateMovie, drawMovie) == ga_quit)
         return;
     
-    MiniLoop(onAdiMovieStarting, onMovieStopping, updateMovie, drawMovie);
+    RunGameLoop(onAdiMovieStarting, onMovieStopping, updateMovie, drawMovie);
 }
 
 END_NAMESPACE(IntroMovies)

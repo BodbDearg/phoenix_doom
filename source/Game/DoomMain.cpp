@@ -25,7 +25,7 @@
 // Main loop processing for the game system.
 // Each callback is optional, though should probably always have a ticker and drawer.
 //----------------------------------------------------------------------------------------------------------------------
-gameaction_e MiniLoop(
+gameaction_e RunGameLoop(
     const GameLoopStartFunc start,
     const GameLoopStopFunc stop,
     const GameLoopTickFunc ticker,
@@ -191,7 +191,7 @@ static void RunMenu() {
     if (Input::isQuitRequested())
         return;
 
-    if (MiniLoop(M_Start, M_Stop, M_Ticker, M_Drawer) == ga_completed) {
+    if (RunGameLoop(M_Start, M_Stop, M_Ticker, M_Drawer) == ga_completed) {
         S_StopSong();
         G_InitNew(gStartSkill, gStartMap);      // Init the new game
         G_RunGame();                            // Play the game
@@ -206,7 +206,7 @@ static bool RunTitle() noexcept {
         return false;
     
     // Run the main menu if the user exited out of this screen
-    if (MiniLoop(START_Title, STOP_Title, TIC_Abortable, DRAW_Title) == ga_exitdemo) {
+    if (RunGameLoop(START_Title, STOP_Title, TIC_Abortable, DRAW_Title) == ga_exitdemo) {
         RunMenu();
         return false;
     } else {
@@ -223,17 +223,17 @@ static void RunCredits() noexcept {
 
     // Show ID credits, Art Data Interactive credits and then Logicware credits in that order.
     // If the user requests to exit this sequence then go to the main menu.
-    if (MiniLoop(nullptr, nullptr, TIC_Credits, DRAW_IdCredits) == ga_exitdemo) {
+    if (RunGameLoop(nullptr, nullptr, TIC_Credits, DRAW_IdCredits) == ga_exitdemo) {
         RunMenu();
         return;
     }
 
-    if (MiniLoop(nullptr, nullptr, TIC_Credits, DRAW_AdiCredits) == ga_exitdemo) {
+    if (RunGameLoop(nullptr, nullptr, TIC_Credits, DRAW_AdiCredits) == ga_exitdemo) {
         RunMenu();
         return;
     }
 
-    if (MiniLoop(nullptr, nullptr, TIC_Credits, DRAW_LogicwareCredits) == ga_exitdemo) {
+    if (RunGameLoop(nullptr, nullptr, TIC_Credits, DRAW_LogicwareCredits) == ga_exitdemo) {
         RunMenu();
         return;
     }

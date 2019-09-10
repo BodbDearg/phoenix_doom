@@ -123,7 +123,7 @@ void G_InitNew(const skill_e skill, const uint32_t map) noexcept {
 void G_RunGame() noexcept {
     while (!Input::isQuitRequested()) {
         // Run a level until death or completion
-        MiniLoop(P_Start, P_Stop, P_Ticker, P_Drawer);
+        RunGameLoop(P_Start, P_Stop, P_Ticker, P_Drawer);
 
         // If quitting to the main menu was requested then don't go any further
         if (gGameAction == ga_quit)     
@@ -165,11 +165,11 @@ void G_RunGame() noexcept {
         }
 
         // Run a stats intermission
-        MiniLoop(IN_Start, IN_Stop, IN_Ticker, IN_Drawer);
+        RunGameLoop(IN_Start, IN_Stop, IN_Ticker, IN_Drawer);
 
         // Run the finale if needed and exit
         if (gGameMap == 23) {
-            MiniLoop(F_Start, F_Stop, F_Ticker, F_Drawer);
+            RunGameLoop(F_Start, F_Stop, F_Ticker, F_Drawer);
             return;
         }
 

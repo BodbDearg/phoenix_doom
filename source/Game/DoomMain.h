@@ -13,7 +13,7 @@ typedef void (*GameLoopDrawFunc)(const bool bPresent, const bool bSaveFrameBuffe
 // Used for running one screen or section of the game.
 // Runs a game loop with start, stop, update and draw functions.
 // Certain stuff like ticking at the right rate, user inputs etc. are handled by the loop.
-gameaction_e MiniLoop(
+gameaction_e RunGameLoop(
     const GameLoopStartFunc start,
     const GameLoopStopFunc stop,
     const GameLoopTickFunc ticker,
