@@ -1,12 +1,15 @@
 #include "DoomMain.h"
 
-#include "Base/Input.h"
-#include "Controls.h"
+#include "Audio/Audio.h"
+#include "Config.h"
 #include "Data.h"
 #include "DoomRez.h"
 #include "GFX/CelImages.h"
 #include "GFX/Renderer.h"
+#include "GFX/Video.h"
 #include "Map/Setup.h"
+#include "Prefs.h"
+#include "Resources.h"
 #include "TickCounter.h"
 #include "UI/IntroLogos.h"
 #include "UI/IntroMovies.h"
@@ -104,14 +107,47 @@ gameaction_e RunGameLoop(
 }
 
 //----------------------------------------------------------------------------------------------------------------------
+// Game initialization
+//----------------------------------------------------------------------------------------------------------------------
+static void D_DoomInit() noexcept {
+    // Init main subsystems
+    Config::init();
+    Resources::init();
+    CelImages::init();
+    Video::init();
+    Input::init();
+    Audio::init();
+    Audio::loadAllSounds();
+    Controls::init();
+    Renderer::init();
+
+    // Other initialization
+    gpBigNumFont = &CelImages::loadImages(rBIGNUMB, CelLoadFlagBits::MASKED);   // Cache the large numeric font (Needed always)
+
+    P_Init();   // Init main code
+    O_Init();   // Init options menu
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+// Game shutdown and cleanup
+//----------------------------------------------------------------------------------------------------------------------
+static void D_DoomShutdown() noexcept {
+    Renderer::shutdown();
+    Controls::shutdown();
+    Audio::shutdown();
+    Input::shutdown();
+    Video::shutdown();
+    CelImages::shutdown();
+    Resources::shutdown();
+    Config::shutdown();
+}
+
+//----------------------------------------------------------------------------------------------------------------------
 // Main entry point for DOOM!!!!
 //----------------------------------------------------------------------------------------------------------------------
 void D_DoomMain() noexcept {
-    gpBigNumFont = &CelImages::loadImages(rBIGNUMB, CelLoadFlagBits::MASKED);   // Cache the large numeric font (Needed always)
-
-    Renderer::init();   // Init refresh system
-    P_Init();           // Init main code
-    O_Init();           // Init options menu
+    D_DoomInit();
+    Prefs::load();
 
     IntroLogos::run();
     IntroMovies::run();
@@ -123,4 +159,7 @@ void D_DoomMain() noexcept {
             TitleScreens::runCreditScreens();
         }
     }
+
+    Prefs::save();
+    D_DoomShutdown();
 }

@@ -1,6 +1,6 @@
-#include "ThreeDO.h"
+#include "Game/DoomMain.h"
 
 int main(int argc, char* argv[]) noexcept {
-    ThreeDOMain();
+    D_DoomMain();
     return 0;
 }

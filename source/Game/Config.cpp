@@ -3,6 +3,7 @@
 #include "Base/FileUtils.h"
 #include "Base/Finally.h"
 #include "Base/IniUtils.h"
+#include "DoomDefines.h"
 #include <filesystem>
 #include <SDL.h>
 
@@ -84,7 +85,7 @@ OutputResolutionH = -1
 # to the output area, but some rows or columns of pixels may be doubled up while others won't be.
 # Note: in all cases nearest filtering is used so the result will never be blurry.
 #---------------------------------------------------------------------------------------------------
-IntegerOutputScaling = 1
+IntegerOutputScaling = 0
 
 #---------------------------------------------------------------------------------------------------
 # Force aspect correct scaling of the output image, toggle.
@@ -634,7 +635,7 @@ static void setCheatKeySequence(CheatKeySequence& sequence, const char* const pK
 // Determines the path to the config .ini for the game
 //----------------------------------------------------------------------------------------------------------------------
 static std::string determineIniFilePath() noexcept {
-    char* const pCfgFilePath = SDL_GetPrefPath("com.darraghcoy", "phoenix_doom");
+    char* const pCfgFilePath = SDL_GetPrefPath(SAVE_FILE_ORG, SAVE_FILE_PRODUCT);
     auto cleanupCfgFilePath = finally([&](){
         SDL_free(pCfgFilePath);
     });

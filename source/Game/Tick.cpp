@@ -20,7 +20,6 @@
 #include "Things/Base.h"
 #include "Things/MapObj.h"
 #include "Things/User.h"
-#include "ThreeDO.h"
 #include "UI/Automap.h"
 #include "UI/OptionsMenu.h"
 #include "UI/StatusBarUI.h"

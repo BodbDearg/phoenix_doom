@@ -6,6 +6,10 @@
 // Global defines for Doom
 //----------------------------------------------------------------------------------------------------------------------
 
+// These affect the folder that save data and config preferences go into:
+static constexpr const char* const SAVE_FILE_ORG = "com.codelobster";
+static constexpr const char* const SAVE_FILE_PRODUCT = "phoenix_doom";
+
 // View related
 static constexpr uint32_t   MAXSCREENHEIGHT = 160;                  // Maximum height allowed
 static constexpr uint32_t   MAXSCREENWIDTH  = 280;                  // Maximum width allowed

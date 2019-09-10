@@ -8,12 +8,12 @@
 #include "Game/Data.h"
 #include "Game/DoomDefines.h"
 #include "Game/DoomRez.h"
+#include "Game/Prefs.h"
 #include "Game/Tick.h"
 #include "GFX/CelImages.h"
 #include "GFX/Renderer.h"
 #include "GFX/Video.h"
 #include "IntermissionScreen.h"
-#include "ThreeDO.h"
 #include "UIUtils.h"
 
 static constexpr uint32_t CURSORX       = 45;       // X coord for skulls
@@ -72,13 +72,13 @@ void O_Control(player_t* const pPlayer) noexcept {
             if (!pPlayer->isAutomapActive()) {
                 pPlayer->AutomapFlags ^= AF_OPTIONSACTIVE;      // Toggle the flag
                 if (!pPlayer->isOptionsMenuActive()) {          // Shut down?
-                    WritePrefsFile();                           // Save new settings to NVRAM
+                    Prefs::save();                              // Save new settings
                 } else {
                     O_Init();                                   // Reset option menu positions
                 }
             }
         } else {
-            WritePrefsFile();   // Save new settings to NVRAM
+            Prefs::save();  // Save new settings
         }
     }
 

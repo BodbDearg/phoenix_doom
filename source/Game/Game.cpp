@@ -6,9 +6,9 @@
 #include "DoomMain.h"
 #include "GFX/Textures.h"
 #include "Map/Setup.h"
+#include "Prefs.h"
 #include "Things/Info.h"
 #include "Things/MapObj.h"
-#include "ThreeDO.h"
 #include "Tick.h"
 #include "UI/FinaleScreen.h"
 #include "UI/IntermissionScreen.h"
@@ -160,7 +160,7 @@ void G_RunGame() noexcept {
 
             if (gNextMap > gMaxLevel) {
                 gMaxLevel = gNextMap;   // Save the prefs file
-                WritePrefsFile();
+                Prefs::save();
             }
         }
 

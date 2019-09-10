@@ -246,6 +246,10 @@ void init() noexcept {
     gSpriteFragments.reserve(1024 * 4);
 }
 
+void shutdown() noexcept {
+    // Nothing to do here yet...
+}
+
 void initMathTables() noexcept {
     // Compute stuff based on screen size
     gScaleFactor = (float) Video::gScreenWidth / (float) Video::REFERENCE_SCREEN_WIDTH;

@@ -6,11 +6,11 @@
 #include "Game/Data.h"
 #include "Game/DoomDefines.h"
 #include "Game/DoomRez.h"
+#include "Game/Prefs.h"
 #include "GFX/CelImages.h"
 #include "GFX/Video.h"
 #include "IntermissionScreen.h"
 #include "OptionsMenu.h"
-#include "ThreeDO.h"
 #include "UIUtils.h"
 
 static constexpr int32_t CURSORX        = 50;       // X coord of skull cursor
@@ -69,7 +69,7 @@ void M_Start() noexcept {
 // Release memory used by the main menu
 //--------------------------------------------------------------------------------------------------
 void M_Stop() noexcept {
-    WritePrefsFile();               // Save the current prefs
+    Prefs::save();      // Save the current prefs
 }
 
 //--------------------------------------------------------------------------------------------------
