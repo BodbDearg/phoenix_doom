@@ -3,8 +3,8 @@
 #include "Base/Input.h"
 #include "Base/Random.h"
 #include "Base/Tables.h"
+#include "Game/TickCounter.h"
 #include "GFX/Video.h"
-#include "TickCounter.h"
 #include <algorithm>
 #include <thread>
 

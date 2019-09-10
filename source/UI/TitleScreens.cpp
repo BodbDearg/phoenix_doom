@@ -9,9 +9,9 @@
 #include "Game/DoomRez.h"
 #include "Game/Game.h"
 #include "GFX/Video.h"
-#include "UI/MainMenu.h"
-#include "UI/UIUtils.h"
-#include "Game/WipeFx.h"
+#include "MainMenu.h"
+#include "UIUtils.h"
+#include "WipeFx.h"
 
 BEGIN_NAMESPACE(TitleScreens)
 

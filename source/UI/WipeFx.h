@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Base/Macros.h"
-#include "DoomMain.h"
+#include "Game/DoomMain.h"
 
 BEGIN_NAMESPACE(WipeFx)
 

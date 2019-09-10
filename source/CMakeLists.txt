@@ -66,8 +66,6 @@ set(SOURCE_FILES
     "Game/Tick.h"
     "Game/TickCounter.cpp"
     "Game/TickCounter.h"
-    "Game/WipeFx.cpp"
-    "Game/WipeFx.h"
     "GFX/Blit.h"
     "GFX/CelImages.cpp"
     "GFX/CelImages.h"
@@ -168,6 +166,8 @@ set(SOURCE_FILES
     "UI/TitleScreens.h"
     "UI/UIUtils.cpp"
     "UI/UIUtils.h"
+    "UI/WipeFx.cpp"
+    "UI/WipeFx.h"
 )
 
 set(OTHER_FILES

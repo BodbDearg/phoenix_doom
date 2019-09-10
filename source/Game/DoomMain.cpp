@@ -12,7 +12,7 @@
 #include "UI/IntroMovies.h"
 #include "UI/OptionsMenu.h"
 #include "UI/TitleScreens.h"
-#include "WipeFx.h"
+#include "UI/WipeFx.h"
 #include <thread>
 
 //----------------------------------------------------------------------------------------------------------------------
