@@ -144,6 +144,8 @@ set(SOURCE_FILES
     "ThreeDO/ChunkedStreamFileUtils.h"
     "ThreeDO/MovieDecoder.cpp"
     "ThreeDO/MovieDecoder.h"
+    "ThreeDO/OperaFS.cpp"
+    "ThreeDO/OperaFS.h"
     "UI/Automap.cpp"
     "UI/Automap.h"
     "UI/FinaleScreen.cpp"
