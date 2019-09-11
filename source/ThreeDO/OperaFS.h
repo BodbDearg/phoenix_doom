@@ -19,7 +19,6 @@ struct FSEntry {
     // Values for filesystem entry type
     static constexpr uint8_t TYPE_FILE = 0;
     static constexpr uint8_t TYPE_DIR = 1;
-    static constexpr uint8_t TYPE_UNKNOWN = 1;
 
     uint8_t type;                       // What type of entry this is
     char    name[MAX_NAME_LEN + 1];     // Note: I null terminate this so adding an extra byte!
@@ -42,6 +41,6 @@ struct FSEntry {
 
 // Builds a complete list of filesystem entries for the given 3DO disc image path.
 // The root entry is always first in the list; returns false on failure.
-bool getFSEntriesFromDiscImage(const char* const pDiscImagePath, std::vector<FSEntry>& fsEntries) noexcept;
+bool getFSEntriesFromDiscImage(const char* const pDiscImagePath, std::vector<FSEntry>& fsEntriesOut) noexcept;
 
 END_NAMESPACE(OperaFS)
