@@ -1,7 +1,7 @@
 #include "AudioLoader.h"
 
 #include "AudioData.h"
-#include "Base/ByteStream.h"
+#include "Base/ByteInputStream.h"
 #include "Base/Endian.h"
 #include "Base/FileUtils.h"
 #include "Base/Finally.h"
@@ -49,15 +49,15 @@ struct IffChunk {
     uint32_t            dataSize;
     const std::byte*    pData;
 
-    inline ByteStream toStream() const {
-        return ByteStream(pData, dataSize);
+    inline ByteInputStream toStream() const {
+        return ByteInputStream(pData, dataSize);
     }
 };
 
 //--------------------------------------------------------------------------------------------------
 // Chunk utilities
 //--------------------------------------------------------------------------------------------------
-static void readIffChunk(IffChunk& chunk, ByteStream& stream) THROWS {
+static void readIffChunk(IffChunk& chunk, ByteInputStream& stream) THROWS {
     // Read the header first
     IffChunkHeader header;
     stream.read(header);
@@ -99,7 +99,7 @@ static const IffChunk* findAiffFormChunk(const std::vector<IffChunk>& chunks) no
 // Reads an 80-bit float in big endian format.
 // Need to do things this way since MSVC no longer treats 'long double' as 80-bit extended.
 //--------------------------------------------------------------------------------------------------
-static double readBigEndianExtendedFloat(ByteStream& stream) THROWS {
+static double readBigEndianExtendedFloat(ByteInputStream& stream) THROWS {
     // If not big endian, need read in reverse order to correct endianness
     uint8_t bytes[10];
 
@@ -165,7 +165,7 @@ static double readBigEndianExtendedFloat(ByteStream& stream) THROWS {
 // Read RAW encoded sound data in 8 or 16 bit format.
 // The sound is assumed to be at the bit rate specified in the given sound data object.
 //--------------------------------------------------------------------------------------------------
-static bool readRawSoundData(ByteStream& stream, AudioData& audioData) THROWS {
+static bool readRawSoundData(ByteInputStream& stream, AudioData& audioData) THROWS {
     ASSERT(audioData.bitDepth == 8 || audioData.bitDepth == 16);
 
     const uint32_t bytesPerSample = (audioData.bitDepth == 8) ? 1 : 2;
@@ -181,7 +181,7 @@ static bool readRawSoundData(ByteStream& stream, AudioData& audioData) THROWS {
 // This format is a little obscure and hard to find information about, however I did manage to find
 // some decoding code on the internet and could
 //--------------------------------------------------------------------------------------------------
-static bool readSdx2CompressedSoundData(ByteStream& stream, AudioData& audioData) THROWS {
+static bool readSdx2CompressedSoundData(ByteInputStream& stream, AudioData& audioData) THROWS {
     // For SDX2 the bit rate MUST be 16-bit!
     if (audioData.bitDepth != 16)
         return false;
@@ -263,7 +263,7 @@ static bool readSdx2CompressedSoundData(ByteStream& stream, AudioData& audioData
 //--------------------------------------------------------------------------------------------------
 static bool readFormChunk(const IffChunk& formChunk, AudioData& audioData) THROWS {
     // Validate and read form type firstly
-    ByteStream formStream = formChunk.toStream();
+    ByteInputStream formStream = formChunk.toStream();
     const IffId formType = formStream.read<IffId>();
 
     if (formType != ID_AIFF && formType != ID_AIFC)
@@ -294,7 +294,7 @@ static bool readFormChunk(const IffChunk& formChunk, AudioData& audioData) THROW
     IffId compressionType;
 
     {
-        ByteStream commonStream = pCommonChunk->toStream();
+        ByteInputStream commonStream = pCommonChunk->toStream();
 
         numChannels = Endian::bigToHost(commonStream.read<uint16_t>());
         numSamples = Endian::bigToHost(commonStream.read<uint32_t>());
@@ -328,7 +328,7 @@ static bool readFormChunk(const IffChunk& formChunk, AudioData& audioData) THROW
     audioData.bitDepth = bitDepth;
 
     // Read the actual sound data itself
-    ByteStream soundChunkStream = pSoundChunk->toStream();
+    ByteInputStream soundChunkStream = pSoundChunk->toStream();
 
     if (compressionType == ID_NONE) {
         return readRawSoundData(soundChunkStream, audioData);
@@ -359,7 +359,7 @@ bool AudioLoader::loadFromFile(const char* const filePath, AudioData& audioData)
 
 bool AudioLoader::loadFromBuffer(const std::byte* const pBuffer, const uint32_t bufferSize, AudioData& audioData) noexcept {
     bool bLoadedSuccessfully = false;
-    ByteStream stream(pBuffer, bufferSize);
+    ByteInputStream stream(pBuffer, bufferSize);
 
     try {
         // Read all the root chunks in the file firstly
@@ -379,7 +379,7 @@ bool AudioLoader::loadFromBuffer(const std::byte* const pBuffer, const uint32_t 
             }
         }
     }
-    catch (ByteStreamException) {
+    catch (...) {
         // Ignore...
     }
 

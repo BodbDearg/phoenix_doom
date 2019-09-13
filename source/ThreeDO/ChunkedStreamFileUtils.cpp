@@ -1,6 +1,6 @@
 #include "ChunkedStreamFileUtils.h"
 
-#include "Base/ByteStream.h"
+#include "Base/ByteInputStream.h"
 #include "Base/Endian.h"
 #include <cstring>
 #include <memory>
@@ -97,7 +97,7 @@ uint32_t determineSubStreamSize(
     try {
         // First skip over the stream header
         uint32_t subStreamSize = 0;
-        ByteStream bytes(pStreamFileData, streamFileSize);
+        ByteInputStream bytes(pStreamFileData, streamFileSize);
         bytes.consume(sizeof(StreamHeader));
 
         // Keep reading more chunk headers until we are done
@@ -169,7 +169,7 @@ bool getSubStreamData(
     try {
         // First skip over the stream header
         std::byte* pCurData = streamData.get();
-        ByteStream bytes(pStreamFileData, streamFileSize);
+        ByteInputStream bytes(pStreamFileData, streamFileSize);
         bytes.consume(sizeof(StreamHeader));
 
         // Keep reading more chunks in the stream until we are done

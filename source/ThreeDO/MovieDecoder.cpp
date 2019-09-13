@@ -1,7 +1,7 @@
 #include "MovieDecoder.h"
 
 #include "Audio/AudioData.h"
-#include "Base/ByteStream.h"
+#include "Base/ByteInputStream.h"
 #include "Base/Endian.h"
 #include "Base/Finally.h"
 #include "ChunkedStreamFileUtils.h"
@@ -246,7 +246,7 @@ static void decodePixelBlock(
 //----------------------------------------------------------------------------------------------------------------------
 static void readCVIDChunk_KF_Codebook_12_Bit(
     VideoDecoderState& decoderState,
-    ByteStream& stream,
+    ByteInputStream& stream,
     const uint16_t chunkSize,
     VidCodebook& codebook
 ) THROWS {
@@ -269,7 +269,7 @@ static void readCVIDChunk_KF_Codebook_12_Bit(
 //----------------------------------------------------------------------------------------------------------------------
 static void readCVIDChunk_DF_Codebook_12_Bit(
     VideoDecoderState& decoderState,
-    ByteStream& stream,
+    ByteInputStream& stream,
     VidCodebook& codebook
 ) THROWS {
     if (!stream.hasBytesLeft())
@@ -301,7 +301,7 @@ static void readCVIDChunk_DF_Codebook_12_Bit(
 //----------------------------------------------------------------------------------------------------------------------
 // Read CVID chunk: key frame vectors (referencing either V1 or V4 codebooks)
 //----------------------------------------------------------------------------------------------------------------------
-static void readCVIDChunk_KF_Vectors(VideoDecoderState& decoderState, ByteStream& stream) THROWS {
+static void readCVIDChunk_KF_Vectors(VideoDecoderState& decoderState, ByteInputStream& stream) THROWS {
     for (uint32_t batchStartBlockIdx = 0; batchStartBlockIdx < NUM_BLOCKS_PER_FRAME; batchStartBlockIdx += 32) {
         // First read the flags vector telling whether the next 32 blocks are using the V1 or V4 codebook
         uint32_t updateFlags = stream.read<uint32_t>();
@@ -333,7 +333,7 @@ static void readCVIDChunk_KF_Vectors(VideoDecoderState& decoderState, ByteStream
 //----------------------------------------------------------------------------------------------------------------------
 // Read CVID chunk: key frame vectors (in V1 codebook only)
 //----------------------------------------------------------------------------------------------------------------------
-static void readCVIDChunk_KF_Vectors_V1_Only(VideoDecoderState& decoderState, ByteStream& stream) THROWS {
+static void readCVIDChunk_KF_Vectors_V1_Only(VideoDecoderState& decoderState, ByteInputStream& stream) THROWS {
     for (uint32_t blockIdx = 0; blockIdx < NUM_BLOCKS_PER_FRAME; ++blockIdx) {
         // This block uses the v1 codebook: 1 byte for 1 V1 codebook vector reference
         const uint32_t vIdx = stream.read<uint8_t>();
@@ -344,7 +344,7 @@ static void readCVIDChunk_KF_Vectors_V1_Only(VideoDecoderState& decoderState, By
 //----------------------------------------------------------------------------------------------------------------------
 // Read CVID chunk: delta frame vectors (selectively updated & referencing either V1 or V4 codebooks)
 //----------------------------------------------------------------------------------------------------------------------
-static void readCVIDChunk_DF_Vectors(VideoDecoderState& decoderState, ByteStream& stream) THROWS {
+static void readCVIDChunk_DF_Vectors(VideoDecoderState& decoderState, ByteInputStream& stream) THROWS {
     // Maintain a bit vector here and read as needed
     uint32_t updateFlags = 0;
     uint32_t updateFlagBitsLeft = 0;
@@ -391,7 +391,7 @@ static void readCVIDChunk_DF_Vectors(VideoDecoderState& decoderState, ByteStream
 //----------------------------------------------------------------------------------------------------------------------
 // Attempt to read a CVID chunk in the data for the video frame strip
 //----------------------------------------------------------------------------------------------------------------------
-static void readCVIDChunk(VideoDecoderState& decoderState, ByteStream& stream) THROWS {
+static void readCVIDChunk(VideoDecoderState& decoderState, ByteInputStream& stream) THROWS {
     // Read the chunk header details and compute the offset in the stream we expect it to end at
     CVIDChunkHeader chunkHeader;
     stream.read(chunkHeader);
@@ -406,7 +406,7 @@ static void readCVIDChunk(VideoDecoderState& decoderState, ByteStream& stream) T
     if (chunkSize > stream.getNumBytesLeft())
         throw VideoDecodeException();
     
-    ByteStream chunkDataStream(stream.getCurData(), chunkSize);
+    ByteInputStream chunkDataStream(stream.getCurData(), chunkSize);
     stream.consume(chunkSize);
     
     // See what type of chunk we are dealing with
@@ -520,7 +520,7 @@ bool decodeNextVideoFrame(VideoDecoderState& decoderState) noexcept {
         return false;
     
     // Start reading
-    ByteStream movieData(
+    ByteInputStream movieData(
         decoderState.pMovieData + decoderState.curMovieDataOffset,
         decoderState.movieDataSize - decoderState.curMovieDataOffset
     );
@@ -571,7 +571,7 @@ bool decodeNextVideoFrame(VideoDecoderState& decoderState) noexcept {
         // Read all of the CVID chunks that follow
         uint32_t stripSize = stripHeader.stripSize - sizeof(VideoStripHeader);
         stripSize = std::min(stripSize, movieData.getNumBytesLeft());
-        ByteStream stripData(movieData.getCurData(), stripSize);
+        ByteInputStream stripData(movieData.getCurData(), stripSize);
 
         while (stripData.getNumBytesLeft() > sizeof(CVIDChunkHeader)) {
             readCVIDChunk(decoderState, stripData);

@@ -5,19 +5,15 @@
 #include <cstdint>
 
 //----------------------------------------------------------------------------------------------------------------------
-// Exception thrown when there are not enough bits to read
-//----------------------------------------------------------------------------------------------------------------------
-class BitStreamException {
-};
-
-//----------------------------------------------------------------------------------------------------------------------
 // Utility class that allows for N bits (up to 64) of an unsigned type to be read from a stream in memory.
 // The most significant bits are read first.
 // The stream is merely a view/wrapper around the given memory chunk and does NOT own the memory.
 //----------------------------------------------------------------------------------------------------------------------
-class BitStream {
+class BitInputStream {
 public:
-    inline BitStream(const std::byte* const pData, const uint32_t size) noexcept
+    class StreamException {};   // Thrown when there is a problem reading etc.
+
+    inline BitInputStream(const std::byte* const pData, const uint32_t size) noexcept
         : mpData(pData)
         , mSize(size)
         , mCurByteIdx(0)
@@ -27,7 +23,7 @@ public:
 
     inline void seekToByteIndex(const uint32_t byteIndex) THROWS {
         if (mCurByteIdx > mSize) {
-            throw BitStreamException();
+            throw StreamException();
         }
 
         mCurByteIdx = byteIndex;
@@ -54,7 +50,7 @@ public:
         while (numBitsLeft > 0) {
             // Setup for reading up to 8 bits
             if (mCurByteIdx >= mSize) {
-                throw BitStreamException();
+                throw StreamException();
             }
 
             const uint8_t curByte = (uint8_t) mpData[mCurByteIdx];
@@ -98,7 +94,7 @@ public:
         newCurByteIdx = (newCurByteIdx + uint32_t(7)) & (~uint32_t(7));
 
         if (newCurByteIdx > mSize) {
-            throw BitStreamException();
+            throw StreamException();
         }
 
         mCurByteIdx = newCurByteIdx;

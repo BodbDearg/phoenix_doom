@@ -6,25 +6,21 @@
 #include <cstring>
 
 //----------------------------------------------------------------------------------------------------------------------
-// Exception thrown when there are not enough bytes to read
-//----------------------------------------------------------------------------------------------------------------------
-class ByteStreamException {
-};
-
-//----------------------------------------------------------------------------------------------------------------------
 // Provides a byte oriented input stream from a given chunk of memory.
 // The stream is merely a view/wrapper around the given memory chunk and does NOT own the memory.
 //----------------------------------------------------------------------------------------------------------------------
-class ByteStream {
+class ByteInputStream {
 public:
-    inline ByteStream(const std::byte* const pData, const uint32_t size) noexcept
+    class StreamException {};   // Thrown when there is a problem reading etc.
+
+    inline ByteInputStream(const std::byte* const pData, const uint32_t size) noexcept
         : mpData(pData)
         , mSize(size)
         , mCurByteIdx(0)
     {
     }
 
-    inline ByteStream(const ByteStream& other) noexcept = default;
+    inline ByteInputStream(const ByteInputStream& other) noexcept = default;
 
     inline uint32_t tell() const noexcept {
         return mCurByteIdx;
@@ -44,7 +40,7 @@ public:
 
     inline void ensureBytesLeft(const uint32_t numBytes = 1) THROWS {
         if (!hasBytesLeft(numBytes)) {
-            throw ByteStreamException();
+            throw StreamException();
         }
     }
 

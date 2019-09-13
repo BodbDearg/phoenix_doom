@@ -1,7 +1,7 @@
 #include "CelUtils.h"
 
-#include "Base/BitStream.h"
-#include "Base/ByteStream.h"
+#include "Base/BitInputStream.h"
+#include "Base/ByteInputStream.h"
 #include "Base/Endian.h"
 #include "Base/FourCID.h"
 #include "Base/Macros.h"
@@ -155,7 +155,7 @@ static void decodeUnpackedCelPixelData(
     uint16_t* const pImageOut
 ) THROWS {
     // Setup for reading
-    BitStream bitStream(pImageData, imageDataSize);
+    BitInputStream bitStream(pImageData, imageDataSize);
     uint16_t* pCurOutputPixel = pImageOut;
 
     // Figure out the size of each row after 64-bit alignment is applied; use that to decide whether to do 64-bit
@@ -237,7 +237,7 @@ static void decodePackedCelPixelData(
         // That is the first bit of info for each row of pixels.
         const uint32_t curOffsetInImgData = (uint32_t)(pCurRowData - pImageData);
         const uint32_t imageDataSizeLeft = (curOffsetInImgData < imageDataSize) ? imageDataSize - curOffsetInImgData : 0;
-        BitStream bitStream(pCurRowData, imageDataSizeLeft);
+        BitInputStream bitStream(pCurRowData, imageDataSizeLeft);
         uint32_t nextRowOffset;
 
         {
@@ -612,7 +612,7 @@ bool loadCelFileCelImage(
     imageOut.free();
 
     try {
-        ByteStream dataStream(pData, dataSize);
+        ByteInputStream dataStream(pData, dataSize);
 
         // Try to locate the CCB chunk, pixels chunk and PLUT chunk in the CEL file (if there)
         const CelFileCCBChunk* pCCBChunk = nullptr;
