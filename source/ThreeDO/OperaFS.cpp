@@ -1,8 +1,7 @@
 #include "OperaFS.h"
 
 #include "Base/Endian.h"
-#include "Base/Finally.h"
-#include <cstdio>
+#include "CDImageFileInputStream.h"
 #include <queue>
 
 BEGIN_NAMESPACE(OperaFS)
@@ -22,7 +21,6 @@ struct DiscHeader {
     static constexpr uint8_t VERSION = 1;
     static constexpr uint8_t SYNC_BYTE = 0x5A;
     
-    uint32_t    _unknown[4];                // I'm not sure what these entries are, they are not mentioned in the 3DO SDK
 	uint8_t     recordType;                 // Must be '1'
     uint8_t     syncBytes[5];               // All of these must be '0x5A'
     uint8_t     version;                    // Should be '1'
@@ -88,10 +86,13 @@ struct DirBlockHeader {
 // Directory entry in a OperaFS disc
 //----------------------------------------------------------------------------------------------------------------------
 struct DirEntry {
-    // Expected flags for files and directories etc.
-    static constexpr uint32_t FLAGS_FILE        = 0x00000002;
-    static constexpr uint32_t FLAGS_SPECIAL     = 0x00000006;
-    static constexpr uint32_t FLAGS_DIR         = 0x00000007;
+    // Flags for directory entries.
+    // Note: all of the bits must be set in each case for the flag to be considered true.
+    static constexpr uint32_t FLAGS_FILE                    = 0x00000002;
+    static constexpr uint32_t FLAGS_SPECIAL                 = 0x00000006;
+    static constexpr uint32_t FLAGS_DIR                     = 0x00000007;
+    static constexpr uint32_t FLAGS_LAST_ENTRY_IN_BLOCK     = 0x40000000;
+    static constexpr uint32_t FLAGS_LAST_ENTRY_IN_DIR       = 0x80000000;
 
     uint32_t    flags;                  // Flags for this directory entry (tells type)
     uint32_t    id;                     // Unique id for the directory entry
@@ -127,38 +128,15 @@ struct DirToRead {
     uint32_t    firstBlockIdx;      // Index of the first block of the directory on the disk (from the disk beginning)
 };
 
-//----------------------------------------------------------------------------------------------------------------------
-// Helper functions for dealing with file I/O
-//----------------------------------------------------------------------------------------------------------------------
-template <class T>
-static void fileRead(FILE* const pFile, T& out) THROWS {
-    if (std::fread(&out, sizeof(T), 1, pFile) != 1)
-        throw IOException();
-}
-
-static void fileSeek(FILE* const pFile, const uint32_t offset) THROWS {
-    if (offset > LONG_MAX)
-        throw IOException();
-
-    if (std::fseek(pFile, (long) offset, SEEK_SET) != 0)
-        throw IOException();
-}
-
-static void fileSkip(FILE* const pFile, const uint32_t numBytes) THROWS {
-    if (numBytes > 0) {
-        if (numBytes > LONG_MAX)
-            throw IOException();
-
-        if (std::fseek(pFile, (long) numBytes, SEEK_CUR) != 0)
-            throw IOException();
-    }
+static bool areAllFlagsSet(const uint32_t flags, const uint32_t bitsToBeSet) noexcept {
+    return ((flags & bitsToBeSet) == bitsToBeSet);
 }
 
 //----------------------------------------------------------------------------------------------------------------------
 // Read and verify the OperaFS disc header
 //----------------------------------------------------------------------------------------------------------------------
-static void readAndVerifyDiscHeader(FILE* const pFile, DiscHeader& header) THROWS {
-    fileRead(pFile, header);
+static void readAndVerifyDiscHeader(CDImageFileInputStream& cd, DiscHeader& header) THROWS {
+    cd.read(header);
     header.convertBigToHostEndian();
 
     const bool bValidHeader = (
@@ -183,8 +161,8 @@ static void readAndVerifyDiscHeader(FILE* const pFile, DiscHeader& header) THROW
 //----------------------------------------------------------------------------------------------------------------------
 // Read and verfiy a directory block header
 //----------------------------------------------------------------------------------------------------------------------
-static void readAndVerifyDirBlockHeader(FILE* const pFile, DirBlockHeader& header) THROWS {
-    fileRead(pFile, header);
+static void readAndVerifyDirBlockHeader(CDImageFileInputStream& cd, DirBlockHeader& header) THROWS {
+    cd.read(header);
     header.convertBigToHostEndian();
 
     const bool bValidHeader = (
@@ -199,8 +177,8 @@ static void readAndVerifyDirBlockHeader(FILE* const pFile, DirBlockHeader& heade
 //----------------------------------------------------------------------------------------------------------------------
 // Read and verfiy a directory entry
 //----------------------------------------------------------------------------------------------------------------------
-static void readAndVerifyDirEntry(FILE* const pFile, DirEntry& entry) THROWS {
-    fileRead(pFile, entry);
+static void readAndVerifyDirEntry(CDImageFileInputStream& cd, DirEntry& entry) THROWS {
+    cd.read(entry);
     entry.convertBigToHostEndian();
 
     const bool bValidEntry = (
@@ -217,14 +195,14 @@ static void readAndVerifyDirEntry(FILE* const pFile, DirEntry& entry) THROWS {
 // Returns the offset of the next block of directory entries to be read after that.
 //----------------------------------------------------------------------------------------------------------------------
 static int32_t readDirEntriesBlock(
-    FILE* const pFile,
+    CDImageFileInputStream& cd,
     const uint32_t parentDirIdx,
     std::queue<DirToRead>& dirsToRead,
     std::vector<FSEntry>& fsEntriesOut
 ) THROWS {
     // Read the block header
     DirBlockHeader dirBlockHeader;
-    readAndVerifyDirBlockHeader(pFile, dirBlockHeader);
+    readAndVerifyDirBlockHeader(cd, dirBlockHeader);
 
     // Seek to where the data is if there is any
     const uint32_t blockDataSize = dirBlockHeader.firstFreeByte - dirBlockHeader.firstByte;
@@ -233,7 +211,7 @@ static int32_t readDirEntriesBlock(
         return dirBlockHeader.nextBlock;
     
     ASSERT(dirBlockHeader.firstByte >= sizeof(DirBlockHeader));
-    fileSkip(pFile, dirBlockHeader.firstByte - sizeof(DirBlockHeader));
+    cd.skip(dirBlockHeader.firstByte - sizeof(DirBlockHeader));
 
     // Keep track of the number of block bytes left there are.
     // Read each directory entry:
@@ -242,7 +220,7 @@ static int32_t readDirEntriesBlock(
     while (blockBytesLeft >= sizeof(DirEntry)) {
         // Read the directory entry
         DirEntry dirEntry;
-        readAndVerifyDirEntry(pFile, dirEntry);
+        readAndVerifyDirEntry(cd, dirEntry);
         blockBytesLeft -= sizeof(DirEntry);
 
         // Skip any additional copy offsets specified
@@ -252,13 +230,13 @@ static int32_t readDirEntriesBlock(
             if (numBytesToSkip > blockBytesLeft)
                 throw BadDataException();
 
-            fileSkip(pFile, numBytesToSkip);
+            cd.skip(numBytesToSkip);
             blockBytesLeft -= numBytesToSkip;
         }
 
         // Makeup a file system entry for this directory entry
-        const bool bIsDir = ((dirEntry.flags & DirEntry::FLAGS_DIR) != 0);
-        const bool bIsFile = ((dirEntry.flags & DirEntry::FLAGS_FILE) != 0);
+        const bool bIsDir = areAllFlagsSet(dirEntry.flags, DirEntry::FLAGS_DIR);
+        const bool bIsFile = areAllFlagsSet(dirEntry.flags, DirEntry::FLAGS_FILE);
 
         if (bIsDir || bIsFile) {
             // Populate the fs entry type and name fields
@@ -279,6 +257,16 @@ static int32_t readDirEntriesBlock(
                 fsEntry.file.size = dirEntry.byteCount;
             }
         }
+
+        // Is this the last entry in the directory?
+        // If so then return that there is no more blocks ahead.
+        if (areAllFlagsSet(dirEntry.flags, DirEntry::FLAGS_LAST_ENTRY_IN_DIR))
+            return -1;
+
+        // Is this the last entry in the block?
+        // If so then abort reading regardless of what is ahead.
+        if (areAllFlagsSet(dirEntry.flags, DirEntry::FLAGS_LAST_ENTRY_IN_BLOCK))
+            break;
     }
 
     return dirBlockHeader.nextBlock;
@@ -289,7 +277,7 @@ static int32_t readDirEntriesBlock(
 // Saves the resulting file system entries to the given output list.
 // Does not return until everything is read.
 //----------------------------------------------------------------------------------------------------------------------
-static void readDirEntries(FILE* const pFile, std::queue<DirToRead>& dirsToRead, std::vector<FSEntry>& fsEntriesOut) THROWS {
+static void readDirEntries(CDImageFileInputStream& cd, std::queue<DirToRead>& dirsToRead, std::vector<FSEntry>& fsEntriesOut) THROWS {
     while (!dirsToRead.empty()) {
         // Get this directory to read
         DirToRead dirToRead = dirsToRead.front();
@@ -308,13 +296,13 @@ static void readDirEntries(FILE* const pFile, std::queue<DirToRead>& dirsToRead,
         }
 
         // Naviate to the first block where the directory entries are stored and read it
-        fileSeek(pFile, dirToRead.firstBlockIdx * OPERA_BLOCK_SIZE);
-        int32_t nextBlockIdx = readDirEntriesBlock(pFile, dirToRead.parentDirIdx, dirsToRead, fsEntriesOut);
+        cd.seek(dirToRead.firstBlockIdx * OPERA_BLOCK_SIZE);
+        int32_t nextBlockIdx = readDirEntriesBlock(cd, dirToRead.parentDirIdx, dirsToRead, fsEntriesOut);
 
         // Continue reading blocks in the directory until we are done
         while (nextBlockIdx >= 0) {
-            fileSeek(pFile, (uint32_t) nextBlockIdx * OPERA_BLOCK_SIZE);
-            nextBlockIdx = readDirEntriesBlock(pFile, dirToRead.parentDirIdx, dirsToRead, fsEntriesOut);
+            cd.seek((uint32_t) nextBlockIdx * OPERA_BLOCK_SIZE);
+            nextBlockIdx = readDirEntriesBlock(cd, dirToRead.parentDirIdx, dirsToRead, fsEntriesOut);
         }
         
         // Now that we know it, set the number of children in the parent directory
@@ -329,22 +317,16 @@ static void readDirEntries(FILE* const pFile, std::queue<DirToRead>& dirsToRead,
 }
 
 bool getFSEntriesFromDiscImage(const char* const pDiscImagePath, std::vector<FSEntry>& fsEntriesOut) noexcept {
-    // Ensure the input list is clear and try to open the disc image file
     fsEntriesOut.clear();
-    FILE* const pFile = std::fopen(pDiscImagePath, "rb");
 
-    if (!pFile)
-        return false;
-    
-    auto cleanupFile = finally([&]() {
-        std::fclose(pFile);
-    });
-
-    // Do the reading
     try {
+        // Open the requested file
+        CDImageFileInputStream cd;
+        cd.open(pDiscImagePath);
+
         // Read the disc header first
         DiscHeader discHeader;
-        readAndVerifyDiscHeader(pFile, discHeader);
+        readAndVerifyDiscHeader(cd, discHeader);
 
         // Makeup the root filesystem entry
         FSEntry& rootFSEntry = fsEntriesOut.emplace_back();
@@ -356,7 +338,7 @@ bool getFSEntriesFromDiscImage(const char* const pDiscImagePath, std::vector<FSE
         dirToRead.parentDirIdx = 0;
         dirToRead.firstBlockIdx = discHeader.rootDirCopyOffsets[0];
         
-        readDirEntries(pFile, dirsToRead, fsEntriesOut);
+        readDirEntries(cd, dirsToRead, fsEntriesOut);
 
         // All good if we got to here!
         return true;
