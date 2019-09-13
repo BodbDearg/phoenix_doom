@@ -53,12 +53,12 @@ struct DiscHeader {
 //----------------------------------------------------------------------------------------------------------------------
 struct DirBlockHeader {
     // Offset in blocks to the next block in the directory (0xFFFFFFFF or -1 if none).
-    // Unclear if the offset is from the start of the disc or relative to the current directory.
-    int32_t nextBlock;
+    // Note: this is relative to the current directory block index!
+    uint32_t nextBlock;
 
     // Offset in blocks to the previous block in the directory (0xFFFFFFFF or -1 if none).
-    // Unclear if the offset is from the start of the disc or relative to the current directory.
-    int32_t prevBlock;
+    // Note: this is relative to the current directory block index!
+    uint32_t prevBlock;
 
     // Flags for the directory block.
     // The exact meaning of this field is unknown (may be unused?).
@@ -194,7 +194,7 @@ static void readAndVerifyDirEntry(CDImageFileInputStream& cd, DirEntry& entry) T
 // Read a single block of directory entries.
 // Returns the offset of the next block of directory entries to be read after that.
 //----------------------------------------------------------------------------------------------------------------------
-static int32_t readDirEntriesBlock(
+static uint32_t readDirEntriesBlock(
     CDImageFileInputStream& cd,
     const uint32_t parentDirIdx,
     std::queue<DirToRead>& dirsToRead,
@@ -277,7 +277,11 @@ static int32_t readDirEntriesBlock(
 // Saves the resulting file system entries to the given output list.
 // Does not return until everything is read.
 //----------------------------------------------------------------------------------------------------------------------
-static void readDirEntries(CDImageFileInputStream& cd, std::queue<DirToRead>& dirsToRead, std::vector<FSEntry>& fsEntriesOut) THROWS {
+static void readDirEntries(
+    CDImageFileInputStream& cd,
+    std::queue<DirToRead>& dirsToRead,
+    std::vector<FSEntry>& fsEntriesOut
+) THROWS {
     while (!dirsToRead.empty()) {
         // Get this directory to read
         DirToRead dirToRead = dirsToRead.front();
@@ -296,12 +300,13 @@ static void readDirEntries(CDImageFileInputStream& cd, std::queue<DirToRead>& di
         }
 
         // Naviate to the first block where the directory entries are stored and read it
-        cd.seek(dirToRead.firstBlockIdx * OPERA_BLOCK_SIZE);
-        int32_t nextBlockIdx = readDirEntriesBlock(cd, dirToRead.parentDirIdx, dirsToRead, fsEntriesOut);
+        const uint32_t firstBlockIdx = dirToRead.firstBlockIdx;
+        cd.seek(firstBlockIdx * OPERA_BLOCK_SIZE);
+        uint32_t nextBlockIdx = readDirEntriesBlock(cd, dirToRead.parentDirIdx, dirsToRead, fsEntriesOut);
 
         // Continue reading blocks in the directory until we are done
-        while (nextBlockIdx >= 0) {
-            cd.seek((uint32_t) nextBlockIdx * OPERA_BLOCK_SIZE);
+        while (nextBlockIdx != UINT32_MAX) {
+            cd.seek((firstBlockIdx + nextBlockIdx) * OPERA_BLOCK_SIZE);
             nextBlockIdx = readDirEntriesBlock(cd, dirToRead.parentDirIdx, dirsToRead, fsEntriesOut);
         }
         
@@ -333,10 +338,12 @@ bool getFSEntriesFromDiscImage(const char* const pDiscImagePath, std::vector<FSE
         rootFSEntry.type = FSEntry::TYPE_DIR;
 
         // Begin reading directories
+        const uint32_t initialBlockIdx = discHeader.rootDirCopyOffsets[0];
+
         std::queue<DirToRead> dirsToRead;
         DirToRead& dirToRead = dirsToRead.emplace();
         dirToRead.parentDirIdx = 0;
-        dirToRead.firstBlockIdx = discHeader.rootDirCopyOffsets[0];
+        dirToRead.firstBlockIdx = initialBlockIdx;
         
         readDirEntries(cd, dirsToRead, fsEntriesOut);
 
