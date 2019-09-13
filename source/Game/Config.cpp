@@ -23,7 +23,42 @@ R"(#----------------------------------------------------------------------------
 
 )";
 
-static constexpr char* const DEFAULT_CONFIG_INI_SECTION_2 =
+static constexpr char* const DEFAULT_CONFIG_INI_SECTION_2 = 
+R"(####################################################################################################
+[GameData]
+####################################################################################################
+
+#---------------------------------------------------------------------------------------------------
+# Path to the CD-ROM image file for 3DO Doom.
+# Normally this is what the game uses as it's source of game data, unless otherwise specified.
+#
+# The path will be relative to to the current working directory that you are executing the app from.
+# You can specify an absolute (fully qualified) path however if you wish.
+#
+# The CD-ROM image is expected to be in 'Mode 1' format with 2352 bytes per sector, but Mode 2
+# CD-ROM images are also allowed. (The US version of 3DO Doom uses Mode 1)
+#
+# On Windows it should be sufficient to place the image file (named the same as this) in the same
+# folder as the .exe and simply to double click the .exe to start the game. On other operating
+# systems you may need to specify the full path to the image file manually due to differing defaults
+# for the current working dir upon app launch.
+#---------------------------------------------------------------------------------------------------
+CDImagePath = Doom3DO.img
+
+#---------------------------------------------------------------------------------------------------
+# Alternate mode for supplying game data where the game files are found in a regular directory on
+# the host machine rather than in a CD image. Useful for development and/or experimenting.
+# 
+# If this mode enabled ('1') then the game will search in this folder for the game's files instead
+# of trying to get them from the CD image. You can use a tool such as 'OperaFS[De]Compiler' to
+# extract the contents of your 3DO Doom CD-ROM image.
+#---------------------------------------------------------------------------------------------------
+UseDataDirectory = 0
+DataDirectoryPath = C:\Users\<MY_NAME>\<WHATEVER>\Doom3DO_DiscExtracted
+
+)";
+
+static constexpr char* const DEFAULT_CONFIG_INI_SECTION_3 =
 R"(####################################################################################################
 [Video]
 ####################################################################################################
@@ -101,7 +136,7 @@ AspectCorrectOutputScaling = 1
 
 )";
 
-static constexpr char* const DEFAULT_CONFIG_INI_SECTION_3 = 
+static constexpr char* const DEFAULT_CONFIG_INI_SECTION_4 = 
 R"(####################################################################################################
 [Graphics]
 ####################################################################################################
@@ -122,7 +157,7 @@ DoFakeContrast = 1
 
 )";
 
-static constexpr char* const DEFAULT_CONFIG_INI_SECTION_4 =
+static constexpr char* const DEFAULT_CONFIG_INI_SECTION_5 =
 R"(####################################################################################################
 [InputGeneral]
 ####################################################################################################
@@ -143,7 +178,7 @@ AnalogToDigitalThreshold = 0.5
 
 )";
 
-static constexpr char* const DEFAULT_CONFIG_INI_SECTION_5 = 
+static constexpr char* const DEFAULT_CONFIG_INI_SECTION_6 = 
 R"(####################################################################################################
 [KeyboardControls]
 ####################################################################################################
@@ -195,7 +230,7 @@ R               = toggle_always_run
 
 )";
 
-static constexpr char* const DEFAULT_CONFIG_INI_SECTION_6 =
+static constexpr char* const DEFAULT_CONFIG_INI_SECTION_7 =
 R"(####################################################################################################
 [MouseControls]
 ####################################################################################################
@@ -225,7 +260,7 @@ Axis_Y          = weapon_next_prev
 
 )";
 
-static constexpr char* const DEFAULT_CONFIG_INI_SECTION_7 =
+static constexpr char* const DEFAULT_CONFIG_INI_SECTION_8 =
 R"(####################################################################################################
 [GameControllerControls]
 ####################################################################################################
@@ -270,7 +305,7 @@ Axis_RightTrigger       = attack
 
 )";
 
-static constexpr char* const DEFAULT_CONFIG_INI_SECTION_8 =
+static constexpr char* const DEFAULT_CONFIG_INI_SECTION_9 =
 R"(####################################################################################################
 [Debug]
 ####################################################################################################
@@ -310,7 +345,7 @@ GrantInvulnerability        = IDBEHOLDV
 
 )";
 
-static constexpr char* const DEFAULT_CONFIG_INI_SECTION_9 = 
+static constexpr char* const DEFAULT_CONFIG_INI_SECTION_10 = 
 R"(####################################################################################################
 #
 # Appendix
@@ -513,6 +548,9 @@ R"(#############################################################################
 
 static std::string gTmpActionStr;   // Re-use this buffer during parsing to prevent reallocs. Not that it probably matters that much...
 
+std::string                 gGameDataCDImagePath;
+bool                        gbUseGameDataDirectory;
+std::string                 gGameDataDirectoryPath;
 bool                        gbFullscreen;
 uint32_t                    gRenderScale;
 int32_t                     gOutputResolutionW;
@@ -690,6 +728,7 @@ static void regenerateDefaultConfigFileIfNotPresent(const std::string& iniFilePa
     configFile.append(DEFAULT_CONFIG_INI_SECTION_7);
     configFile.append(DEFAULT_CONFIG_INI_SECTION_8);
     configFile.append(DEFAULT_CONFIG_INI_SECTION_9);
+    configFile.append(DEFAULT_CONFIG_INI_SECTION_10);
 
     if (!FileUtils::writeDataToFile(iniFilePath.c_str(), (const std::byte*) configFile.data(), configFile.length())) {
         FATAL_ERROR_F(
@@ -983,7 +1022,18 @@ static void parseCheatKeySequence(const std::string& name, const char* const pSe
 // This is not a particularly elegant or fast implementation, but it gets the job done... 
 //----------------------------------------------------------------------------------------------------------------------
 static void handleConfigEntry(const IniUtils::Entry& entry) noexcept {
-    if (entry.section == "Video") {
+    if (entry.section == "GameData") {        
+        if (entry.key == "CDImagePath") {
+            gGameDataCDImagePath = entry.value;
+        }
+        else if (entry.key == "UseDataDirectory") {
+            gbUseGameDataDirectory = entry.getBoolValue(gbUseGameDataDirectory);
+        }
+        else if (entry.key == "DataDirectoryPath") {
+            gGameDataDirectoryPath = entry.value;
+        }
+    }
+    else if (entry.section == "Video") {
         if (entry.key == "Fullscreen") {
             gbFullscreen = entry.getBoolValue(gbFullscreen);
         }
@@ -1069,6 +1119,10 @@ static void handleConfigEntry(const IniUtils::Entry& entry) noexcept {
 // Clears all settings (used prior to reading config)
 //----------------------------------------------------------------------------------------------------------------------
 static void clear() noexcept {
+    gGameDataCDImagePath = "Doom3DO.img";
+    gbUseGameDataDirectory = false;
+    gGameDataDirectoryPath.clear();
+
     gbFullscreen = true;
     gRenderScale = 1;
     gOutputResolutionW = -1;
@@ -1138,6 +1192,10 @@ void init() noexcept {
 void shutdown() noexcept {
     gTmpActionStr.clear();
     gTmpActionStr.shrink_to_fit();
+    gGameDataCDImagePath.clear();
+    gGameDataCDImagePath.shrink_to_fit();    
+    gGameDataDirectoryPath.clear();
+    gGameDataDirectoryPath.shrink_to_fit();
 }
 
 END_NAMESPACE(Config)

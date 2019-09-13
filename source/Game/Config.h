@@ -2,8 +2,14 @@
 
 #include "Base/Input.h"
 #include "Controls.h"
+#include <string>
 
 BEGIN_NAMESPACE(Config)
+
+// Game data settings
+extern std::string  gGameDataCDImagePath;
+extern bool         gbUseGameDataDirectory;
+extern std::string  gGameDataDirectoryPath;
 
 // Video settings
 extern bool         gbFullscreen;
