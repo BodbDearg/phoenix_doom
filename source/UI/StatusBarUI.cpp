@@ -7,7 +7,6 @@
 #include "Game/DoomDefines.h"
 #include "Game/DoomRez.h"
 #include "GFX/CelImages.h"
-#include "IntermissionScreen.h"
 #include "UIUtils.h"
 #include <cstring>
 
@@ -91,26 +90,22 @@ static bool                     gGibDraw;                   // Got gibbed?
 static uint32_t                 gGibFrame;                  // Which gib frame
 static uint32_t                 gGibDelay;                  // Delay for gibbing
 
-/**********************************
-
-    Process the timer for a shape flash
-
-**********************************/
-
-static void CycleFlash(sbflash_t *FlashPtr)
-{
-    if (FlashPtr->delay) {              // Active?
-        if (FlashPtr->delay > 1) {      // Still time?
-            --FlashPtr->delay;          // Remove the time
+//----------------------------------------------------------------------------------------------------------------------
+// Process the timer for a shape flash
+//----------------------------------------------------------------------------------------------------------------------
+static void CycleFlash(sbflash_t& flash) noexcept {
+    if (flash.delay) {              // Active?
+        if (flash.delay > 1) {      // Still time?
+            --flash.delay;          // Remove the time
         } else {
-            if (!--FlashPtr->times) {           // Can I still go?
-                FlashPtr->delay = 0;
-                FlashPtr->doDraw = false;       // Force off
+            if (--flash.times == 0) {               // Can I still go?
+                flash.delay = 0;
+                flash.doDraw = false;               // Force off
             } else {
-                FlashPtr->delay = FLASHDELAY;       // Reset the time
-                FlashPtr->doDraw ^= true;           // Toggle the draw flag
-                if (FlashPtr->doDraw) {             // If on, play sound
-                    S_StartSound(0,sfx_itemup);
+                flash.delay = FLASHDELAY;           // Reset the time
+                flash.doDraw ^= true;               // Toggle the draw flag
+                if (flash.doDraw) {                 // If on, play sound
+                    S_StartSound(0, sfx_itemup);
                 }
             }
         }
@@ -140,16 +135,10 @@ void ST_Stop() noexcept {
     CelImages::releaseImages(rSTBAR);
 }
 
-/**********************************
-
-    Called during the think logic phase to prepare
-    to draw the status bar.
-
-**********************************/
+//----------------------------------------------------------------------------------------------------------------------
+// Called during the think logic phase to prepare to draw the status bar
+//----------------------------------------------------------------------------------------------------------------------
 void ST_Ticker() noexcept {
-    uint32_t ind;
-    sbflash_t *FlashPtr;
-
     // Animate face
     --gFaceTics;                                // Count down
     if (gFaceTics & 0x8000) {                   // Negative?
@@ -159,34 +148,36 @@ void ST_Ticker() noexcept {
 
     // Draw special face?
     if (gStBar.specialFace) {
-        gNewFace = SPECIAL_FACE_SPRITE[gStBar.specialFace];    // Get the face shape
-        gFaceTics = TICKSPERSEC;     // 1 second
-        gStBar.specialFace = f_none; // Ack the shape
+        gNewFace = SPECIAL_FACE_SPRITE[gStBar.specialFace];     // Get the face shape
+        gFaceTics = TICKSPERSEC;                                // 1 second
+        gStBar.specialFace = f_none;                            // Ack the shape
     }
 
     // Did we get gibbed?
-    if (gStBar.gotgibbed && !gGibDraw) {  // In progress?
-        gGibDraw = true;     // In progress...
+    if (gStBar.gotgibbed && !gGibDraw) {    // In progress?
+        gGibDraw = true;                    // In progress...
         gGibFrame = 0;
         gGibDelay = GIBTIME;
         gStBar.gotgibbed = false;
     }
 
     // Tried to open a CARD or SKULL door?
-    ind = 0;
-    FlashPtr = gFlashCards;
-    do {    // Check for initalization
-        if (gStBar.tryopen[ind]) {       // Did the user ask to flash the card?
-            gStBar.tryopen[ind] = false; // Ack the flag
-            FlashPtr->delay = FLASHDELAY;
-            FlashPtr->times = FLASHTIMES+1;
-            FlashPtr->doDraw = false;
-        }
-        CycleFlash(FlashPtr);       // Handle the ticker
-        ++FlashPtr;
-    } while (++ind<NUMCARDS);       // All scanned?
-}
+    {
+        sbflash_t* pFlash = gFlashCards;
 
+        for (uint32_t i = 0; i < NUMCARDS; ++i) {
+            if (gStBar.tryopen[i]) {                // Did the user ask to flash the card?
+                gStBar.tryopen[i] = false;          // Ack the flag
+                pFlash->delay = FLASHDELAY;
+                pFlash->times = FLASHTIMES + 1;
+                pFlash->doDraw = false;
+            }
+
+            CycleFlash(*pFlash);    // Handle the ticker
+            ++pFlash;
+        }
+    }
+}
 
 // TODO: REIMPLEMENT FPS COUNT
 #define VBLTIMER 0
@@ -197,18 +188,10 @@ static Word Frames;
 static Word CountVBL[TIMERSIZE];
 #endif
 
-
-/**********************************
-
-    Draw the status bar
-
-**********************************/
+//----------------------------------------------------------------------------------------------------------------------
+// Draw the status bar
+//----------------------------------------------------------------------------------------------------------------------
 void ST_Drawer() noexcept {
-    uint32_t i;
-    uint32_t ind;
-    player_t *p;
-    sbflash_t *FlashPtr;
-
     UIUtils::drawUISprite(0, 160, *gpStatusBarShape);
 
     // TODO: REIMPLEMENT FPS COUNT
@@ -228,45 +211,48 @@ void ST_Drawer() noexcept {
         PrintNumber(100,80,ind,0);
     #endif
 
-    p = &gPlayer;
+    // Draw ammo amount
+    player_t& p = gPlayer;
 
-    // Ammo
-    if (p->readyweapon != wp_nochange) {                // No weapon?
-        ind = gWeaponAmmos[p->readyweapon];
-        if (ind != am_noammo) {                         // No ammo needed?
-            i = p->ammo[ind];
-            PrintNumber(AMMOX,AMMOY,i,PNFLAGS_RIGHT);   // Draw ammo
+    if (p.readyweapon != wp_nochange) {                                                  // No weapon?
+        const uint32_t ammoType = gWeaponAmmos[p.readyweapon];
+        if (ammoType != am_noammo) {                                                    // No ammo needed?
+            const uint32_t ammoAmount = p.ammo[ammoType];
+            UIUtils::printNumber(AMMOX, AMMOY, ammoAmount, UIUtils::PNFLAGS_RIGHT);     // Draw ammo
         }
     }
 
-    PrintNumber(HEALTHX, HEALTHY, p->health, PNFLAGS_RIGHT|PNFLAGS_PERCENT);        // Draw the health
-    PrintNumber(ARMORX, ARMORY, p->armorpoints, PNFLAGS_RIGHT|PNFLAGS_PERCENT);     // Draw armor
-    PrintNumber(MAPX, MAPY, gGameMap, PNFLAGS_CENTER);                              // Draw AREA
+    // Draw health armor and level number
+    UIUtils::printNumber(HEALTHX, HEALTHY, p.health, UIUtils::PNFLAGS_RIGHT|UIUtils::PNFLAGS_PERCENT);
+    UIUtils::printNumber(ARMORX, ARMORY, p.armorpoints, UIUtils::PNFLAGS_RIGHT|UIUtils::PNFLAGS_PERCENT);
+    UIUtils::printNumber(MAPX, MAPY, gGameMap, UIUtils::PNFLAGS_CENTER);
 
-    // Cards & skulls
-    ind = 0;
-    FlashPtr = gFlashCards;
-    do {
-        // Flashing?
-        if (p->cards[ind] || FlashPtr->doDraw) {
-            UIUtils::drawUISprite(CARD_X[ind], CARD_Y[ind], gpSBObj->getImage(sb_card_b + ind));
+    // Cards & skulls: draw if flashing or owned
+    {
+        sbflash_t* pFlash = gFlashCards;
+
+        for (uint32_t i = 0; i < NUMCARDS; ++i) {
+            if (p.cards[i] || pFlash->doDraw) {
+                UIUtils::drawUISprite(CARD_X[i], CARD_Y[i], gpSBObj->getImage(sb_card_b + i));
+            }
+            ++pFlash;
         }
-        ++FlashPtr;
-    } while (++ind < NUMCARDS);
+    }
 
     // Weapons
-    ind = 0;
-    do {
-        if (p->weaponowned[ind+1]) {
-            UIUtils::drawUISprite(MICRO_NUMS_X[ind], MICRO_NUMS_Y[ind], gpSBObj->getImage(sb_micro+ind));
+    for (uint32_t i = 0; i < NUMMICROS; ++i) {
+        if (p.weaponowned[i + 1]) {
+            UIUtils::drawUISprite(MICRO_NUMS_X[i], MICRO_NUMS_Y[i], gpSBObj->getImage(sb_micro + i));
         }
-    } while (++ind < NUMMICROS);
+    }
 
     // Face change
-    if ((p->AutomapFlags & AF_GODMODE) || p->powers[pw_invulnerability]) {      // In god mode?
-        i = GODFACE;        // God mode
+    uint32_t faceImgNum;
+
+    if ((p.AutomapFlags & AF_GODMODE) || p.powers[pw_invulnerability]) {      // In god mode?
+        faceImgNum = GODFACE;       // God mode
         gGibFrame = 0;
-    } else if (gGibDraw) {       // Got gibbed
+    } else if (gGibDraw) {          // Got gibbed
         if (gGibDelay > 0) {
             --gGibDelay;
         }
@@ -278,25 +264,27 @@ void ST_Drawer() noexcept {
             }
         }
 
-        i = FIRSTSPLAT+gGibFrame;
-    } else if (!p->health) {
-        i = FIRSTSPLAT+gGibFrame;    // Dead man
-    } else {
+        faceImgNum = FIRSTSPLAT + gGibFrame;
+    } 
+    else if (p.health == 0) {
+        faceImgNum = FIRSTSPLAT + gGibFrame;    // Dead man
+    } 
+    else {
         gGibFrame = 0;
-        i = p->health;      // Get the health
-        if (i>=80) {    // Div by 20 without a real divide (Saves time)
-            i = 0;
-        } else if (i>=60) {
-            i = 8;
-        } else if (i>=40) {
-            i = 16;
-        } else if (i>=20) {
-            i = 24;
+        const uint32_t health = p.health;       // Get the health
+        if (health >= 80) {                     // Div by 20 without a real divide (Saves time)
+            faceImgNum = 0;
+        } else if (health >= 60) {
+            faceImgNum = 8;
+        } else if (health >= 40) {
+            faceImgNum = 16;
+        } else if (health >= 20) {
+            faceImgNum = 24;
         } else {
-            i = 32; // Bad shape...
+            faceImgNum = 32;                    // Bad shape...
         }
-        i = i + gNewFace;  // Get shape requested
+        faceImgNum = faceImgNum + gNewFace;     // Get shape requested
     }
 
-    UIUtils::drawUISprite(FACEX, FACEY, gpFaces->getImage(i));     // Dead man
+    UIUtils::drawUISprite(FACEX, FACEY, gpFaces->getImage(faceImgNum));     // Dead man
 }

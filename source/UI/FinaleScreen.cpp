@@ -9,7 +9,6 @@
 #include "GFX/Blit.h"
 #include "GFX/Sprites.h"
 #include "GFX/Video.h"
-#include "IntermissionScreen.h"
 #include "Things/Info.h"
 #include "UIUtils.h"
 
@@ -173,7 +172,7 @@ static void F_PrintString(
             ASSERT(numChars < C_ARRAY_SIZE(subStrChars));
             std::strncpy(subStrChars, beg, numChars);
             subStrChars[numChars] = 0;
-            PrintBigFont(x, y, subStrChars);
+            UIUtils::printBigFont(x, y, subStrChars);
         }
     };
 
@@ -362,8 +361,8 @@ void F_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
             }
         }
     } else {
-        DrawActorCentered(*gpCastState);                        // Draw the sprite
-        PrintBigFontCenter(160, 20, CAST_NAMES[gCastNum]);      // Print the name
+        DrawActorCentered(*gpCastState);                                // Draw the sprite
+        UIUtils::printBigFontCenter(160, 20, CAST_NAMES[gCastNum]);     // Print the name
     }
 
     Video::endFrame(bPresent, bSaveFrameBuffer);    // Show the frame

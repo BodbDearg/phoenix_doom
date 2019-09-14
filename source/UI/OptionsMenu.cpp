@@ -13,7 +13,6 @@
 #include "GFX/CelImages.h"
 #include "GFX/Renderer.h"
 #include "GFX/Video.h"
-#include "IntermissionScreen.h"
 #include "UIUtils.h"
 
 static constexpr uint32_t CURSORX       = 45;       // X coord for skulls
@@ -211,11 +210,11 @@ void O_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
 
     // Draw menu text
     const CelImageArray& sliderImgs = CelImages::loadImages(rSLIDER, CelLoadFlagBits::MASKED);
-    PrintBigFontCenter(160, 10, "Options");
+    UIUtils::printBigFontCenter(160, 10, "Options");
 
     if (gCursorPos < MENU_OPT_SCREEN_SIZE) {
-        PrintBigFontCenter(160, SFXVOLY, "Sound Volume");
-        PrintBigFontCenter(160, MUSICVOLY, "Music Volume");
+        UIUtils::printBigFontCenter(160, SFXVOLY, "Sound Volume");
+        UIUtils::printBigFontCenter(160, MUSICVOLY, "Music Volume");
 
         // Draw scroll bars
         UIUtils::drawUISprite(SLIDERX, SFXVOLY + 20, sliderImgs.getImage(BAR));
@@ -233,16 +232,16 @@ void O_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
 
     } else {
         // Draw screen size slider
-        PrintBigFontCenter(160, SIZEY, "Screen Size");
+        UIUtils::printBigFontCenter(160, SIZEY, "Screen Size");
         UIUtils::drawUISprite(SLIDERX, SIZEY + 20, sliderImgs.getImage(BAR));
 
         const uint32_t offset = (5 - gScreenSize) * 18;
         UIUtils::drawUISprite(SLIDERX + 5 + offset, SIZEY + 20, sliderImgs.getImage(HANDLE));
 
         if (gbIsPlayingMap) {
-            PrintBigFontCenter(160, QUITY, "Quit To Main");
+            UIUtils::printBigFontCenter(160, QUITY, "Quit To Main");
         } else {
-            PrintBigFontCenter(160, QUITY, "Exit Game");
+            UIUtils::printBigFontCenter(160, QUITY, "Exit Game");
         }
     }
 

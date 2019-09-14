@@ -1,15 +1,12 @@
 #include "MainMenu.h"
 
-#include "Base/Input.h"
 #include "Game/Config.h"
-#include "Game/Controls.h"
 #include "Game/Data.h"
 #include "Game/DoomDefines.h"
 #include "Game/DoomRez.h"
 #include "Game/Prefs.h"
 #include "GFX/CelImages.h"
 #include "GFX/Video.h"
-#include "IntermissionScreen.h"
 #include "OptionsMenu.h"
 #include "UIUtils.h"
 
@@ -206,15 +203,15 @@ void M_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
         CelImages::releaseImages(rSKULLS);
 
         // Draw start level information
-        PrintBigFont(CURSORX + 24, AREAY, "Level");
-        PrintNumber(CURSORX + 40, AREAY + 20, gPlayerMap, 0);
+        UIUtils::printBigFont(CURSORX + 24, AREAY, "Level");
+        UIUtils::printNumber(CURSORX + 40, AREAY + 20, gPlayerMap, 0);
 
         // Draw difficulty information
         UIUtils::drawUISprite(CURSORX + 24, DIFFICULTYY, shapes.getImage(DIFFSHAPE));
         UIUtils::drawUISprite(CURSORX + 40, DIFFICULTYY + 20, shapes.getImage(gPlayerSkill));
 
         // Draw the options screen
-        PrintBigFont(CURSORX + 24, OPTIONSY, "Options Menu");
+        UIUtils::printBigFont(CURSORX + 24, OPTIONSY, "Options Menu");
         CelImages::releaseImages(rMAINMENU);
         Video::endFrame(bPresent, bSaveFrameBuffer);
     }
