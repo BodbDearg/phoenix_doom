@@ -1,6 +1,7 @@
 #include "GameDataFS.h"
 
 #include "Base/FileUtils.h"
+#include "Base/FileInputStream.h"
 #include "Config.h"
 #include "ThreeDO/CDImageFileInputStream.h"
 #include "ThreeDO/OperaFS.h"
@@ -24,6 +25,109 @@ static constexpr char getPlatformPathSeparator() noexcept {
 }
 
 //----------------------------------------------------------------------------------------------------------------------
+// Real file input stream implementation.
+// This implementation reads from a real file on disk.
+//----------------------------------------------------------------------------------------------------------------------
+class GameFileInputStream_Real : public InputStream {
+public:
+    GameFileInputStream_Real() noexcept = default;
+
+    void open(const char* pFile) THROWS {
+        mInput.open(pFile);
+    }
+
+    virtual uint32_t size() const THROWS override {
+        return mInput.size();
+    }
+
+    virtual uint32_t tell() const THROWS override {
+        return mInput.tell();
+    }
+
+    virtual void seek(const uint32_t offset) THROWS override {
+        mInput.seek(offset);
+    }
+
+    virtual void skip(const uint32_t numBytes) THROWS override {
+        mInput.skip(numBytes);
+    }
+
+    virtual void readBytes(std::byte* const pBytes, const uint32_t numBytes) THROWS override {
+        mInput.readBytes(pBytes, numBytes);
+    }
+
+private:
+    FileInputStream mInput;
+};
+
+//----------------------------------------------------------------------------------------------------------------------
+// CD image file input stream implementation.
+// This implementation reads from a file stored in CD-ROM image on disk.
+//----------------------------------------------------------------------------------------------------------------------
+class GameFileInputStream_CDImage : public InputStream {
+public:
+    struct StreamException {};
+
+    GameFileInputStream_CDImage() noexcept
+        : mInput()
+        , mFileOffset(0)
+        , mFileSize(0)
+        , mCurOffsetWithinFile(0)
+    {
+    }
+
+    void open(const char* pCDImageFile, const uint32_t fileOffset, const uint32_t fileSize) THROWS {
+        mInput.open(pCDImageFile);
+        mInput.seek(fileOffset);
+
+        mFileOffset = fileOffset;
+        mFileSize = fileSize;
+        mCurOffsetWithinFile = 0;
+    }
+
+    virtual uint32_t size() const noexcept override {
+        return mFileSize;
+    }
+
+    virtual uint32_t tell() const noexcept override {
+        return mCurOffsetWithinFile;
+    }
+
+    virtual void seek(const uint32_t offset) THROWS {
+        if (offset > mFileSize)
+            throw StreamException();
+        
+        mInput.seek(mFileOffset + offset);
+        mCurOffsetWithinFile = offset;
+    }
+
+    virtual void skip(const uint32_t numBytes) THROWS {
+        const uint32_t maxBytesLeft = UINT32_MAX - mCurOffsetWithinFile;
+
+        if (numBytes > maxBytesLeft)
+            throw StreamException();
+        
+        seek(mCurOffsetWithinFile + numBytes);
+    }
+
+    virtual void readBytes(std::byte* const pBytes, const uint32_t numBytes) THROWS {
+        const uint32_t numFileBytesLeft = mFileSize - mCurOffsetWithinFile;
+
+        if (numBytes > numFileBytesLeft)
+            throw StreamException();
+        
+        mInput.readBytes(pBytes, numBytes);
+        mCurOffsetWithinFile += numBytes;
+    }
+
+private:
+    CDImageFileInputStream  mInput;
+    uint32_t                mFileOffset;
+    uint32_t                mFileSize;
+    uint32_t                mCurOffsetWithinFile;
+};
+
+//----------------------------------------------------------------------------------------------------------------------
 // Makeup a full path to the given file (prefixed by the game data dir) and store in the temporary file path global.
 // Used to get the actual path to files to open.
 //----------------------------------------------------------------------------------------------------------------------
@@ -42,8 +146,9 @@ static void makeupTempGameFilePath(const char* pRelativePath) noexcept {
 static void buildOperaFSEntriesList() noexcept {
     if (!OperaFS::getFSEntriesFromDiscImage(Config::gGameDataCDImagePath.c_str(), gOperaFSEntries)) {
         FATAL_ERROR_F(
-            "Failed to open, read or interpret the CD-ROM image for 3DO Doom at the specified path, '%s'! "
-            "Does the the file at this path exist? If so is it a valid CD-ROM image in Mode 1 / 2352 format?"
+            "Failed to open, read or interpret the CD-ROM image for 3DO Doom at the specified path '%s'!\n"
+            "Does the the file at this path exist? If so is it a valid Doom 3DO CD-ROM image in Mode 1 / 2352 format?",
+            Config::gGameDataCDImagePath.c_str()
         );
     }
 }
@@ -222,6 +327,38 @@ bool getContentsOfFile(
     }
 
     return true;
+}
+
+std::unique_ptr<InputStream> openFile(const char* const pFilePath) noexcept {
+    if (Config::gbUseGameDataDirectory) {
+        // Reading from a real file on the host machine
+        makeupTempGameFilePath(pFilePath);
+        std::unique_ptr<GameFileInputStream_Real> stream(new GameFileInputStream_Real());
+
+        try {
+            stream->open(gTempFilePath.c_str());
+        } catch (...) {
+            return {};
+        }
+
+        return stream;
+    } else {
+        // Reading from a file inside a CD-ROM image that is stored on disc
+        const OperaFS::FSEntry* const pFSEntry = findOperaFSEntry(pFilePath);
+
+        if (!pFSEntry)
+            return {};
+        
+        std::unique_ptr<GameFileInputStream_CDImage> stream(new GameFileInputStream_CDImage());
+
+        try {
+            stream->open(Config::gGameDataCDImagePath.c_str(), pFSEntry->file.offset, pFSEntry->file.size);
+        } catch (...) {
+            return {};
+        }
+
+        return stream;
+    }
 }
 
 END_NAMESPACE(GameDataFS)

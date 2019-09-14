@@ -59,7 +59,7 @@ void ResourceMgr::init(const char* const fileName) noexcept {
     ASSERT(mpResourceFile == nullptr);
 
     // Open the resource file
-    mpResourceFile = std::fopen(fileName, "rb");
+    mpResourceFile = GameDataFS::openFile(fileName);
 
     if (!mpResourceFile) {
         FATAL_ERROR_F("ERROR: Unable to open game resource file '%s'!", fileName);
@@ -68,7 +68,9 @@ void ResourceMgr::init(const char* const fileName) noexcept {
     // Read the file header and verify
     ResourceFileHeader fileHeader = {};
 
-    if (std::fread(&fileHeader, sizeof(ResourceFileHeader), 1, mpResourceFile) != 1) {
+    try {
+        mpResourceFile->read(fileHeader);
+    } catch (...) {
         FATAL_ERROR_F("ERROR: Failed to read game resource file '%s' header!", fileName);
     }
 
@@ -87,7 +89,9 @@ void ResourceMgr::init(const char* const fileName) noexcept {
     // Now read all of the resource group and individual resource headers
     std::unique_ptr<std::byte[]> pResourceHeadersData(new std::byte[fileHeader.resourceGroupHeadersSize]);
 
-    if (std::fread(pResourceHeadersData.get(), fileHeader.resourceGroupHeadersSize, 1, mpResourceFile) != 1) {
+    try {
+        mpResourceFile->readBytes(pResourceHeadersData.get(), fileHeader.resourceGroupHeadersSize);
+    } catch (...) {
         FATAL_ERROR_F("ERROR: Failed to read game resource file '%s' header!", fileName);
     }
 
@@ -138,14 +142,9 @@ void ResourceMgr::init(const char* const fileName) noexcept {
 
 void ResourceMgr::destroy() noexcept {
     mEndResourceNum = 0;
-
-    if (mpResourceFile) {
-        std::fclose(mpResourceFile);
-        mpResourceFile = nullptr;
-    }
-
     freeAllResources();
     mResources.clear();
+    mpResourceFile.reset();
 }
 
 const Resource* ResourceMgr::getResource(const uint32_t number) const noexcept {
@@ -172,11 +171,10 @@ const Resource* ResourceMgr::loadResource(const uint32_t number) noexcept {
     if (!pResource->pData) {
         pResource->pData = MemAlloc(pResource->size);
 
-        if (std::fseek(mpResourceFile, pResource->offset, SEEK_SET) != 0) {
-            FATAL_ERROR_F("Failed to read resource number %u!", unsigned(number));
-        }
-
-        if (std::fread(pResource->pData, pResource->size, 1, mpResourceFile) != 1) {
+        try {
+            mpResourceFile->seek(pResource->offset);
+            mpResourceFile->readBytes(pResource->pData, pResource->size);
+        } catch (...) {
             FATAL_ERROR_F("Failed to read resource number %u!", unsigned(number));
         }
     }

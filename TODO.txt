@@ -5,7 +5,6 @@ TODO
 - New sprite clipping method that takes into account side of seg sprite is on.
 - Fix BSP check BBOX for high res rendering
 - Cleanup and optimize render code
-- Reading the game files from an IMG (+ reading 3D0 Opera Filesystem)
 - FPS counter
 - Fix address sanitizer crash on angle LUT lookup (easy to reproduce on MacOS with Xcode) (might not be applicable anymore)
 - Optimize audio mixing for different channel counts and bit depths

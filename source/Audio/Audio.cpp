@@ -41,8 +41,9 @@ void loadAllSounds() noexcept {
     gSoundAudioDataHandles[0] = AudioDataMgr::INVALID_HANDLE;    // The 'none' sound
 
     for (uint32_t soundNum = 1; soundNum < NUMSFX; ++soundNum) {
-        char fileName[128];
-        std::snprintf(fileName, sizeof(fileName), "Sounds/Sound%02d.aiff", int(soundNum));
+        // N.B: File extension *must* be UPPERCASE - this is what is on the 3DO Disc!
+        char fileName[128];          
+        std::snprintf(fileName, sizeof(fileName), "Sounds/Sound%02d.AIFF", int(soundNum));
         gSoundAudioDataHandles[soundNum] = gAudioDataMgr.loadFile(fileName);
     }
 }

@@ -1,7 +1,7 @@
 #pragma once
 
+#include "Game/GameDataFS.h"
 #include <cstdint>
-#include <cstdio>
 #include <vector>
 
 struct Resource;
@@ -36,7 +36,7 @@ private:
         return const_cast<Resource*>(getResource(number));
     }
 
-    FILE*                   mpResourceFile;
-    std::vector<Resource>   mResources;
-    uint32_t                mEndResourceNum;    // 1 past the last valid resource number
+    std::unique_ptr<GameDataFS::InputStream>    mpResourceFile;
+    std::vector<Resource>                       mResources;
+    uint32_t                                    mEndResourceNum;    // 1 past the last valid resource number
 };
