@@ -3,6 +3,161 @@
 #include "AudioDataMgr.h"
 #include "AudioOutputDevice.h"
 
+//----------------------------------------------------------------------------------------------------------------------
+// Does the work of mixing an audio voice, specialized to a certain bit depth and channel count
+//----------------------------------------------------------------------------------------------------------------------
+template <uint16_t NumChannels, uint16_t BitDepth>
+static void mixVoiceAudioImpl(
+    AudioOutputDevice& audioOutputDevice,
+    const float masterVolume,
+    AudioVoice& voice,
+    const AudioData& audioData,
+    float* const pSamples,
+    const uint32_t numSamples
+) noexcept {
+    // Sanity check formats
+    static_assert(NumChannels == 1 || NumChannels == 2);
+    static_assert(BitDepth == 8 || BitDepth == 16);
+
+    // Gathering some useful info
+    const uint32_t inSampleRate = audioData.sampleRate;
+    const uint32_t outSampleRate = audioOutputDevice.getSampleRate();
+    const uint32_t totalInSamples = audioData.numSamples;
+
+    // Figure out how many input samples to step per output sample in 32.16 fixed point format
+    uint64_t sampleStepFrac;
+
+    {
+        uint64_t inSampleRate32_16 = uint64_t(inSampleRate) << 16;
+        uint64_t outSampleRate32_16 = uint64_t(outSampleRate) << 16;
+        sampleStepFrac = (inSampleRate32_16 << 16) / outSampleRate32_16;
+    }
+
+    // Figure out the current sample location in the audio in 32.16 format
+    uint64_t curSampleFrac = (uint64_t(voice.curSample) << 16) | uint64_t(voice.curSampleFrac);
+
+    // Now, continue to sample audio
+    float* pCurOutSample = pSamples;
+    float* const pEndOutSample = pSamples + (uintptr_t) numSamples * 2;
+
+    while (pCurOutSample < pEndOutSample) {
+        // See if we are over the end of the input.
+        // If the sound is not looped then we are done playback, otherwise we wraparound.
+        uint32_t curSample = uint32_t(curSampleFrac >> 16);
+
+        if (curSample >= totalInSamples) {
+            if (!voice.bIsLooped) {
+                voice.state = AudioVoice::State::STOPPED;
+                voice.curSample = audioData.numSamples;
+                voice.curSampleFrac = 0;
+                break;
+            }
+
+            curSample = curSample % totalInSamples;
+        }
+
+        // Get the next sample to interpolate with.
+        // Will interpolate between the two sample values depending on fraction between samples.
+        uint32_t nextSample = (uint16_t(curSampleFrac) != 0) ? curSample + 1 : curSample;
+
+        if (nextSample >= totalInSamples) {
+            nextSample = (voice.bIsLooped) ? 0 : totalInSamples - 1;
+        }
+
+        // Figure out interpolation value between samples
+        const float sampleLerp = float(uint16_t(curSampleFrac)) / 65536.0f;
+
+        // Read the actual samples
+        float sample1L;
+        float sample1R;
+        float sample2L;
+        float sample2R;
+
+        if constexpr (NumChannels == 1) {
+            // 1 Channel
+            if constexpr (BitDepth == 8) {
+                // 8 bit audio
+                const int8_t rawSample1 = ((const int8_t*) audioData.pBuffer)[curSample];
+                const int8_t rawSample2 = ((const int8_t*) audioData.pBuffer)[nextSample];
+                sample1L = float(rawSample1) / float(INT8_MAX);
+                sample2L = float(rawSample2) / float(INT8_MAX);
+                sample1R = sample1L;
+                sample2R = sample2L;
+            }
+            else {
+                // 16 bit audio
+                const int16_t rawSample1 = ((const int16_t*) audioData.pBuffer)[curSample];
+                const int16_t rawSample2 = ((const int16_t*) audioData.pBuffer)[nextSample];
+                sample1L = float(rawSample1) / float(INT16_MAX);
+                sample2L = float(rawSample2) / float(INT16_MAX);
+                sample1R = sample1L;
+                sample2R = sample2L;
+            }
+        }
+        else {
+            // 2 Channels
+            if (audioData.bitDepth == 8) {
+                // 8 bit audio
+                const int8_t rawSample1L = ((const int8_t*) audioData.pBuffer)[curSample * 2 + 0];
+                const int8_t rawSample1R = ((const int8_t*) audioData.pBuffer)[curSample * 2 + 1];
+                const int8_t rawSample2L = ((const int8_t*) audioData.pBuffer)[nextSample * 2 + 0];
+                const int8_t rawSample2R = ((const int8_t*) audioData.pBuffer)[nextSample * 2 + 1];
+                sample1L = float(rawSample1L) / float(INT8_MAX);
+                sample1R = float(rawSample1R) / float(INT8_MAX);
+                sample2L = float(rawSample2L) / float(INT8_MAX);
+                sample2R = float(rawSample2R) / float(INT8_MAX);
+            }
+            else {
+                // 16 bit audio
+                const int16_t rawSample1L = ((const int16_t*) audioData.pBuffer)[curSample * 2 + 0];
+                const int16_t rawSample1R = ((const int16_t*) audioData.pBuffer)[curSample * 2 + 1];
+                const int16_t rawSample2L = ((const int16_t*) audioData.pBuffer)[nextSample * 2 + 0];
+                const int16_t rawSample2R = ((const int16_t*) audioData.pBuffer)[nextSample * 2 + 1];
+                sample1L = float(rawSample1L) / float(INT16_MAX);
+                sample1R = float(rawSample1R) / float(INT16_MAX);
+                sample2L = float(rawSample2L) / float(INT16_MAX);
+                sample2R = float(rawSample2R) / float(INT16_MAX);
+            }
+        }
+
+        // Interpolate and save the samples, modulating by volume and panning
+        const float sampleL = (1.0f - sampleLerp) * sample1L + sampleLerp * sample2L;
+        const float sampleR = (1.0f - sampleLerp) * sample1R + sampleLerp * sample2R;
+        const float finalSampleL = sampleL * voice.lVolume;
+        const float finalSampleR = sampleR * voice.rVolume;
+
+        pCurOutSample[0] += finalSampleL * masterVolume;
+        pCurOutSample[1] += finalSampleR * masterVolume;
+
+        // Move along in the input and output sound
+        curSampleFrac += sampleStepFrac;
+        pCurOutSample += 2;
+    }
+
+    // At the end of this bout of playback check if we are stopped.
+    // If not stopped then we can save the current position
+    {
+        uint32_t curSample = (uint32_t)(curSampleFrac >> 16);
+
+        if (curSample >= totalInSamples) {
+            if (!voice.bIsLooped) {
+                voice.state = AudioVoice::State::STOPPED;
+                voice.curSample = audioData.numSamples;
+                voice.curSampleFrac = 0;
+            }
+            else {
+                curSample = curSample % totalInSamples;
+                voice.curSample = curSample;
+                voice.curSampleFrac = (uint16_t) curSampleFrac;
+            }
+        }
+        else {
+            voice.curSample = curSample;
+            voice.curSampleFrac = (uint16_t) curSampleFrac;
+        }
+    }
+}
+
 AudioSystem::AudioSystem() noexcept
     : mbIsInitialized(false)
     , mbIsPaused(false)
@@ -292,141 +447,25 @@ void AudioSystem::mixVoiceAudio(
     float* const pSamples,
     const uint32_t numSamples
 ) noexcept {
-    // Gathering some useful info
-    const uint32_t inSampleRate = audioData.sampleRate;
-    const uint32_t outSampleRate = mpAudioOutputDevice->getSampleRate();
-    const uint32_t totalInSamples = audioData.numSamples;
+    AudioOutputDevice& audioOutputDevice = *mpAudioOutputDevice;
 
-    // Figure out how many input samples to step per output sample in 32.16 fixed point format
-    uint64_t sampleStepFrac;
-
-    {
-        uint64_t inSampleRate32_16 = uint64_t(inSampleRate) << 16;
-        uint64_t outSampleRate32_16 = uint64_t(outSampleRate) << 16;
-        sampleStepFrac = (inSampleRate32_16 << 16) / outSampleRate32_16;
-    }
-
-    // Figure out the current sample location in the audio in 32.16 format
-    uint64_t curSampleFrac = (uint64_t(voice.curSample) << 16) | uint64_t(voice.curSampleFrac);
-
-    // Now, continue to sample audio
-    float* pCurOutSample = pSamples;
-    float* const pEndOutSample = pSamples + (numSamples * 2);
-
-    while (pCurOutSample < pEndOutSample) {
-        // See if we are over the end of the input.
-        // If the sound is not looped then we are done playback, otherwise we wraparound.
-        uint32_t curSample = uint32_t(curSampleFrac >> 16);
-
-        if (curSample >= totalInSamples) {
-            if (!voice.bIsLooped) {
-                voice.state = AudioVoice::State::STOPPED;
-                voice.curSample = audioData.numSamples;
-                voice.curSampleFrac = 0;
-                break;
-            }
-
-            curSample = curSample % totalInSamples;
-        }
-
-        // Get the next sample to interpolate with.
-        // Will interpolate between the two sample values depending on fraction between samples.
-        uint32_t nextSample = (uint16_t(curSampleFrac) != 0) ? curSample + 1 : curSample;
-
-        if (nextSample >= totalInSamples) {
-            nextSample = (voice.bIsLooped) ? 0 : totalInSamples - 1;
-        }
-
-        // Figure out interpolation value between samples
-        const float sampleLerp = float(uint16_t(curSampleFrac)) / 65536.0f;
-
-        // Read the actual samples
-        float sample1L;
-        float sample1R;
-        float sample2L;
-        float sample2R;
-
-        if (audioData.numChannels == 1) {
-            if (audioData.bitDepth == 8) {
-                const int8_t rawSample1 = ((const int8_t*) audioData.pBuffer)[curSample];
-                const int8_t rawSample2 = ((const int8_t*) audioData.pBuffer)[nextSample];
-                sample1L = float(rawSample1) / float(INT8_MAX);
-                sample2L = float(rawSample2) / float(INT8_MAX);
-                sample1R = sample1L;
-                sample2R = sample2L;
-            }
-            else {
-                ASSERT(audioData.bitDepth == 16);
-
-                const int16_t rawSample1 = ((const int16_t*) audioData.pBuffer)[curSample];
-                const int16_t rawSample2 = ((const int16_t*) audioData.pBuffer)[nextSample];
-                sample1L = float(rawSample1) / float(INT16_MAX);
-                sample2L = float(rawSample2) / float(INT16_MAX);
-                sample1R = sample1L;
-                sample2R = sample2L;
-            }
+    if (audioData.numChannels == 1) {
+        if (audioData.bitDepth == 8) {
+            mixVoiceAudioImpl<1, 8>(audioOutputDevice, mMasterVolume, voice, audioData, pSamples, numSamples);
         }
         else {
-            ASSERT(audioData.numChannels == 2);
-
-            if (audioData.bitDepth == 8) {
-                const int8_t rawSample1L = ((const int8_t*) audioData.pBuffer)[curSample * 2 + 0];
-                const int8_t rawSample1R = ((const int8_t*) audioData.pBuffer)[curSample * 2 + 1];
-                const int8_t rawSample2L = ((const int8_t*) audioData.pBuffer)[nextSample * 2 + 0];
-                const int8_t rawSample2R = ((const int8_t*) audioData.pBuffer)[nextSample * 2 + 1];
-                sample1L = float(rawSample1L) / float(INT8_MAX);
-                sample1R = float(rawSample1R) / float(INT8_MAX);
-                sample2L = float(rawSample2L) / float(INT8_MAX);
-                sample2R = float(rawSample2R) / float(INT8_MAX);
-            }
-            else {
-                ASSERT(audioData.bitDepth == 16);
-
-                const int16_t rawSample1L = ((const int16_t*) audioData.pBuffer)[curSample * 2 + 0];
-                const int16_t rawSample1R = ((const int16_t*) audioData.pBuffer)[curSample * 2 + 1];
-                const int16_t rawSample2L = ((const int16_t*) audioData.pBuffer)[nextSample * 2 + 0];
-                const int16_t rawSample2R = ((const int16_t*) audioData.pBuffer)[nextSample * 2 + 1];
-                sample1L = float(rawSample1L) / float(INT16_MAX);
-                sample1R = float(rawSample1R) / float(INT16_MAX);
-                sample2L = float(rawSample2L) / float(INT16_MAX);
-                sample2R = float(rawSample2R) / float(INT16_MAX);
-            }
+            ASSERT(audioData.bitDepth == 16);
+            mixVoiceAudioImpl<1, 16>(audioOutputDevice, mMasterVolume, voice, audioData, pSamples, numSamples);
         }
-
-        // Interpolate and save the samples, modulating by volume and panning
-        const float sampleL = (1.0f - sampleLerp) * sample1L + sampleLerp * sample2L;
-        const float sampleR = (1.0f - sampleLerp) * sample1R + sampleLerp * sample2R;
-        const float finalSampleL = sampleL * voice.lVolume;
-        const float finalSampleR = sampleR * voice.rVolume;
-
-        pCurOutSample[0] += finalSampleL * mMasterVolume;
-        pCurOutSample[1] += finalSampleR * mMasterVolume;
-
-        // Move along in the input and output sound
-        curSampleFrac += sampleStepFrac;
-        pCurOutSample += 2;
     }
+    else {
+        ASSERT(audioData.numChannels == 2);
 
-    // At the end of this bout of playback check if we are stopped.
-    // If not stopped then we can save the current position
-    {
-        uint32_t curSample = (uint32_t)(curSampleFrac >> 16);
-
-        if (curSample >= totalInSamples) {
-            if (!voice.bIsLooped) {
-                voice.state = AudioVoice::State::STOPPED;
-                voice.curSample = audioData.numSamples;
-                voice.curSampleFrac = 0;
-            }
-            else {
-                curSample = curSample % totalInSamples;
-                voice.curSample = curSample;
-                voice.curSampleFrac = (uint16_t) curSampleFrac;
-            }
-        }
-        else {
-            voice.curSample = curSample;
-            voice.curSampleFrac = (uint16_t) curSampleFrac;
+        if (audioData.bitDepth == 8) {
+            mixVoiceAudioImpl<2, 8>(audioOutputDevice, mMasterVolume, voice, audioData, pSamples, numSamples);
+        } else {
+            ASSERT(audioData.bitDepth == 16);
+            mixVoiceAudioImpl<2, 16>(audioOutputDevice, mMasterVolume, voice, audioData, pSamples, numSamples);
         }
     }
 }

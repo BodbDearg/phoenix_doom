@@ -7,7 +7,6 @@ TODO
 - Cleanup and optimize render code
 - FPS counter
 - Fix address sanitizer crash on angle LUT lookup (easy to reproduce on MacOS with Xcode) (might not be applicable anymore)
-- Optimize audio mixing for different channel counts and bit depths
 
 ------------------------------------------------------------------------------------------------------------------------
 Known issues: document
