@@ -702,20 +702,6 @@ static void regenerateDefaultConfigFileIfNotPresent(const std::string& iniFilePa
 
     if (cfgFileExists)
         return;
-    
-    std::string cfgFileMessage = 
-        "No config.ini file found on disk! (probably because this is your first time launching)\n"
-        "The game will generate a new one at the following location:\n\n";
-    
-    cfgFileMessage += iniFilePath;
-    cfgFileMessage += "\n\nEdit this file to change controls, screen resolution etc.";
-
-    SDL_ShowSimpleMessageBox(
-        SDL_MESSAGEBOX_INFORMATION,
-        "How to configure Phoenix Doom",
-        cfgFileMessage.c_str(),
-        nullptr
-    );
 
     std::string configFile;
     configFile.reserve(1024 * 64);
@@ -737,6 +723,20 @@ static void regenerateDefaultConfigFileIfNotPresent(const std::string& iniFilePa
             iniFilePath.c_str()
         );
     }
+
+    std::string cfgFileMessage = 
+        "No config.ini file found on disk! (probably because this is your first time launching)\n"
+        "The game has generated a new one at the following location:\n\n";
+    
+    cfgFileMessage += iniFilePath;
+    cfgFileMessage += "\n\nEdit this file before proceeding to change controls, screen resolution etc.";
+
+    SDL_ShowSimpleMessageBox(
+        SDL_MESSAGEBOX_INFORMATION,
+        "How to configure Phoenix Doom",
+        cfgFileMessage.c_str(),
+        nullptr
+    );
 }
 
 //----------------------------------------------------------------------------------------------------------------------
