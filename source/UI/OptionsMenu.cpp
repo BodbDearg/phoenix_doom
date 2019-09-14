@@ -21,8 +21,8 @@ static constexpr uint32_t SLIDERX       = 106;      // X coord for slider bars
 static constexpr uint32_t SLIDESTEP     = 6;        // Adjustment for volume to screen coord
 static constexpr uint32_t SFXVOLY       = 60;       // Y coord for SFX volume control
 static constexpr uint32_t MUSICVOLY     = 120;      // Y coord for Music volume control
-static constexpr uint32_t SIZEY         = 40;       // Y coord for screen size control
-static constexpr uint32_t QUITY         = 100;      // Y coord for quit menu control
+static constexpr uint32_t SIZEY         = 60;       // Y coord for screen size control
+static constexpr uint32_t QUITY         = 120;      // Y coord for quit menu control
 
 // Menu items to select from
 enum {
