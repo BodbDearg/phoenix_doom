@@ -8,20 +8,20 @@
 BEGIN_NAMESPACE(FileUtils)
 
 bool getContentsOfFile(
-    const char* const filePath,
+    const char* const pFilePath,
     std::byte*& pOutputMem,
     size_t& outputSize,
     const size_t numExtraBytes,
     const std::byte extraBytesValue
 ) noexcept {
-    ASSERT(filePath);
+    ASSERT(pFilePath);
 
     // Clear output firstly
     pOutputMem = nullptr;
     outputSize = 0;
 
     // Open the file firstly and ensure it will be closed on exit    
-    FILE* pFile = std::fopen(filePath, "rb");
+    FILE* pFile = std::fopen(pFilePath, "rb");
 
     if (!pFile) {
         return false;
@@ -63,15 +63,15 @@ bool getContentsOfFile(
 }
 
 bool writeDataToFile(
-    const char* const filePath,
+    const char* const pFilePath,
     const std::byte* const pData,
     const size_t dataSize,
     const bool bAppend
 ) noexcept {
-    ASSERT(filePath);
+    ASSERT(pFilePath);
 
     // Open the file firstly and ensure it will be closed on exit    
-    FILE* pFile = std::fopen(filePath, bAppend ? "ab" : "wb");
+    FILE* pFile = std::fopen(pFilePath, bAppend ? "ab" : "wb");
 
     if (!pFile) {
         return false;

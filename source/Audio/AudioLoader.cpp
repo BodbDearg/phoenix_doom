@@ -3,8 +3,8 @@
 #include "AudioData.h"
 #include "Base/ByteInputStream.h"
 #include "Base/Endian.h"
-#include "Base/FileUtils.h"
 #include "Base/Finally.h"
+#include "Game/GameDataFS.h"
 #include <memory>
 #include <vector>
 
@@ -350,7 +350,7 @@ bool AudioLoader::loadFromFile(const char* const filePath, AudioData& audioData)
         delete[] pAudioFileData;
     });
 
-    if (!FileUtils::getContentsOfFile(filePath, pAudioFileData, audioFileSize))
+    if (!GameDataFS::getContentsOfFile(filePath, pAudioFileData, audioFileSize))
         return false;
     
     // Now load the audio from the file's buffer

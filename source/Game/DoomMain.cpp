@@ -4,6 +4,7 @@
 #include "Config.h"
 #include "Data.h"
 #include "DoomRez.h"
+#include "GameDataFS.h"
 #include "GFX/CelImages.h"
 #include "GFX/Renderer.h"
 #include "GFX/Video.h"
@@ -112,6 +113,7 @@ gameaction_e RunGameLoop(
 static void D_DoomInit() noexcept {
     // Init main subsystems
     Config::init();
+    GameDataFS::init();
     Resources::init();
     CelImages::init();
     Video::init();
@@ -139,6 +141,7 @@ static void D_DoomShutdown() noexcept {
     Video::shutdown();
     CelImages::shutdown();
     Resources::shutdown();
+    GameDataFS::shutdown();
     Config::shutdown();
 }
 

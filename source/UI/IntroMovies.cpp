@@ -3,13 +3,13 @@
 #include "Audio/Audio.h"
 #include "Audio/AudioDataMgr.h"
 #include "Audio/AudioSystem.h"
-#include "Base/FileUtils.h"
 #include "Base/Finally.h"
 #include "Base/Input.h"
 #include "Base/Tables.h"
 #include "Game/Controls.h"
 #include "Game/Data.h"
 #include "Game/DoomMain.h"
+#include "Game/GameDataFS.h"
 #include "GFX/Blit.h"
 #include "GFX/Video.h"
 #include "ThreeDO/MovieDecoder.h"
@@ -56,7 +56,7 @@ static void startupMovie(const char* path) noexcept {
         delete[] pMovieFileData;
     });
 
-    if (!FileUtils::getContentsOfFile(path, pMovieFileData, movieFileSize))
+    if (!GameDataFS::getContentsOfFile(path, pMovieFileData, movieFileSize))
         return;
 
     // Initialize the decoder: destroy if failed

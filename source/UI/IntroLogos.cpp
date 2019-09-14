@@ -1,12 +1,12 @@
 #include "IntroMovies.h"
 
-#include "Base/FileUtils.h"
 #include "Base/Finally.h"
 #include "Base/Input.h"
 #include "Base/Tables.h"
 #include "Game/Controls.h"
 #include "Game/Data.h"
 #include "Game/DoomMain.h"
+#include "Game/GameDataFS.h"
 #include "GFX/Blit.h"
 #include "GFX/Video.h"
 #include "ThreeDO/CelUtils.h"
@@ -38,7 +38,7 @@ static void loadLogo(const char* path) noexcept {
         delete[] pLogoFileData;
     });
 
-    if (!FileUtils::getContentsOfFile(path, pLogoFileData, logoFileSize))
+    if (!GameDataFS::getContentsOfFile(path, pLogoFileData, logoFileSize))
         return;
     
     // Load the logo CEL from that

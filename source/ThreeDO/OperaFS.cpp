@@ -209,6 +209,9 @@ static uint32_t readDirEntriesBlock(
 
     if (blockDataSize <= 0)
         return dirBlockHeader.nextBlock;
+
+    if (blockDataSize > OPERA_BLOCK_SIZE - (uint32_t) sizeof(DirBlockHeader))
+        throw BadDataException();
     
     ASSERT(dirBlockHeader.firstByte >= sizeof(DirBlockHeader));
     cd.skip(dirBlockHeader.firstByte - sizeof(DirBlockHeader));

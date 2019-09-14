@@ -154,14 +154,15 @@ void CDImageFileInputStream::readBytes(std::byte* const pBytes, const uint32_t n
         // See if there are enough bytes left in the sector to fulfill the remaining bytes to be read.
         // If not then we will have to split the read across multiple sectors:
         if (numBytesLeft > sectorBytesLeft) {
-            mFileStream.readBytes(pBytes, sectorBytesLeft);
+            mFileStream.readBytes(pCurBytes, sectorBytesLeft);
             mCurDataOffset += sectorBytesLeft;
+            pCurBytes += sectorBytesLeft;
             numBytesLeft -= sectorBytesLeft;
             
             // Skip any control bytes at the end of the sector and the header at the beginning of the next sector
             mFileStream.skip(mSectorEndSkipBytes + CD_SECTOR_HEADER_SIZE);
         } else {
-            mFileStream.readBytes(pBytes, numBytesLeft);
+            mFileStream.readBytes(pCurBytes, numBytesLeft);
             mCurDataOffset += numBytesLeft;
             numBytesLeft = 0;
         }
