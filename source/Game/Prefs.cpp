@@ -128,7 +128,7 @@ void load() noexcept {
     IniUtils::parseIniFromString((const char*) pIniFileData, iniFileDataSize, handlePrefsFileEntry);
 
     // Make sure this does not conflict:
-    gStartMap = std::max(gStartMap, gMaxLevel);
+    gStartMap = std::min(gStartMap, gMaxLevel);
 }
 
 void save() noexcept {
