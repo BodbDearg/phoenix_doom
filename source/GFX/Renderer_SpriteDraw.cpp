@@ -195,9 +195,9 @@ void addSpriteToFrame(const mobj_t& thing) noexcept {
         return;
 
     // Get the world position of the thing firstly
-    const float worldX = FMath::doomFixed16ToFloat(thing.x);
-    const float worldY = FMath::doomFixed16ToFloat(thing.y);
-    const float worldZ = FMath::doomFixed16ToFloat(thing.z);
+    const float worldX = fixed16ToFloat(thing.x);
+    const float worldY = fixed16ToFloat(thing.y);
+    const float worldZ = fixed16ToFloat(thing.z);
 
     // Convert to viewspace and cull if that transform determined the sprite is behind the camera
     float viewX;

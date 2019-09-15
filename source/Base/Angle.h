@@ -1,5 +1,6 @@
 #pragma once
 
+#include "FMath.h"
 #include <cstdint>
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -16,4 +17,21 @@ static constexpr angle_t ANG270 = 0xC0000000u;      // 270 degrees in angle_t
 
 static inline constexpr angle_t negateAngle(const angle_t a) noexcept {
     return (angle_t) -(int32_t) a;
+}
+
+
+//----------------------------------------------------------------------------------------------------------------------
+// Convert a Doom binary angle to a float angle (in radians) and back again
+//----------------------------------------------------------------------------------------------------------------------
+inline constexpr float bamAngleToRadians(const angle_t angle) noexcept {
+    const double normalized = (double) angle / (double(UINT32_MAX) + 1.0);
+    const double twoPiRange = normalized * FMath::ANGLE_360<double>;
+    return float(twoPiRange);
+}
+
+inline angle_t radiansToBamAngle(const float angle) noexcept {
+    const double twoPiRange = std::fmod(double(angle), FMath::ANGLE_360<double>);
+    const double normalized = twoPiRange / FMath::ANGLE_360<double>;
+    const double intRange = normalized * (double(UINT32_MAX) + 1.0);
+    return angle_t(intRange);
 }

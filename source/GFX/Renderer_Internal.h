@@ -4,7 +4,7 @@
 // Data structures and globals internal to the renderer.
 // Nothing here is used by outside code.
 //----------------------------------------------------------------------------------------------------------------------
-#include "Base/FMath.h"
+#include "Base/Angle.h"
 #include "Game/DoomDefines.h"
 #include "Renderer.h"
 #include <cstddef>

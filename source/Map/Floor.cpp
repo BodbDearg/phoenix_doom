@@ -401,7 +401,7 @@ bool EV_DoDonut(line_t& line) noexcept {
 
             // Spawn lowering donut-hole
             floormove_t& floor2 = AddThinker(T_MoveFloor);
-            s1.specialdata = floor;
+            s1.specialdata = &floor2;
             floor2.type = lowerFloor;
             floor2.crush = false;
             floor2.direction = -1;  // Going down

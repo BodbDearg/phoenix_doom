@@ -2,11 +2,8 @@
 
 #include "Audio/Sound.h"
 #include "Audio/Sounds.h"
-#include "Base/FMath.h"
-#include "Base/Input.h"
 #include "Base/Tables.h"
 #include "Game/Config.h"
-#include "Game/Controls.h"
 #include "Game/Data.h"
 #include "GFX/Renderer.h"
 #include "Info.h"
@@ -139,8 +136,8 @@ static void P_PlayerXYMovement(mobj_t& mo) noexcept {
             mo.momx = 0;    // Kill momentum
             mo.momy = 0;
         } else {
-            mo.momx = fixedMul(mo.momx, FRICTION);   // Slow down
-            mo.momy = fixedMul(mo.momy, FRICTION);
+            mo.momx = fixed16Mul(mo.momx, FRICTION);    // Slow down
+            mo.momy = fixed16Mul(mo.momy, FRICTION);
         }
     }
 }
@@ -261,8 +258,8 @@ static void P_BuildMove(player_t& player) noexcept {
         sideMoveFracF = std::max(sideMoveFracF, -1.0f);
         sideMoveFracF = std::min(sideMoveFracF, 1.0f);
 
-        const Fixed sideMoveFrac = floatToFixed(sideMoveFracF);
-        player.sidemove = fixedMul(sideMoveFrac, SIDE_MOVE[speedIndex]);
+        const Fixed sideMoveFrac = floatToFixed16(sideMoveFracF);
+        player.sidemove = fixed16Mul(sideMoveFrac, SIDE_MOVE[speedIndex]);
 
         // Do turning
         float angleTurnFracF = -INPUT_AXIS(TURN_LEFT_RIGHT);
@@ -276,7 +273,7 @@ static void P_BuildMove(player_t& player) noexcept {
             angleTurnFracF -= 1.0f;
         }
 
-        const Fixed angleTurnFrac = floatToFixed(angleTurnFracF);
+        const Fixed angleTurnFrac = floatToFixed16(angleTurnFracF);
 
         if ((speedIndex != 0) && 
             (!GAME_ACTION(MOVE_FORWARD)) &&
@@ -284,9 +281,9 @@ static void P_BuildMove(player_t& player) noexcept {
             (INPUT_AXIS(MOVE_FORWARD_BACK) == 0.0f) &&
             (INPUT_AXIS(STRAFE_LEFT_RIGHT) == 0.0f)
         ) {
-            player.angleturn = fixedMul(angleTurnFrac, FAST_ANGLE_TURN[turnIndex]);
+            player.angleturn = fixed16Mul(angleTurnFrac, FAST_ANGLE_TURN[turnIndex]);
         } else {
-            player.angleturn = fixedMul(angleTurnFrac, ANGLE_TURN[turnIndex]);
+            player.angleturn = fixed16Mul(angleTurnFrac, ANGLE_TURN[turnIndex]);
         }
 
         // Do move forward and backward
@@ -303,8 +300,8 @@ static void P_BuildMove(player_t& player) noexcept {
         forwardMoveFracF = std::max(forwardMoveFracF, -1.0f);
         forwardMoveFracF = std::min(forwardMoveFracF, 1.0f);
 
-        const Fixed forwardMoveFrac = floatToFixed(forwardMoveFracF);
-        player.forwardmove = fixedMul(forwardMoveFrac, FORWARD_MOVE[speedIndex]);
+        const Fixed forwardMoveFrac = floatToFixed16(forwardMoveFracF);
+        player.forwardmove = fixed16Mul(forwardMoveFrac, FORWARD_MOVE[speedIndex]);
 
         // Debug camera movement
         if (Config::gbAllowDebugCameraUpDownMovement) {
@@ -364,9 +361,9 @@ void PlayerCalcHeight(player_t& player) noexcept {
     const Fixed momX = player.mo->momx;
     const Fixed momY = player.mo->momy;
 
-    constexpr Fixed BOB_SCALE = FMath::floatToDoomFixed16(0.25f * (60.0f / 35.0f));     // Note: 60/35 adjustment to account for different frame rate from PC
-    Fixed bob = fixedMul(momX, momX) + fixedMul(momY, momY);
-    bob = fixedMul(bob, BOB_SCALE);
+    constexpr Fixed BOB_SCALE = floatToFixed16(0.25f * (60.0f / 35.0f));    // Note: 60/35 adjustment to account for different frame rate from PC
+    Fixed bob = fixed16Mul(momX, momX) + fixed16Mul(momY, momY);
+    bob = fixed16Mul(bob, BOB_SCALE);
 
     if (bob > MAXBOB) {
         bob = MAXBOB;
@@ -383,7 +380,7 @@ void PlayerCalcHeight(player_t& player) noexcept {
         // This is translated to 8192/40 or 204.8 angles per tick. Neat eh?
         constexpr uint32_t TICK_FREQ = (2 * TICKSPERSEC) / 3;
         const uint32_t angle = ((FINEANGLES / TICK_FREQ) * gTotalGameTicks) & FINEMASK;
-        bob = fixedMul(bob / 2, gFineSine[angle]);
+        bob = fixed16Mul(bob / 2, gFineSine[angle]);
 
         if (player.playerstate == PST_LIVE) {                   // If the player is alive...
             Fixed deltaViewHeight = player.deltaviewheight;     // Get gravity

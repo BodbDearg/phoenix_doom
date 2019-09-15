@@ -1,6 +1,5 @@
 #include "Base.h"
 
-#include "Base/Macros.h"
 #include "Enemy.h"
 #include "Game/Data.h"
 #include "Game/Tick.h"
@@ -52,7 +51,7 @@ static bool P_ZMovement(mobj_t& mo) noexcept {
     // This fixes issues in the 3DO version with certain projectiles like imps fireballs moving too quickly.
     //
     // Apply basic z motion:
-    mo.z += fixedDiv(mo.momz, 2 * FRACUNIT);    
+    mo.z += fixed16Div(mo.momz, 2 * FRACUNIT);    
 
     if (((mo.flags & MF_FLOAT) != 0) && mo.target) {    // float down towards target if too close
         FloatChange(mo);
@@ -377,8 +376,8 @@ static bool P_XYMovement(mobj_t& mo) noexcept {
     // This fixes issues in the 3DO version with certain projectiles like imps fireballs moving too quickly.
     Fixed xleft = mo.momx & ~7;
     Fixed yleft = mo.momy & ~7;
-    xleft = fixedDiv(mo.momx, 2 * FRACUNIT);
-    yleft = fixedDiv(mo.momy, 2 * FRACUNIT);
+    xleft = fixed16Div(mo.momx, 2 * FRACUNIT);
+    yleft = fixed16Div(mo.momy, 2 * FRACUNIT);
 
     while ((xleft != 0) || (yleft != 0)) {
         // Cut the move into chunks if too large

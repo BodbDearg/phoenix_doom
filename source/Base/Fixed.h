@@ -19,44 +19,53 @@ static constexpr Fixed      FRACMIN     = INT32_MIN;            // Min and max v
 static constexpr Fixed      FRACMAX     = INT32_MAX;
 
 //----------------------------------------------------------------------------------------------------------------------
-// Multiply and divide 16.16 fixed point numbers.
+// Multiply and divide Doom format fixed point numbers (in 16.16 format).
 // On a 32-bit CPU this would have been much trickier (due to overflow) but on a modern 64-bit system we can simply
 // use native 64-bit types to do this very quickly.
 //----------------------------------------------------------------------------------------------------------------------
-static inline constexpr Fixed fixedMul(const Fixed num1, const Fixed num2) noexcept {
+static inline constexpr Fixed fixed16Mul(const Fixed num1, const Fixed num2) noexcept {
     const int64_t result64 = (int64_t) num1 * (int64_t) num2;
     return (Fixed) (result64 >> 16);
 }
 
-static inline constexpr Fixed fixedDiv(const Fixed num1, const Fixed num2) noexcept {
+static inline constexpr Fixed fixed16Div(const Fixed num1, const Fixed num2) noexcept {
     const int64_t result64 = (((int64_t) num1) << 16) / (int64_t) num2;
     return (Fixed) result64;
 }
 
 //----------------------------------------------------------------------------------------------------------------------
-// Converstions from 'float' and 'int32_t' to 16.16 fixed point
+// Conversions to and from Doom format fixed point numbers (in 16.16 format) to 32-bit integers
 //----------------------------------------------------------------------------------------------------------------------
-static inline constexpr Fixed intToFixed(const int32_t num) noexcept {
+static inline constexpr Fixed intToFixed16(const int32_t num) noexcept {
     return num << 16;
 }
 
-static inline constexpr int32_t fixedToInt(const Fixed num) noexcept {
+static inline constexpr int32_t fixed16ToInt(const Fixed num) noexcept {
     return num >> 16;
 }
 
-static inline constexpr Fixed floatToFixed(const float num) noexcept {
-    const double doubleVal = (double) num * 65536.0;
-    return (Fixed) doubleVal;
+//------------------------------------------------------------------------------------------------------------------
+// Conversions to and from Doom format fixed point numbers (16.16 and 26.6) to floats
+//------------------------------------------------------------------------------------------------------------------
+inline constexpr float fixed16ToFloat(const Fixed fixed) noexcept {
+    return float((double) fixed * (1.0 / 65536.0));
 }
 
-static inline constexpr float fixedToFloat(const Fixed num) noexcept {
-    const double doubleVal = (double) num;
-    return (float) (doubleVal / 65536.0);
+inline constexpr float fixed6ToFloat(const Fixed fixed) noexcept {
+    return float((double) fixed * (1.0 / 64.0));
+}
+
+inline constexpr Fixed floatToFixed16(const float value) noexcept {
+    return Fixed((double) value * 65536.0);
+}
+
+inline constexpr Fixed floatToFixed6(const float value) noexcept {
+    return Fixed((double) value * 64.0);
 }
 
 //----------------------------------------------------------------------------------------------------------------------
-// Yields a reciprocal of the given 16.16 number.
+// Yields a reciprocal of the given Doom format fixed point 16.16 number
 //----------------------------------------------------------------------------------------------------------------------
-static inline constexpr Fixed fixedInvert(const Fixed num) noexcept {
-    return fixedDiv(FRACUNIT, num);
+static inline constexpr Fixed Fixed16Invert(const Fixed num) noexcept {
+    return fixed16Div(FRACUNIT, num);
 }

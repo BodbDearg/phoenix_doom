@@ -57,11 +57,11 @@ static inline int32_t MulByMapScale(const Fixed mapCoord) noexcept {
 // Multiply two fixed point numbers but return an INTEGER result!
 //--------------------------------------------------------------------------------------------------
 static inline int IMFixMulGetInt(const Fixed a, const Fixed b) noexcept {
-    return fixedMul(a,b) >> FRACBITS;
+    return fixed16Mul(a, b) >> FRACBITS;
 }
 
 static void updateMapScale() noexcept {
-    gMapScale = fixedMul(gUnscaledOldScale, floatToFixed(gScaleFactor));
+    gMapScale = fixed16Mul(gUnscaledOldScale, floatToFixed16(gScaleFactor));
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -202,7 +202,7 @@ void AM_Control(player_t& player) noexcept {
     // If follow mode if off, then I intercept the joypad motion to move the map anywhere on the screen.
     if (!player.isAutomapFollowModeActive()) {
         Fixed step = STEPVALUE;                         // Multiplier for joypad motion: mul by integer
-        step = fixedDiv(step, gUnscaledMapScale);       // Adjust for scale factor
+        step = fixed16Div(step, gUnscaledMapScale);     // Adjust for scale factor
 
         // Gather inputs (both analog and digital)
         float moveFracX = INPUT_AXIS(TURN_LEFT_RIGHT) + INPUT_AXIS(STRAFE_LEFT_RIGHT);
@@ -243,13 +243,13 @@ void AM_Control(player_t& player) noexcept {
         zoomFrac = std::min(zoomFrac, +1.0f);
 
         // Do movement
-        player.automapx += fixedMul(floatToFixed(moveFracX), step);
-        player.automapy += fixedMul(floatToFixed(moveFracY), step);
+        player.automapx += fixed16Mul(floatToFixed16(moveFracX), step);
+        player.automapy += fixed16Mul(floatToFixed16(moveFracY), step);
 
         // Do scaling
         if (zoomFrac < 0.0f) {
             const float zoomMulF = (1.0f + zoomFrac) - zoomFrac * ZOOMOUT;
-            gUnscaledMapScale = fixedMul(gUnscaledMapScale, floatToFixed(zoomMulF));    // Perform the scale
+            gUnscaledMapScale = fixed16Mul(gUnscaledMapScale, floatToFixed16(zoomMulF));    // Perform the scale
 
             if (gUnscaledMapScale < MINSCALES) {    // Too small?
                 gUnscaledMapScale = MINSCALES;      // Set to smallest allowable
@@ -259,7 +259,7 @@ void AM_Control(player_t& player) noexcept {
             }
         } else {
             const float zoomMulF = (1.0f - zoomFrac) + zoomFrac * ZOOMIN;
-            gUnscaledMapScale = fixedMul(gUnscaledMapScale, floatToFixed(zoomMulF));    // Perform the scale
+            gUnscaledMapScale = fixed16Mul(gUnscaledMapScale, floatToFixed16(zoomMulF));    // Perform the scale
 
             if (gUnscaledMapScale >= MAXSCALES) {   // Too large?
                 gUnscaledMapScale = MAXSCALES;      // Set to maximum
@@ -363,7 +363,7 @@ void AM_Drawer() noexcept {
     // Draw the position of the player
     {
         // Get the size of the triangle into a cached local
-        const Fixed noseScale = fixedMul(NOSELENGTH, gMapScale);
+        const Fixed noseScale = fixed16Mul(NOSELENGTH, gMapScale);
         mobj_t* const pMapObj = gPlayer.mo;
 
         int32_t x1 = MulByMapScale(pMapObj->x - ox);            // Get the screen

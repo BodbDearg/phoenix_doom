@@ -48,9 +48,9 @@ namespace Blit {
         // The way the math works here helps to ensure that the last texel chosen for the given render size is pretty much
         // always the last texel according to the given texture dimension:
         const int32_t numPixelSteps = (int32_t) renderSize - 1;
-        const Fixed step = fixedDiv(
-            intToFixed(textureSize) - 1,    // N.B: never let it reach 'textureSize' (i.e out of bounds) - keep *just* below!
-            intToFixed(numPixelSteps)
+        const Fixed step = fixed16Div(
+            intToFixed16(textureSize) - 1,  // N.B: never let it reach 'textureSize' (i.e out of bounds) - keep *just* below!
+            intToFixed16(numPixelSteps)
         );
 
         return step;

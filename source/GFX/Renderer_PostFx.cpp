@@ -32,13 +32,13 @@ static void doTintEffect(const uint32_t r5, const uint32_t g5, const uint32_t b5
         return;
 
     // Create a fixed point multiplier for RGB values
-    constexpr Fixed COL5_MAX_FRAC = intToFixed(31);
-    constexpr Fixed COL8_MAX_FRAC = intToFixed(255);
-    constexpr Fixed EFFECT_STRENGHT = intToFixed(2);
+    constexpr Fixed COL5_MAX_FRAC = intToFixed16(31);
+    constexpr Fixed COL8_MAX_FRAC = intToFixed16(255);
+    constexpr Fixed EFFECT_STRENGHT = intToFixed16(2);
 
-    const Fixed rMul = FRACUNIT + fixedMul(fixedDiv(intToFixed(r5), COL5_MAX_FRAC), EFFECT_STRENGHT);
-    const Fixed gMul = FRACUNIT + fixedMul(fixedDiv(intToFixed(g5), COL5_MAX_FRAC), EFFECT_STRENGHT);
-    const Fixed bMul = FRACUNIT + fixedMul(fixedDiv(intToFixed(b5), COL5_MAX_FRAC), EFFECT_STRENGHT);
+    const Fixed rMul = FRACUNIT + fixed16Mul(fixed16Div(intToFixed16(r5), COL5_MAX_FRAC), EFFECT_STRENGHT);
+    const Fixed gMul = FRACUNIT + fixed16Mul(fixed16Div(intToFixed16(g5), COL5_MAX_FRAC), EFFECT_STRENGHT);
+    const Fixed bMul = FRACUNIT + fixed16Mul(fixed16Div(intToFixed16(b5), COL5_MAX_FRAC), EFFECT_STRENGHT);
 
     // Modulate all of the RGB values in the framebuffer
     const uint32_t screenH = g3dViewHeight;
@@ -51,20 +51,20 @@ static void doTintEffect(const uint32_t r5, const uint32_t g5, const uint32_t b5
         while (pPixel < pEndPixel) {
             // Get the old colors from 0-1
             const uint32_t color = *pPixel;
-            const Fixed oldRFrac = intToFixed((color >> 16) & 0xFFu);
-            const Fixed oldGFrac = intToFixed((color >> 8) & 0xFFu);
-            const Fixed oldBFrac = intToFixed(color & 0xFFu);
+            const Fixed oldRFrac = intToFixed16((color >> 16) & 0xFFu);
+            const Fixed oldGFrac = intToFixed16((color >> 8) & 0xFFu);
+            const Fixed oldBFrac = intToFixed16(color & 0xFFu);
 
             // Modulate and clamp
-            const Fixed rFrac = std::min(fixedMul(oldRFrac, rMul), 255 * FRACUNIT);
-            const Fixed gFrac = std::min(fixedMul(oldGFrac, gMul), 255 * FRACUNIT);
-            const Fixed bFrac = std::min(fixedMul(oldBFrac, bMul), 255 * FRACUNIT);
+            const Fixed rFrac = std::min(fixed16Mul(oldRFrac, rMul), 255 * FRACUNIT);
+            const Fixed gFrac = std::min(fixed16Mul(oldGFrac, gMul), 255 * FRACUNIT);
+            const Fixed bFrac = std::min(fixed16Mul(oldBFrac, bMul), 255 * FRACUNIT);
 
             // Make a framebuffer color
             const uint32_t finalColor = (
-                ((uint32_t) fixedToInt(rFrac) << 16) |
-                ((uint32_t) fixedToInt(gFrac) << 8) |
-                ((uint32_t) fixedToInt(bFrac))
+                ((uint32_t) fixed16ToInt(rFrac) << 16) |
+                ((uint32_t) fixed16ToInt(gFrac) << 8) |
+                ((uint32_t) fixed16ToInt(bFrac))
             );
 
             *pPixel = finalColor;

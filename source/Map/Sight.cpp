@@ -1,6 +1,5 @@
 #include "Sight.h"
 
-#include "Base/Macros.h"
 #include "Game/Data.h"
 #include "MapData.h"
 #include "MapUtil.h"
@@ -63,7 +62,7 @@ static Fixed PS_SightCrossLine(line_t& line) noexcept {
     dy = p4y - p1y;
 
     int32_t s2 = ndx * dx + ndy * dy;   // Distance projected onto normal
-    s2 = fixedDiv(s1, s1 + s2);
+    s2 = fixed16Div(s1, s1 + s2);
 
     return s2;
 }

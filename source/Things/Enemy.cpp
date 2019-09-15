@@ -2,7 +2,6 @@
 
 #include "Audio/Sound.h"
 #include "Audio/Sounds.h"
-#include "Base/Macros.h"
 #include "Base/Random.h"
 #include "Base/Tables.h"
 #include "Game/Data.h"
@@ -626,14 +625,14 @@ void A_SkullAttack(mobj_t& actor) noexcept {
 
         // Speed for distance
         const angle_t angle = actor.angle >> ANGLETOFINESHIFT;
-        actor.momx = fixedMul(SKULLSPEED, gFineCosine[angle]);
-        actor.momy = fixedMul(SKULLSPEED, gFineSine[angle]);
+        actor.momx = fixed16Mul(SKULLSPEED, gFineCosine[angle]);
+        actor.momy = fixed16Mul(SKULLSPEED, gFineSine[angle]);
         
         // Z speed - reach target cetner y by the the time we hit it
         const Fixed distToTarget = GetApproxDistance(pDest->x - actor.x, pDest->y - actor.y);
-        const Fixed timeToHit = fixedDiv(distToTarget, SKULLSPEED);
+        const Fixed timeToHit = fixed16Div(distToTarget, SKULLSPEED);
         const Fixed zAdjustmentRequired = pDest->z + (pDest->height >> 1) - actor.z;
-        actor.momz = (timeToHit > 0) ? fixedDiv(zAdjustmentRequired, timeToHit) : 0;
+        actor.momz = (timeToHit > 0) ? fixed16Div(zAdjustmentRequired, timeToHit) : 0;
     }
 }
 

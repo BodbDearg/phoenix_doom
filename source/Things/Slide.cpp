@@ -1,6 +1,5 @@
 #include "Slide.h"
 
-#include "Base/Macros.h"
 #include "Base/Tables.h"
 #include "Game/Data.h"
 #include "Map/MapData.h"
@@ -54,8 +53,8 @@ static int SL_PointOnSide2(
     int32_t nx = y3 - y2;
     int32_t ny = x2 - x3;
 
-    Fixed dist = fixedMul(x1, nx);
-    dist += fixedMul(y1, ny);
+    Fixed dist = fixed16Mul(x1, nx);
+    dist += fixed16Mul(y1, ny);
 
     if (dist < 0) {
         return SIDE_BACK;
@@ -83,8 +82,8 @@ void P_SlideMove(mobj_t& mo) noexcept {
             frac = 0;
         }
 
-        const Fixed rx = fixedMul(frac, dx);
-        const Fixed ry = fixedMul(frac, dy);
+        const Fixed rx = fixed16Mul(frac, dx);
+        const Fixed ry = fixed16Mul(frac, dy);
         gSlideX += rx;
         gSlideY += ry;
 
@@ -104,10 +103,10 @@ void P_SlideMove(mobj_t& mo) noexcept {
         // Project the remaining move along the line that blocked movement
         dx -= rx;
         dy -= ry;
-        Fixed slide = fixedMul(dx, gBlockNVx);
-        slide += fixedMul(dy, gBlockNVy);
-        dx = fixedMul(slide, gBlockNVx);
-        dy = fixedMul(slide, gBlockNVy);
+        Fixed slide = fixed16Mul(dx, gBlockNVx);
+        slide += fixed16Mul(dy, gBlockNVy);
+        dx = fixed16Mul(slide, gBlockNVx);
+        dy = fixed16Mul(slide, gBlockNVy);
     }
 
     // Some hideous situation has happened that won't let the player slide
@@ -186,8 +185,8 @@ int32_t SL_PointOnSide(const Fixed x, const Fixed y) noexcept {
     Fixed dx = x - gP1x;
     Fixed dy = y - gP1y;
 
-    Fixed dist = fixedMul(dx, gNVx);
-    dist += fixedMul(dy, gNVy);
+    Fixed dist = fixed16Mul(dx, gNVx);
+    dist += fixed16Mul(dy, gNVy);
 
     if (dist > FRACUNIT) {
         return SIDE_FRONT;
@@ -205,19 +204,19 @@ Fixed SL_CrossFrac() noexcept {
     Fixed dx = gP3x - gP1x;
     Fixed dy = gP3y - gP1y;
 
-    Fixed dist1 = fixedMul(dx, gNVx);
-    dist1 += fixedMul(dy, gNVy);
+    Fixed dist1 = fixed16Mul(dx, gNVx);
+    dist1 += fixed16Mul(dy, gNVy);
     dx = gP4x - gP1x;
     dy = gP4y - gP1y;
 
-    Fixed dist2 = fixedMul(dx, gNVx);
-    dist2 += fixedMul(dy, gNVy);
+    Fixed dist2 = fixed16Mul(dx, gNVx);
+    dist2 += fixed16Mul(dy, gNVy);
 
     if ((dist1 < 0) == (dist2 < 0)) {
         return FRACUNIT;    // Doesn't cross
     }
 
-    Fixed frac = fixedDiv(dist1, dist1 - dist2);
+    Fixed frac = fixed16Div(dist1, dist1 - dist2);
     return frac;
 }
 
@@ -227,14 +226,14 @@ bool CheckLineEnds() noexcept {
     Fixed dx = gP1x - gP3x;
     Fixed dy = gP1y - gP3y;
 
-    Fixed dist1 = fixedMul(dx, snx);
-    dist1 += fixedMul(dy, sny);
+    Fixed dist1 = fixed16Mul(dx, snx);
+    dist1 += fixed16Mul(dy, sny);
 
     dx = gP2x - gP3x;
     dy = gP2y - gP3y;
 
-    Fixed dist2 = fixedMul(dx, snx);
-    dist2 += fixedMul(dy, sny);
+    Fixed dist2 = fixed16Mul(dx, snx);
+    dist2 += fixed16Mul(dy, sny);
 
     if ((dist1 < 0) == (dist2 < 0)) {
         return true;

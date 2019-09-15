@@ -1,16 +1,13 @@
 #include "Renderer_Internal.h"
 
-#include "Base/FMath.h"
 #include "Base/Tables.h"
 #include "Blit.h"
-#include "CelImages.h"
 #include "Game/Config.h"
 #include "Game/Data.h"
 #include "Sprites.h"
 #include "Textures.h"
 #include "Things/MapObj.h"
 #include "Video.h"
-#include <algorithm>
 
 BEGIN_NAMESPACE(Renderer)
 
@@ -96,7 +93,7 @@ static void initData() noexcept {
         uint32_t i = 1;
 
         do {
-            gIDivTable[i] = fixedDiv(512 << FRACBITS, i << FRACBITS);    // 512.0 / i
+            gIDivTable[i] = fixed16Div(512 << FRACBITS, i << FRACBITS);     // 512.0 / i
         } while (++i < (sizeof(gIDivTable) / sizeof(uint32_t)));
     }
 
@@ -177,15 +174,15 @@ static void preDrawSetup() noexcept {
 
     gViewXFrac = mapObj.x;
     gViewYFrac = mapObj.y;
-    gViewX = FMath::doomFixed16ToFloat(mapObj.x);
-    gViewY = FMath::doomFixed16ToFloat(mapObj.y);
+    gViewX = fixed16ToFloat(mapObj.x);
+    gViewY = fixed16ToFloat(mapObj.y);
     gViewZFrac = player.viewz;
-    gViewZ = FMath::doomFixed16ToFloat(player.viewz);
+    gViewZ = fixed16ToFloat(player.viewz);
     gViewAngleBAM = mapObj.angle;
-    gViewAngle = FMath::doomAngleToRadians(mapObj.angle);
+    gViewAngle = bamAngleToRadians(mapObj.angle);
 
     if (Config::gbAllowDebugCameraUpDownMovement) {
-        gViewZFrac += FMath::floatToDoomFixed16(gDebugCameraZOffset);
+        gViewZFrac += floatToFixed16(gDebugCameraZOffset);
         gViewZ += gDebugCameraZOffset;
     }
 
@@ -349,7 +346,7 @@ void initMathTables() noexcept {
             const float t = ((float) x + 0.5f) * screenXToT;
             const float nearPlaneX = t * gNearPlaneW - gNearPlaneHalfW;
             const float angleRad = std::atan2(Z_NEAR, nearPlaneX);
-            const angle_t angleBAM = FMath::radiansToDoomAngle(angleRad);
+            const angle_t angleBAM = radiansToBamAngle(angleRad);
             gScreenXToAngleBAM[x] = angleBAM;
         }
     }

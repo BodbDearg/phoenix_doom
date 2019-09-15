@@ -1,14 +1,11 @@
 #include "MapData.h"
 
 #include "Base/Endian.h"
-#include "Base/FMath.h"
-#include "Base/Macros.h"
 #include "Base/Resource.h"
 #include "Base/Tables.h"
 #include "Game/Config.h"
 #include "Game/DoomRez.h"
 #include "Game/Resources.h"
-#include <vector>
 
 // On-disk versions of various map data structures.
 // These differ in many (all?) cases to the runtime versions.
@@ -159,8 +156,8 @@ static void loadSides(const uint32_t lumpResourceNum) noexcept {
     side_t* pDstSide = gSides.data();
 
     while (pSrcSide < pEndSrcSide) {
-        pDstSide->texXOffset = FMath::doomFixed16ToFloat(Endian::bigToHost(pSrcSide->texXOffset));
-        pDstSide->texYOffset = FMath::doomFixed16ToFloat(Endian::bigToHost(pSrcSide->texYOffset));
+        pDstSide->texXOffset = fixed16ToFloat(Endian::bigToHost(pSrcSide->texXOffset));
+        pDstSide->texYOffset = fixed16ToFloat(Endian::bigToHost(pSrcSide->texYOffset));
         pDstSide->toptexture = Endian::bigToHost(pSrcSide->topTexture);
         pDstSide->bottomtexture = Endian::bigToHost(pSrcSide->bottomTexture);
         pDstSide->midtexture = Endian::bigToHost(pSrcSide->midTexture);
@@ -291,12 +288,12 @@ static void loadLineSegs(const uint32_t lumpResourceNum) noexcept {
         vertex_t v1Fixed = gVertexes[Endian::bigToHost(pSrcLineSeg->v1)];
         vertex_t v2Fixed = gVertexes[Endian::bigToHost(pSrcLineSeg->v2)];
 
-        pDstLineSeg->v1.x = FMath::doomFixed16ToFloat(v1Fixed.x);
-        pDstLineSeg->v1.y = FMath::doomFixed16ToFloat(v1Fixed.y);
-        pDstLineSeg->v2.x = FMath::doomFixed16ToFloat(v2Fixed.x);
-        pDstLineSeg->v2.y = FMath::doomFixed16ToFloat(v2Fixed.y);
+        pDstLineSeg->v1.x = fixed16ToFloat(v1Fixed.x);
+        pDstLineSeg->v1.y = fixed16ToFloat(v1Fixed.y);
+        pDstLineSeg->v2.x = fixed16ToFloat(v2Fixed.x);
+        pDstLineSeg->v2.y = fixed16ToFloat(v2Fixed.y);
         pDstLineSeg->angle = Endian::bigToHost(pSrcLineSeg->angle);
-        pDstLineSeg->texXOffset = fixedToFloat(Endian::bigToHost(pSrcLineSeg->texXOffset));
+        pDstLineSeg->texXOffset = fixed16ToFloat(Endian::bigToHost(pSrcLineSeg->texXOffset));
 
         line_t* const pLine = &gLines[Endian::bigToHost(pSrcLineSeg->lineDef)];
         pDstLineSeg->linedef = pLine;
