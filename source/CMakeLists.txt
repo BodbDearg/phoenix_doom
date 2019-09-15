@@ -79,7 +79,7 @@ set(SOURCE_FILES
     "GFX/Renderer.cpp"
     "GFX/Renderer.h"
     "GFX/Renderer_BspTraversal.cpp"
-    "GFX/Renderer_FloorDraw.cpp"
+    "GFX/Renderer_FlatDraw.cpp"
     "GFX/Renderer_Internal.h"
     "GFX/Renderer_PostFx.cpp"
     "GFX/Renderer_SpriteDraw.cpp"
