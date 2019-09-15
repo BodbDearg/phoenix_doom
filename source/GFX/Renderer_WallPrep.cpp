@@ -42,20 +42,20 @@ static void swapDrawSegP1AndP2(DrawSeg& seg) noexcept {
 static void populateSegVertexAttribs(const seg_t& seg, DrawSeg& drawSeg) noexcept {
     // Set the texture 'X' coordinates for the seg
     {
-        const float segdx = FMath::doomFixed16ToFloat<float>(seg.v2.x - seg.v1.x);
-        const float segdy = FMath::doomFixed16ToFloat<float>(seg.v2.y - seg.v1.y);
+        const float segdx = seg.v2.x - seg.v1.x;
+        const float segdy = seg.v2.y - seg.v1.y;
         const float segLength = std::sqrtf(segdx * segdx + segdy * segdy);
-        const float texXOffset = FMath::doomFixed16ToFloat<float>(seg.offset + seg.sidedef->textureoffset);
+        const float texXOffset = seg.texXOffset + seg.sidedef->texXOffset;
 
         drawSeg.p1TexX = texXOffset;
         drawSeg.p2TexX = texXOffset + segLength - 0.001f;   // Note: if a wall is 64 units and the texture is 64 units, never go to 64.0 (always stay to 63.99999 or something like that)
     }
 
     // Set the world x and y positions for the seg's two points
-    drawSeg.p1WorldX = FMath::doomFixed16ToFloat<float>(seg.v1.x);
-    drawSeg.p1WorldY = FMath::doomFixed16ToFloat<float>(seg.v1.y);
-    drawSeg.p2WorldX = FMath::doomFixed16ToFloat<float>(seg.v2.x);
-    drawSeg.p2WorldY = FMath::doomFixed16ToFloat<float>(seg.v2.y);
+    drawSeg.p1WorldX = seg.v1.x;
+    drawSeg.p1WorldY = seg.v1.y;
+    drawSeg.p2WorldX = seg.v2.x;
+    drawSeg.p2WorldY = seg.v2.y;
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -63,10 +63,10 @@ static void populateSegVertexAttribs(const seg_t& seg, DrawSeg& drawSeg) noexcep
 //----------------------------------------------------------------------------------------------------------------------
 static void transformSegXYToViewSpace(const seg_t& inSeg, DrawSeg& outSeg) noexcept {
     // First convert from fixed point to floats
-    outSeg.p1x = FMath::doomFixed16ToFloat<float>(inSeg.v1.x);
-    outSeg.p1y = FMath::doomFixed16ToFloat<float>(inSeg.v1.y);
-    outSeg.p2x = FMath::doomFixed16ToFloat<float>(inSeg.v2.x);
-    outSeg.p2y = FMath::doomFixed16ToFloat<float>(inSeg.v2.y);
+    outSeg.p1x = inSeg.v1.x;
+    outSeg.p1y = inSeg.v1.y;
+    outSeg.p2x = inSeg.v2.x;
+    outSeg.p2y = inSeg.v2.y;
 
     // Transform the seg xy coords by the view position
     const float viewX = gViewX;
@@ -972,7 +972,7 @@ static uint32_t emitDrawSegColumns(const DrawSeg& drawSeg, const seg_t seg) noex
         [[maybe_unused]] bool bTopTexUnpegged;
 
         if constexpr (EMIT_ANY_WALL) {
-            sideDefRowOffset = FMath::doomFixed16ToFloat<float>(sideDef.rowoffset);
+            sideDefRowOffset = sideDef.texYOffset;
         }
 
         if constexpr (EMIT_MID_WALL) {

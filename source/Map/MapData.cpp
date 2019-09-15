@@ -23,8 +23,8 @@ struct MapSector {
 };
 
 struct MapSide {
-    Fixed       textureOffset;
-    Fixed       rowOffset;
+    Fixed       texXOffset;
+    Fixed       texYOffset;
     uint32_t    topTexture;
     uint32_t    bottomTexture;
     uint32_t    midTexture;
@@ -41,12 +41,12 @@ struct MapLine {
 };
 
 struct MapLineSeg {
-    uint32_t    v1;         // Vertex index: 1
-    uint32_t    v2;         // Vertex index: 2
-    angle_t     angle;      // Angle of the line segment
-    Fixed       offset;     // Texture offset
-    uint32_t    lineDef;    // Line definition
-    uint32_t    side;       // Side of the line segment
+    uint32_t    v1;             // Vertex index: 1
+    uint32_t    v2;             // Vertex index: 2
+    angle_t     angle;          // Angle of the line segment
+    Fixed       texXOffset;     // Texture offset
+    uint32_t    lineDef;        // Line definition
+    uint32_t    side;           // Side of the line segment
 };
 
 struct MapSubSector {
@@ -159,8 +159,8 @@ static void loadSides(const uint32_t lumpResourceNum) noexcept {
     side_t* pDstSide = gSides.data();
 
     while (pSrcSide < pEndSrcSide) {
-        pDstSide->textureoffset = Endian::bigToHost(pSrcSide->textureOffset);
-        pDstSide->rowoffset = Endian::bigToHost(pSrcSide->rowOffset);
+        pDstSide->texXOffset = FMath::doomFixed16ToFloat(Endian::bigToHost(pSrcSide->texXOffset));
+        pDstSide->texYOffset = FMath::doomFixed16ToFloat(Endian::bigToHost(pSrcSide->texYOffset));
         pDstSide->toptexture = Endian::bigToHost(pSrcSide->topTexture);
         pDstSide->bottomtexture = Endian::bigToHost(pSrcSide->bottomTexture);
         pDstSide->midtexture = Endian::bigToHost(pSrcSide->midTexture);
@@ -288,10 +288,15 @@ static void loadLineSegs(const uint32_t lumpResourceNum) noexcept {
     while (pSrcLineSeg < pEndSrcLineSeg) {
         // Note: deliberately NOT initializing the seg light multiplier here.
         // That is done at a later stage.
-        pDstLineSeg->v1 = gVertexes[Endian::bigToHost(pSrcLineSeg->v1)];
-        pDstLineSeg->v2 = gVertexes[Endian::bigToHost(pSrcLineSeg->v2)];
+        vertex_t v1Fixed = gVertexes[Endian::bigToHost(pSrcLineSeg->v1)];
+        vertex_t v2Fixed = gVertexes[Endian::bigToHost(pSrcLineSeg->v2)];
+
+        pDstLineSeg->v1.x = FMath::doomFixed16ToFloat(v1Fixed.x);
+        pDstLineSeg->v1.y = FMath::doomFixed16ToFloat(v1Fixed.y);
+        pDstLineSeg->v2.x = FMath::doomFixed16ToFloat(v2Fixed.x);
+        pDstLineSeg->v2.y = FMath::doomFixed16ToFloat(v2Fixed.y);
         pDstLineSeg->angle = Endian::bigToHost(pSrcLineSeg->angle);
-        pDstLineSeg->offset = Endian::bigToHost(pSrcLineSeg->offset);
+        pDstLineSeg->texXOffset = fixedToFloat(Endian::bigToHost(pSrcLineSeg->texXOffset));
 
         line_t* const pLine = &gLines[Endian::bigToHost(pSrcLineSeg->lineDef)];
         pDstLineSeg->linedef = pLine;
@@ -306,7 +311,7 @@ static void loadLineSegs(const uint32_t lumpResourceNum) noexcept {
         }
 
         // Init the fine angle on the line
-        if (pLine->v1.x == pDstLineSeg->v1.x && pLine->v1.y == pDstLineSeg->v1.y) {
+        if (pLine->v1.x == v1Fixed.x && pLine->v1.y == v1Fixed.y) {
             pLine->fineangle = pDstLineSeg->angle >> ANGLETOFINESHIFT;  // This is a point only
         }
 
@@ -515,8 +520,8 @@ static void calcSegLightMultipliers() noexcept {
         constexpr float MAX_LIGHT_MUL = 1.05f;
 
         for (seg_t& seg : gLineSegs) {
-            const float segDirX = FMath::doomFixed16ToFloat<float>(seg.v2.x - seg.v1.x);
-            const float segDirY = FMath::doomFixed16ToFloat<float>(seg.v2.y - seg.v1.y);
+            const float segDirX = seg.v2.x - seg.v1.x;
+            const float segDirY = seg.v2.y - seg.v1.y;
             const float segAngle = std::atan2(segDirY, segDirX) + FMath::ANGLE_90<float>;
             const float lerpFactor = std::abs(std::cos(segAngle));
 

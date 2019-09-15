@@ -24,7 +24,7 @@ namespace FMath {
     //------------------------------------------------------------------------------------------------------------------
     // Convert a Doom binary angle to a float angle (in radians) and back again
     //------------------------------------------------------------------------------------------------------------------
-    template <class T>
+    template <class T = float>
     inline constexpr T doomAngleToRadians(const angle_t angle) noexcept {
         const double normalized = (double) angle / (double(UINT32_MAX) + 1.0);
         const double twoPiRange = normalized * ANGLE_360<double>;
@@ -42,7 +42,7 @@ namespace FMath {
     //------------------------------------------------------------------------------------------------------------------
     // Convert a Doom 16.16 fixed point number to float and back again
     //------------------------------------------------------------------------------------------------------------------
-    template <class T>
+    template <class T = float>
     inline constexpr T doomFixed16ToFloat(const Fixed fixed) noexcept {
         return T((double) fixed * (1.0 / 65536.0));
     }
@@ -55,7 +55,7 @@ namespace FMath {
     //------------------------------------------------------------------------------------------------------------------
     // Convert a Doom 26.6 fixed point number (used for sector height values) to float and back again
     //------------------------------------------------------------------------------------------------------------------
-    template <class T>
+    template <class T = float>
     inline constexpr T doomFixed6ToFloat(const Fixed fixed) noexcept {
         return T((double) fixed * (1.0 / 64.0));
     }

@@ -18,6 +18,7 @@
 #include "Things/Interactions.h"
 #include "Things/MapObj.h"
 #include "Things/Teleport.h"
+#include <cmath>
 
 uint32_t gNumFlatAnims;     // Number of flat anims
 
@@ -547,19 +548,20 @@ void P_UpdateSpecials() noexcept {
 
     // Animate line specials
     {
-        uint32_t i = gNumLineSpecials;
-        if (i != 0) {
-            line_t **line;
-            line = gppLineSpecialList;
-            do {
-                line_t *theline;
-                theline = line[0];  // Get the pointer
+        line_t** ppCurLine = gppLineSpecialList;
+        line_t** const ppEndLine = gppLineSpecialList + gNumLineSpecials;
 
-                if (theline->special == 48) {                           // Effect firstcol scroll
-                    theline->SidePtr[0]->textureoffset += FRACUNIT;     // Scroll it
-                }
-                ++line;
-            } while (--i);
+        while (ppCurLine < ppEndLine) {
+            line_t& theline = *ppCurLine[0];
+
+            if (theline.special == 48) {
+                // Effect firstcol scroll: scroll the texture
+                side_t& side = *theline.SidePtr[0];
+                side.texXOffset += 1.0f;
+                side.texXOffset = std::fmodf(side.texXOffset, 256.0f);      // Wrap to prevent precision getting out of control
+            }
+
+            ++ppCurLine;
         }
     }
 }

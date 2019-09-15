@@ -13,6 +13,12 @@ struct vertex_t {
     Fixed y;
 };
 
+// The same as 'vertex_t', except in floating point format
+struct vertexf_t {
+    float x;
+    float y;
+};
+
 // Vector struct
 struct vector_t {
     Fixed x;        // X,Y start of line
@@ -48,8 +54,8 @@ struct sector_t {
 struct side_t {
     NON_ASSIGNABLE_STRUCT(side_t)
 
-    Fixed       textureoffset;      // Column texture offset (X)
-    Fixed       rowoffset;          // Row texture offset (Y)
+    float       texXOffset;         // Column texture offset (X)
+    float       texYOffset;         // Row texture offset (Y)
     uint32_t    toptexture;         // Wall textures
     uint32_t    bottomtexture;
     uint32_t    midtexture;
@@ -97,10 +103,10 @@ static constexpr uint32_t ML_MAPPED         = 0x100;    // set if allready drawn
 struct seg_t {
     NON_ASSIGNABLE_STRUCT(seg_t)
 
-    vertex_t    v1;             // Source and dest points
-    vertex_t    v2;
+    vertexf_t   v1;             // Source and dest points
+    vertexf_t   v2;
     angle_t     angle;          // Angle of the vector
-    Fixed       offset;         // Extra shape offset
+    float       texXOffset;     // Extra texture offset in the x direction
     side_t*     sidedef;        // Pointer to the connected side
     line_t*     linedef;        // Pointer to the connected line
     sector_t*   frontsector;    // Sector on the front side
