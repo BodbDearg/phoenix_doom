@@ -163,6 +163,7 @@ gameaction_e RunGameLoop(
 static void D_DoomInit() noexcept {
     // Init main subsystems
     Config::init();
+    Prefs::load();
     GameDataFS::init();
     Resources::init();
     CelImages::init();
@@ -192,6 +193,7 @@ static void D_DoomShutdown() noexcept {
     CelImages::shutdown();
     Resources::shutdown();
     GameDataFS::shutdown();
+    Prefs::save();
     Config::shutdown();
 }
 
@@ -200,8 +202,7 @@ static void D_DoomShutdown() noexcept {
 //----------------------------------------------------------------------------------------------------------------------
 void D_DoomMain() noexcept {
     D_DoomInit();
-    Prefs::load();
-
+    
     IntroLogos::run();
     IntroMovies::run();
 
@@ -213,6 +214,5 @@ void D_DoomMain() noexcept {
         }
     }
 
-    Prefs::save();
     D_DoomShutdown();
 }

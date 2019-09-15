@@ -180,17 +180,13 @@ void O_Control(player_t* const pPlayer) noexcept {
                     if (menuMoveX >= 1) {
                         if (gScreenSize > 0) {
                             --gScreenSize;
-                            if (pPlayer) {
-                                Renderer::initMathTables();     // Handle the math tables
-                            }
+                            Renderer::initMathTables();     // Handle the math tables
                         }
                     }
                     else if (menuMoveX <= -1) {
                         if (gScreenSize < 6 - 1) {
                             ++gScreenSize;
-                            if (pPlayer) {
-                                Renderer::initMathTables();     // Handle the math tables
-                            }
+                            Renderer::initMathTables();     // Handle the math tables
                         }
                     }
                 }   break;
