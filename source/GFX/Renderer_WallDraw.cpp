@@ -36,7 +36,7 @@ static void drawSkyColumn(const uint32_t viewX, const uint32_t maxColHeight) noe
     const uint32_t colHeight = (uint32_t) fixedToInt(scaledColHeight) + roundColHeight;
     BLIT_ASSERT(colHeight < g3dViewHeight);
 
-    const float texYStep = FMath::doomFixed16ToFloat<float>(Blit::calcTexelStep(skyTexH, colHeight));
+    const float texYStep = FMath::doomFixed16ToFloat(Blit::calcTexelStep(skyTexH, colHeight));
 
     // Draw the sky column
     Blit::blitColumn<

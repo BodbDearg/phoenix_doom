@@ -307,8 +307,8 @@ static bool clipSegAgainstRightPlane(DrawSeg& seg) noexcept {
 static void addClipSpaceZValuesForSeg(DrawSeg& drawSeg, const seg_t& seg) noexcept {
     const float viewZ = gViewZ;
 
-    const float frontFloorZ = FMath::doomFixed16ToFloat<float>(seg.frontsector->floorheight);
-    const float frontCeilZ = FMath::doomFixed16ToFloat<float>(seg.frontsector->ceilingheight);
+    const float frontFloorZ = FMath::doomFixed16ToFloat(seg.frontsector->floorheight);
+    const float frontCeilZ = FMath::doomFixed16ToFloat(seg.frontsector->ceilingheight);
     const float frontFloorViewZ = frontFloorZ - viewZ;
     const float frontCeilViewZ = frontCeilZ - viewZ;
 
@@ -321,8 +321,8 @@ static void addClipSpaceZValuesForSeg(DrawSeg& drawSeg, const seg_t& seg) noexce
     drawSeg.p2bz = frontFloorViewZ * gProjMatrix.r1c1;
 
     if (seg.backsector) {
-        const float backFloorZ = FMath::doomFixed16ToFloat<float>(seg.backsector->floorheight);
-        const float backCeilZ = FMath::doomFixed16ToFloat<float>(seg.backsector->ceilingheight);
+        const float backFloorZ = FMath::doomFixed16ToFloat(seg.backsector->floorheight);
+        const float backCeilZ = FMath::doomFixed16ToFloat(seg.backsector->ceilingheight);
         const float backFloorViewZ = backFloorZ - viewZ;
         const float backCeilViewZ = backCeilZ - viewZ;
 
@@ -976,21 +976,21 @@ static uint32_t emitDrawSegColumns(const DrawSeg& drawSeg, const seg_t seg) noex
         }
 
         if constexpr (EMIT_MID_WALL) {
-            frontFloorZ = FMath::doomFixed16ToFloat<float>(seg.frontsector->floorheight);
+            frontFloorZ = FMath::doomFixed16ToFloat(seg.frontsector->floorheight);
         }
 
         if constexpr (EMIT_ANY_WALL) {
-            frontCeilingZ = FMath::doomFixed16ToFloat<float>(seg.frontsector->ceilingheight);
+            frontCeilingZ = FMath::doomFixed16ToFloat(seg.frontsector->ceilingheight);
         }
 
         if constexpr (EMIT_LOWER_WALL) {
             ASSERT(seg.backsector);
-            backFloorZ = FMath::doomFixed16ToFloat<float>(seg.backsector->floorheight);
+            backFloorZ = FMath::doomFixed16ToFloat(seg.backsector->floorheight);
         }
 
         if constexpr (EMIT_UPPER_WALL) {
             ASSERT(seg.backsector);
-            backCeilingZ = FMath::doomFixed16ToFloat<float>(seg.backsector->ceilingheight);
+            backCeilingZ = FMath::doomFixed16ToFloat(seg.backsector->ceilingheight);
         }
 
         if constexpr (EMIT_MID_WALL || EMIT_LOWER_WALL) {
@@ -1043,19 +1043,19 @@ static uint32_t emitDrawSegColumns(const DrawSeg& drawSeg, const seg_t seg) noex
     [[maybe_unused]] float lowerWorldBz;
 
     if constexpr (EMIT_MID_WALL || EMIT_UPPER_WALL || EMIT_CEILING || EMIT_SKY) {
-        upperWorldTz = FMath::doomFixed16ToFloat<float>(seg.frontsector->ceilingheight);
+        upperWorldTz = FMath::doomFixed16ToFloat(seg.frontsector->ceilingheight);
     }
 
     if constexpr (EMIT_UPPER_WALL || EMIT_UPPER_WALL_OCCLUDER) {
-        upperWorldBz = FMath::doomFixed16ToFloat<float>(seg.backsector->ceilingheight);
+        upperWorldBz = FMath::doomFixed16ToFloat(seg.backsector->ceilingheight);
     }
 
     if constexpr (EMIT_LOWER_WALL || EMIT_LOWER_WALL_OCCLUDER) {
-        lowerWorldTz = FMath::doomFixed16ToFloat<float>(seg.backsector->floorheight);
+        lowerWorldTz = FMath::doomFixed16ToFloat(seg.backsector->floorheight);
     }
 
     if constexpr (EMIT_MID_WALL || EMIT_LOWER_WALL || EMIT_FLOOR) {
-        lowerWorldBz = FMath::doomFixed16ToFloat<float>(seg.frontsector->floorheight);
+        lowerWorldBz = FMath::doomFixed16ToFloat(seg.frontsector->floorheight);
     }
 
     //------------------------------------------------------------------------------------------------------------------

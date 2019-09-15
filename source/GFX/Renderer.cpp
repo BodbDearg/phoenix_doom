@@ -177,12 +177,12 @@ static void preDrawSetup() noexcept {
 
     gViewXFrac = mapObj.x;
     gViewYFrac = mapObj.y;
-    gViewX = FMath::doomFixed16ToFloat<float>(mapObj.x);
-    gViewY = FMath::doomFixed16ToFloat<float>(mapObj.y);
+    gViewX = FMath::doomFixed16ToFloat(mapObj.x);
+    gViewY = FMath::doomFixed16ToFloat(mapObj.y);
     gViewZFrac = player.viewz;
-    gViewZ = FMath::doomFixed16ToFloat<float>(player.viewz);
+    gViewZ = FMath::doomFixed16ToFloat(player.viewz);
     gViewAngleBAM = mapObj.angle;
-    gViewAngle = FMath::doomAngleToRadians<float>(mapObj.angle);
+    gViewAngle = FMath::doomAngleToRadians(mapObj.angle);
 
     if (Config::gbAllowDebugCameraUpDownMovement) {
         gViewZFrac += FMath::floatToDoomFixed16(gDebugCameraZOffset);
