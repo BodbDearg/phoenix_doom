@@ -47,7 +47,8 @@ extern Controls::GameActionBits gGamepadGameActions[NUM_CONTROLLER_INPUTS];
 extern Controls::AxisBits       gGamepadAxisBindings[NUM_CONTROLLER_INPUTS];
 
 // Debug stuff
-extern bool gbAllowDebugCameraUpDownMovement;
+extern bool         gbAllowDebugCameraUpDownMovement;
+extern uint32_t     gPerfCounterNumFramesToAverage;
 
 // Cheat key sequences: an array of up to 16 SDL scan codes.
 // Unused key slots in the sequence will be set to '0'.

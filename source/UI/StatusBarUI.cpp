@@ -179,37 +179,11 @@ void ST_Ticker() noexcept {
     }
 }
 
-// TODO: REIMPLEMENT FPS COUNT
-#define VBLTIMER 0
-
-#if VBLTIMER
-#define TIMERSIZE 16
-static Word Frames;
-static Word CountVBL[TIMERSIZE];
-#endif
-
 //----------------------------------------------------------------------------------------------------------------------
 // Draw the status bar
 //----------------------------------------------------------------------------------------------------------------------
 void ST_Drawer() noexcept {
     UIUtils::drawUISprite(0, 160, *gpStatusBarShape);
-
-    // TODO: REIMPLEMENT FPS COUNT
-    #if VBLTIMER
-        ++Frames;
-        if (Frames>=TIMERSIZE) {
-            Frames=0;
-        }
-        CountVBL[Frames]=ElapsedTime;
-        ind = 0;
-        i = 0;
-        do {
-            ind+=CountVBL[i];
-        } while (++i<TIMERSIZE);
-        ind = (60*TIMERSIZE)/ind;
-
-        PrintNumber(100,80,ind,0);
-    #endif
 
     // Draw ammo amount
     player_t& p = gPlayer;
@@ -287,4 +261,5 @@ void ST_Drawer() noexcept {
     }
 
     UIUtils::drawUISprite(FACEX, FACEY, gpFaces->getImage(faceImgNum));     // Dead man
+    UIUtils::drawPerformanceCounter(0, 0);
 }

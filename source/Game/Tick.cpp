@@ -246,11 +246,6 @@ gameaction_e P_Ticker() noexcept {
 // Draw current display
 //----------------------------------------------------------------------------------------------------------------------
 void P_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
-    #if PROFILE_RENDER
-        const uint64_t clocksPerSecond = SDL_GetPerformanceFrequency();
-        const uint64_t drawStartClock = SDL_GetPerformanceCounter();
-    #endif
-
     if (gbGamePaused && gbRefreshDrawn) {
         UIUtils::drawPlaque(rPAUSED);                   // Draw 'Paused' plaque
         Video::endFrame(bPresent, bSaveFrameBuffer);
@@ -273,13 +268,6 @@ void P_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
         Video::endFrame(bPresent, bSaveFrameBuffer);
         gbRefreshDrawn = true;
     }
-
-    #if PROFILE_RENDER
-        const uint64_t drawEndClock = SDL_GetPerformanceCounter();
-        const uint64_t drawClockCount = drawEndClock - drawStartClock;
-        const double drawTime = (double) drawClockCount / (double) clocksPerSecond;
-        std::printf("Draw time: %f seconds, %zu clock ticks\n", drawTime, (size_t) drawClockCount);
-    #endif
 }
 
 //----------------------------------------------------------------------------------------------------------------------

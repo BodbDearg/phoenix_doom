@@ -5,6 +5,7 @@
 #include "Base/Tables.h"
 #include "Game/TickCounter.h"
 #include "GFX/Video.h"
+#include "UIUtils.h"
 #include <algorithm>
 #include <thread>
 
@@ -208,6 +209,7 @@ void doWipe(const GameLoopDrawFunc drawFunc) noexcept {
 
         // Draw the wipe and present
         drawWipe(oldFramebuffer.get(), Video::gpSavedFrameBuffer, yDeltas.get());
+        UIUtils::drawPerformanceCounter(0, 0);
         Video::present();
     }
 

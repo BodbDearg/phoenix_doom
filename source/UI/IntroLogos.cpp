@@ -10,6 +10,7 @@
 #include "GFX/Blit.h"
 #include "GFX/Video.h"
 #include "ThreeDO/CelUtils.h"
+#include "UIUtils.h"
 
 BEGIN_NAMESPACE(IntroLogos)
 
@@ -158,6 +159,7 @@ static void drawLogo(const bool bPresent, const bool bSaveFrameBuffer) noexcept 
         brightnessMul
     );
 
+    UIUtils::drawPerformanceCounter(0, 0);
     Video::endFrame(bPresent, bSaveFrameBuffer);
 }
 

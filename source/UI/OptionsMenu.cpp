@@ -245,6 +245,10 @@ void O_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
         }
     }
 
+    if (bPresent || bSaveFrameBuffer) {
+        UIUtils::drawPerformanceCounter(0, 0);
+    }
+
     CelImages::releaseImages(rSLIDER);
     Video::endFrame(bPresent, bSaveFrameBuffer);
 }

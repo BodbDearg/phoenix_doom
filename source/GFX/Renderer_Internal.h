@@ -333,9 +333,6 @@ namespace Renderer {
     void drawWeapons() noexcept;
     void doPostFx() noexcept;
 
-    // TODO: FIXME - REMOVE FROM HERE
-    void DrawSpriteCenter(uint32_t SpriteNum);
-
     // Get light parameters for a floor or wall at the given light level
     LightParams getLightParams(const uint32_t sectorLightLevel) noexcept;
 }

@@ -227,6 +227,7 @@ Keypad +        = automap_free_cam_zoom_in
 PageUp          = debug_move_camera_up
 PageDown        = debug_move_camera_down
 R               = toggle_always_run
+F9              = toggle_performance_counters
 
 )";
 
@@ -315,6 +316,12 @@ R"(#############################################################################
 # 'debug_cam_move_down' key actions. This is useful for testing the renderer at different heights.
 #---------------------------------------------------------------------------------------------------
 AllowCameraUpDownMovement = 0
+
+#---------------------------------------------------------------------------------------------------
+# The number of frames to average the performance counter values over.
+# Affects how often the FPS/microsecond count updates.
+#---------------------------------------------------------------------------------------------------
+PerfCounterNumFramesToAverage = 15
 
 ####################################################################################################
 [CheatKeySequences]
@@ -574,6 +581,7 @@ Controls::MenuActionBits    gGamepadMenuActions[NUM_CONTROLLER_INPUTS];
 Controls::GameActionBits    gGamepadGameActions[NUM_CONTROLLER_INPUTS];
 Controls::AxisBits          gGamepadAxisBindings[NUM_CONTROLLER_INPUTS];
 bool                        gbAllowDebugCameraUpDownMovement;
+uint32_t                    gPerfCounterNumFramesToAverage;
 CheatKeySequence            gCheatKeys_GodMode;
 CheatKeySequence            gCheatKeys_NoClip;
 CheatKeySequence            gCheatKeys_MapAndThingsRevealToggle;
@@ -794,7 +802,8 @@ static void parseSingleActionOrAxisString(
     handleGameAction("debug_move_camera_up",        Controls::GameActions::DEBUG_MOVE_CAMERA_UP);
     handleGameAction("debug_move_camera_down",      Controls::GameActions::DEBUG_MOVE_CAMERA_DOWN);
     handleGameAction("toggle_always_run",           Controls::GameActions::TOGGLE_ALWAYS_RUN);
-
+    handleGameAction("toggle_performance_counters", Controls::GameActions::TOGGLE_PERFORMANCE_COUNTERS);
+    
     handleMenuAction("menu_up",     Controls::MenuActions::UP);
     handleMenuAction("menu_down",   Controls::MenuActions::DOWN);
     handleMenuAction("menu_left",   Controls::MenuActions::LEFT);
@@ -1109,6 +1118,9 @@ static void handleConfigEntry(const IniUtils::Entry& entry) noexcept {
         if (entry.key == "AllowCameraUpDownMovement") {
             gbAllowDebugCameraUpDownMovement = entry.getBoolValue(gbAllowDebugCameraUpDownMovement);
         }
+        else if (entry.key == "PerfCounterNumFramesToAverage") {
+            gPerfCounterNumFramesToAverage = std::max(entry.getUintValue(gPerfCounterNumFramesToAverage), 1u);
+        }
     }
     else if (entry.section == "CheatKeySequences") {
         parseCheatKeySequence(entry.key, entry.value.c_str());
@@ -1152,6 +1164,7 @@ static void clear() noexcept {
     std::memset(gGamepadGameActions, 0, sizeof(gGamepadAxisBindings));
     
     gbAllowDebugCameraUpDownMovement = false;
+    gPerfCounterNumFramesToAverage = 15;
 
     setCheatKeySequence(gCheatKeys_GodMode,                     "IDDQD");
     setCheatKeySequence(gCheatKeys_NoClip,                      "IDCLIP");

@@ -47,3 +47,15 @@ extern uint32_t                 gScreenSize;                    // Screen size t
 extern bool                     gAlwaysRun;                     // If enabled player always runs
 extern bool                     gDoWipe;                        // True if I should do the DOOM wipe
 extern uint32_t                 gValidCount;                    // Increment every time a check is made (used for sort of unique ids)
+
+// Performance/FPS counting
+enum class PerfCounterMode {
+    NONE,
+    FPS,
+    USEC
+};
+
+extern PerfCounterMode  gPerfCounterMode;           // What mode the performance counter is in
+extern uint64_t         gPerfCounterAverageUSec;    // This is what feeds the FPS display (the averaged frame time over a number of frames, in microseconds)
+extern uint64_t         gPerfCounterRunningTotal;   // Running total of the performance counter: added over a number of frames
+extern uint64_t         gPerfCounterTicksDone;      // Number of frames we've done performance counting for

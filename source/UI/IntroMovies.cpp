@@ -13,6 +13,7 @@
 #include "GFX/Blit.h"
 #include "GFX/Video.h"
 #include "ThreeDO/MovieDecoder.h"
+#include "UIUtils.h"
 
 BEGIN_NAMESPACE(IntroMovies)
 
@@ -174,6 +175,7 @@ static void drawMovie(const bool bPresent, const bool bSaveFrameBuffer) noexcept
         hScaled
     );
 
+    UIUtils::drawPerformanceCounter(0, 0);
     Video::endFrame(bPresent, bSaveFrameBuffer);
 }
 

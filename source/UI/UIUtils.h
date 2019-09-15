@@ -27,4 +27,7 @@ void drawMaskedUISprite(const int32_t x, const int32_t y, const uint32_t resourc
 // Draw a plaque in the center of the screen (loading or paused)
 void drawPlaque(const uint32_t resourceNum) noexcept;
 
+// Draw the performance counter (if enabled) at the specified location
+void drawPerformanceCounter(const int32_t x, const int32_t y) noexcept;
+
 END_NAMESPACE(UIUtils)

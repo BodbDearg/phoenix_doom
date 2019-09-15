@@ -54,6 +54,7 @@ static void STOP_Title() noexcept {
 static void DRAW_Title(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
     Video::debugClearScreen();
     UIUtils::drawUISprite(0, 0, rTITLE);           // Draw the doom logo
+    UIUtils::drawPerformanceCounter(0, 0);
     Video::endFrame(bPresent, bSaveFrameBuffer);
 }
 
@@ -75,6 +76,7 @@ static gameaction_e TIC_Credits() noexcept {
 static void DRAW_Credits(const bool bPresent, const bool bSaveFrameBuffer, const uint32_t creditsPageResourceNum) noexcept {
     Video::debugClearScreen();
     UIUtils::drawUISprite(0, 0, creditsPageResourceNum);
+    UIUtils::drawPerformanceCounter(0, 0);
     Video::endFrame(bPresent, bSaveFrameBuffer);
 }
 

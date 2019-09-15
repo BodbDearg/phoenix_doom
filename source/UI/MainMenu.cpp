@@ -213,6 +213,8 @@ void M_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
         // Draw the options screen
         UIUtils::printBigFont(CURSORX + 24, OPTIONSY, "Options Menu");
         CelImages::releaseImages(rMAINMENU);
+        UIUtils::drawPerformanceCounter(0, 0);
+
         Video::endFrame(bPresent, bSaveFrameBuffer);
     }
 }

@@ -365,5 +365,6 @@ void F_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
         UIUtils::printBigFontCenter(160, 20, CAST_NAMES[gCastNum]);     // Print the name
     }
 
-    Video::endFrame(bPresent, bSaveFrameBuffer);    // Show the frame
+    UIUtils::drawPerformanceCounter(0, 0);
+    Video::endFrame(bPresent, bSaveFrameBuffer);
 }

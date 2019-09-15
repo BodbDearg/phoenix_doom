@@ -35,3 +35,7 @@ uint32_t                gScreenSize;
 bool                    gAlwaysRun;
 bool                    gDoWipe;
 uint32_t                gValidCount;
+PerfCounterMode         gPerfCounterMode = PerfCounterMode::NONE;
+uint64_t                gPerfCounterAverageUSec;
+uint64_t                gPerfCounterRunningTotal;
+uint64_t                gPerfCounterTicksDone;

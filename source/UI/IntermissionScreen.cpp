@@ -170,5 +170,7 @@ void IN_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
     UIUtils::printNumber(SVALX, SVALY, gSecretValue, UIUtils::PNFLAGS_PERCENT|UIUtils::PNFLAGS_RIGHT);
 
     CelImages::releaseImages(rINTERMIS);
+    UIUtils::drawPerformanceCounter(0, 0);
+
     Video::endFrame(bPresent, bSaveFrameBuffer);
 }

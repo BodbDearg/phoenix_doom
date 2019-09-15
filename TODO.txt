@@ -5,7 +5,6 @@ TODO
 - New sprite clipping method that takes into account side of seg sprite is on.
 - Fix BSP check BBOX for high res rendering
 - Cleanup and optimize render code
-- FPS counter
 - Fix address sanitizer crash on angle LUT lookup (easy to reproduce on MacOS with Xcode) (might not be applicable anymore)
 
 ------------------------------------------------------------------------------------------------------------------------

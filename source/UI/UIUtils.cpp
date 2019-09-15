@@ -6,6 +6,7 @@
 #include "GFX/Blit.h"
 #include "GFX/CelImages.h"
 #include "GFX/Video.h"
+#include <string>
 
 BEGIN_NAMESPACE(UIUtils)
 
@@ -217,6 +218,21 @@ void drawPlaque(const uint32_t resourceNum) noexcept  {
     const CelImage& img = CelImages::loadImage(resourceNum);
     drawUISprite(160 - img.width / 2, 80, img);
     CelImages::releaseImages(resourceNum);
+}
+
+void drawPerformanceCounter(const int32_t x, const int32_t y) noexcept {
+    if (gPerfCounterMode == PerfCounterMode::FPS) {
+        if (gPerfCounterAverageUSec > 0) {
+            const double frameTimeSeconds = gPerfCounterAverageUSec / 1000000.0;
+            const double fps = 1.0f / frameTimeSeconds;
+            std::string fpsString = std::to_string(fps) + std::string(" FPS");
+            printBigFont(x, y, fpsString.c_str());
+        }
+    }
+    else if (gPerfCounterMode == PerfCounterMode::USEC) {
+        std::string usecString = std::to_string(gPerfCounterAverageUSec) + std::string(" USEC");
+        printBigFont(x, y, usecString.c_str());
+    }
 }
 
 END_NAMESPACE(UIUtils)
