@@ -22,6 +22,49 @@
 #include <thread>
 
 //----------------------------------------------------------------------------------------------------------------------
+// Performance profiling for the FPS count
+//----------------------------------------------------------------------------------------------------------------------
+static uint64_t gPerfProfileStartClockCount;
+
+static void startTickPerfProfile() noexcept {
+    gPerfProfileStartClockCount = SDL_GetPerformanceCounter();
+}
+
+static void endTickPerfProfile() noexcept {
+    // Performance profiling: add to the running total
+    const uint64_t perfEndClock = SDL_GetPerformanceCounter();
+    const uint64_t perfNumClocks = perfEndClock - gPerfProfileStartClockCount;
+    gPerfCounterRunningTotal += perfNumClocks;
+    gPerfCounterTicksDone++;
+
+    // Performance profiling: if it's time to update the averaged result then do that now
+    if (gPerfCounterTicksDone >= Config::gPerfCounterNumFramesToAverage) {
+        const uint64_t perfAvgClocks = gPerfCounterRunningTotal / Config::gPerfCounterNumFramesToAverage;
+        gPerfCounterRunningTotal = 0;
+        gPerfCounterTicksDone = 0;
+
+        const uint64_t perfClocksPerSecond = SDL_GetPerformanceFrequency();
+        const double perfSeconds = (double) perfNumClocks / (double) perfClocksPerSecond;
+        const double perfUSec = perfSeconds * 1000000.0;
+        gPerfCounterAverageUSec = (uint64_t) perfUSec;
+    }
+}
+
+static void checkForPerfProfileToggle() noexcept {
+    if (GAME_ACTION_ENDED(TOGGLE_PERFORMANCE_COUNTERS)) {
+        if (gPerfCounterMode == PerfCounterMode::NONE) {
+            gPerfCounterMode = PerfCounterMode::FPS;
+        }
+        else if (gPerfCounterMode == PerfCounterMode::FPS) {
+            gPerfCounterMode = PerfCounterMode::USEC;
+        } 
+        else {
+            gPerfCounterMode = PerfCounterMode::NONE;
+        }
+    }
+}
+
+//----------------------------------------------------------------------------------------------------------------------
 // Main loop processing for the game system.
 // Each callback is optional, though should probably always have a ticker and drawer.
 //----------------------------------------------------------------------------------------------------------------------
@@ -61,24 +104,12 @@ gameaction_e RunGameLoop(
             continue;
         }
 
-        // Performance profiling start clock and whether the user wants to toggle performance counters
-        const uint64_t perfStartClock = SDL_GetPerformanceCounter();
+        // Possibly doing a tick: update input and controls and if a quit was requested then exit immediately
+        startTickPerfProfile();
 
-        if (GAME_ACTION_ENDED(TOGGLE_PERFORMANCE_COUNTERS)) {
-            if (gPerfCounterMode == PerfCounterMode::NONE) {
-                gPerfCounterMode = PerfCounterMode::FPS;
-            }
-            else if (gPerfCounterMode == PerfCounterMode::FPS) {
-                gPerfCounterMode = PerfCounterMode::USEC;
-            } 
-            else {
-                gPerfCounterMode = PerfCounterMode::NONE;
-            }
-        }
-
-        // Update input and controls and if a quit was requested then exit immediately
         Input::update();
         Controls::update();
+        checkForPerfProfileToggle();    // Allow the FPS counter to be toggled
 
         if (Input::isQuitRequested()) {
             nextGameAction = ga_quit;
@@ -112,23 +143,7 @@ gameaction_e RunGameLoop(
             drawer(bPresent, bSaveFrameBuffer);
         }
 
-        // Performance profiling: add to the running total
-        const uint64_t perfEndClock = SDL_GetPerformanceCounter();
-        const uint64_t perfNumClocks = perfEndClock - perfStartClock;
-        gPerfCounterRunningTotal += perfNumClocks;
-        gPerfCounterTicksDone++;
-
-        // Performance profiling: if it's time to update the averaged result then do that now
-        if (gPerfCounterTicksDone >= Config::gPerfCounterNumFramesToAverage) {
-            const uint64_t perfAvgClocks = gPerfCounterRunningTotal / Config::gPerfCounterNumFramesToAverage;
-            gPerfCounterRunningTotal = 0;
-            gPerfCounterTicksDone = 0;
-
-            const uint64_t perfClocksPerSecond = SDL_GetPerformanceFrequency();
-            const double perfSeconds = (double) perfNumClocks / (double) perfClocksPerSecond;
-            const double perfUSec = perfSeconds * 1000000.0;
-            gPerfCounterAverageUSec = (uint64_t) perfUSec;
-        }
+        endTickPerfProfile();
 
     } while (nextGameAction == ga_nothing);     // Is the loop finished?
 
