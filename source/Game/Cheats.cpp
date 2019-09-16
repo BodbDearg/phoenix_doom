@@ -1,5 +1,6 @@
 #include "Cheats.h"
 
+#include "Audio/Audio.h"
 #include "Audio/Sound.h"
 #include "Audio/Sounds.h"
 #include "Base/Input.h"
@@ -8,6 +9,7 @@
 #include "DoomDefines.h"
 #include "Things/Interactions.h"
 #include "Things/MapObj.h"
+#include "Tick.h"
 #include "UI/Automap.h"
 #include <SDL.h>
 #include <vector>
@@ -220,6 +222,13 @@ static void updateWarpToMapCheat() noexcept {
                     gGameMap = gWarpToMapCheatNum;
                     gNextMap = gWarpToMapCheatNum;
                     gGameAction = ga_warped;
+
+                    // If this is done while paused, then unpause
+                    if (gbGamePaused) {
+                        gbGamePaused = false;
+                        Audio::resumeAllSounds();
+                        Audio::resumeMusic();
+                    }
                 }
             } else {
                 bCancelCheat = false;
