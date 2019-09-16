@@ -73,7 +73,6 @@ std::vector<FlatFragment>       gFloorFragments;
 std::vector<FlatFragment>       gCeilFragments;
 std::vector<SkyFragment>        gSkyFragments;
 std::vector<DrawSprite>         gDrawSprites;
-std::vector<SpriteFragment>     gSpriteFragments;
 
 //----------------------------------------------------------------------------------------------------------------------
 // Load in the "TextureInfo" array so that the game knows all about the wall and sky textures (Width,Height).
@@ -223,7 +222,6 @@ static void preDrawSetup() noexcept {
     gCeilFragments.clear();
     gSkyFragments.clear();
     gDrawSprites.clear();
-    gSpriteFragments.clear();
 
     // Other misc setup
     gExtraLight = player.extralight << 6;       // Init the extra lighting value
@@ -240,7 +238,6 @@ void init() noexcept {
     gCeilFragments.reserve(1024 * 8);
     gSkyFragments.reserve(1024);
     gDrawSprites.reserve(128);
-    gSpriteFragments.reserve(1024 * 4);
 }
 
 void shutdown() noexcept {

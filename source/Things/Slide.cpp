@@ -429,11 +429,11 @@ void SL_CheckSpecialLines(
                     continue;
                 }
 
-                if (gpLd->validcount == gValidCount) {
+                if (gpLd->validCount == gValidCount) {
                     continue;   // Line has already been checked
                 }
 
-                gpLd->validcount = gValidCount;
+                gpLd->validCount = gValidCount;
 
                 if ((xh < gpLd->bbox[BOXLEFT]) ||
                     (xl > gpLd->bbox[BOXRIGHT]) ||

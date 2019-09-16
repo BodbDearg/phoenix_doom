@@ -11,6 +11,7 @@
 #include <vector>
 
 struct ImageData;
+struct line_t;
 struct mobj_t;
 struct seg_t;
 struct SpriteFrameAngle;
@@ -174,18 +175,19 @@ namespace Renderer {
     // Contains details on a sprite that is queued to be drawn
     //------------------------------------------------------------------------------------------------------------------
     struct DrawSprite {
-        float               depth;              // Depth value for the sprite
-        float               lx;                 // Left and right screen X values
-        float               rx;
-        float               ty;                 // Top and bottom screen Y values
-        float               by;
+        const uint16_t*     pPixels;            // Pixels for the sprite (in column major format)
+        float               worldX;             // World center X position of the sprite (used for occlusion tests)
+        float               worldY;             // World center Y position of the sprite (used for occlusion tests)
+        float               screenLx;           // Left and right screen X values
+        float               screenRx;
+        float               screenTy;           // Top and bottom screen Y values
+        float               screenBy;
+        float               depth;              // Depth of the sprite for the view (used for Z sorting)
         float               lightMul;           // Light multiplier
-        bool                bFlip;              // Flip horizontally?
-        bool                bTransparent;       // Used for the spectre demon
         uint16_t            texW;               // Width and height of sprite texture
         uint16_t            texH;
-        uint16_t            _unused;
-        const uint16_t*     pPixels;            // Pixels for the sprite (in column major format)
+        bool                bFlip;              // Flip horizontally?
+        bool                bTransparent;       // Used for the spectre demon
     };
 
     //------------------------------------------------------------------------------------------------------------------
@@ -197,11 +199,13 @@ namespace Renderer {
         uint16_t            height;                 // Screen height
         uint16_t            texH : 15;              // Height of the sprite texture
         uint16_t            isTransparent : 1;      // If '1' then draw the sprite transparent (used for spectres)
-        float               depth;                  // Depth that the sprite fragment is at
+        float               depth;                  // Depth that the sprite is at (used for all sprite fragments)
         float               lightMul;               // Light multiplier
         float               texYStep;               // Stepping to use for the 'Y' texture coordinate
         float               texYSubPixelAdjust;     // Sub-pixel adjustment for 'Y' texture coordinate. Applied to every pixel after the first.
         const uint16_t*     pSpriteColPixels;       // The image data for the sprite (in column major format)
+        float               spriteWorldX;           // World center of the sprite: X
+        float               spriteWorldY;           // World center of the sprite: Y
     };
 
     //------------------------------------------------------------------------------------------------------------------
@@ -217,6 +221,10 @@ namespace Renderer {
         // The depths of each occluding column.
         // Note: is automatically in ascending order due to the nature of the BSP tree rendering - hence can be binary searched!
         float depths[MAX_ENTRIES];
+
+        // The lines for each occluding column.
+        // Used for the purposes of sprite clipping.
+        line_t* pLines[MAX_ENTRIES];
 
         // How much screen real estate each occluding column occupies at the top and bottom of the screen.
         // Anything at or above the top coordinate is occluded.
@@ -315,14 +323,13 @@ namespace Renderer {
     extern std::vector<FlatFragment>        gCeilFragments;                     // Ceiling fragments to be drawn
     extern std::vector<SkyFragment>         gSkyFragments;                      // Sky fragments to be drawn
     extern std::vector<DrawSprite>          gDrawSprites;                       // Sprites to be drawn that will later be turned into fragments (after depth sort)
-    extern std::vector<SpriteFragment>      gSpriteFragments;                   // Sprite fragments to be drawn
-
+    
     //==================================================================================================================
     // Functions
     //==================================================================================================================
 
     void doBspTraversal() noexcept;
-    void addSegToFrame(const seg_t& seg) noexcept;
+    void addSegToFrame(seg_t& seg) noexcept;
     void addSpriteToFrame(const mobj_t& thing) noexcept;
     void drawAllLineSegs() noexcept;
     void drawAllWallFragments() noexcept;

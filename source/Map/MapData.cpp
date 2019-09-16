@@ -199,20 +199,25 @@ static void loadLines(const uint32_t lumpResourceNum) noexcept {
         pDstLine->special = Endian::bigToHost(pSrcLine->special);
         pDstLine->tag = Endian::bigToHost(pSrcLine->tag);
 
-        // Copy the end points to the line
+        // Copy the end points to the line and also convert to float format
         const uint32_t v1Idx = Endian::bigToHost(pSrcLine->v1);
         const uint32_t v2Idx = Endian::bigToHost(pSrcLine->v2);
         pDstLine->v1 = gVertexes[v1Idx];
         pDstLine->v2 = gVertexes[v2Idx];
+
+        pDstLine->v1f.x = fixed16ToFloat(pDstLine->v1.x);
+        pDstLine->v1f.y = fixed16ToFloat(pDstLine->v1.y);
+        pDstLine->v2f.x = fixed16ToFloat(pDstLine->v2.x);
+        pDstLine->v2f.y = fixed16ToFloat(pDstLine->v2.y);
 
         // Get the delta offset (Line vector)
         const Fixed dx = pDstLine->v2.x - pDstLine->v1.x;
         const Fixed dy = pDstLine->v2.y - pDstLine->v1.y;
 
         // What type of line is this?
-        if (!dx) {                                      // No x motion?
+        if (dx == 0) {                                  // No x motion?
             pDstLine->slopetype = ST_VERTICAL;          // Vertical line only
-        } else if (!dy) {                               // No y motion?
+        } else if (dy == 0) {                           // No y motion?
             pDstLine->slopetype = ST_HORIZONTAL;        // Horizontal line only
         } else {
             if ((dy ^ dx) >= 0) {                       // Is this a positive or negative slope
@@ -231,7 +236,7 @@ static void loadLines(const uint32_t lumpResourceNum) noexcept {
             pDstLine->bbox[BOXRIGHT] = pDstLine->v1.x;
         }
 
-        if (dy>=0) {
+        if (dy >= 0) {
             pDstLine->bbox[BOXBOTTOM] = pDstLine->v1.y;     // Bottommost y
             pDstLine->bbox[BOXTOP] = pDstLine->v2.y;        // Topmost y
         } else {

@@ -2,6 +2,7 @@
 
 #include "Base/Tables.h"
 #include "Blit.h"
+#include "Game/Data.h"
 #include "Map/MapData.h"
 #include "Map/MapUtil.h"
 #include "Sprites.h"
@@ -256,18 +257,20 @@ void addSpriteToFrame(const mobj_t& thing) noexcept {
 
     // Makeup the draw sprite and add to the list
     DrawSprite drawSprite;
+    drawSprite.pPixels = spriteFrameAngle->pTexture;
+    drawSprite.worldX = worldX;
+    drawSprite.worldY = worldY;
+    drawSprite.screenLx = screenLx;
+    drawSprite.screenRx = screenRx;
+    drawSprite.screenTy = screenTy;
+    drawSprite.screenBy = screenBy;
     drawSprite.depth = clipW;
-    drawSprite.lx = screenLx;
-    drawSprite.rx = screenRx;
-    drawSprite.ty = screenTy;
-    drawSprite.by = screenBy;
     drawSprite.lightMul = lightMul;
-    drawSprite.bFlip = spriteFrameAngle->flipped;
-    drawSprite.bTransparent = bIsSpriteTransparent;
     drawSprite.texW = spriteFrameAngle->width;
     drawSprite.texH = spriteFrameAngle->height;
-    drawSprite.pPixels = spriteFrameAngle->pTexture;
-
+    drawSprite.bFlip = spriteFrameAngle->flipped;
+    drawSprite.bTransparent = bIsSpriteTransparent;
+    
     gDrawSprites.push_back(drawSprite);
 }
 
@@ -293,142 +296,88 @@ enum class SpriteFlipMode {
 };
 
 //----------------------------------------------------------------------------------------------------------------------
-// Emit the sprite fragments for one draw sprite
+// Clips the given sprite column against the given set of occluding columns.
+// Modifies the given top and bottom y clip bounds.
 //----------------------------------------------------------------------------------------------------------------------
-template <SpriteFlipMode FLIP_MODE>
-static void emitFragmentsForSprite(const DrawSprite& sprite) noexcept {
-    BLIT_ASSERT(sprite.rx >= sprite.lx);
-    BLIT_ASSERT(sprite.by >= sprite.ty);
+static void clipSpriteFragmentAgainstOccludingCols(
+    const SpriteFragment& frag,
+    const OccludingColumns& cols,
+    int16_t& yClipT,
+    int16_t& yClipB
+) noexcept {
+    const uint32_t validCount = gValidCount;
+    const uint32_t numCols = cols.count;
+    BLIT_ASSERT(numCols <= OccludingColumns::MAX_ENTRIES);
+    
+    for (uint32_t i = 0; i < numCols; ++i) {
+        // Grab the line associated with this column and see if we did an 'in front' test against this column
+        line_t& line = *cols.pLines[i];
 
-    // Figure out the size of the sprite on the screen
-    const float spriteW = sprite.rx - sprite.lx;
-    const float spriteH = sprite.by - sprite.ty;
+        if (line.validCount != validCount) {
+            // Get the min and max depths of the line. These are used for tests that take precedence over
+            // the cross-product test determining whether the sprite is in front of the line:
+            //
+            //  (1) If the sprite is deeper than the max line depth then it must be clipped by the line.
+            //      This handles cases where the sprite is past a corner but technically in 'front' of the line.
+            //  (2) If the sprite is closer than the min line depth then it must be in front of the line.
+            //      This handles cases where the sprite is in front of the line but technically 'behind' it.
+            //
+            // These extra checks help produce clipping that works in a similar way to software rendered Doom,
+            // with all of the same artifacts and corner cases too... Generally it works better than just a
+            // standard Z test since it avoids lots of problems with sprites poking into walls. It still has
+            // issues in some places however with parallel lines that are subdivided, often a sprite will be
+            // seen to be clipped at the subdivisions...
+            //
+            const float lineMinDepth = std::min(line.v1DrawDepth, line.v2DrawDepth);
+            const float lineMaxDepth = std::max(line.v1DrawDepth, line.v2DrawDepth);
 
-    int32_t spriteLxInt = (int32_t) sprite.lx;
-    int32_t spriteRxInt = (int32_t) sprite.rx;
-    int32_t spriteTyInt = (int32_t) sprite.ty;
-    int32_t spriteByInt = (int32_t) sprite.by + 2;      // Do 2 extra rows to ensure we capture sprite borders!
-
-    int32_t spriteWInt = spriteRxInt - spriteLxInt + 1;
-    int32_t spriteHInt = spriteByInt - spriteTyInt + 1;
-
-    // Figure out x and y texcoord stepping
-    const uint16_t texWInt = sprite.texW;
-    const uint16_t texHInt = sprite.texH;
-    const float texW = texWInt;
-    const float texH = texHInt;
-    const float texXStep = (spriteW > 1) ? texW / spriteW : 0.0f;
-    const float texYStep = (spriteH > 1) ? texH / spriteH : 0.0f;
-
-    // Computing a sub pixel x and y adjustment for stability. This is similar to the adjustment we do for walls.
-    // We take into account the fractional part of the first pixel when computing the distance to travel to the 2nd pixel.
-    const float texSubPixelXAdjust = -(sprite.lx - std::trunc(sprite.lx)) * texXStep;
-    const float texSubPixelYAdjust = -(sprite.ty - std::trunc(sprite.ty)) * texYStep;
-
-    // If we fall short of displaying the last column in a sprite then extend it by 1 column.
-    // This helps ensure that sprites don't get a column of pixels cut off at the end and miss important borders/edges.
-    bool bDoExtraCol;
-
-    {
-        const float origEndTexX = (float)(spriteWInt - 1) * texXStep + texSubPixelXAdjust;
-        const float texXShortfall = texW - 1.0f - origEndTexX;
-        bDoExtraCol = (texXShortfall > 0.0f);
-    }
-
-    // Skip past columns that are on the left side of the screen
-    int32_t curScreenX = spriteLxInt;
-    uint32_t curColNum = 0;
-
-    if (curScreenX < 0) {
-        curColNum = -curScreenX;
-        curScreenX = 0;
-    }
-
-    // Safety, this shouldn't be required but just in case if we are TOO MUCH off screen
-    if ((int32_t) curColNum >= spriteWInt)
-        return;
-
-    // Ensure we don't go past the right side of the screen.
-    // If we do also cancel any extra columns we might have ordered:
-    int32_t endScreenX;
-
-    if (spriteRxInt >= (int32_t) g3dViewWidth) {
-        endScreenX = (int32_t) g3dViewWidth;
-        bDoExtraCol = false;
-    } else {
-        endScreenX = spriteRxInt + 1;
-    }
-
-    // Emit the columns
-    {
-        float texXf;
-
-        if constexpr (FLIP_MODE == SpriteFlipMode::FLIPPED) {
-            texXf = std::nextafterf(texW, 0.0f);
-        } else {
-            texXf = 0.0f;
-        }
-
-        while (curScreenX < endScreenX) {
-            BLIT_ASSERT(curScreenX >= 0 && curScreenX < (int32_t) g3dViewWidth);
-            const uint16_t texX = (uint16_t) texXf;
-
-            if (texX >= texW)
-                break;
-
-            SpriteFragment frag;
-            frag.x = curScreenX;
-            frag.y = spriteTyInt;
-            frag.height = spriteHInt;
-            frag.texH = texHInt;
-            frag.isTransparent = (sprite.bTransparent) ? 1 : 0;
-            frag.depth = sprite.depth;
-            frag.lightMul = sprite.lightMul;
-            frag.texYStep = texYStep;
-            frag.texYSubPixelAdjust = texSubPixelYAdjust;
-            frag.pSpriteColPixels = sprite.pPixels + (uintptr_t) texX * texHInt;
-
-            gSpriteFragments.push_back(frag);
-
-            ++curScreenX;
-            ++curColNum;
-
-            if constexpr (FLIP_MODE == SpriteFlipMode::FLIPPED) {
-                texXf = texW - std::max(texXStep * (float) curColNum + texSubPixelXAdjust, 0.5f);
-            } else {
-                texXf = std::max(texXStep * (float) curColNum + texSubPixelXAdjust, 0.0f);
+            if (frag.depth > lineMaxDepth) {
+                line.bIsInFrontOfSprite = true;
+            } 
+            else if (frag.depth < lineMinDepth) {
+                line.bIsInFrontOfSprite = false;
             }
+            else {
+                // Okay, this is where we do the magic cross product check to see if the sprite is in 'front' of the line.
+                // This is the same method as the 'SegBehindPoint' function in the original 3DO Doom code:
+                float spriteRx, spriteRy, lineDx, lineDy;
+
+                if (line.drawnSideIndex == 0) {
+                    spriteRx = frag.spriteWorldX - line.v1f.x;
+                    spriteRy = frag.spriteWorldY - line.v1f.y;
+                    lineDx = line.v2f.x - line.v1f.x;
+                    lineDy = line.v2f.y - line.v1f.y;
+                } else {
+                    spriteRx = frag.spriteWorldX - line.v2f.x;
+                    spriteRy = frag.spriteWorldY - line.v2f.y;
+                    lineDx = line.v1f.x - line.v2f.x;
+                    lineDy = line.v1f.y - line.v2f.y;
+                }
+
+                const float a = spriteRx * lineDy;
+                const float b = spriteRy * lineDx;
+                line.bIsInFrontOfSprite = (a < b);
+            }
+
+            // Don't run this calculation again for this sprite
+            line.validCount = validCount;
         }
-    }
 
-    // Do an extra column at the end if required
-    if (bDoExtraCol) {
-        curScreenX = spriteRxInt + 1;
-
-        if (curScreenX < (int32_t) g3dViewWidth) {
-            const uint16_t texX = (FLIP_MODE == SpriteFlipMode::FLIPPED) ? 0 : texWInt - 1;
-
-            SpriteFragment frag;
-            frag.x = curScreenX;
-            frag.y = spriteTyInt;
-            frag.height = spriteHInt;
-            frag.texH = texHInt;
-            frag.isTransparent = (sprite.bTransparent) ? 1 : 0;
-            frag.depth = sprite.depth;
-            frag.lightMul = sprite.lightMul;
-            frag.texYStep = texYStep;
-            frag.texYSubPixelAdjust = texSubPixelYAdjust;
-            frag.pSpriteColPixels = sprite.pPixels + (uintptr_t) texX * texHInt;
-
-            gSpriteFragments.push_back(frag);
-        }
+        // Ignore this line if it is not in front of the sprite
+        if (!line.bIsInFrontOfSprite)
+            continue;
+        
+        // This line occludes the sprite: update the clip bounds
+        const OccludingColumns::Bounds bounds = cols.bounds[i];
+        yClipT = std::max(yClipT, bounds.top);
+        yClipB = std::min(yClipB, bounds.bottom);
     }
 }
 
 //----------------------------------------------------------------------------------------------------------------------
-// Draws a single sprite fragment
+// Clips and draws a single sprite fragment
 //----------------------------------------------------------------------------------------------------------------------
-void drawSpriteFragment(const SpriteFragment frag) noexcept {
+static void clipAndDrawSpriteFragment(const SpriteFragment& frag) noexcept {
     BLIT_ASSERT(frag.x < g3dViewWidth);
 
     // Firstly figure out the top and bottom clip bounds for the sprite fragment
@@ -437,25 +386,13 @@ void drawSpriteFragment(const SpriteFragment frag) noexcept {
 
     {
         const OccludingColumns& occludingCols = gOccludingCols[frag.x];
-        const uint32_t numOccludingCols = occludingCols.count;
-        BLIT_ASSERT(numOccludingCols <= OccludingColumns::MAX_ENTRIES);
-
-        for (uint32_t i = 0; i < numOccludingCols; ++i) {
-            // Ignore if the sprite is in front!
-            if (frag.depth <= occludingCols.depths[i])
-                continue;
-
-            // Update the clip bounds
-            const OccludingColumns::Bounds bounds = occludingCols.bounds[i];
-            yClipT = std::max(yClipT, bounds.top);
-            yClipB = std::min(yClipB, bounds.bottom);
-        }
+        clipSpriteFragmentAgainstOccludingCols(frag, occludingCols, yClipT, yClipB);
     }
 
     // If we are drawing nothing then bail
     if (yClipT >= yClipB)
         return;
-
+    
     // Do clipping against the top of the bounds
     float srcTexY = 0.0f;
     float srcTexYSubPixelAdjust = frag.texYSubPixelAdjust;
@@ -552,6 +489,146 @@ void drawSpriteFragment(const SpriteFragment frag) noexcept {
 }
 
 //----------------------------------------------------------------------------------------------------------------------
+// Emit the sprite fragments for one draw sprite
+//----------------------------------------------------------------------------------------------------------------------
+template <SpriteFlipMode FLIP_MODE>
+static void drawSprite(const DrawSprite& sprite) noexcept {
+    BLIT_ASSERT(sprite.screenRx >= sprite.screenLx);
+    BLIT_ASSERT(sprite.screenBy >= sprite.screenTy);
+
+    // Figure out the size of the sprite on the screen
+    const float spriteW = sprite.screenRx - sprite.screenLx;
+    const float spriteH = sprite.screenBy - sprite.screenTy;
+
+    int32_t spriteLxInt = (int32_t) sprite.screenLx;
+    int32_t spriteRxInt = (int32_t) sprite.screenRx;
+    int32_t spriteTyInt = (int32_t) sprite.screenTy;
+    int32_t spriteByInt = (int32_t) sprite.screenBy + 2;    // Do 2 extra rows to ensure we capture sprite borders!
+
+    int32_t spriteWInt = spriteRxInt - spriteLxInt + 1;
+    int32_t spriteHInt = spriteByInt - spriteTyInt + 1;
+
+    // Figure out x and y texcoord stepping
+    const uint16_t texWInt = sprite.texW;
+    const uint16_t texHInt = sprite.texH;
+    const float texW = texWInt;
+    const float texH = texHInt;
+    const float texXStep = (spriteW > 1) ? texW / spriteW : 0.0f;
+    const float texYStep = (spriteH > 1) ? texH / spriteH : 0.0f;
+
+    // Computing a sub pixel x and y adjustment for stability. This is similar to the adjustment we do for walls.
+    // We take into account the fractional part of the first pixel when computing the distance to travel to the 2nd pixel.
+    const float texSubPixelXAdjust = -(sprite.screenLx - std::trunc(sprite.screenLx)) * texXStep;
+    const float texSubPixelYAdjust = -(sprite.screenTy - std::trunc(sprite.screenTy)) * texYStep;
+
+    // If we fall short of displaying the last column in a sprite then extend it by 1 column.
+    // This helps ensure that sprites don't get a column of pixels cut off at the end and miss important borders/edges.
+    bool bDoExtraCol;
+
+    {
+        const float origEndTexX = (float)(spriteWInt - 1) * texXStep + texSubPixelXAdjust;
+        const float texXShortfall = texW - 1.0f - origEndTexX;
+        bDoExtraCol = (texXShortfall > 0.0f);
+    }
+
+    // Skip past columns that are on the left side of the screen
+    int32_t curScreenX = spriteLxInt;
+    uint32_t curColNum = 0;
+
+    if (curScreenX < 0) {
+        curColNum = -curScreenX;
+        curScreenX = 0;
+    }
+
+    // Safety, this shouldn't be required but just in case if we are TOO MUCH off screen
+    if ((int32_t) curColNum >= spriteWInt)
+        return;
+
+    // Ensure we don't go past the right side of the screen.
+    // If we do also cancel any extra columns we might have ordered:
+    int32_t endScreenX;
+
+    if (spriteRxInt >= (int32_t) g3dViewWidth) {
+        endScreenX = (int32_t) g3dViewWidth;
+        bDoExtraCol = false;
+    } else {
+        endScreenX = spriteRxInt + 1;
+    }
+
+    // Increment this marker for clipping checks
+    ++gValidCount;
+
+    // Emit the columns
+    {
+        float texXf;
+
+        if constexpr (FLIP_MODE == SpriteFlipMode::FLIPPED) {
+            texXf = std::nextafterf(texW, 0.0f);
+        } else {
+            texXf = 0.0f;
+        }
+
+        while (curScreenX < endScreenX) {
+            BLIT_ASSERT(curScreenX >= 0 && curScreenX < (int32_t) g3dViewWidth);
+            const uint16_t texX = (uint16_t) texXf;
+
+            if (texX >= texW)
+                break;
+
+            SpriteFragment frag;
+            frag.x = curScreenX;
+            frag.y = spriteTyInt;
+            frag.height = spriteHInt;
+            frag.texH = texHInt;
+            frag.isTransparent = (sprite.bTransparent) ? 1 : 0;
+            frag.depth = sprite.depth;
+            frag.lightMul = sprite.lightMul;
+            frag.texYStep = texYStep;
+            frag.texYSubPixelAdjust = texSubPixelYAdjust;
+            frag.pSpriteColPixels = sprite.pPixels + (uintptr_t) texX * texHInt;
+            frag.spriteWorldX = sprite.worldX;
+            frag.spriteWorldY = sprite.worldY;
+
+            clipAndDrawSpriteFragment(frag);
+
+            ++curScreenX;
+            ++curColNum;
+
+            if constexpr (FLIP_MODE == SpriteFlipMode::FLIPPED) {
+                texXf = texW - std::max(texXStep * (float) curColNum + texSubPixelXAdjust, 0.5f);
+            } else {
+                texXf = std::max(texXStep * (float) curColNum + texSubPixelXAdjust, 0.0f);
+            }
+        }
+    }
+
+    // Do an extra column at the end if required
+    if (bDoExtraCol) {
+        curScreenX = spriteRxInt + 1;
+
+        if (curScreenX < (int32_t) g3dViewWidth) {
+            const uint16_t texX = (FLIP_MODE == SpriteFlipMode::FLIPPED) ? 0 : texWInt - 1;
+
+            SpriteFragment frag;
+            frag.x = curScreenX;
+            frag.y = spriteTyInt;
+            frag.height = spriteHInt;
+            frag.texH = texHInt;
+            frag.isTransparent = (sprite.bTransparent) ? 1 : 0;
+            frag.depth = sprite.depth;
+            frag.lightMul = sprite.lightMul;
+            frag.texYStep = texYStep;
+            frag.texYSubPixelAdjust = texSubPixelYAdjust;
+            frag.pSpriteColPixels = sprite.pPixels + (uintptr_t) texX * texHInt;
+            frag.spriteWorldX = sprite.worldX;
+            frag.spriteWorldY = sprite.worldY;
+
+            clipAndDrawSpriteFragment(frag);
+        }
+    }
+}
+
+//----------------------------------------------------------------------------------------------------------------------
 // Draw all the sprites in the 3D view from back to front
 //----------------------------------------------------------------------------------------------------------------------
 void drawAllSprites() noexcept {
@@ -559,14 +636,10 @@ void drawAllSprites() noexcept {
 
     for (const DrawSprite& sprite : gDrawSprites) {
         if (sprite.bFlip) {
-            emitFragmentsForSprite<SpriteFlipMode::FLIPPED>(sprite);
+            drawSprite<SpriteFlipMode::FLIPPED>(sprite);
         } else {
-            emitFragmentsForSprite<SpriteFlipMode::NOT_FLIPPED>(sprite);
+            drawSprite<SpriteFlipMode::NOT_FLIPPED>(sprite);
         }
-    }
-
-    for (const SpriteFragment& spriteFrag : gSpriteFragments) {
-        drawSpriteFragment(spriteFrag);
     }
 }
 

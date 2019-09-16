@@ -18,24 +18,6 @@ BEGIN_NAMESPACE(Renderer)
 static constexpr float MIN_DEPTH_FOR_FLAT_PIXEL_CLAMP = 128.0f;
 
 //----------------------------------------------------------------------------------------------------------------------
-// Reverse the draw seg by swapping p1 and p2.
-// Useful for fixing up back facing segs so we can deal with them in the same way as front facing segs.
-//----------------------------------------------------------------------------------------------------------------------
-static void swapDrawSegP1AndP2(DrawSeg& seg) noexcept {
-    std::swap(seg.p1x,          seg.p2x);
-    std::swap(seg.p1y,          seg.p2y);
-    std::swap(seg.p1w,          seg.p2w);
-    std::swap(seg.p1w_inv,      seg.p2w_inv);
-    std::swap(seg.p1tz,         seg.p2tz);
-    std::swap(seg.p1bz,         seg.p2bz);
-    std::swap(seg.p1tz_back,    seg.p2tz_back);
-    std::swap(seg.p1bz_back,    seg.p2bz_back);
-    std::swap(seg.p1TexX,       seg.p2TexX);
-    std::swap(seg.p1WorldX,     seg.p2WorldX);
-    std::swap(seg.p1WorldY,     seg.p2WorldY);
-}
-
-//----------------------------------------------------------------------------------------------------------------------
 // Populate vertex attributes for the given seg that are interpolated across the seg during rendering.
 // These attributes are not affected by any transforms, but *ARE* clipped.
 //----------------------------------------------------------------------------------------------------------------------
@@ -59,37 +41,33 @@ static void populateSegVertexAttribs(const seg_t& seg, DrawSeg& drawSeg) noexcep
 }
 
 //----------------------------------------------------------------------------------------------------------------------
+// Transforms a single point into view space
+//----------------------------------------------------------------------------------------------------------------------
+static void transformPointToViewSpace(float& x, float& y) noexcept {
+    // Transform by the view position
+    x -= gViewX;
+    y -= gViewY;
+
+    // Do rotation by view angle and save the result
+    // Rotation matrix formula from: https://en.wikipedia.org/wiki/Rotation_matrix
+    const float viewSin = gViewSin;
+    const float viewCos = gViewCos;
+    const float xRot = viewCos * x - viewSin * y;
+    const float yRot = viewSin * x + viewCos * y;
+    x = xRot;
+    y = yRot;
+}
+
+//----------------------------------------------------------------------------------------------------------------------
 // Transforms the XY coordinates for the seg into view space
 //----------------------------------------------------------------------------------------------------------------------
-static void transformSegXYToViewSpace(const seg_t& inSeg, DrawSeg& outSeg) noexcept {
-    // First convert from fixed point to floats
+static void transformSegXYToViewSpace(const seg_t& inSeg, DrawSeg& outSeg) noexcept {    
     outSeg.p1x = inSeg.v1.x;
     outSeg.p1y = inSeg.v1.y;
     outSeg.p2x = inSeg.v2.x;
     outSeg.p2y = inSeg.v2.y;
-
-    // Transform the seg xy coords by the view position
-    const float viewX = gViewX;
-    const float viewY = gViewY;
-    const float viewSin = gViewSin;
-    const float viewCos = gViewCos;
-
-    outSeg.p1x -= viewX;
-    outSeg.p1y -= viewY;
-    outSeg.p2x -= viewX;
-    outSeg.p2y -= viewY;
-
-    // Do rotation by view angle.
-    // Rotation matrix formula from: https://en.wikipedia.org/wiki/Rotation_matrix
-    const float p1xRot = viewCos * outSeg.p1x - viewSin * outSeg.p1y;
-    const float p1yRot = viewSin * outSeg.p1x + viewCos * outSeg.p1y;
-    const float p2xRot = viewCos * outSeg.p2x - viewSin * outSeg.p2y;
-    const float p2yRot = viewSin * outSeg.p2x + viewCos * outSeg.p2y;
-
-    outSeg.p1x = p1xRot;
-    outSeg.p1y = p1yRot;
-    outSeg.p2x = p2xRot;
-    outSeg.p2y = p2yRot;
+    transformPointToViewSpace(outSeg.p1x, outSeg.p1y);
+    transformPointToViewSpace(outSeg.p2x, outSeg.p2y);
 }
 
 static bool isScreenSpaceSegBackFacing(const DrawSeg& seg) noexcept {
@@ -695,7 +673,8 @@ template <EmitOccluderMode MODE>
 static void emitOccluderColumn(
     const uint32_t x,
     const int32_t screenYCoord,
-    const float depth
+    const float depth,
+    line_t& line
 ) noexcept {
     static_assert(MODE == EmitOccluderMode::TOP || MODE == EmitOccluderMode::BOTTOM);
     ASSERT(x < g3dViewWidth);
@@ -723,6 +702,7 @@ static void emitOccluderColumn(
 
         ++occludingCols.count;
         occludingCols.depths[0] = depth;
+        occludingCols.pLines[0] = &line;
         OccludingColumns::Bounds& bounds = occludingCols.bounds[0];
 
         if constexpr (MODE == EmitOccluderMode::TOP) {
@@ -760,6 +740,7 @@ static void emitOccluderColumn(
 
             ++occludingCols.count;
             occludingCols.depths[numOccludingCols] = depth;
+            occludingCols.pLines[numOccludingCols] = &line;
             OccludingColumns::Bounds& bounds = occludingCols.bounds[numOccludingCols];
 
             if constexpr (MODE == EmitOccluderMode::TOP) {
@@ -796,7 +777,7 @@ static void emitOccluderColumn(
 // Returns the number of wall and floor columns emitted, for the purposes of marking automap lines as visible.
 //----------------------------------------------------------------------------------------------------------------------
 template <FragEmitFlagsT FLAGS>
-static uint32_t emitDrawSegColumns(const DrawSeg& drawSeg, const seg_t seg) noexcept {
+static uint32_t emitDrawSegColumns(const DrawSeg& drawSeg, seg_t& seg) noexcept {
     //------------------------------------------------------------------------------------------------------------------
     // Some setup logic
     //------------------------------------------------------------------------------------------------------------------
@@ -1375,12 +1356,12 @@ static uint32_t emitDrawSegColumns(const DrawSeg& drawSeg, const seg_t seg) noex
 
         if constexpr (EMIT_MID_WALL_OCCLUDER) {
             // A solid wall will gobble up the entire screen and occlude everything!
-            emitOccluderColumn<EmitOccluderMode::TOP>(x, g3dViewHeight, depth);
+            emitOccluderColumn<EmitOccluderMode::TOP>(x, g3dViewHeight, depth, *seg.linedef);
         } else {
             // Even if it's not asked for, if we find the column at this pixel is now
             // fully occluded then mark that as the case with an occluder column:
             if (clipBounds.top >= clipBounds.bottom) {
-                emitOccluderColumn<EmitOccluderMode::TOP>(x, g3dViewHeight, depth);
+                emitOccluderColumn<EmitOccluderMode::TOP>(x, g3dViewHeight, depth, *seg.linedef);
                 continue;
             }
         }
@@ -1388,14 +1369,14 @@ static uint32_t emitDrawSegColumns(const DrawSeg& drawSeg, const seg_t seg) noex
         if constexpr (EMIT_LOWER_WALL_OCCLUDER) {
             if (bEmitLowerWallOccluder) {
                 const float z = (bLowerWallOccluderUsesBackZ) ? lowerTz : lowerBz;
-                emitOccluderColumn<EmitOccluderMode::BOTTOM>(x, (int32_t) z, depth);
+                emitOccluderColumn<EmitOccluderMode::BOTTOM>(x, (int32_t) z, depth, *seg.linedef);
             }
         }
 
         if constexpr (EMIT_UPPER_WALL_OCCLUDER) {
             if (bEmitUpperWallOccluder) {
                 const float z = (bUpperWallOccluderUsesBackZ) ? upperBz : upperTz;
-                emitOccluderColumn<EmitOccluderMode::TOP>(x, (int32_t) z, depth);
+                emitOccluderColumn<EmitOccluderMode::TOP>(x, (int32_t) z, depth, *seg.linedef);
             }
         }
     }
@@ -1403,7 +1384,7 @@ static uint32_t emitDrawSegColumns(const DrawSeg& drawSeg, const seg_t seg) noex
     return numWallAndFlatCols;
 }
 
-void addSegToFrame(const seg_t& seg) noexcept {
+void addSegToFrame(seg_t& seg) noexcept {
     // First transform the seg into viewspace and populate vertex attributes
     DrawSeg drawSeg;
     populateSegVertexAttribs(seg, drawSeg);
@@ -1433,6 +1414,22 @@ void addSegToFrame(const seg_t& seg) noexcept {
     if (isScreenSpaceSegBackFacing(drawSeg))
         return;
     
+    // Line: mark what side of the line we are drawing and get the depths of the two endpoints
+    line_t& line = *seg.linedef;
+    line.drawnSideIndex = seg.getLineSideIndex();
+
+    {
+        // The depth of each endpoint is simply the y value after it's been transformed to viewspace
+        float x1 = line.v1f.x;
+        float y1 = line.v1f.y;
+        float x2 = line.v2f.x;
+        float y2 = line.v2f.y;
+        transformPointToViewSpace(x1, y1);
+        transformPointToViewSpace(x2, y2);
+        line.v1DrawDepth = y1;
+        line.v2DrawDepth = y2;
+    }
+
     // Emit all wall and floor fragments for the seg
     uint32_t numWallAndFloorColumnsEmitted;
 

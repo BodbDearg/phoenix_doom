@@ -423,10 +423,10 @@ bool PA_CrossSubsector(const subsector_t* sub) {
     {
         line = seg->linedef;
 
-        if (line->validcount == gValidCount)
+        if (line->validCount == gValidCount)
             continue;       // already checked other side
-        line->validcount = gValidCount;
 
+        line->validCount = gValidCount;
         frac = PA_SightCrossLine (line);
 
         if (frac < 0 || frac > FRACUNIT)

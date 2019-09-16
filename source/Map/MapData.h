@@ -74,18 +74,26 @@ enum slopetype_e {
 struct line_t {
     NON_ASSIGNABLE_STRUCT(line_t)
 
-    vertex_t        v1;                 // X,Ys for the line ends
+    vertex_t        v1;                     // X,Ys for the line ends
     vertex_t        v2;
-    uint32_t        flags;              // Bit flags (ML_) for states
-    uint32_t        special;            // Event number
-    uint32_t        tag;                // Event tag number
-    side_t*         SidePtr[2];         // Sidenum[1] will be NULL if one sided
-    Fixed           bbox[BOXCOUNT];     // Bounding box for quick clipping
-    slopetype_e     slopetype;          // To aid move clipping
-    sector_t*       frontsector;        // Front line side sector
-    sector_t*       backsector;         // Back side sector (NULL if one sided)
-    uint32_t        validcount;         // Prevent recursion flag
-    uint32_t        fineangle;          // Index to get sine / cosine for sliding
+    vertexf_t       v1f;                    // The same in float format
+    vertexf_t       v2f;
+    uint32_t        flags;                  // Bit flags (ML_) for states
+    uint32_t        special;                // Event number
+    uint32_t        tag;                    // Event tag number
+    side_t*         SidePtr[2];             // Sidenum[1] will be NULL if one sided
+    Fixed           bbox[BOXCOUNT];         // Bounding box for quick clipping
+    slopetype_e     slopetype;              // To aid move clipping
+    sector_t*       frontsector;            // Front line side sector
+    sector_t*       backsector;             // Back side sector (NULL if one sided)
+    uint32_t        fineangle;              // Index to get sine / cosine for sliding
+
+    // Intrusive/non-property fields
+    uint32_t    validCount;             // Keeps track of whether the line has been visited during certain operations
+    float       v1DrawDepth;            // Depth of v1 and v2 when drawn
+    float       v2DrawDepth;
+    uint8_t     drawnSideIndex;         // Which side of the line is being rendered
+    bool        bIsInFrontOfSprite;     // Used during sprite clipping: stores if the line is considered in front of the sprite
 };
 
 // Flags that can be applied to a line
@@ -112,6 +120,10 @@ struct seg_t {
     sector_t*   frontsector;    // Sector on the front side
     sector_t*   backsector;     // NULL for one sided lines
     float       lightMul;       // Wall light multiplier (used for fake contrast)
+
+    uint8_t getLineSideIndex() const noexcept {
+        return (linedef->SidePtr[0] == sidedef) ? 0 : 1;
+    }
 };
 
 // Subsector structure

@@ -345,8 +345,8 @@ bool BlockLinesIterator(const uint32_t x, const uint32_t y, const BlockLinesIter
                 break;                          // Get out of the loop
             }
 
-            if (pLine->validcount != gValidCount) {     // Line not checked?
-                pLine->validcount = gValidCount;        // Mark it
+            if (pLine->validCount != gValidCount) {     // Line not checked?
+                pLine->validCount = gValidCount;        // Mark it
                 if (!func(*pLine)) {                    // Call the line proc
                     return false;                       // I have a match?
                 }

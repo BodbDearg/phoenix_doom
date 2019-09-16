@@ -78,11 +78,11 @@ static bool PS_CrossSubsector(const subsector_t& sub) noexcept {
         ASSERT(pSeg->linedef);
         line_t& line = *pSeg->linedef;
 
-        if (line.validcount == gValidCount) {
+        if (line.validCount == gValidCount) {
             continue;   // Allready checked other side
         }
 
-        line.validcount = gValidCount;
+        line.validCount = gValidCount;
         Fixed frac = PS_SightCrossLine(line);
 
         if (frac < 4 || frac > FRACUNIT) {
