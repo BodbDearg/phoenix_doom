@@ -10,5 +10,15 @@ TODO
 Known issues: document
 ------------------------------------------------------------------------------------------------------------------------
 
-- Issue on level 10 with small crate textures (found this in 3DO version - data problem?)
-- Switch on 'Limbo' level not working (seems to be the same on the 3DO too, level design bug?)
+- There is corruption on level 10's crate maze with the very small crate textures.
+Found this in the 3DO version also - is it a data problem?
+Perhaps the build tools that generated this texture failed somehow for that particular asset.
+
+- A switch on the 'Limbo' level is not working; it does nothing when you attempt to interact with it.
+Appears to be the same on the 3DO too, level design bug? It's functional on PC, though I'm not sure exactly what it does.
+
+- Can damage enemies sometimes through walls and doors with explosions from rockets etc.
+This bug was in the 3DO version also, might be able to fix this though!
+
+- In some cases sprites can clip through walls or be clipped by walls when they shouldn't be.
+The cases where this happens are similar to both PC and 3DO Doom; it's due to the limitations of the sprite clipping technique used.

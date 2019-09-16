@@ -70,6 +70,7 @@ static bool PIT_ChangeSector(mobj_t& thing) noexcept {
     // Crunch bodies to giblets
     if (thing.MObjHealth <= 0) {                    // No health...
         SetMObjState(thing, gStates[S_GIBS]);       // Change to goo
+        thing.flags &= ~MF_SOLID;                   // No longer solid
         thing.height = 0;                           // No height
         thing.radius = 0;                           // No radius
         return true;                                // keep checking

@@ -9,6 +9,9 @@ This allows for smoother light gradients and less color banding.
 [] Improved texture mapping and renderer temporal stability.
 Textures, walls and sprites are now much more temporally coherent and 'wiggle' around less. Texture mapping on the walls in particular is much improved and gets rid of the 'fuzzing' from the 3DO version where the y pixel values continously jump up and down on every wall column.
 
+[] Upgraded lighting and light diminishing effects.
+The contrast between light and dark areas has been increased greatly and the game looks less washed out compared to the original. The light diminishing effect is also now much higher quality and looks almost like a fog/darkness shroud; it no longer looks like a series of darkening/tint strips being overlaid horizontally across the screen in a fixed manner.
+
 [] Sprites no longer appear unnaturally bright.
 3DO Doom seemed to light all sprites much brighter than the environment surrounding them. This may have been due to the lookup values that it used to light the sprites - perhaps they were too high? The darkness of sprites in this version much more closely mimicks the environment lighting and sprites hopefully blend in much better.
 
@@ -71,3 +74,6 @@ No longer have to use a cheat to access this!
 [] Fixed some inconsistencies in the simulation between high vs low framerates.
 This could be observed on stuff like the view bob, where the bob amount would be large at low framerates but very little at high framerates.
 To fix this I removed logic that simulates a variable number of ticks per frame and instead do a fixed time step update of game logic at all times (like PC Doom).
+
+[] Fixed an occasional bug where if you killed a monster under a door and the door dropped on the monster while the death anim was still playing, the gore puddle would become blocking.
+Sometimes this issue would prevent you from passing through narrow doors! This bug was present on the 3DO version but does not happen on PC Doom. Fixed by removing the 'blocking' attribute of the enemy when it is being crushed.
