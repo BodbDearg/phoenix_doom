@@ -6,44 +6,36 @@
 #include "Map/MapData.h"
 #include "Map/MapUtil.h"
 #include "MapObj.h"
+#include <algorithm>
 
-//===================
+//---------------------------------------------------------------------------------------------------------------------
+// Input values:
 //
-// IN
-//
-// A line will be shootdivd from the middle of shooter in the direction of
-// attackangle until either a shootable mobj is within the visible
-// aimtopslope / aimbottomslope range, or a solid wall blocks further
-// tracing.  If no thing is targeted along the entire range, the first line
-// that blocks the midpoint of the shootdiv will be hit.
-//===================
-
+//  A line will be shootdivd from the middle of shooter in the direction of attackangle until either a shootable
+//  mobj is within the visible aimtopslope / aimbottomslope range, or a solid wall blocks further tracing.
+//  If no thing is targeted along the entire range, the first line that blocks the midpoint of the shootdiv will be hit.
+//---------------------------------------------------------------------------------------------------------------------
 line_t*     gpShootLine;
 mobj_t*     gpShootMObj;
-Fixed       gShootSlope;        // between aimtop and aimbottom
+Fixed       gShootSlope;    // Between aimtop and aimbottom
 Fixed       gShootX;
 Fixed       gShootY;
-Fixed       gShootZ;            // location for puff/blood
+Fixed       gShootZ;        // Location for puff/blood
 
-//===================
-//
-// TEMPS
-//
-//===================
-
-static Fixed        gAimMidSlope;               // for detecting first wall hit
+// Temps
+static Fixed        gAimMidSlope;           // For detecting first wall hit
 static vector_t     gShootDiv;
 static Fixed        gShootX2;
 static Fixed        gShootY2;
 static Fixed        gFirstLineFrac;
-static int          gShootDivPositive;
+static bool         gbShootDivPositive;
 static Fixed        gOldFrac;
-static void*        gOldValue;
+static void*        gpOldValue;
 static bool         gOldIsLine;
-static int          gSsx1;
-static int          gSsy1;
-static int          gSsx2;
-static int          gSsy2;
+static int32_t      gSsx1;
+static int32_t      gSsy1;
+static int32_t      gSsx2;
+static int32_t      gSsy2;
 
 //---------------------------------------------------------------------------------------------------------------------
 // Returns true if strace crosses the given node successfuly
@@ -52,7 +44,7 @@ static bool PA_CrossBSPNode(const node_t* pNode) {
     if (isBspNodeASubSector(pNode)) {
         // N.B: pointer has to be fixed up due to prescence of a flag in the lowest bit!
         const subsector_t* const pSubSector = reinterpret_cast<const subsector_t*>(getActualBspNodePtr(pNode));
-        return PA_CrossSubsector(pSubSector);
+        return PA_CrossSubsector(*pSubSector);
     }
 
     // Decide which side the start point is on and cross the starting side
@@ -72,41 +64,31 @@ static bool PA_CrossBSPNode(const node_t* pNode) {
     return PA_CrossBSPNode((const node_t*) pNode->Children[sideIdx ^ 1]);
 }
 
-/*
-=====================
-=
-= P_Shoot2
-=
-=====================
-*/
-void P_Shoot2()
-{
-    mobj_t      *t1;
-    unsigned    angle;
-
-    t1 = gpShooter;
+void P_Shoot2() noexcept {
+    ASSERT(gpShooter);
+    mobj_t& shooter = *gpShooter;
 
     gpShootLine = nullptr;
     gpShootMObj = nullptr;
 
-    angle = gAttackAngle >> ANGLETOFINESHIFT;
+    const uint32_t angle = gAttackAngle >> ANGLETOFINESHIFT;
 
-    gShootDiv.x = t1->x;
-    gShootDiv.y = t1->y;
-    gShootX2 = t1->x + (gAttackRange >> FRACBITS) * gFineCosine[angle];
-    gShootY2 = t1->y + (gAttackRange >> FRACBITS) * gFineSine[angle];
+    gShootDiv.x = shooter.x;
+    gShootDiv.y = shooter.y;
+    gShootX2 = shooter.x + (gAttackRange >> FRACBITS) * gFineCosine[angle];
+    gShootY2 = shooter.y + (gAttackRange >> FRACBITS) * gFineSine[angle];
     gShootDiv.dx = gShootX2 - gShootDiv.x;
     gShootDiv.dy = gShootY2 - gShootDiv.y;
-    gShootZ = t1->z + (t1->height>>1) + 8 * FRACUNIT;
+    gShootZ = shooter.z + (shooter.height >> 1) + 8 * FRACUNIT;
 
-    gShootDivPositive = (gShootDiv.dx ^ gShootDiv.dy)>0;
+    gbShootDivPositive = ((gShootDiv.dx ^ gShootDiv.dy) > 0);
 
     gSsx1 = gShootDiv.x >> 16;
     gSsy1 = gShootDiv.y >> 16;
     gSsx2 = gShootX2 >> 16;
     gSsy2 = gShootY2 >> 16;
 
-    gAimMidSlope = (gAimTopSlope + gAimBottomSlope)>>1;
+    gAimMidSlope = (gAimTopSlope + gAimBottomSlope) >> 1;
 
     // Cross everything
     gOldFrac = 0;
@@ -114,7 +96,7 @@ void P_Shoot2()
 
     // Check the last intercept if needed
     if (!gpShootMObj) {
-        PA_DoIntercept(0, false, FRACUNIT);
+        PA_DoIntercept(nullptr, false, FRACUNIT);
     }
 
     // post process
@@ -132,94 +114,64 @@ void P_Shoot2()
     gShootZ = gShootZ + fixed16Mul(gAimMidSlope, fixed16Mul(gFirstLineFrac, gAttackRange));
 }
 
-
-/*
-==================
-=
-= PA_DoIntercept
-=
-==================
-*/
-bool PA_DoIntercept(void *value, bool isline, Fixed frac) {
-    intptr_t temp;
-
-    if (gOldFrac < frac)
-    {
-        temp = (intptr_t) gOldValue;
-        gOldValue = value;
-        value = (void *)temp;
-
-        temp = gOldIsLine;
-        gOldIsLine = isline;
-        isline = temp;
-
-        temp = gOldFrac;
-        gOldFrac = frac;
-        frac = temp;
+bool PA_DoIntercept(void* pValue, bool isLine, Fixed frac) noexcept {
+    if (gOldFrac < frac) {
+        std::swap(gpOldValue, pValue);
+        std::swap(gOldIsLine, isLine);
+        std::swap(gOldFrac, frac);
     }
 
     if (frac == 0 || frac >= FRACUNIT)
         return true;
 
-    if (isline)
-        return PA_ShootLine ((line_t *)value, frac);
+    ASSERT(pValue);
+    
+    if (isLine) {
+        line_t* const pLine = (line_t*) pValue;
+        return PA_ShootLine(*pLine, frac);
+    }
 
-    return PA_ShootThing ((mobj_t *)value, frac);
+    mobj_t* const pThing = (mobj_t*) pValue;
+    return PA_ShootThing(*pThing, frac);
 }
 
-
-/*
-==============================================================================
-=
-= PA_ShootLine
-=
-==============================================================================
-*/
-bool PA_ShootLine(line_t* li, Fixed interceptfrac)
-{
-    Fixed       slope;
-    Fixed       dist;
-    sector_t    *front, *back;
-    Fixed opentop,openbottom;
-
-    if ( !(li->flags & ML_TWOSIDED) )
-    {
-        if (!gpShootLine)
-        {
-            gpShootLine = li;
+bool PA_ShootLine(line_t& li, const Fixed interceptfrac) noexcept {
+    if ((li.flags & ML_TWOSIDED) == 0) {
+        if (!gpShootLine) {
+            gpShootLine = &li;
             gFirstLineFrac = interceptfrac;
         }
-        gOldFrac = 0;   // don't shoot anything past this
+
+        gOldFrac = 0;   // Don't shoot anything past this
         return false;
     }
 
-//
-// crosses a two sided line
-//
-    front = li->frontsector;
-    back = li->backsector;
+    // Crosses a two sided line
+    sector_t* const pFrontSec = li.frontsector;
+    sector_t* const pBackSec = li.backsector;
+    
+    Fixed opentop;
+    Fixed openbottom;
 
-    if (front->ceilingheight < back->ceilingheight) {
-        opentop = front->ceilingheight;
-    }
-    else {
-        opentop = back->ceilingheight;
-    }
-
-    if (front->floorheight > back->floorheight) {
-        openbottom = front->floorheight;
-    }
-    else {
-        openbottom = back->floorheight;
+    if (pFrontSec->ceilingheight < pBackSec->ceilingheight) {
+        opentop = pFrontSec->ceilingheight;
+    } else {
+        opentop = pBackSec->ceilingheight;
     }
 
-    dist = fixed16Mul(gAttackRange, interceptfrac);
+    if (pFrontSec->floorheight > pBackSec->floorheight) {
+        openbottom = pFrontSec->floorheight;
+    } else {
+        openbottom = pBackSec->floorheight;
+    }
 
-    if (li->frontsector->floorheight != li->backsector->floorheight) {
-        slope = fixed16Div(openbottom - gShootZ, dist);
+    const Fixed dist = fixed16Mul(gAttackRange, interceptfrac);
 
-        if (slope >= gAimMidSlope && !gpShootLine) {
-            gpShootLine = li;
+    if (li.frontsector->floorheight != li.backsector->floorheight) {
+        const Fixed slope = fixed16Div(openbottom - gShootZ, dist);
+
+        if ((slope >= gAimMidSlope) && (!gpShootLine)) {
+            gpShootLine = &li;
             gFirstLineFrac = interceptfrac;
         }
 
@@ -228,11 +180,11 @@ bool PA_ShootLine(line_t* li, Fixed interceptfrac)
         }
     }
 
-    if (li->frontsector->ceilingheight != li->backsector->ceilingheight) {
-        slope = fixed16Div(opentop - gShootZ, dist);
+    if (li.frontsector->ceilingheight != li.backsector->ceilingheight) {
+        const Fixed slope = fixed16Div(opentop - gShootZ, dist);
 
-        if (slope <= gAimMidSlope && !gpShootLine) {
-            gpShootLine = li;
+        if ((slope <= gAimMidSlope) && (!gpShootLine)) {
+            gpShootLine = &li;
             gFirstLineFrac = interceptfrac;
         }
 
@@ -242,54 +194,45 @@ bool PA_ShootLine(line_t* li, Fixed interceptfrac)
     }
 
     if (gAimTopSlope <= gAimBottomSlope)
-        return false;       // stop
+        return false;   // Stop
 
-    return true;        // shot continues
+    return true;    // Shot continues
 }
 
-/*
-==============================================================================
-=
-= PA_ShootThing
-=
-==============================================================================
-*/
-bool PA_ShootThing(mobj_t* th, Fixed interceptfrac) {
-    Fixed       frac;
-    Fixed       dist;
-    Fixed       thingaimtopslope, thingaimbottomslope;
+bool PA_ShootThing(mobj_t& th, const Fixed interceptfrac) noexcept {
+    if (&th == gpShooter)
+        return true;    // Can't shoot self
 
-    if (th == gpShooter)
-        return true;        // can't shoot self
-    if (!(th->flags&MF_SHOOTABLE))
-        return true;        // corpse or something
-
-// check angles to see if the thing can be aimed at
-    dist = fixed16Mul(gAttackRange, interceptfrac);
-    thingaimtopslope = fixed16Div(th->z + th->height - gShootZ, dist);
+    if ((th.flags & MF_SHOOTABLE) == 0)
+        return true;    // Corpse or something
+    
+    // Check angles to see if the thing can be aimed at
+    const Fixed dist = fixed16Mul(gAttackRange, interceptfrac);
+    Fixed thingaimtopslope = fixed16Div(th.z + th.height - gShootZ, dist);
 
     if (thingaimtopslope < gAimBottomSlope)
-        return true;        // shot over the thing
+        return true;    // Shot over the thing
 
-    thingaimbottomslope = fixed16Div(th->z - gShootZ, dist);
+    Fixed thingaimbottomslope = fixed16Div(th.z - gShootZ, dist);
 
     if (thingaimbottomslope > gAimTopSlope)
-        return true;        // shot under the thing
-
-//
-// this thing can be hit!
-//
-    if (thingaimtopslope > gAimTopSlope)
+        return true;    // Shot under the thing
+    
+    // This thing can be hit!
+    if (thingaimtopslope > gAimTopSlope) {
         thingaimtopslope = gAimTopSlope;
-    if (thingaimbottomslope < gAimBottomSlope)
-        thingaimbottomslope = gAimBottomSlope;
+    }
 
-    // shoot midway in the visible part of the thing
-    gShootSlope = (thingaimtopslope+thingaimbottomslope)/2;
-    gpShootMObj = th;
+    if (thingaimbottomslope < gAimBottomSlope) {
+        thingaimbottomslope = gAimBottomSlope;
+    }
+
+    // Shoot midway in the visible part of the thing
+    gShootSlope = (thingaimtopslope + thingaimbottomslope) / 2;
+    gpShootMObj = &th;
 
     // position a bit closer
-    frac = interceptfrac - fixed16Div(10 * FRACUNIT, gAttackRange);
+    const Fixed frac = interceptfrac - fixed16Div(10 * FRACUNIT, gAttackRange);
     gShootX = gShootDiv.x + fixed16Mul(gShootDiv.dx, frac);
     gShootY = gShootDiv.y + fixed16Mul(gShootDiv.dy, frac);
     gShootZ = gShootZ + fixed16Mul(gShootSlope, fixed16Mul(frac, gAttackRange));
@@ -297,146 +240,111 @@ bool PA_ShootThing(mobj_t* th, Fixed interceptfrac) {
     return false;   // Don't go any farther
 }
 
+//----------------------------------------------------------------------------------------------------------------------
+// First checks the endpoints of the line to make sure that they cross the sight trace treated as an infinite line.
+// 
+// If so, it calculates the fractional distance along the sight trace that the intersection occurs at.
+// If 0 < intercept < 1.0, the line will block the sight.
+//----------------------------------------------------------------------------------------------------------------------
+Fixed PA_SightCrossLine(const vertex_t& lineV1, const vertex_t& lineV2) noexcept {
+    // P1, P2 are line endpoints
+    int32_t p1x = fixed16ToInt(lineV1.x);
+    int32_t p1y = fixed16ToInt(lineV1.y);
+    int32_t p2x = fixed16ToInt(lineV2.x);
+    int32_t p2y = fixed16ToInt(lineV2.y);
+    
+    // P3, P4 are sight endpoints
+    int32_t p3x = gSsx1;
+    int32_t p3y = gSsy1;
+    int32_t p4x = gSsx2;
+    int32_t p4y = gSsy2;
 
-/*
-=================
-=
-= PA_SightCrossLine
-=
-= First checks the endpoints of the line to make sure that they cross the
-= sight trace treated as an infinite line.
-=
-= If so, it calculates the fractional distance along the sight trace that
-= the intersection occurs at.  If 0 < intercept < 1.0, the line will block
-= the sight.
-=================
-*/
-Fixed PA_SightCrossLine(line_t* line) {
-    int         s1, s2;
-    int         p1x,p1y,p2x,p2y,p3x,p3y,p4x,p4y,dx,dy,ndx,ndy;
+    int32_t dx = p2x - p3x;
+    int32_t dy = p2y - p3y;
 
-// p1, p2 are line endpoints
-    p1x = line->v1.x >> 16;
-    p1y = line->v1.y >> 16;
-    p2x = line->v2.x >> 16;
-    p2y = line->v2.y >> 16;
-
-// p3, p4 are sight endpoints
-    p3x = gSsx1;
-    p3y = gSsy1;
-    p4x = gSsx2;
-    p4y = gSsy2;
-
-    dx = p2x - p3x;
-    dy = p2y - p3y;
-
-    ndx = p4x - p3x;        // this can be precomputed if worthwhile
-    ndy = p4y - p3y;
-
-    s1 =  (ndy * dx) <  (dy * ndx);
+    // This can be precomputed if worthwhile
+    int32_t ndx = p4x - p3x;
+    int32_t ndy = p4y - p3y;
+    bool bs1 = (ndy * dx) < (dy * ndx);
 
     dx = p1x - p3x;
     dy = p1y - p3y;
+    bool bs2 = (ndy * dx) < (dy * ndx);
 
-    s2 =  (ndy * dx) <  (dy * ndx);
-
-    if (s1 == s2)
-        return -1;          // line isn't crossed
-
-    ndx = p1y - p2y;        // vector normal to world line
+    if (bs1 == bs2)
+        return -1;  // line isn't crossed
+    
+    // Vector normal to world line
+    ndx = p1y - p2y;
     ndy = p2x - p1x;
-
-    s1 = ndx*dx + ndy*dy;   // distance projected onto normal
+    int32_t s1 = ndx * dx + ndy * dy;   // Distance projected onto normal
 
     dx = p4x - p1x;
     dy = p4y - p1y;
-
-    s2 = ndx*dx + ndy*dy;   // distance projected onto normal
+    int32_t s2 = ndx * dx + ndy * dy;   // Distance projected onto normal
 
     s2 = fixed16Div(s1, s1 + s2);
-
     return s2;
 }
 
+Fixed PA_SightCrossLine(const line_t& line) noexcept {
+    return PA_SightCrossLine(line.v1, line.v2);
+}
 
-
-/*
-=================
-=
-= PA_CrossSubsectorPass
-=
-= Returns true if strace crosses the given subsector successfuly
-=================
-*/
-
-static struct {
- vertex_t tv1,tv2;
-} thingline;
-bool PA_CrossSubsector(const subsector_t* sub) {
-    seg_t       *seg;
-    line_t      *line;
-    int         count;
-    Fixed       frac;
-    mobj_t      *thing;
-
-//
-// check things
-//
-    for (thing = sub->sector->thinglist ; thing ; thing = thing->snext )
-    {
-        if (thing->subsector != sub)
+//----------------------------------------------------------------------------------------------------------------------
+// Returns true if strace crosses the given subsector successfuly
+//----------------------------------------------------------------------------------------------------------------------
+bool PA_CrossSubsector(const subsector_t& sub) noexcept {
+    // Check things
+    for (mobj_t* pThing = sub.sector->thinglist; pThing != nullptr; pThing = pThing->snext) {
+        if (pThing->subsector != &sub)
             continue;
 
-        // check a corner to corner crossection for hit
+        // Check a corner to corner crossection for hit
+        vertex_t thingLineV1;
+        vertex_t thingLineV2;
 
-        if (gShootDivPositive) {
-            thingline.tv1.x = thing->x - thing->radius;
-            thingline.tv1.y = thing->y + thing->radius;
-
-            thingline.tv2.x = thing->x + thing->radius;
-            thingline.tv2.y = thing->y - thing->radius;
+        if (gbShootDivPositive) {
+            thingLineV1.x = pThing->x - pThing->radius;
+            thingLineV1.y = pThing->y + pThing->radius;
+            thingLineV2.x = pThing->x + pThing->radius;
+            thingLineV2.y = pThing->y - pThing->radius;
         } else {
-            thingline.tv1.x = thing->x - thing->radius;
-            thingline.tv1.y = thing->y - thing->radius;
-
-            thingline.tv2.x = thing->x + thing->radius;
-            thingline.tv2.y = thing->y + thing->radius;
+            thingLineV1.x = pThing->x - pThing->radius;
+            thingLineV1.y = pThing->y - pThing->radius;
+            thingLineV2.x = pThing->x + pThing->radius;
+            thingLineV2.y = pThing->y + pThing->radius;
         }
 
-        frac = PA_SightCrossLine ((line_t *)&thingline);
-
-        if (frac < 0 || frac > FRACUNIT) {
-            continue;
-        }
-        if (!PA_DoIntercept ( (void *)thing, false, frac)) {
-            return false;
-        }
-    }
-
-//
-// check lines
-//
-    count = sub->numsublines;
-    seg = sub->firstline;
-
-    for ( ; count ; seg++, count--)
-    {
-        line = seg->linedef;
-
-        if (line->validCount == gValidCount)
-            continue;       // already checked other side
-
-        line->validCount = gValidCount;
-        frac = PA_SightCrossLine (line);
+        const Fixed frac = PA_SightCrossLine(thingLineV1, thingLineV2);
 
         if (frac < 0 || frac > FRACUNIT)
             continue;
 
-        if (!PA_DoIntercept ( (void *)line, true, frac))
-//      if (!PA_ShootLine (line, frac))
+        if (!PA_DoIntercept(pThing, false, frac))
             return false;
     }
 
+    // Check lines
+    {
+        seg_t* pSeg = sub.firstline;
 
-    return true;            // passed the subsector ok
+        for (uint32_t count = sub.numsublines; count > 0; pSeg++, count--) {
+            line_t& line = *pSeg->linedef;
+
+            if (line.validCount == gValidCount)
+                continue;   // Already checked other side
+
+            line.validCount = gValidCount;
+            const Fixed frac = PA_SightCrossLine(line);
+
+            if (frac < 0 || frac > FRACUNIT)
+                continue;
+
+            if (!PA_DoIntercept(&line, true, frac))
+                return false;
+        }
+    }
+
+    return true;    // Passed the subsector ok
 }
