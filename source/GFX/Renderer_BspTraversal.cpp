@@ -11,18 +11,6 @@
 //----------------------------------------------------------------------------------------------------------------------
 BEGIN_NAMESPACE(Renderer)
 
-static uint32_t gCheckCoord[9][4] = {
-    { BOXRIGHT, BOXTOP, BOXLEFT, BOXBOTTOM },       // Above,Left
-    { BOXRIGHT, BOXTOP, BOXLEFT, BOXTOP },          // Above,Center
-    { BOXRIGHT, BOXBOTTOM, BOXLEFT, BOXTOP },       // Above,Right
-    { BOXLEFT, BOXTOP, BOXLEFT, BOXBOTTOM },        // Center,Left
-    { UINT32_MAX, 0, 0, 0 },                        // Center,Center
-    { BOXRIGHT, BOXBOTTOM, BOXRIGHT, BOXTOP },      // Center,Right
-    { BOXLEFT, BOXTOP, BOXRIGHT, BOXBOTTOM },       // Below,Left
-    { BOXLEFT, BOXBOTTOM, BOXRIGHT, BOXBOTTOM },    // Below,Center
-    { BOXLEFT, BOXBOTTOM, BOXRIGHT, BOXTOP }        // Below,Right
-};
-
 //----------------------------------------------------------------------------------------------------------------------
 // Given a sector pointer, and if I hadn't already rendered the sprites, make valid sprites for the sprite list.
 //----------------------------------------------------------------------------------------------------------------------
@@ -57,110 +45,96 @@ static void addSubsectorToFrame(subsector_t& sub) noexcept {
 }
 
 //----------------------------------------------------------------------------------------------------------------------
-// Check if any part of the BSP bounding box is touching the view arc.
-// Also project the width of the box to screen coords to see if it is too small to even bother with.
-// If I should process this box then return 'true'.
+// Transform a 2d xy point to view space
+//----------------------------------------------------------------------------------------------------------------------
+static inline void transformXYPointToViewSpace(vertexf_t& point) noexcept {
+    // Transform by view position and then view angle; similar to the code in other render functions:
+    point.x -= gViewX;
+    point.y -= gViewY;
+
+    const float viewCos = gViewCos;
+    const float viewSin = gViewSin;
+    const float rotatedX = viewCos * point.x - viewSin * point.y;
+    const float rotatedY = viewSin * point.x + viewCos * point.y;
+
+    point.x = rotatedX;
+    point.y = rotatedY;
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+// Transform a 2d xy point to clip space.
+// The 'y' component becomes the 'w' component in clip space.
+//----------------------------------------------------------------------------------------------------------------------
+static inline void transformXYPointToClipSpace(vertexf_t& point) noexcept {
+    // Notes:
+    //  (1) We treat 'y' as if it were 'z' for the purposes of these calculations, since the
+    //      projection matrix has 'z' as the depth value and not y (Doom coord sys).
+    //  (2) We assume that the point always starts off with an implicit 'w' value of '1'.
+    //  (3) W = Y in this calculation, so I don't bother assigning to it.
+    point.x *= gProjMatrix.r0c0;
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+// Some basic rejection checks to see if we should process a BSP node.
 //----------------------------------------------------------------------------------------------------------------------
 static bool checkBBox(const Fixed bspcoord[BOXCOUNT]) noexcept {
-    // FIXME: This check is BROKEN for high resolutions
-    #if 1
-        return true;
-    #else
+    // Get the float coords first
+    const float boxLx = fixed16ToFloat(bspcoord[BOXLEFT]);
+    const float boxRx = fixed16ToFloat(bspcoord[BOXRIGHT]);
+    const float boxTy = fixed16ToFloat(bspcoord[BOXTOP]);
+    const float boxBy = fixed16ToFloat(bspcoord[BOXBOTTOM]);
 
-    // Left and right angles for view
-    angle_t angle1;
-    angle_t angle2;
+    // Makeup the 4 box points and transform to view space
+    vertexf_t p1 = { boxLx, boxTy };
+    vertexf_t p2 = { boxRx, boxTy };
+    vertexf_t p3 = { boxRx, boxBy };
+    vertexf_t p4 = { boxLx, boxBy };
+    transformXYPointToViewSpace(p1);
+    transformXYPointToViewSpace(p2);
+    transformXYPointToViewSpace(p3);
+    transformXYPointToViewSpace(p4);
 
-    // Find the corners of the box that define the edges from current viewpoint.
-    // First use the box pointer:
-    {
-        uint32_t* pBox = &gCheckCoord[0][0];            // Init to the base of the table (Above)
-        if (gViewYFrac < bspcoord[BOXTOP]) {            // Off the top?
-            pBox += 12;                                 // Index to center
-            if (gViewYFrac <= bspcoord[BOXBOTTOM]) {    // Off the bottom?
-                pBox += 12;                             // Index to below
-            }
-        }
+    // If all are behind the camera then we can ignore completely
+    const bool bAllPtsBehind = (
+        (p1.y < Z_NEAR) &&
+        (p2.y < Z_NEAR) &&
+        (p3.y < Z_NEAR) &&
+        (p4.y < Z_NEAR)
+    );
 
-        if (gViewXFrac > bspcoord[BOXLEFT]) {           // Check if off the left edge
-            pBox += 4;                                  // Center x
-            if (gViewXFrac >= bspcoord[BOXRIGHT]) {     // Is it off the right?
-                pBox += 4;
-            }
-        }
+    if (bAllPtsBehind)
+        return false;
+    
+    // Transform to clip space and see if the box is offscreen to the left or right
+    transformXYPointToClipSpace(p1);
+    transformXYPointToClipSpace(p2);
+    transformXYPointToClipSpace(p3);
+    transformXYPointToClipSpace(p4);
 
-        if (pBox[0] == -1) {    // Center node?
-            return true;        // I am in the center of the box, process it!!
-        }
+    // See if all the points are either to the left or right of the view frustrum left and right planes.
+    // 'y' is now actually the 'w' coordinate value in clip space, so we can do normal clipspace checks here:
+    const bool bAllPtsToLeft = (
+        (p1.x < -p1.y) &&
+        (p2.x < -p2.y) &&
+        (p3.x < -p3.y) &&
+        (p4.x < -p4.y)
+    );
 
-        // I now have in 3 Space the endpoints of the BSP box, now project it to the screen
-        // and see if it is either off the screen or too small to even care about
-        angle1 = PointToAngle(gViewXFrac, gViewYFrac, bspcoord[pBox[0]], bspcoord[pBox[1]]) - gViewAngleBAM;    // What is the projected angle?
-        angle2 = PointToAngle(gViewXFrac, gViewYFrac, bspcoord[pBox[2]], bspcoord[pBox[3]]) - gViewAngleBAM;    // Now the rightmost angle
-    }
+    if (bAllPtsToLeft)
+        return false;
 
-    // Use span and tspan
-    {
-        const angle_t span = angle1 - angle2;   // What is the span of the angle?
-        if (span >= ANG180) {                   // Whoa... I must be sitting on the line or it's in my face!
-            return true;                        // Process this one...
-        }
+    const bool bAllPtsToRight = (
+        (p1.x > p1.y) &&
+        (p2.x > p2.y) &&
+        (p3.x > p3.y) &&
+        (p4.x > p4.y)
+    );
 
-        // angle1 must be treated as signed, so to see if it is either >-clipangle and < clipangle
-        // I add clipangle to the angle to adjust the 0 center and compare to clipangle * 2
+    if (bAllPtsToRight)
+        return false;
 
-        angle_t tspan = angle1 + gClipAngleBAM;
-        if (tspan > gDoubleClipAngleBAM) {         // Possibly off the left edge
-            tspan -= gDoubleClipAngleBAM;
-            if (tspan >= span) {                    // Off the left side?
-                return false;                       // Don't bother, it's off the left side
-            }
-            angle1 = gClipAngleBAM;                 // Clip the left edge
-        }
-
-        tspan = gClipAngleBAM - angle2;            // Move from a zero base of "clipangle"
-        if (tspan > gDoubleClipAngleBAM) {         // Possible off the right edge
-            tspan -= gDoubleClipAngleBAM;
-            if (tspan >= span) {                    // The entire span is off the right edge?
-                return false;                       // Too far right!
-            }
-            angle2 = -(int32_t) gClipAngleBAM;      // Clip the right edge angle
-        }
-
-        // See if any part of the contained area could be visible
-        angle1 = (angle1 + ANG90) >> (ANGLETOFINESHIFT + 1);        // Rotate 90 degrees and make table index
-        angle2 = (angle2 + ANG90) >> (ANGLETOFINESHIFT + 1);
-    }
-
-    angle1 = gViewAngleToX[angle1];      // Get the screen coords
-    angle2 = gViewAngleToX[angle2];
-
-    if (angle1 == angle2) {     // Is the run too small?
-        return false;           // Don't bother rendering it then
-    }
-
-    --angle2;
-
-    // FIXME: Do we need to reimplement?
-    #if 0
-        // Use start
-        {
-            cliprange_t* pSolid = gSolidsegs;                   // Pointer to the solid walls
-            if (pSolid->rightX < (int32_t) angle2) {            // Scan through the sorted list
-                do {
-                    ++pSolid;                                   // Next entry
-                } while (pSolid->rightX < (int32_t) angle2);
-            }
-
-            if ((int32_t) angle1 >= pSolid->leftX && (int32_t) angle2 <= pSolid->rightX) {
-                return false;   // This block is behind a solid wall!
-            }
-        }
-    #endif
-
-    return true;    // Process me!
-
-    #endif
+    // If we get to here then the BSP node is in bounds, process it!
+    return true;
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -176,11 +150,11 @@ static void addBspNodeToFrame(const node_t* const pNode) noexcept {
         addSubsectorToFrame(*pSubSector);
         return;
     }
-
+    
     // If we have filled the screen then exit now - don't traverse the BSP any further
     if (gNumFullSegCols >= g3dViewWidth)
         return;
-
+    
     // Decide which side the view point is on
     uint32_t side = PointOnVectorSide(gViewXFrac, gViewYFrac, pNode->Line);     // Is this the front side?
     addBspNodeToFrame((const node_t*) pNode->Children[side]);                   // Process the side closer to me

@@ -2,8 +2,6 @@
 TODO
 ------------------------------------------------------------------------------------------------------------------------
 
-- Fix BSP check BBOX for high res rendering
-- Cleanup and optimize render code
 - Fix address sanitizer crash on angle LUT lookup (easy to reproduce on MacOS with Xcode) (might not be applicable anymore)
 
 ------------------------------------------------------------------------------------------------------------------------

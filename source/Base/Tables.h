@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Angle.h"
-#include "Game/DoomDefines.h"   // FIXME: DC - Break the dependency on 'DoomDefines.h'
+#include "Fixed.h"
 
 // Table related defines
 static constexpr uint32_t FINEANGLES        = 8192;             // Size of the fineangle table
@@ -15,8 +15,6 @@ extern Fixed        gFineTangent[4096];
 extern Fixed*       gFineCosine;
 extern Fixed        gFineSine[10240];
 extern angle_t      gTanToAngle[2049];
-extern angle_t      gXToViewAngle[MAXSCREENWIDTH + 1];
-extern int32_t      gViewAngleToX[FINEANGLES / 4];
 extern uint32_t     gIDivTable[8192];                   // 1.0 / 0-5500 for recipocal muls
 extern uint32_t     gCenterX;                           // Center view center X coord (integer)
 extern uint32_t     gCenterY;                           // Center view center Y coord (integer)

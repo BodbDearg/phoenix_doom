@@ -5,6 +5,7 @@
 #include "Base/Random.h"
 #include "Base/Tables.h"
 #include "Game/Data.h"
+#include "Game/DoomDefines.h"
 #include "Game/DoomRez.h"
 #include "Info.h"
 #include "Map/MapUtil.h"

@@ -61,8 +61,6 @@ float                           gNearPlaneYStepPerViewCol;
 float                           gNearPlaneZStepPerViewColPixel;
 ProjectionMatrix                gProjMatrix;
 uint32_t                        gExtraLight;
-angle_t                         gClipAngleBAM;
-angle_t                         gDoubleClipAngleBAM;
 std::vector<angle_t>            gScreenXToAngleBAM;
 std::vector<DrawSeg>            gDrawSegs;
 std::vector<SegClip>            gSegClip;
@@ -228,9 +226,7 @@ static void preDrawSetup() noexcept {
 }
 
 void init() noexcept {
-    initData();                                 // Init resource managers and all of the lookup tables
-    gClipAngleBAM = gXToViewAngle[0];           // Get the left clip angle from viewport
-    gDoubleClipAngleBAM = gClipAngleBAM * 2;    // Precalc angle * 2
+    initData();     // Init resource managers and all of the lookup tables
 
     // Fragment reserve
     gWallFragments.reserve(1024 * 8);
@@ -274,51 +270,6 @@ void initMathTables() noexcept {
     gNearPlaneH = gNearPlaneW / VIEW_ASPECT_RATIO;
     gNearPlaneHalfW = gNearPlaneW * 0.5f;
     gNearPlaneHalfH = gNearPlaneH * 0.5f;
-
-    // FIXME: REMOVE!
-    // DOESN'T WORK FOR HIGH RESOLUTIONS!
-    #if 0
-        // Create the 'view angle to x' table
-        {
-            const Fixed j = fixedDiv(gCenterX << FRACBITS, gFineTangent[FINEANGLES / 4 + FIELDOFVIEW / 2]);
-
-            for (uint32_t i = 0; i < FINEANGLES / 2; i += 2) {
-                Fixed t;
-                if (gFineTangent[i] > FRACUNIT * 2) {
-                    t = -1;
-                } else if (gFineTangent[i] < -FRACUNIT * 2) {
-                    t = gScreenWidth + 1;
-                } else {
-                    t = fixedMul(gFineTangent[i], j);
-                    t = ((gCenterX << FRACBITS) - t + FRACUNIT - 1) >> FRACBITS;
-                    if (t < -1) {
-                        t = -1;
-                    } else if ( t > (int) gScreenWidth + 1) {
-                        t = gScreenWidth + 1;
-                    }
-                }
-                gViewAngleToX[i / 2] = t;
-            }
-        }
-
-        // Using the 'view angle to x' table, create 'x to view angle' table
-        for (uint32_t i = 0; i <= gScreenWidth; ++i) {
-            uint32_t x = 0;
-            while (gViewAngleToX[x] > (int) i) {
-                ++x;
-            }
-            gXToViewAngle[i] = (x << (ANGLETOFINESHIFT + 1)) - ANG90;
-        }
-
-        // Set the minimums and maximums for 'view angle to x'
-        for (uint32_t i = 0; i < FINEANGLES / 4; ++i) {
-            if (gViewAngleToX[i] == -1) {
-                gViewAngleToX[i] = 0;
-            } else if (gViewAngleToX[i] == gScreenWidth + 1) {
-                gViewAngleToX[i] = gScreenWidth;
-            }
-        }
-    #endif
 
     // Compute the partial projection matrix
     {

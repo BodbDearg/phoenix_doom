@@ -5,6 +5,7 @@
 #include "Base/Tables.h"
 #include "Game/Controls.h"
 #include "Game/Data.h"
+#include "Game/DoomDefines.h"
 #include "Game/DoomRez.h"
 #include "GFX/Blit.h"
 #include "GFX/Sprites.h"

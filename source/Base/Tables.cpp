@@ -2064,8 +2064,6 @@ angle_t gTanToAngle[2049] = {
 536870911
 };
 
-int32_t     gViewAngleToX[FINEANGLES/4];
-angle_t     gXToViewAngle[MAXSCREENWIDTH+1];
 uint32_t    gIDivTable[8192];
 uint32_t    gCenterX;
 uint32_t    gCenterY;

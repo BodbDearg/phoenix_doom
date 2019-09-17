@@ -311,8 +311,6 @@ namespace Renderer {
     extern float                            gNearPlaneZStepPerViewColPixel;     // How much to step world z for each successive pixel in a screen column at the near plane
     extern ProjectionMatrix                 gProjMatrix;                        // 3D projection matrix
     extern uint32_t                         gExtraLight;                        // Bumped light from gun blasts
-    extern angle_t                          gClipAngleBAM;                      // Leftmost clipping angle
-    extern angle_t                          gDoubleClipAngleBAM;                // Doubled leftmost clipping angle
     extern std::vector<angle_t>             gScreenXToAngleBAM;                 // Convert from a screen X coordinate to a Doom format (BAM) angle
     extern std::vector<DrawSeg>             gDrawSegs;
     extern std::vector<SegClip>             gSegClip;                           // Used to clip seg columns (walls + floors) vertically as segs are being submitted. One entry per screen column.
