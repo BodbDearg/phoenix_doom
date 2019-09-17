@@ -7,23 +7,21 @@
 #include "Sounds.h"
 #include "Things/MapObj.h"
 
-#define S_CLIPPING_DIST (3600 * 0x10000)    // Clip sounds beyond this distance
-#define S_CLOSE_DIST (200 * 0x10000)        // Sounds at this distance or closer are full volume sounds
+constexpr Fixed     S_CLIPPING_DIST = 3600 * 0x10000;       // Clip sounds beyond this distance
+constexpr Fixed     S_CLOSE_DIST    = 200 * 0x10000;        // Sounds at this distance or closer are full volume sounds
+constexpr int32_t   S_ATTENUATOR    = (S_CLIPPING_DIST - S_CLOSE_DIST) >> FRACBITS;
+constexpr Fixed     S_STEREO_SWING  = 96 * 0x10000;
 
-#define S_ATTENUATOR ((S_CLIPPING_DIST - S_CLOSE_DIST) >> FRACBITS)
-#define S_STEREO_SWING (96 * 0x10000)
-
-//--------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 // Clear the sound buffers and stop all sound
-//--------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 void S_Clear() noexcept {
     Audio::stopAllSounds();
 }
 
-//--------------------------------------------------------------------------------------------------
-// Start a new sound.
-// Uses the view origin to affect the stereo panning and volume.
-//--------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
+// Start a new sound: uses the view origin to affect the stereo panning and volume.
+//----------------------------------------------------------------------------------------------------------------------
 uint32_t S_StartSound(const Fixed* const pOriginXY, const uint32_t soundId, const bool bStopOtherInstances) noexcept {
     if (soundId <= 0 || soundId >= NUMSFX)
         return UINT32_MAX;
@@ -47,7 +45,7 @@ uint32_t S_StartSound(const Fixed* const pOriginXY, const uint32_t soundId, cons
             angle >>= ANGLETOFINESHIFT;
 
             if (dist >= S_CLOSE_DIST) {
-                const int vol = (255 * ((S_CLIPPING_DIST - dist) >> FRACBITS)) / S_ATTENUATOR;
+                const int32_t vol = (255 * ((S_CLIPPING_DIST - dist) >> FRACBITS)) / S_ATTENUATOR;
 
                 if (vol <= 0) { // Too quiet?
                     return UINT32_MAX;
@@ -71,9 +69,9 @@ uint32_t S_StartSound(const Fixed* const pOriginXY, const uint32_t soundId, cons
     }
 }
 
-//--------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 // Start music
-//--------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 static constexpr uint8_t SONG_LOOKUP[] = {
     0,      // -- NO SONG --
     11,     // Intro

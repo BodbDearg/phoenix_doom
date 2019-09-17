@@ -8,13 +8,13 @@
 #include "MapObj.h"
 #include <algorithm>
 
-//---------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 // Input values:
 //
 //  A line will be shootdivd from the middle of shooter in the direction of attackangle until either a shootable
 //  mobj is within the visible aimtopslope / aimbottomslope range, or a solid wall blocks further tracing.
 //  If no thing is targeted along the entire range, the first line that blocks the midpoint of the shootdiv will be hit.
-//---------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 line_t*     gpShootLine;
 mobj_t*     gpShootMObj;
 Fixed       gShootSlope;    // Between aimtop and aimbottom
@@ -37,9 +37,9 @@ static int32_t      gSsy1;
 static int32_t      gSsx2;
 static int32_t      gSsy2;
 
-//---------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 // Returns true if strace crosses the given node successfuly
-//---------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 static bool PA_CrossBSPNode(const node_t* pNode) {
     if (isBspNodeASubSector(pNode)) {
         // N.B: pointer has to be fixed up due to prescence of a flag in the lowest bit!

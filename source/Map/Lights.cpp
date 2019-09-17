@@ -1,7 +1,6 @@
 #include "Lights.h"
 
 #include "Base/Random.h"
-#include "Game/Data.h"
 #include "Game/Tick.h"
 #include "MapData.h"
 #include "Specials.h"

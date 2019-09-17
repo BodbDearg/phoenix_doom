@@ -2,7 +2,6 @@
 
 #include "Audio/Sound.h"
 #include "Audio/Sounds.h"
-#include "Base/Macros.h"
 #include "Base/Random.h"
 #include "Base/Tables.h"
 #include "Game/Data.h"
@@ -15,13 +14,12 @@
 #include "Things/MapObj.h"
 #include "Things/Move.h"
 #include "Things/Shoot.h"
-#include <cstdlib>
 
 mobj_t*     gpLineTarget;
 mobj_t*     gpTmpThing;
 Fixed       gTmpX;
 Fixed       gTmpY;
-bool        gCheckPosOnly;
+bool        gbCheckPosOnly;
 mobj_t*     gpShooter;
 angle_t     gAttackAngle;
 Fixed       gAttackRange;
@@ -53,7 +51,7 @@ bool P_CheckPosition(mobj_t& thing, const Fixed x, const Fixed y) noexcept {
     gpTmpThing = &thing;        // Copy parms to globals
     gTmpX = x;
     gTmpY = y;
-    gCheckPosOnly = true;       // Only check the position
+    gbCheckPosOnly = true;      // Only check the position
     P_TryMove2();               // See if I can move there...
     return gbTryMove2;          // Return the result
 }

@@ -1,7 +1,6 @@
 #include "Sprites.h"
 
 #include "Base/Endian.h"
-#include "Base/Macros.h"
 #include "Base/Mem.h"
 #include "Base/Resource.h"
 #include "Game/DoomRez.h"
@@ -15,7 +14,7 @@ BEGIN_NAMESPACE(Sprites)
 
 static std::vector<Sprite> gSprites;
 
-//--------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 // Header for sprite data.
 //
 // This was known as a 'patch' previously in the 3DO source, but differed greatly to the PC version
@@ -23,15 +22,15 @@ static std::vector<Sprite> gSprites;
 // encoded in the CEL image data hence that would have been redundant...
 //
 // Note: The actual data for the sprite image follows this data structure.
-//--------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 struct SpriteImageHeader {
     int16_t     leftOffset;     // Where the first column of the sprite gets drawn, in pixels to the left of it's position.
     int16_t     topOffset;      // Where the first row of the sprite gets drawn, in pixels above it's position.
 };
 
-//--------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 // Constants
-//--------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 
 // Flag encoded in the offset to sprite frame data:
 // If set then the particular angle of a sprite frame should be rendered flipped.
@@ -46,10 +45,10 @@ static constexpr uint32_t SPR_OFFSET_FLAG_ROTATED = uint32_t(0x40000000);
 // Bit mask to remove sprite offsets flags
 static constexpr uint32_t REMOVE_SPR_OFFSET_FLAGS_MASK = uint32_t(0x3FFFFFFF);
 
-//--------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 // Get the sprite for a particular resource number.
 // The resource number MUST be that for a sprite.
-//--------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 static Sprite& getSpriteForResourceNum(const uint32_t resourceNum) noexcept {
     ASSERT(resourceNum >= getFirstSpriteResourceNum());
     ASSERT(resourceNum < getEndSpriteResourceNum());
@@ -58,9 +57,9 @@ static Sprite& getSpriteForResourceNum(const uint32_t resourceNum) noexcept {
     return gSprites[spriteIndex];
 }
 
-//--------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 // Frees the texture data associated with a sprite
-//--------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 static void freeSprite(Sprite& sprite) noexcept {
     // Gather up all the texture data pointers that need to be freed
     std::vector<uint16_t*> tmpTexturePtrList;
@@ -107,9 +106,9 @@ static void freeSprite(Sprite& sprite) noexcept {
     sprite = {};
 }
 
-//--------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 // Reads the data for a sprite frame header
-//--------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 static SpriteImageHeader readSpriteFrameHeader(const std::byte* const pData) noexcept {
     SpriteImageHeader header = *((const SpriteImageHeader*)pData);
     Endian::convertBigToHost(header.leftOffset);

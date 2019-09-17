@@ -1,8 +1,6 @@
 #include "Textures.h"
 
 #include "Base/Endian.h"
-#include "Base/Macros.h"
-#include "Game/Data.h"
 #include "Game/DoomRez.h"
 #include "Game/Resources.h"
 #include <vector>

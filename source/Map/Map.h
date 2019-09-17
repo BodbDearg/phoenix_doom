@@ -10,7 +10,7 @@ extern mobj_t*  gpLineTarget;        // Object that was targeted
 extern mobj_t*  gpTmpThing;          // mobj_t to be checked
 extern Fixed    gTmpX;               // Temp x,y for a position to be checked
 extern Fixed    gTmpY;
-extern bool     gCheckPosOnly;       // If true, just check the position, no actions
+extern bool     gbCheckPosOnly;      // If true, just check the position, no actions
 extern mobj_t*  gpShooter;           // Source of a direct line shot
 extern angle_t  gAttackAngle;        // Angle to target
 extern Fixed    gAttackRange;        // Range to target

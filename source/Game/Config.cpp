@@ -567,11 +567,11 @@ bool                        gbAspectCorrectOutputScaling;
 bool                        gbSimulate16BitFramebuffer;
 bool                        gbDoFakeContrast;
 float                       gInputAnalogToDigitalThreshold;
-bool                        gDefaultAlwaysRun;
+bool                        gbDefaultAlwaysRun;
 Controls::MenuActionBits    gKeyboardMenuActions[Input::NUM_KEYBOARD_KEYS];
 Controls::GameActionBits    gKeyboardGameActions[Input::NUM_KEYBOARD_KEYS];
 float                       gMouseTurnSensitivity;
-bool                        gInvertMouseWheelAxis[Input::NUM_MOUSE_WHEEL_AXES];
+bool                        gbInvertMouseWheelAxis[Input::NUM_MOUSE_WHEEL_AXES];
 Controls::MenuActionBits    gMouseMenuActions[NUM_MOUSE_BUTTONS];
 Controls::GameActionBits    gMouseGameActions[NUM_MOUSE_BUTTONS];
 Controls::AxisBits          gMouseWheelAxisBindings[Input::NUM_MOUSE_WHEEL_AXES];
@@ -1075,7 +1075,7 @@ static void handleConfigEntry(const IniUtils::Entry& entry) noexcept {
             gInputAnalogToDigitalThreshold = entry.getFloatValue(gInputAnalogToDigitalThreshold);
         }
         else if (entry.key == "DefaultAlwaysRun") {
-            gDefaultAlwaysRun = entry.getBoolValue(gDefaultAlwaysRun);
+            gbDefaultAlwaysRun = entry.getBoolValue(gbDefaultAlwaysRun);
         }
     }
     else if (entry.section == "KeyboardControls") {
@@ -1094,10 +1094,10 @@ static void handleConfigEntry(const IniUtils::Entry& entry) noexcept {
             gMouseTurnSensitivity = entry.getFloatValue(gMouseTurnSensitivity);
         }
         else if (entry.key == "InvertMWheelXAxis") {
-            gInvertMouseWheelAxis[0] = entry.getBoolValue(gInvertMouseWheelAxis[0]);
+            gbInvertMouseWheelAxis[0] = entry.getBoolValue(gbInvertMouseWheelAxis[0]);
         }
         else if (entry.key == "InvertMWheelYAxis") {
-            gInvertMouseWheelAxis[1] = entry.getBoolValue(gInvertMouseWheelAxis[1]);
+            gbInvertMouseWheelAxis[1] = entry.getBoolValue(gbInvertMouseWheelAxis[1]);
         }
         else {
             parseMouseButtonOrWheelActions(entry.key, entry.value);
@@ -1146,14 +1146,14 @@ static void clear() noexcept {
     gbDoFakeContrast = true;
 
     gInputAnalogToDigitalThreshold = 0.5f;
-    gDefaultAlwaysRun = false;
+    gbDefaultAlwaysRun = false;
 
     std::memset(gKeyboardMenuActions, 0, sizeof(gKeyboardMenuActions));
     std::memset(gKeyboardGameActions, 0, sizeof(gKeyboardGameActions));
 
     gMouseTurnSensitivity = 1.0f;
-    gInvertMouseWheelAxis[0] = false;
-    gInvertMouseWheelAxis[1] = false;
+    gbInvertMouseWheelAxis[0] = false;
+    gbInvertMouseWheelAxis[1] = false;
     std::memset(gMouseMenuActions, 0, sizeof(gMouseMenuActions));
     std::memset(gMouseGameActions, 0, sizeof(gMouseGameActions));
 

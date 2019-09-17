@@ -2,7 +2,6 @@
 
 #include "Audio/Audio.h"
 #include "Config.h"
-#include "Controls.h"
 #include "Data.h"
 #include "DoomRez.h"
 #include "GameDataFS.h"
@@ -75,7 +74,7 @@ gameaction_e RunGameLoop(
     const GameLoopDrawFunc drawer
 ) noexcept {
     // Do a wipe by default unless the start handler cancels it
-    gDoWipe = true;
+    gbDoWipe = true;
 
     // Initialize ticking
     gTotalGameTicks = 0;
@@ -90,7 +89,7 @@ gameaction_e RunGameLoop(
     gGameAction = ga_nothing;                   // Game is not in progress
 
     // Do a wipe if one is desired (start func can abort if desired)
-    if (gDoWipe) {
+    if (gbDoWipe) {
         WipeFx::doWipe(drawer);
     }
     

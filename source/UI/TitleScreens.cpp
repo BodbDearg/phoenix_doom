@@ -35,7 +35,7 @@ static bool gOnlyOnce;
 static void START_Title() noexcept {
     if (!gOnlyOnce) {
         gOnlyOnce = true;
-        gDoWipe = false;    // On power up, don't wipe the screen
+        gbDoWipe = false;   // On power up, don't wipe the screen
     }
 
     S_StartSong(Song_intro);

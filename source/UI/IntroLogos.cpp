@@ -49,7 +49,7 @@ static void loadLogo(const char* path) noexcept {
 }
 
 static void on3doLogoStarting() noexcept {
-    gDoWipe = false;
+    gbDoWipe = false;
 
     gLogoCurStateTime = 0.0f;
     gLogoFadeInTime = 0.0f;
@@ -61,7 +61,7 @@ static void on3doLogoStarting() noexcept {
 }
 
 static void onIdLogoStarting() noexcept {
-    gDoWipe = false;
+    gbDoWipe = false;
 
     gLogoCurStateTime = 0.0f;
     gLogoFadeInTime = 1.0f;

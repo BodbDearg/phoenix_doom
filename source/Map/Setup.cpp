@@ -1,11 +1,9 @@
 #include "Setup.h"
 
 #include "Base/Endian.h"
-#include "Base/Mem.h"
 #include "Base/Random.h"
 #include "Base/Resource.h"
 #include "Game/Data.h"
-#include "Game/DoomMain.h"
 #include "Game/DoomRez.h"
 #include "Game/Resources.h"
 #include "Game/Tick.h"
@@ -304,7 +302,7 @@ static void setSkyTextureNum() noexcept {
 //----------------------------------------------------------------------------------------------------------------------
 // Load and prepare the game level
 //----------------------------------------------------------------------------------------------------------------------
-void SetupLevel(uint32_t map) noexcept {
+void SetupLevel(const uint32_t map) noexcept {
     Random::init();         // Reset the random number generator
     LoadingPlaque();        // Display "Loading"
 

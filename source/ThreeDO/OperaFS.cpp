@@ -21,7 +21,7 @@ struct DiscHeader {
     static constexpr uint8_t VERSION = 1;
     static constexpr uint8_t SYNC_BYTE = 0x5A;
     
-	uint8_t     recordType;                 // Must be '1'
+    uint8_t     recordType;                 // Must be '1'
     uint8_t     syncBytes[5];               // All of these must be '0x5A'
     uint8_t     version;                    // Should be '1'
     uint8_t     flags;                      // Should be '0' (purpose unknown)

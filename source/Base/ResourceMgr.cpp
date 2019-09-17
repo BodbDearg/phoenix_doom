@@ -2,11 +2,9 @@
 
 #include "Endian.h"
 #include "FourCID.h"
-#include "Macros.h"
 #include "Mem.h"
 #include "Resource.h"
 #include <algorithm>
-#include <memory>
 
 struct ResourceFileHeader {
     FourCID     magic;  // Should read 'BRGR'

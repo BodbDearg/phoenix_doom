@@ -3,7 +3,6 @@
 #include "Audio/Audio.h"
 #include "Audio/Sound.h"
 #include "Audio/Sounds.h"
-#include "Base/Input.h"
 #include "Config.h"
 #include "Data.h"
 #include "DoomDefines.h"
@@ -12,7 +11,6 @@
 #include "Tick.h"
 #include "UI/Automap.h"
 #include <SDL.h>
-#include <vector>
 
 BEGIN_NAMESPACE(Cheats)
 

@@ -2,7 +2,6 @@
 
 #include "Base/Tables.h"
 #include "Game/Data.h"
-#include "GFX/Renderer.h"
 #include "MapData.h"
 #include "Things/MapObj.h"
 
@@ -23,71 +22,65 @@ angle_t SlopeAngle(uint32_t num, uint32_t den) noexcept {
     return gTanToAngle[num];    // Get the angle
 }
 
-/**********************************
-
-    To get a global angle from cartesian coordinates, the coordinates are
-    flipped until they are in the first octant of the coordinate system, then
-    the y (<=x) is scaled and divided by x to get a tangent (slope) value
-    which is looked up in the tantoangle[] table.
-
-**********************************/
-
-angle_t PointToAngle(Fixed x1, Fixed y1, Fixed x2, Fixed y2)
-{
+//----------------------------------------------------------------------------------------------------------------------
+// To get a global angle from cartesian coordinates, the coordinates are flipped until they are in the
+// first octant of the coordinate system, then the y (<=x) is scaled and divided by x to get a
+// tangent (slope) value which is looked up in the tantoangle[] table.
+//----------------------------------------------------------------------------------------------------------------------
+angle_t PointToAngle(Fixed x1, Fixed y1, Fixed x2, Fixed y2) noexcept {
     x2 -= x1;   // Convert the two points into a fractional slope
     y2 -= y1;
 
-    if (x2 || y2) {             // Not 0,0?
-        if (x2>=0) {                // Positive x?
-            if (y2>=0) {            // Positive x, Positive y
-                if (x2>y2) {        // Octant 0?
-                    return SlopeAngle(y2,x2);     // Octant 0
+    if (x2 != 0 || y2 != 0) {                                   // Not 0,0?
+        if (x2 >= 0) {                                          // Positive x?
+            if (y2 >= 0) {                                      // Positive x, Positive y
+                if (x2 > y2) {                                  // Octant 0?
+                    return SlopeAngle(y2, x2);                  // Octant 0
                 }
-                return (ANG90 - 1) - SlopeAngle(x2,y2);  // Octant 1
+                return (ANG90 - 1) - SlopeAngle(x2, y2);        // Octant 1
             }
-            y2 = -y2;       // Get the absolute value of y (Was negative)
-            if (x2>y2) {    // Octant 6
-                return negateAngle(SlopeAngle(y2,x2));      // Octant 6
+            y2 = -y2;                                           // Get the absolute value of y (Was negative)
+            if (x2 > y2) {                                      // Octant 6
+                return negateAngle(SlopeAngle(y2, x2));         // Octant 6
             }
-            return SlopeAngle(x2,y2)+ANG270;    // Octant 7
+            return SlopeAngle(x2, y2) + ANG270;                 // Octant 7
         }
-        x2 = -x2;           // Negate x (Make it positive)
-        if (y2>=0) {        // Positive y?
-            if (x2>y2) {    // Octant 3?
-                return (ANG180-1)-SlopeAngle(y2,x2);    // Octant 3
+        x2 = -x2;                                               // Negate x (Make it positive)
+        if (y2 >= 0) {                                          // Positive y?
+            if (x2 > y2) {                                      // Octant 3?
+                return (ANG180 - 1) - SlopeAngle(y2, x2);       // Octant 3
             }
-            return SlopeAngle(x2,y2)+ANG90;     // Octant 2
+            return SlopeAngle(x2, y2) + ANG90;                  // Octant 2
         }
-        y2 = -y2;       // Negate y (Make it positive)
-        if (x2>y2) {
-            return SlopeAngle(y2,x2)+ANG180;    // Octant 4
+        y2 = -y2;                                               // Negate y (Make it positive)
+        if (x2 > y2) {
+            return SlopeAngle(y2 , x2) + ANG180;                // Octant 4
         }
-        return (ANG270-1)-SlopeAngle(x2,y2);    // Octant 5
+        return (ANG270 - 1) - SlopeAngle(x2, y2);               // Octant 5
     }
-    return 0;       // In case of 0,0, return an angle of 0
+    return 0;                                                   // In case of 0,0, return an angle of 0
 }
 
-/**********************************
-
-    Gives an estimation of distance (not exact)
-    This is used when an exact distance between two points is not needed.
-
-**********************************/
-
-Fixed GetApproxDistance(Fixed dx, Fixed dy)
-{
-    if (dx<0) {
+//----------------------------------------------------------------------------------------------------------------------
+// Gives an estimation of distance (not exact).
+// This is used when an exact distance between two points is not needed.
+//----------------------------------------------------------------------------------------------------------------------
+Fixed GetApproxDistance(Fixed dx, Fixed dy) noexcept {
+    if (dx < 0) {
         dx = -dx;       // Get the absolute value of the distance
     }
-    if (dy<0) {
+    
+    if (dy < 0) {
         dy = -dy;
     }
+
     if (dx < dy) {      // Is the x smaller?
-        dx>>=1;         // Use half the x
+        dx >>= 1;       // Use half the x
     } else {
-        dy>>=1;         // Or use half the y
+        dy >>= 1;       // Or use half the y
     }
-    dx+=dy;             // Add larger and half of the smaller for distance
+    
+    dx += dy;           // Add larger and half of the smaller for distance
     return dx;          // Return result
 }
 
@@ -330,10 +323,10 @@ void SetThingPosition(mobj_t& thing) noexcept {
     }
 }
 
-//---------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 // The validcount flags are used to avoid checking lines that are marked in multiple mapblocks,
 // so increment validcount before the first call to BlockLinesIterator, then make one or more calls to it.
-//---------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 bool BlockLinesIterator(const uint32_t x, const uint32_t y, const BlockLinesIterCallback func) noexcept {
     if (x < gBlockMapWidth && y < gBlockMapHeight) {            // On the map?
         const uint32_t blockIdx = y * gBlockMapWidth + x;
@@ -359,9 +352,9 @@ bool BlockLinesIterator(const uint32_t x, const uint32_t y, const BlockLinesIter
     return true;    // Everything was checked
 }
 
-//---------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 // Scan all objects standing on this map block.
-//---------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 bool BlockThingsIterator(const uint32_t x, const uint32_t y, const BlockThingsIterCallback func) noexcept {
     // Check if we are off the map or not
     if (x < gBlockMapWidth && y < gBlockMapHeight) {

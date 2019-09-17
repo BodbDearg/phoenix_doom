@@ -16,13 +16,13 @@ static int32_t      gT1ys;
 static int32_t      gT2xs;
 static int32_t      gT2ys;
 
-//---------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 // First checks the endpoints of the line to make sure that they cross the sight trace
 // treated as an infinite line.
 //
 // If so, it calculates the fractional distance along the sight trace that the intersection occurs at.
 // If 0 < intercept < 1.0, the line will block the sight.
-//---------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 static Fixed PS_SightCrossLine(line_t& line) noexcept {
     // p1, p2 are line endpoints
     const int32_t p1x = line.v1.x >> 16;
@@ -67,9 +67,9 @@ static Fixed PS_SightCrossLine(line_t& line) noexcept {
     return s2;
 }
 
-//---------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 // Returns true if strace crosses the given subsector successfuly
-//---------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 static bool PS_CrossSubsector(const subsector_t& sub) noexcept {
     // Check lines
     seg_t* pSeg = sub.firstline;
@@ -148,9 +148,9 @@ static bool PS_CrossSubsector(const subsector_t& sub) noexcept {
     return true;    // Passed the subsector ok
 }
 
-//---------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 // Returns true if strace crosses the given node successfuly
-//---------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 static bool PS_CrossBSPNode(const node_t* const pNode) noexcept {
     if (isBspNodeASubSector(pNode)) {
         // N.B: pointer has to be fixed up due to prescence of a flag in the lowest bit!
@@ -173,9 +173,9 @@ static bool PS_CrossBSPNode(const node_t* const pNode) noexcept {
     return PS_CrossBSPNode((const node_t*) pNode->Children[side ^ 1]);
 }
 
-//---------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 // Returns true if a straight line between t1 and t2 is unobstructed
-//---------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 bool CheckSight(mobj_t& t1, mobj_t& t2) noexcept {
     // Check for trivial rejection
     const uint32_t s1 = (uint32_t)(t1.subsector->sector - gpSectors);

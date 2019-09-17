@@ -33,23 +33,23 @@
 //  https://github.com/trapexit/3DO-information/blob/master/software/sdk/3DO%20Online%20Developer%20Documentation/ppgfldr/smmfldr/cdmfldr/08CDM001.html
 //----------------------------------------------------------------------------------------------------------------------
 struct CelControlBlock {
-	uint32_t    flags;
+    uint32_t    flags;
     uint32_t    nextPtr;        // N.B: can't use CelControlBlock* since that introduces 64-bit incompatibilities!
-	uint32_t    sourcePtr;      // N.B: can't use void* since that introduces 64-bit incompatibilities!
-	uint32_t    plutPtr;        // N.B: can't use void* since that introduces 64-bit incompatibilities!
-	int32_t     xPos;
-	int32_t     yPos;
-	int32_t     hdx;
-	int32_t     hdy;
-	int32_t     vdx;
-	int32_t     vdy;
-	int32_t     hddx;
-	int32_t     hddy;
-	uint32_t    pixc;
-	uint32_t    pre0;
-	uint32_t    pre1;
-	int32_t     width;
-	int32_t     height;
+    uint32_t    sourcePtr;      // N.B: can't use void* since that introduces 64-bit incompatibilities!
+    uint32_t    plutPtr;        // N.B: can't use void* since that introduces 64-bit incompatibilities!
+    int32_t     xPos;
+    int32_t     yPos;
+    int32_t     hdx;
+    int32_t     hdy;
+    int32_t     vdx;
+    int32_t     vdy;
+    int32_t     hddx;
+    int32_t     hddy;
+    uint32_t    pixc;
+    uint32_t    pre0;
+    uint32_t    pre1;
+    int32_t     width;
+    int32_t     height;
 };
 
 //----------------------------------------------------------------------------------------------------------------------

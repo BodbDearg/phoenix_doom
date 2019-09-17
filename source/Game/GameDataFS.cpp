@@ -1,7 +1,6 @@
 #include "GameDataFS.h"
 
 #include "Base/FileUtils.h"
-#include "Base/FileInputStream.h"
 #include "Config.h"
 #include "ThreeDO/CDImageFileInputStream.h"
 #include "ThreeDO/OperaFS.h"

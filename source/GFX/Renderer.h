@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Base/Macros.h"
+#include <cstdint>
 
 BEGIN_NAMESPACE(Renderer)
 

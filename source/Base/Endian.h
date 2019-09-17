@@ -15,11 +15,11 @@
 
 BEGIN_NAMESPACE(Endian)
 
-//---------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 // Utility functions for byte swapping big endian to host endian, which should be little endian in most cases...
 // Needed because the 3DO data for doom is stored in big endian format. Both the dev machine (68K Mac) and the
 // 3DO hardware itself were big endian, hence it made sense to store the data this way.
-//---------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 static inline uint16_t bigToHost(const uint16_t num) {
     #if BIG_ENDIAN
         return num;

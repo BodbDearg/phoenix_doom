@@ -208,7 +208,7 @@ bool EV_DoFloor(line_t& line, const floor_e floortype) noexcept {
                 sec.special = line.frontsector->special;
             case raiseFloor24:          // Just raise 24 pixels
                 floor.direction = 1;    // Go up
-                floor.floordestheight = floor.sector->floorheight + (24<<FRACBITS);
+                floor.floordestheight = floor.sector->floorheight + (24 << FRACBITS);
                 break;
 
             case raiseToTexture: {

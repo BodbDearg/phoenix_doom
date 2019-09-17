@@ -1,6 +1,4 @@
 #include "IniUtils.h"
-#include <algorithm>
-#include <vector>
 
 BEGIN_NAMESPACE(IniUtils)
 

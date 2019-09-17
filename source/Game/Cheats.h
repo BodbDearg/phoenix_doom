@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Base/Macros.h"
-#include <cstdint>
 
 //----------------------------------------------------------------------------------------------------------------------
 // Simple module that tracks for cheat key sequences in-game and applies cheats

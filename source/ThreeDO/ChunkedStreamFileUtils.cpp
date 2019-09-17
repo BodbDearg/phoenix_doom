@@ -2,7 +2,6 @@
 
 #include "Base/ByteInputStream.h"
 #include "Base/Endian.h"
-#include <cstring>
 #include <memory>
 
 BEGIN_NAMESPACE(ChunkedStreamFileUtils)

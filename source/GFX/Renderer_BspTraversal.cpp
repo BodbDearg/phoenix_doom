@@ -163,10 +163,10 @@ static bool checkBBox(const Fixed bspcoord[BOXCOUNT]) noexcept {
     #endif
 }
 
-//---------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 // Traverse the BSP tree starting from a tree node (Or sector) and recursively subdivide if needed.
 // Use a cross product from the line cast from the viewxy to the bspxy and the bsp line itself.
-//---------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 static void addBspNodeToFrame(const node_t* const pNode) noexcept {
     // Is this node actual pointing to a sub sector?
     if (isBspNodeASubSector(pNode)) {
@@ -191,10 +191,10 @@ static void addBspNodeToFrame(const node_t* const pNode) noexcept {
     }
 }
 
-//---------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 // Find all walls that can be rendered in the current view plane. I make it handle the whole
 // screen by placing fake posts on the farthest left and right sides in solidsegs 0 and 1.
-//---------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 void doBspTraversal() noexcept {
     ++gValidCount;                          // For sprite recursion
     addBspNodeToFrame(gpBSPTreeRoot);       // Begin traversing the BSP tree for all walls in render range

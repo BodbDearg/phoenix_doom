@@ -12,8 +12,8 @@ typedef bool (*BlockLinesIterCallback)(line_t&);
 typedef bool (*BlockThingsIterCallback)(mobj_t&);
 
 angle_t SlopeAngle(uint32_t num, uint32_t den) noexcept;
-angle_t PointToAngle(Fixed x1, Fixed y1, Fixed x2, Fixed y2);
-Fixed GetApproxDistance(Fixed dx, Fixed dy);
+angle_t PointToAngle(Fixed x1, Fixed y1, Fixed x2, Fixed y2) noexcept;
+Fixed GetApproxDistance(Fixed dx, Fixed dy) noexcept;
 bool PointOnVectorSide(Fixed x, Fixed y, const vector_t& line) noexcept;
 subsector_t& PointInSubsector(const Fixed x, const Fixed y) noexcept;
 void MakeVector(line_t& li, vector_t& dl) noexcept;

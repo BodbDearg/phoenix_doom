@@ -6,10 +6,8 @@
 #include "Base/IniUtils.h"
 #include "Data.h"
 #include "DoomDefines.h"
-#include <cstdio>
 #include <filesystem>
 #include <SDL.h>
-#include <string>
 
 BEGIN_NAMESPACE(Prefs)
 
@@ -32,9 +30,9 @@ static std::string determineIniFilePath() noexcept {
     return path;
 }
 
-//-------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 // Clear out all prefs settings to the defaults
-//-------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 static void resetPrefsToDefaults() noexcept {
     gStartSkill = sk_medium;                        // Init the basic skill level
     gStartMap = 1;                                  // Only allow playing from map #1

@@ -1,6 +1,5 @@
 #include "CDImageFileInputStream.h"
 
-#include "Base/Finally.h"
 #include <cstring>
 #include <type_traits>
 

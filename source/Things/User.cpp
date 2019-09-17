@@ -218,7 +218,7 @@ static void P_BuildMove(player_t& player) noexcept {
         )
     );
 
-    const bool bIsRunning = (gAlwaysRun || GAME_ACTION(RUN));
+    const bool bIsRunning = (gbAlwaysRun || GAME_ACTION(RUN));
 
     if (bCanMoveAndTurn) {
         // Use two stage accelerative turning on the joypad.
@@ -625,7 +625,7 @@ void P_PlayerThink(player_t& player) noexcept {
 
     // Toggle always run if the right key is pressed
     if (GAME_ACTION_ENDED(TOGGLE_ALWAYS_RUN)) {
-        gAlwaysRun = (!gAlwaysRun);
+        gbAlwaysRun = (!gbAlwaysRun);
     }
 
     // I use MF_JUSTATTACKED when the chainsaw is being used

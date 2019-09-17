@@ -1,7 +1,5 @@
 #include "Video.h"
 
-#include "Base/Macros.h"
-#include "Base/Mem.h"
 #include "Game/Config.h"
 #include <algorithm>
 #include <cmath>

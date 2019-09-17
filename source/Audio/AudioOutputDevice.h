@@ -5,10 +5,10 @@
 
 class AudioSystem;
 
-//--------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 // Manages a single audio output device.
 // Mixes together streams from multiple audio systems.
-//--------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 class AudioOutputDevice {
 public:
     AudioOutputDevice() noexcept;
@@ -25,7 +25,7 @@ public:
     void registerAudioSystem(AudioSystem& system) noexcept;
     void unregisterAudioSystem(AudioSystem& system) noexcept;
 
-    //----------------------------------------------------------------------------------------------
+    //------------------------------------------------------------------------------------------------------------------
     // Locks and unlocks the audio device.
     // When the lock is held it is guaranteed that no audio callback will be in progress.
     //
@@ -34,7 +34,7 @@ public:
     // into data race issues with the audio callback thread...
     //
     // Use the RAII lock helper to assist with using these.
-    //----------------------------------------------------------------------------------------------
+    //------------------------------------------------------------------------------------------------------------------
     void lockAudioDevice() noexcept;
     void unlockAudioDevice() noexcept;
 
@@ -52,9 +52,9 @@ private:
     std::vector<AudioSystem*>   mAudioSystems;
 };
 
-//--------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 // Helper for locking and unlocking the audio device
-//--------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 class AudioDeviceLock {
 public:
     inline AudioDeviceLock(AudioOutputDevice& device) noexcept : mDevice(device) {

@@ -6,10 +6,10 @@
 #include <string>
 #include <vector>
 
-//------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 // Holds audio pieces loaded from files and allocates each audio piece handles.
 // Simple resource manager for all kinds of audio.
-//------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 class AudioDataMgr {
 public:
     // Type for an audio file handle and a handle value returned to signify an invalid handle

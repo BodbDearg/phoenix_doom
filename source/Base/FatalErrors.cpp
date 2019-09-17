@@ -1,10 +1,6 @@
 #include "FatalErrors.h"
 
 #include "GFX/Video.h"
-#include "Macros.h"
-#include <cstdarg>
-#include <cstdio>
-#include <exception>
 #include <SDL.h>
 #include <vector>
 

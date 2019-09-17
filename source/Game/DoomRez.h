@@ -2,16 +2,16 @@
 
 #include <cstdint>
 
-//---------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 // Resource map for all data in DOOM
-//---------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 
 #define rTEXTURE1 1     // Lump containing info on all textures
 
 // Textures
 enum {
-    rT_START=2,
-    rBIGDOOR2=rT_START,
+    rT_START = 2,
+    rBIGDOOR2 = rT_START,
     rBIGDOOR6,
     rBRNPOIS,
     rBROWNGRN,
@@ -90,8 +90,8 @@ enum {
 
 // Flats
 enum {
-    rF_START=rT_END,
-    rFLAT14=rF_START,
+    rF_START = rT_END,
+    rFLAT14 = rF_START,
     rFLAT23,
     rFLAT5_2,
     rFLAT5_4,
@@ -139,56 +139,56 @@ enum {
 
 // Other stuff, maps & sprites
 enum {
-    rBACKGROUNDMASK=rF_END,     // Background for actual game play
-    rTITLE=rBACKGROUNDMASK+6,   // Large doom logo
-    rIDCREDITS, // ID Credits
-    rCREDITS,   // Art data Credits
+    rBACKGROUNDMASK = rF_END,       // Background for actual game play
+    rTITLE = rBACKGROUNDMASK + 6,   // Large doom logo
+    rIDCREDITS,     // ID Credits
+    rCREDITS,       // Art data Credits
     rLOGCREDITS,    // Logicware credits
-    rBACKGRND,  // Background of skulls
+    rBACKGRND,      // Background of skulls
     rBACKGRNDBROWN, // Brown skulls in background
-    rCHARSET,   // Large font
-    rPAUSED,    // Game is paused
-    rLOADING,   // Game is loading
-    rBIGNUMB,   // Numbers, minus and percent
-    rINTERMIS,  // Intermission text
-    rSTBAR,     // Normal status bar
-    rSBARSHP,   // Shapes for status bar
-    rFACES,     // Shapes for faces
-    rSKULLS,    // Skull cursors
-    rMAINDOOM,  // Main menu background
-    rMAINMENU,  // Shapes for main menu
-    rSLIDER,    // Shapes for menu slider
+    rCHARSET,       // Large font
+    rPAUSED,        // Game is paused
+    rLOADING,       // Game is loading
+    rBIGNUMB,       // Numbers, minus and percent
+    rINTERMIS,      // Intermission text
+    rSTBAR,         // Normal status bar
+    rSBARSHP,       // Shapes for status bar
+    rFACES,         // Shapes for faces
+    rSKULLS,        // Skull cursors
+    rMAINDOOM,      // Main menu background
+    rMAINMENU,      // Shapes for main menu
+    rSLIDER,        // Shapes for menu slider
 
     rDEMO1,
     rDEMO2,
 
     rMAP01,         // Game maps
-    rMAP02=rMAP01+10,
-    rMAP03=rMAP02+10,
-    rMAP04=rMAP03+10,
-    rMAP05=rMAP04+10,
-    rMAP06=rMAP05+10,
-    rMAP07=rMAP06+10,
-    rMAP08=rMAP07+10,
-    rMAP09=rMAP08+10,
-    rMAP10=rMAP09+10,
-    rMAP11=rMAP10+10,
-    rMAP12=rMAP11+10,
-    rMAP13=rMAP12+10,
-    rMAP14=rMAP13+10,
-    rMAP15=rMAP14+10,
-    rMAP16=rMAP15+10,
-    rMAP17=rMAP16+10,
-    rMAP18=rMAP17+10,
-    rMAP19=rMAP18+10,
-    rMAP20=rMAP19+10,
-    rMAP21=rMAP20+10,
-    rMAP22=rMAP21+10,
-    rMAP23=rMAP22+10,
-    rMAP24=rMAP23+10,
+    rMAP02 = rMAP01 + 10,
+    rMAP03 = rMAP02 + 10,
+    rMAP04 = rMAP03 + 10,
+    rMAP05 = rMAP04 + 10,
+    rMAP06 = rMAP05 + 10,
+    rMAP07 = rMAP06 + 10,
+    rMAP08 = rMAP07 + 10,
+    rMAP09 = rMAP08 + 10,
+    rMAP10 = rMAP09 + 10,
+    rMAP11 = rMAP10 + 10,
+    rMAP12 = rMAP11 + 10,
+    rMAP13 = rMAP12 + 10,
+    rMAP14 = rMAP13 + 10,
+    rMAP15 = rMAP14 + 10,
+    rMAP16 = rMAP15 + 10,
+    rMAP17 = rMAP16 + 10,
+    rMAP18 = rMAP17 + 10,
+    rMAP19 = rMAP18 + 10,
+    rMAP20 = rMAP19 + 10,
+    rMAP21 = rMAP20 + 10,
+    rMAP22 = rMAP21 + 10,
+    rMAP23 = rMAP22 + 10,
+    rMAP24 = rMAP23 + 10,
 
-    rFIRSTSPRITE=rMAP24+10, // Sprite shapes
-    rSPR_BIGFISTS=rFIRSTSPRITE, // Player's fists
+    rFIRSTSPRITE = rMAP24 + 10,     // Sprite shapes
+    rSPR_BIGFISTS = rFIRSTSPRITE,   // Player's fists
     rSPR_BIGPISTOL,         // Player's pistol
     rSPR_BIGSHOTGUN,        // Player's shotgun
     rSPR_BIGCHAINGUN,       // Player's chain gun

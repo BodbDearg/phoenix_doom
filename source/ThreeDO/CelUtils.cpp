@@ -4,9 +4,6 @@
 #include "Base/ByteInputStream.h"
 #include "Base/Endian.h"
 #include "Base/FourCID.h"
-#include "Base/Macros.h"
-#include "Base/Mem.h"
-#include <cstring>
 #include <type_traits>
 
 BEGIN_NAMESPACE(CelUtils)

@@ -2,9 +2,7 @@
 
 #include "Audio/Sound.h"
 #include "Audio/Sounds.h"
-#include "Base/Macros.h"
 #include "Floor.h"
-#include "Game/Data.h"
 #include "Game/Tick.h"
 #include "MapData.h"
 #include "Specials.h"
@@ -85,7 +83,7 @@ static void T_VerticalDoor(vldoor_t& door) noexcept {
                         break;
                     case close30ThenOpen:
                         door.direction = 0;                         // Waiting
-                        door.topcountdown = (TICKSPERSEC * 30);
+                        door.topcountdown = TICKSPERSEC * 30;
                     case open:                                      // DC: these cases were unhandled
                     case raiseIn5Mins:
                         break;
@@ -166,7 +164,7 @@ bool EV_DoDoor(line_t& line, const vldoor_e type) noexcept {
                 door.topheight = P_FindLowestCeilingSurrounding(sec);
                 door.topheight -= 4 * FRACUNIT;
                 if (door.topheight != sec.ceilingheight) {
-                    S_StartSound(&door.sector->SoundX,sfx_doropn);
+                    S_StartSound(&door.sector->SoundX, sfx_doropn);
                 }
                 break;
             case raiseIn5Mins:  // DC: unhandled cases

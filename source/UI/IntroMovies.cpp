@@ -47,7 +47,7 @@ static void startupMovie(const char* path) noexcept {
     Video::clearScreen(0, 0, 0);
 
     // Don't do any screen wipes for movies
-    gDoWipe = false;
+    gbDoWipe = false;
 
     // Try to load the movie file into memory
     std::byte* pMovieFileData = nullptr;

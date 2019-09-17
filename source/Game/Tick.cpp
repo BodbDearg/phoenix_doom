@@ -25,10 +25,6 @@
 #include "UI/StatusBarUI.h"
 #include "UI/UIUtils.h"
 #include <cstring>
-#include <SDL.h>
-
-// Define to profile rendering (outputs to console)
-#define PROFILE_RENDER 1
 
 struct thinker_t {
     thinker_t*      next;

@@ -6,7 +6,6 @@
 #include "Base/Finally.h"
 #include "ChunkedStreamFileUtils.h"
 #include <algorithm>
-#include <memory>
 
 BEGIN_NAMESPACE(MovieDecoder)
 

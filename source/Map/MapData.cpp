@@ -8,7 +8,7 @@
 #include "Game/Resources.h"
 
 // On-disk versions of various map data structures.
-// These differ in many (all?) cases to the runtime versions.
+// These differ to the runtime versions and are in big endian format.
 struct MapSector {
     Fixed       floorHeight;
     Fixed       ceilingHeight;

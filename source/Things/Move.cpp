@@ -21,9 +21,9 @@ static uint32_t         gTmpFlags;
 static Fixed            gTmpDropoffZ;       // Lowest point contacted
 static subsector_t*     gpNewSubSec;        // Dest subsector
 
-//---------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 // Attempt to move to a new position, crossing special lines unless MF_TELEPORT is set.
-//---------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 void P_TryMove2() noexcept {
     gbTryMove2 = false;     // Until proven otherwise
     gbFloatOk = false;
@@ -32,8 +32,8 @@ void P_TryMove2() noexcept {
     gOldY = gpTmpThing->y;
     PM_CheckPosition();
 
-    if (gCheckPosOnly) {
-        gCheckPosOnly = false;
+    if (gbCheckPosOnly) {
+        gbCheckPosOnly = false;
         return;
     }
 
@@ -91,7 +91,7 @@ static bool PM_CrossCheck(line_t& ld) noexcept {
     return true;
 }
 
-//---------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 // This is purely informative, nothing is modified (except things picked up).
 //
 // in:
@@ -104,7 +104,7 @@ static bool PM_CrossCheck(line_t& ld) noexcept {
 //  ceilingz
 //  tmdropoffz  The lowest point contacted (monsters won't move to a dropoff)
 //  movething
-//---------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 void PM_CheckPosition() noexcept {
     gTmpFlags = gpTmpThing->flags;
 
@@ -235,9 +235,9 @@ bool PM_BoxCrossLine(line_t& ld) noexcept {
     return (bSide1 != bSide2);
 }
 
-//---------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 // Adjusts tmfloorz and tmceilingz as lines are contacted
-//---------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 bool PIT_CheckLine(line_t& ld) noexcept {
     // A line has been hit:
     // The moving thing's destination position will cross the given line.

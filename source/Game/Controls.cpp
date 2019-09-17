@@ -212,11 +212,11 @@ static void updateAxesFromMouseInput() noexcept {
     float xAxisMovement = Input::getMouseWheelAxisMovement(0);
     float yAxisMovement = Input::getMouseWheelAxisMovement(1);
 
-    if (Config::gInvertMouseWheelAxis[0]) {
+    if (Config::gbInvertMouseWheelAxis[0]) {
         xAxisMovement = -xAxisMovement;
     }
 
-    if (Config::gInvertMouseWheelAxis[1]) {
+    if (Config::gbInvertMouseWheelAxis[1]) {
         yAxisMovement = -yAxisMovement;
     }
 
@@ -292,7 +292,7 @@ float Axis::getValue(const AxisBits axis) noexcept {
 
 void init() noexcept {
     clearAllInputs();
-    gAlwaysRun = Config::gDefaultAlwaysRun;
+    gbAlwaysRun = Config::gbDefaultAlwaysRun;
 }
 
 void shutdown() noexcept {

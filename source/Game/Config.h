@@ -25,7 +25,7 @@ extern bool     gbDoFakeContrast;
 
 // Input general settings
 extern float    gInputAnalogToDigitalThreshold;
-extern bool     gDefaultAlwaysRun;
+extern bool     gbDefaultAlwaysRun;
 
 // Keyboard key bindings
 extern Controls::MenuActionBits gKeyboardMenuActions[Input::NUM_KEYBOARD_KEYS];
@@ -33,7 +33,7 @@ extern Controls::GameActionBits gKeyboardGameActions[Input::NUM_KEYBOARD_KEYS];
 
 // Mouse controls and bindings
 extern float    gMouseTurnSensitivity;
-extern bool     gInvertMouseWheelAxis[Input::NUM_MOUSE_WHEEL_AXES];
+extern bool     gbInvertMouseWheelAxis[Input::NUM_MOUSE_WHEEL_AXES];
 extern Controls::MenuActionBits gMouseMenuActions[NUM_MOUSE_BUTTONS];
 extern Controls::GameActionBits gMouseGameActions[NUM_MOUSE_BUTTONS];
 extern Controls::AxisBits       gMouseWheelAxisBindings[Input::NUM_MOUSE_WHEEL_AXES];

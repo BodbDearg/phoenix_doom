@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Base/Fixed.h"
+#include <cstdint>
 
 enum gameaction_e : uint8_t;
 

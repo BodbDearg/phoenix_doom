@@ -19,7 +19,6 @@ static inline constexpr angle_t negateAngle(const angle_t a) noexcept {
     return (angle_t) -(int32_t) a;
 }
 
-
 //----------------------------------------------------------------------------------------------------------------------
 // Convert a Doom binary angle to a float angle (in radians) and back again
 //----------------------------------------------------------------------------------------------------------------------

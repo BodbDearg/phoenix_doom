@@ -5,12 +5,11 @@
 #include "Base/Endian.h"
 #include "Base/Finally.h"
 #include "Game/GameDataFS.h"
-#include <memory>
 #include <vector>
 
-//--------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 // Some ids expected in AIFF-C and AIFF files
-//--------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 typedef uint32_t IffId;
 
 // Note: this makes the id in such a way that we don't need to byte swap these fields
@@ -32,9 +31,9 @@ static constexpr IffId ID_SSND = makeIffId("SSND");     // Sound samples chunk
 static constexpr IffId ID_NONE = makeIffId("NONE");     // Compression type: NONE
 static constexpr IffId ID_SDX2 = makeIffId("SDX2");     // Compression type: SDX2
 
-//--------------------------------------------------------------------------------------------------
-// Header for a chunk of data as per the 'EA IFF-85' standard and the wrapped data for a chunk.
-//--------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
+// Header for a chunk of data as per the 'EA IFF-85' standard and the wrapped data for a chunk
+//----------------------------------------------------------------------------------------------------------------------
 struct IffChunkHeader {
     IffId       id;
     uint32_t    dataSize;
@@ -54,9 +53,9 @@ struct IffChunk {
     }
 };
 
-//--------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 // Chunk utilities
-//--------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 static void readIffChunk(IffChunk& chunk, ByteInputStream& stream) THROWS {
     // Read the header first
     IffChunkHeader header;
@@ -95,10 +94,10 @@ static const IffChunk* findAiffFormChunk(const std::vector<IffChunk>& chunks) no
     return nullptr;
 }
 
-//--------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 // Reads an 80-bit float in big endian format.
 // Need to do things this way since MSVC no longer treats 'long double' as 80-bit extended.
-//--------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 static double readBigEndianExtendedFloat(ByteInputStream& stream) THROWS {
     // If not big endian, need read in reverse order to correct endianness
     uint8_t bytes[10];
@@ -161,10 +160,10 @@ static double readBigEndianExtendedFloat(ByteInputStream& stream) THROWS {
     return doubleVal;
 }
 
-//--------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 // Read RAW encoded sound data in 8 or 16 bit format.
 // The sound is assumed to be at the bit rate specified in the given sound data object.
-//--------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 static bool readRawSoundData(ByteInputStream& stream, AudioData& audioData) THROWS {
     ASSERT(audioData.bitDepth == 8 || audioData.bitDepth == 16);
 
@@ -176,11 +175,11 @@ static bool readRawSoundData(ByteInputStream& stream, AudioData& audioData) THRO
     return true;
 }
 
-//--------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 // Reads sound data in the compressed 'SDX2' (Square-Root-Delta) format that the 3DO used.
-// This format is a little obscure and hard to find information about, however I did manage to find
-// some decoding code on the internet and could
-//--------------------------------------------------------------------------------------------------
+// This format is a little obscure and hard to find information about, however I did manage to find some decoding
+// code on the internet and could figure out how to make it work from that.
+//----------------------------------------------------------------------------------------------------------------------
 static bool readSdx2CompressedSoundData(ByteInputStream& stream, AudioData& audioData) THROWS {
     // For SDX2 the bit rate MUST be 16-bit!
     if (audioData.bitDepth != 16)
@@ -258,9 +257,9 @@ static bool readSdx2CompressedSoundData(ByteInputStream& stream, AudioData& audi
     return true;
 }
 
-//--------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 // Reads the contents of the FORM chunk
-//--------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 static bool readFormChunk(const IffChunk& formChunk, AudioData& audioData) THROWS {
     // Validate and read form type firstly
     ByteInputStream formStream = formChunk.toStream();

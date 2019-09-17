@@ -5,7 +5,8 @@
 
 BEGIN_NAMESPACE(Resources)
 
-static const char* const RESOURCE_FILE_PATH = "REZFILE";
+static constexpr char* const RESOURCE_FILE_PATH = "REZFILE";
+
 static ResourceMgr gResourceMgr;
 
 void init() noexcept {
