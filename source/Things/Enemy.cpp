@@ -739,7 +739,7 @@ void A_Metal(mobj_t& actor) noexcept {
 //----------------------------------------------------------------------------------------------------------------------
 void L_MissileHit(mobj_t& mapObj, mobj_t* const pMissile) noexcept {
     if (pMissile) {
-        const uint32_t damage = (Random::nextU32(7) +1 ) * mapObj.InfoPtr->damage;      // Calc the damage
+        const uint32_t damage = (Random::nextU32(7) + 1) * mapObj.InfoPtr->damage;      // Calc the damage
         DamageMObj(*pMissile, &mapObj, mapObj.target, damage);                          // Inflict damage
     }
 

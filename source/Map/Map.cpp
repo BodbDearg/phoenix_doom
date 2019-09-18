@@ -7,6 +7,7 @@
 #include "Game/Data.h"
 #include "MapData.h"
 #include "MapUtil.h"
+#include "Sight.h"
 #include "Specials.h"
 #include "Switch.h"
 #include "Things/Info.h"
@@ -189,6 +190,8 @@ void P_UseLines(player_t& player) noexcept {
 // Always returns TRUE to check ALL lines
 //----------------------------------------------------------------------------------------------------------------------
 static bool PIT_RadiusAttack(mobj_t& thing) noexcept {
+    ASSERT(gpBombSpot);
+
     if ((thing.flags & MF_SHOOTABLE) == 0) {    // Can this item be hit?
         return true;                            // Next thing...
     }
@@ -202,8 +205,13 @@ static bool PIT_RadiusAttack(mobj_t& thing) noexcept {
         dist = 0;       // Fix the distance
     }
 
-    if (dist < (int32_t) gBombDamage) {     // Within blast range?
-        DamageMObj(thing, gpBombSpot, gpBombSource, gBombDamage - dist);
+    // Is the blast within range?
+    if (dist < (int32_t) gBombDamage) {
+        // DC: Bugfix to the original 3DO Doom: check for line of sight before applying damage.
+        // In the original 3DO Doom you could damage stuff through walls with rockets! (wasn't like that in PC Doom)
+        if (CheckSight(thing, *gpBombSpot)) {
+            DamageMObj(thing, gpBombSpot, gpBombSource, gBombDamage - dist);
+        }
     }
 
     return true;    // Continue
