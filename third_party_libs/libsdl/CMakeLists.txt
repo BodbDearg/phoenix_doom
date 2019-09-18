@@ -84,7 +84,6 @@ set(SOURCE_FILES
     "${SRC_DIR}/audio/SDL_wave.c"
     "${SRC_DIR}/audio/SDL_wave.h"
     "${SRC_DIR}/cpuinfo/SDL_cpuinfo.c"
-    "${SRC_DIR}/cpuinfo/SDL_simd.h"
     "${SRC_DIR}/dynapi/SDL_dynapi.c"
     "${SRC_DIR}/dynapi/SDL_dynapi.h"
     "${SRC_DIR}/dynapi/SDL_dynapi_overrides.h"
