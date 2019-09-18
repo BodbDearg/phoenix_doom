@@ -295,6 +295,27 @@ Fixed PA_SightCrossLine(const line_t& line) noexcept {
 // Returns true if strace crosses the given subsector successfuly
 //----------------------------------------------------------------------------------------------------------------------
 bool PA_CrossSubsector(const subsector_t& sub) noexcept {
+    // Check lines
+    {
+        seg_t* pSeg = sub.firstline;
+
+        for (uint32_t count = sub.numsublines; count > 0; pSeg++, count--) {
+            line_t& line = *pSeg->linedef;
+
+            if (line.validCount == gValidCount)
+                continue;   // Already checked other side
+
+            line.validCount = gValidCount;
+            const Fixed frac = PA_SightCrossLine(line);
+
+            if (frac < 0 || frac > FRACUNIT)
+                continue;
+
+            if (!PA_DoIntercept(&line, true, frac))
+                return false;
+        }
+    }
+
     // Check things
     for (mobj_t* pThing = sub.sector->thinglist; pThing != nullptr; pThing = pThing->snext) {
         if (pThing->subsector != &sub)
@@ -323,27 +344,6 @@ bool PA_CrossSubsector(const subsector_t& sub) noexcept {
 
         if (!PA_DoIntercept(pThing, false, frac))
             return false;
-    }
-
-    // Check lines
-    {
-        seg_t* pSeg = sub.firstline;
-
-        for (uint32_t count = sub.numsublines; count > 0; pSeg++, count--) {
-            line_t& line = *pSeg->linedef;
-
-            if (line.validCount == gValidCount)
-                continue;   // Already checked other side
-
-            line.validCount = gValidCount;
-            const Fixed frac = PA_SightCrossLine(line);
-
-            if (frac < 0 || frac > FRACUNIT)
-                continue;
-
-            if (!PA_DoIntercept(&line, true, frac))
-                return false;
-        }
     }
 
     return true;    // Passed the subsector ok
