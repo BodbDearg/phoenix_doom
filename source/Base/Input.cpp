@@ -142,16 +142,20 @@ static void handleSdlEvents() noexcept {
             case SDL_QUIT:
                 gbIsQuitRequested = true;
                 break;
+            
+            case SDL_WINDOWEVENT: {
+                switch (sdlEvent.window.event) {
+                    case SDL_WINDOWEVENT_FOCUS_GAINED:
+                        SDL_ShowCursor(SDL_DISABLE);
+                        SDL_SetWindowGrab(Video::getWindow(), SDL_TRUE);
+                        break;
 
-            case SDL_WINDOWEVENT_FOCUS_GAINED:
-                SDL_ShowCursor(SDL_DISABLE);
-                SDL_SetWindowGrab(Video::getWindow(), SDL_TRUE);
-                break;
-
-            case SDL_WINDOWEVENT_FOCUS_LOST:
-                SDL_ShowCursor(SDL_ENABLE);
-                SDL_SetWindowGrab(Video::getWindow(), SDL_FALSE);
-                break;
+                    case SDL_WINDOWEVENT_FOCUS_LOST:
+                        SDL_ShowCursor(SDL_ENABLE);
+                        SDL_SetWindowGrab(Video::getWindow(), SDL_FALSE);
+                        break;
+                }
+            }   break;
 
             case SDL_KEYDOWN: {
                 const uint16_t scancode = (uint16_t) sdlEvent.key.keysym.scancode;
