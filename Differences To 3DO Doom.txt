@@ -83,3 +83,6 @@ To fix this I removed logic that simulates a variable number of ticks per frame 
 
 [] Fixed an occasional bug where if you killed a monster under a door and the door dropped on the monster while the death anim was still playing, the gore puddle would become blocking.
 Sometimes this issue would prevent you from passing through narrow doors! This bug was present on the 3DO version but does not happen on PC Doom. Fixed by removing the 'blocking' attribute of the enemy when it is being crushed.
+
+[] Fix a bug (that was also in the 3DO version) where auto aiming would sometimes try to shoot through completely raised platforms that have no gap to shoot through.
+The issue could be observed on Map 07 (Computer Station) in the section in between the two slime pits (just past two steps) where a octagonal platform  is present. In this situation the game was trying to shoot at monsters inside the octagon pillar before it was lowered by the trap trigger.
