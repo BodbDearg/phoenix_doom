@@ -315,6 +315,7 @@ if (PLATFORM_MAC)
         "${SRC_DIR}/events/scancodes_darwin.h"
         "${SRC_DIR}/file/cocoa/SDL_rwopsbundlesupport.h"
         "${SRC_DIR}/file/cocoa/SDL_rwopsbundlesupport.m"
+        "${SRC_DIR}/filesystem/cocoa/SDL_sysfilesystem.m"
         "${SRC_DIR}/haptic/darwin/SDL_syshaptic.c"
         "${SRC_DIR}/haptic/darwin/SDL_syshaptic_c.h"
         "${SRC_DIR}/joystick/darwin/SDL_sysjoystick.c"

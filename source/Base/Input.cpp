@@ -4,6 +4,7 @@
 #include "Game/Config.h"
 #include "GFX/Video.h"
 #include <algorithm>
+#include <cmath>
 #include <cstring>
 #include <SDL.h>
 

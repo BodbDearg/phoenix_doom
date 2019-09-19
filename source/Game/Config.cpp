@@ -5,8 +5,15 @@
 #include "Base/IniUtils.h"
 #include "DoomDefines.h"
 #include <cstring>
-#include <filesystem>
 #include <SDL.h>
+
+// MacOS: working around missing support for <filesystem> in everything except the latest bleeding edge OS and Xcode.
+// Use standard Unix file functions instead for now, but some day this can be removed.
+#ifdef __MACOSX__
+    #include <unistd.h>
+#else
+    #include <filesystem>
+#endif
 
 BEGIN_NAMESPACE(Config)
 
@@ -700,15 +707,21 @@ static std::string determineIniFilePath() noexcept {
 // Regenerates the config ini file if it doesn't exist on disk
 //----------------------------------------------------------------------------------------------------------------------
 static void regenerateDefaultConfigFileIfNotPresent(const std::string& iniFilePath) noexcept {
-    bool cfgFileExists;
+    bool bCfgFileExists;
 
     try {
-        cfgFileExists = std::filesystem::exists(iniFilePath);
+        // MacOS: working around missing support for <filesystem> in everything except the latest bleeding edge OS and Xcode.
+        // Use standard Unix file functions instead for now, but some day this can be removed.
+        #ifdef __MACOSX__
+            bCfgFileExists = (access(iniFilePath.c_str(), R_OK) == 0);
+        #else
+            bCfgFileExists = std::filesystem::exists(iniFilePath);
+        #endif
     } catch (...) {
         FATAL_ERROR("Unable to determine if the game configuration file exists!");
     }
 
-    if (cfgFileExists)
+    if (bCfgFileExists)
         return;
 
     std::string configFile;

@@ -6,8 +6,15 @@
 #include "Base/IniUtils.h"
 #include "Data.h"
 #include "DoomDefines.h"
-#include <filesystem>
 #include <SDL.h>
+
+// MacOS: working around missing support for <filesystem> in everything except the latest bleeding edge OS and Xcode.
+// Use standard Unix file functions instead for now, but some day this can be removed.
+#ifdef __MACOSX__
+    #include <unistd.h>
+#else
+    #include <filesystem>
+#endif
 
 BEGIN_NAMESPACE(Prefs)
 
@@ -101,7 +108,13 @@ void load() noexcept {
     bool bPrefsFileExists = false;
 
     try {
-        bPrefsFileExists = std::filesystem::exists(iniFilePath);
+        // MacOS: working around missing support for <filesystem> in everything except the latest bleeding edge OS and Xcode.
+        // Use standard Unix file functions instead for now, but some day this can be removed.
+        #ifdef __MACOSX__
+            bPrefsFileExists = (access(iniFilePath.c_str(), R_OK|W_OK) == 0);
+        #else
+            bPrefsFileExists = std::filesystem::exists(iniFilePath);
+        #endif
     } catch (...) {
         // Ignore, we can recover...
     }
