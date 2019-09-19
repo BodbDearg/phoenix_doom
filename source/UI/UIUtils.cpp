@@ -6,6 +6,7 @@
 #include "GFX/Blit.h"
 #include "GFX/CelImages.h"
 #include "GFX/Video.h"
+#include <cstring>
 #include <string>
 
 BEGIN_NAMESPACE(UIUtils)
@@ -204,13 +205,13 @@ void drawUISprite(const int32_t x, const int32_t y, const CelImage& image) noexc
 
 void drawUISprite(const int32_t x, const int32_t y, const uint32_t resourceNum) noexcept {
     const CelImage& img = CelImages::loadImage(resourceNum, CelLoadFlagBits::NONE);
-    drawUISprite(0, 0, img);
+    drawUISprite(x, y, img);
     CelImages::releaseImages(resourceNum);
 }
 
 void drawMaskedUISprite(const int32_t x, const int32_t y, const uint32_t resourceNum) noexcept {
     const CelImage& img = CelImages::loadImage(resourceNum, CelLoadFlagBits::MASKED);
-    drawUISprite(0, 0, img);
+    drawUISprite(x, y, img);
     CelImages::releaseImages(resourceNum);
 }
 

@@ -4,6 +4,7 @@
 #include "Base/Finally.h"
 #include "Base/IniUtils.h"
 #include "DoomDefines.h"
+#include <cstring>
 #include <filesystem>
 #include <SDL.h>
 
@@ -14,7 +15,7 @@ static_assert(Input::NUM_KEYBOARD_KEYS == SDL_NUM_SCANCODES);   // Must agree!
 static_assert(Input::NUM_MOUSE_WHEEL_AXES == 2);
 
 // Note: these had to be split up into sections because I hit the maximum string limit size of MSVC!
-static constexpr char* const DEFAULT_CONFIG_INI_SECTION_1 = 
+static constexpr const char* const DEFAULT_CONFIG_INI_SECTION_1 =
 R"(#---------------------------------------------------------------------------------------------------
 # === Phoenix Doom config file ===
 #
@@ -23,7 +24,7 @@ R"(#----------------------------------------------------------------------------
 
 )";
 
-static constexpr char* const DEFAULT_CONFIG_INI_SECTION_2 = 
+static constexpr const char* const DEFAULT_CONFIG_INI_SECTION_2 =
 R"(####################################################################################################
 [GameData]
 ####################################################################################################
@@ -58,7 +59,7 @@ DataDirectoryPath = C:\Users\<MY_NAME>\<WHATEVER>\Doom3DO_DiscExtracted
 
 )";
 
-static constexpr char* const DEFAULT_CONFIG_INI_SECTION_3 =
+static constexpr const char* const DEFAULT_CONFIG_INI_SECTION_3 =
 R"(####################################################################################################
 [Video]
 ####################################################################################################
@@ -136,7 +137,7 @@ AspectCorrectOutputScaling = 1
 
 )";
 
-static constexpr char* const DEFAULT_CONFIG_INI_SECTION_4 = 
+static constexpr const char* const DEFAULT_CONFIG_INI_SECTION_4 =
 R"(####################################################################################################
 [Graphics]
 ####################################################################################################
@@ -157,7 +158,7 @@ DoFakeContrast = 1
 
 )";
 
-static constexpr char* const DEFAULT_CONFIG_INI_SECTION_5 =
+static constexpr const char* const DEFAULT_CONFIG_INI_SECTION_5 =
 R"(####################################################################################################
 [InputGeneral]
 ####################################################################################################
@@ -178,7 +179,7 @@ AnalogToDigitalThreshold = 0.5
 
 )";
 
-static constexpr char* const DEFAULT_CONFIG_INI_SECTION_6 = 
+static constexpr const char* const DEFAULT_CONFIG_INI_SECTION_6 =
 R"(####################################################################################################
 [KeyboardControls]
 ####################################################################################################
@@ -231,7 +232,7 @@ F9              = toggle_performance_counters
 
 )";
 
-static constexpr char* const DEFAULT_CONFIG_INI_SECTION_7 =
+static constexpr const char* const DEFAULT_CONFIG_INI_SECTION_7 =
 R"(####################################################################################################
 [MouseControls]
 ####################################################################################################
@@ -261,7 +262,7 @@ Axis_Y          = weapon_next_prev
 
 )";
 
-static constexpr char* const DEFAULT_CONFIG_INI_SECTION_8 =
+static constexpr const char* const DEFAULT_CONFIG_INI_SECTION_8 =
 R"(####################################################################################################
 [GameControllerControls]
 ####################################################################################################
@@ -306,7 +307,7 @@ Axis_RightTrigger       = attack
 
 )";
 
-static constexpr char* const DEFAULT_CONFIG_INI_SECTION_9 =
+static constexpr const char* const DEFAULT_CONFIG_INI_SECTION_9 =
 R"(####################################################################################################
 [Debug]
 ####################################################################################################
@@ -352,7 +353,7 @@ GrantInvulnerability        = IDBEHOLDV
 
 )";
 
-static constexpr char* const DEFAULT_CONFIG_INI_SECTION_10 = 
+static constexpr const char* const DEFAULT_CONFIG_INI_SECTION_10 =
 R"(####################################################################################################
 #
 # Appendix
@@ -688,7 +689,6 @@ static std::string determineIniFilePath() noexcept {
 
     if (!pCfgFilePath) {
         FATAL_ERROR("Unable to create or determine the path to the configuration for the game!");
-        return std::string();
     }
 
     std::string path = pCfgFilePath;
@@ -960,8 +960,8 @@ static void parseMouseButtonOrWheelActions(const std::string buttonOrAxisName, c
 // Figures out what controller input a button or axis name in the .ini corresponds to.
 // Returns an invalid controller input if not recognized.
 //----------------------------------------------------------------------------------------------------------------------
-static constexpr char* CONTROLLER_BTN_NAME_PREFIX = "Button_";
-static constexpr char* CONTROLLER_AXIS_NAME_PREFIX = "Axis_";
+static constexpr const char* CONTROLLER_BTN_NAME_PREFIX = "Button_";
+static constexpr const char* CONTROLLER_AXIS_NAME_PREFIX = "Axis_";
 
 static ControllerInput getControllerInputFromName(const std::string name) noexcept {
     const char* const pStr = name.c_str();

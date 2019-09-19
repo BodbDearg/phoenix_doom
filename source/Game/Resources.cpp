@@ -5,7 +5,7 @@
 
 BEGIN_NAMESPACE(Resources)
 
-static constexpr char* const RESOURCE_FILE_PATH = "REZFILE";
+static constexpr const char* const RESOURCE_FILE_PATH = "REZFILE";
 
 static ResourceMgr gResourceMgr;
 
@@ -39,7 +39,7 @@ void free(const uint32_t num) noexcept {
     gResourceMgr.freeResource(num);
 }
 
-void release(const uint32_t num) noexcept {
+void release([[maybe_unused]] const uint32_t num) noexcept {
     // At the moment I'm not implementing any kind of mark and purge memory management system like what
     // Burgerlib had in the original 3DO source - this call is merely for documentation purposes throughout
     // the code as a statement of intent. The code can still use this call to say 'Hey, I don't need this

@@ -142,18 +142,18 @@ bool getSubStreamData(
         return false;
     
     // Read the stream header and endian correct
-    StreamHeader header;
-    std::memcpy(&header, pStreamFileData, sizeof(StreamHeader));
-    header.convertBigToHostEndian();
+    StreamHeader streamHdr;
+    std::memcpy(&streamHdr, pStreamFileData, sizeof(StreamHeader));
+    streamHdr.convertBigToHostEndian();
 
     // Ensure the header is what we expect
-    if (header.chunkType != FourCID("SHDR"))
+    if (streamHdr.chunkType != FourCID("SHDR"))
         return false;
     
-    if (header.headerVersion != 2)
+    if (streamHdr.headerVersion != 2)
         return false;
 
-    if (header.chunkSize != sizeof(StreamHeader))
+    if (streamHdr.chunkSize != sizeof(StreamHeader))
         return false;
     
     // Determine the size of the sub stream, if there is no data then we cannot read it
@@ -161,7 +161,7 @@ bool getSubStreamData(
 
     if (subStreamSize <= 0)
         return false;
-
+    
     // Read all of the data for this stream from each chunk in the stream file
     std::unique_ptr<std::byte[]> streamData(new std::byte[subStreamSize]);
 
@@ -175,12 +175,12 @@ bool getSubStreamData(
         while (bytes.hasBytesLeft()) {
             // Get this chunk's header and see if it is the type we are interested in.
             // If it is the correct type then read the chunk, otherwise skip:
-            ChunkHeader header;
-            bytes.read(header);
-            header.convertBigToHostEndian();
-            const uint32_t chunkDataSize = header.chunkSize - sizeof(ChunkHeader);
+            ChunkHeader chunkHdr;
+            bytes.read(chunkHdr);
+            chunkHdr.convertBigToHostEndian();
+            const uint32_t chunkDataSize = chunkHdr.chunkSize - sizeof(ChunkHeader);
 
-            if (header.chunkType == subStreamId) {
+            if (chunkHdr.chunkType == subStreamId) {
                 bytes.readBytes(pCurData, chunkDataSize);
                 pCurData += chunkDataSize;
             } else {

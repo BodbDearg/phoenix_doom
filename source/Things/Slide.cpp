@@ -9,7 +9,7 @@
 static constexpr int32_t    CLIPRADIUS  = 23;
 static constexpr uint32_t   SIDE_ON     = 0;
 static constexpr uint32_t   SIDE_FRONT  = 1;
-static constexpr uint32_t   SIDE_BACK   = -1;
+static constexpr uint32_t   SIDE_BACK   = UINT32_MAX;
 
 Fixed       gSlideX;        // The final position
 Fixed       gSlideY;
@@ -304,38 +304,39 @@ bool SL_CheckLine(line_t& ld) noexcept {
     }
 
     // See if it can possibly block movement
-    if (!ld.backsector || ((ld.flags & ML_BLOCKING) != 0)) {
-        goto findfrac;  // Explicitly blocking
-    }
+    do {
+        if ((!ld.backsector) || ((ld.flags & ML_BLOCKING) != 0)) {
+            break;  // Explicitly blocking
+        }
 
-    sector_t& front = *ld.frontsector;
-    sector_t& back = *ld.backsector;
+        sector_t& front = *ld.frontsector;
+        sector_t& back = *ld.backsector;
 
-    Fixed openbottom;
+        Fixed openbottom;
 
-    if (front.floorheight > back.floorheight) {
-        openbottom = front.floorheight;
-    } else {
-        openbottom = back.floorheight;
-    }
+        if (front.floorheight > back.floorheight) {
+            openbottom = front.floorheight;
+        } else {
+            openbottom = back.floorheight;
+        }
 
-    if (openbottom - gpSlideThing->z > 24 * FRACUNIT) {
-        goto findfrac;  // Too big of a step up
-    }
+        if (openbottom - gpSlideThing->z > 24 * FRACUNIT) {
+            break;  // Too big of a step up
+        }
 
-    Fixed opentop;
+        Fixed opentop;
 
-    if (front.ceilingheight < back.ceilingheight) {
-        opentop = front.ceilingheight;
-    } else {
-        opentop = back.ceilingheight;
-    }
+        if (front.ceilingheight < back.ceilingheight) {
+            opentop = front.ceilingheight;
+        } else {
+            opentop = back.ceilingheight;
+        }
 
-    if (opentop - openbottom >= 56 * FRACUNIT) {
-        return true;    // The line doesn't block movement
-    }
+        if (opentop - openbottom >= 56 * FRACUNIT) {
+            return true;    // The line doesn't block movement
+        }
+    } while (false);
 
-findfrac:
     // The line definately blocks movement: p1, p2 are line endpoints
     gP1x = ld.v1.x;
     gP1y = ld.v1.y;

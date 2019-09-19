@@ -555,7 +555,7 @@ void P_UpdateSpecials() noexcept {
                 // Effect firstcol scroll: scroll the texture
                 side_t& side = *theline.SidePtr[0];
                 side.texXOffset += 1.0f;
-                side.texXOffset = std::fmodf(side.texXOffset, 256.0f);      // Wrap to prevent precision getting out of control
+                side.texXOffset = std::fmod(side.texXOffset, 256.0f);   // Wrap to prevent precision getting out of control
             }
 
             ++ppCurLine;

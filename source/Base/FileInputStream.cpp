@@ -1,4 +1,6 @@
 #include "FileInputStream.h"
+
+#include <climits>
 #include <cstdio>
 
 static inline int64_t u32ToI64NoSignExtend(const uint32_t val) noexcept {

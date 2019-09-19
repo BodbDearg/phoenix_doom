@@ -4,6 +4,7 @@
 #include "Config.h"
 #include "ThreeDO/CDImageFileInputStream.h"
 #include "ThreeDO/OperaFS.h"
+#include <cstring>
 
 BEGIN_NAMESPACE(GameDataFS)
 

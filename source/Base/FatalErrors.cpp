@@ -1,6 +1,7 @@
 #include "FatalErrors.h"
 
 #include "GFX/Video.h"
+#include <cstring>
 #include <SDL.h>
 #include <vector>
 
@@ -10,7 +11,7 @@ BEGIN_NAMESPACE(FatalErrors)
 // Normally most code does not tolerate nulls, but error reporting should be more robust.
 static const char* const UNSPECIFIED_ERROR_STR = "An unspecified/unknown error has occurred!";
 
-static void fatalError(const char* const msg) noexcept {
+[[noreturn]] static void fatalError(const char* const msg) noexcept {
     // Always print to the console (standard out) and in debug builds
     if (msg) {
         std::printf("[FATAL ERROR] %s\n", msg);

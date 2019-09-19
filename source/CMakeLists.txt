@@ -191,8 +191,7 @@ if (PLATFORM_MAC)
 endif()
 
 if (COMPILER_MSVC)
-    # MSVC: Don't complain about using regular 'std::fopen()' etc.
-    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+    add_definitions(-D_CRT_SECURE_NO_WARNINGS)  # MSVC: Don't complain about using regular 'std::fopen()' etc.
 endif()
 
 add_executable(${GAME_NAME} ${SOURCE_FILES} ${HEADER_FILES} ${OTHER_FILES})
@@ -200,3 +199,7 @@ setup_source_groups("${SOURCE_FILES}" "${HEADER_FILES}" "${OTHER_FILES}")
 
 include_directories(${INCLUDE_PATHS})
 target_link_libraries(${GAME_NAME} ${LIBSDL_NAME})
+
+if (COMPILER_MSVC)
+    target_compile_options(${GAME_NAME} PRIVATE /W4)    # Enable all warnings
+endif()

@@ -244,7 +244,6 @@ static void decodePixelBlock(
 // Read CVID chunk: a codebook for a key frame (12 bits per pixel mode)
 //----------------------------------------------------------------------------------------------------------------------
 static void readCVIDChunk_KF_Codebook_12_Bit(
-    VideoDecoderState& decoderState,
     ByteInputStream& stream,
     const uint16_t chunkSize,
     VidCodebook& codebook
@@ -266,11 +265,7 @@ static void readCVIDChunk_KF_Codebook_12_Bit(
 //----------------------------------------------------------------------------------------------------------------------
 // Read CVID chunk: a selectively updated codebook for a delta frame (12 bits per pixel mode)
 //----------------------------------------------------------------------------------------------------------------------
-static void readCVIDChunk_DF_Codebook_12_Bit(
-    VideoDecoderState& decoderState,
-    ByteInputStream& stream,
-    VidCodebook& codebook
-) THROWS {
+static void readCVIDChunk_DF_Codebook_12_Bit(ByteInputStream& stream, VidCodebook& codebook) THROWS {
     if (!stream.hasBytesLeft())
         return;
     
@@ -322,7 +317,7 @@ static void readCVIDChunk_KF_Vectors(VideoDecoderState& decoderState, ByteInputS
                 decodePixelBlock(decoderState, blockIdx, decoderState.codebooks[1], v0Idx, v1Idx, v2Idx, v3Idx);
             } else {
                 // This block uses the v1 codebook: 1 byte for 1 V1 codebook vector reference
-                const uint32_t vIdx = stream.read<uint8_t>();
+                const uint8_t vIdx = stream.read<uint8_t>();
                 decodePixelBlock(decoderState, blockIdx, decoderState.codebooks[0], vIdx, vIdx, vIdx, vIdx);
             }
         }
@@ -335,7 +330,7 @@ static void readCVIDChunk_KF_Vectors(VideoDecoderState& decoderState, ByteInputS
 static void readCVIDChunk_KF_Vectors_V1_Only(VideoDecoderState& decoderState, ByteInputStream& stream) THROWS {
     for (uint32_t blockIdx = 0; blockIdx < NUM_BLOCKS_PER_FRAME; ++blockIdx) {
         // This block uses the v1 codebook: 1 byte for 1 V1 codebook vector reference
-        const uint32_t vIdx = stream.read<uint8_t>();
+        const uint8_t vIdx = stream.read<uint8_t>();
         decodePixelBlock(decoderState, blockIdx, decoderState.codebooks[0], vIdx, vIdx, vIdx, vIdx);
     }
 }
@@ -380,7 +375,7 @@ static void readCVIDChunk_DF_Vectors(VideoDecoderState& decoderState, ByteInputS
                 decodePixelBlock(decoderState, blockIdx, decoderState.codebooks[1], v0Idx, v1Idx, v2Idx, v3Idx);
             } else {
                 // This block uses the v1 codebook: 1 byte for 1 V1 codebook vector reference
-                const uint32_t vIdx = stream.read<uint8_t>();
+                const uint8_t vIdx = stream.read<uint8_t>();
                 decodePixelBlock(decoderState, blockIdx, decoderState.codebooks[0], vIdx, vIdx, vIdx, vIdx);
             }
         }
@@ -400,7 +395,7 @@ static void readCVIDChunk(VideoDecoderState& decoderState, ByteInputStream& stre
         throw VideoDecodeException();
     
     // Package that up into it's own sub stream and consume the input stream bytes
-    const uint32_t chunkSize = chunkHeader.chunkSize - (uint32_t) sizeof(CVIDChunkHeader);
+    const uint16_t chunkSize = chunkHeader.chunkSize - (uint16_t) sizeof(CVIDChunkHeader);
 
     if (chunkSize > stream.getNumBytesLeft())
         throw VideoDecodeException();
@@ -410,16 +405,16 @@ static void readCVIDChunk(VideoDecoderState& decoderState, ByteInputStream& stre
     
     // See what type of chunk we are dealing with
     if (chunkHeader.chunkType == CVID_KF_V4_CODEBOOK_12_BIT) {
-        readCVIDChunk_KF_Codebook_12_Bit(decoderState, chunkDataStream, chunkSize, decoderState.codebooks[1]);
+        readCVIDChunk_KF_Codebook_12_Bit(chunkDataStream, chunkSize, decoderState.codebooks[1]);
     } 
     else if (chunkHeader.chunkType == CVID_DF_V4_CODEBOOK_12_BIT) {
-        readCVIDChunk_DF_Codebook_12_Bit(decoderState, chunkDataStream, decoderState.codebooks[1]);
+        readCVIDChunk_DF_Codebook_12_Bit(chunkDataStream, decoderState.codebooks[1]);
     }
     else if (chunkHeader.chunkType == CVID_KF_V1_CODEBOOK_12_BIT) {
-        readCVIDChunk_KF_Codebook_12_Bit(decoderState, chunkDataStream, chunkSize, decoderState.codebooks[0]);
+        readCVIDChunk_KF_Codebook_12_Bit(chunkDataStream, chunkSize, decoderState.codebooks[0]);
     }
     else if (chunkHeader.chunkType == CVID_DF_V1_CODEBOOK_12_BIT) {
-        readCVIDChunk_DF_Codebook_12_Bit(decoderState, chunkDataStream, decoderState.codebooks[0]);
+        readCVIDChunk_DF_Codebook_12_Bit(chunkDataStream, decoderState.codebooks[0]);
     }
     else if (chunkHeader.chunkType == CVID_KF_VECTORS) {
         readCVIDChunk_KF_Vectors(decoderState, chunkDataStream);
@@ -644,8 +639,8 @@ bool decodeMovieAudio(
     audioDataOut.bufferSize = header.audioDataSize;
     audioDataOut.numSamples = (header.audioDataSize / bytesPerSample) / header.numChannels;
     audioDataOut.sampleRate = header.sampleRate;
-    audioDataOut.numChannels = header.numChannels;
-    audioDataOut.bitDepth = header.bitDepth;
+    audioDataOut.numChannels = (uint16_t) header.numChannels;
+    audioDataOut.bitDepth = (uint16_t) header.bitDepth;
 
     std::memcpy(audioDataOut.pBuffer, pAudioStreamData + sizeof(AudioStreamHeader), header.audioDataSize);
     return true;

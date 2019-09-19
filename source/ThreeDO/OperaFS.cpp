@@ -2,6 +2,7 @@
 
 #include "Base/Endian.h"
 #include "CDImageFileInputStream.h"
+#include <cstring>
 #include <queue>
 
 BEGIN_NAMESPACE(OperaFS)
@@ -196,7 +197,6 @@ static void readAndVerifyDirEntry(CDImageFileInputStream& cd, DirEntry& entry) T
 //----------------------------------------------------------------------------------------------------------------------
 static uint32_t readDirEntriesBlock(
     CDImageFileInputStream& cd,
-    const uint32_t parentDirIdx,
     std::queue<DirToRead>& dirsToRead,
     std::vector<FSEntry>& fsEntriesOut
 ) THROWS {
@@ -264,7 +264,7 @@ static uint32_t readDirEntriesBlock(
         // Is this the last entry in the directory?
         // If so then return that there is no more blocks ahead.
         if (areAllFlagsSet(dirEntry.flags, DirEntry::FLAGS_LAST_ENTRY_IN_DIR))
-            return -1;
+            return UINT32_MAX;
 
         // Is this the last entry in the block?
         // If so then abort reading regardless of what is ahead.
@@ -305,12 +305,12 @@ static void readDirEntries(
         // Naviate to the first block where the directory entries are stored and read it
         const uint32_t firstBlockIdx = dirToRead.firstBlockIdx;
         cd.seek(firstBlockIdx * OPERA_BLOCK_SIZE);
-        uint32_t nextBlockIdx = readDirEntriesBlock(cd, dirToRead.parentDirIdx, dirsToRead, fsEntriesOut);
+        uint32_t nextBlockIdx = readDirEntriesBlock(cd, dirsToRead, fsEntriesOut);
 
         // Continue reading blocks in the directory until we are done
         while (nextBlockIdx != UINT32_MAX) {
             cd.seek((firstBlockIdx + nextBlockIdx) * OPERA_BLOCK_SIZE);
-            nextBlockIdx = readDirEntriesBlock(cd, dirToRead.parentDirIdx, dirsToRead, fsEntriesOut);
+            nextBlockIdx = readDirEntriesBlock(cd, dirsToRead, fsEntriesOut);
         }
         
         // Now that we know it, set the number of children in the parent directory

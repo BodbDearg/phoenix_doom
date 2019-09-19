@@ -60,9 +60,9 @@ void endFrame(const bool bPresent, const bool bSaveFrameBuffer) noexcept;
 // The returned value is fully opaque.
 //----------------------------------------------------------------------------------------------------------------------
 inline uint32_t fixedRgbToScreenCol(const Fixed rFrac, const Fixed gFrac, const Fixed bFrac) noexcept {
-    const uint16_t rInt = rFrac >> (FRACBITS - 3);
-    const uint16_t gInt = gFrac >> (FRACBITS - 3);
-    const uint16_t bInt = bFrac >> (FRACBITS - 3);
+    const uint32_t rInt = (uint32_t)(rFrac >> (FRACBITS - 3));
+    const uint32_t gInt = (uint32_t)(gFrac >> (FRACBITS - 3));
+    const uint32_t bInt = (uint32_t)(bFrac >> (FRACBITS - 3));
     const uint32_t rClamp = (rInt > 0xFF) ? 0xFF : rInt;
     const uint32_t gClamp = (gInt > 0xFF) ? 0xFF : gInt;
     const uint32_t bClamp = (bInt > 0xFF) ? 0xFF : bInt;

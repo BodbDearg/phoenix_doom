@@ -47,7 +47,7 @@ static void determineTargetVideoMode() noexcept {
     SDL_DisplayMode screenMode = {};
 
     if (SDL_GetCurrentDisplayMode(0, &screenMode) != 0) {
-        FATAL_ERROR_F("Failed to determine current screen video mode!");
+        FATAL_ERROR("Failed to determine current screen video mode!");
     }
 
     // Determine output width and height.

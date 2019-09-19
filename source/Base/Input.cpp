@@ -3,6 +3,8 @@
 #include "ControllerInput.h"
 #include "Game/Config.h"
 #include "GFX/Video.h"
+#include <algorithm>
+#include <cstring>
 #include <SDL.h>
 
 BEGIN_NAMESPACE(Input)

@@ -12,12 +12,12 @@ BEGIN_NAMESPACE(Input)
 
 // N.B: MUST match the SDL headers! (I don't want to expose SDL via this header)
 // Verified via static assert in the .cpp file. 
-inline constexpr uint16_t NUM_KEYBOARD_KEYS = 512;
+inline static constexpr uint16_t NUM_KEYBOARD_KEYS = 512;
 
 // The number of mouse wheel axes there are.
 // 0 = x-axis and 1 = y-axis.
 // There may be a y-axis on some laptop touch pads:
-inline constexpr uint8_t NUM_MOUSE_WHEEL_AXES = 2;
+inline static constexpr uint8_t NUM_MOUSE_WHEEL_AXES = 2;
 
 // Initialize and shutdown input handling
 void init() noexcept;

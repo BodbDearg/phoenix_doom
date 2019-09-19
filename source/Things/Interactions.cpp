@@ -204,7 +204,7 @@ uint32_t GivePower(player_t& player, const powertype_e power) noexcept {
 
 //----------------------------------------------------------------------------------------------------------------------
 // The case statement got too big, moved the rest here.
-// Returns sound to play, or -1 if no sound
+// Returns sound to play, or UINT32_MAX if no sound
 //----------------------------------------------------------------------------------------------------------------------
 static uint32_t TouchSpecialThing2(mobj_t& toucher, const uint32_t sprite) noexcept {
     ASSERT(toucher.player);
@@ -213,14 +213,14 @@ static uint32_t TouchSpecialThing2(mobj_t& toucher, const uint32_t sprite) noexc
     switch (sprite) {
         case rSPR_GREENARMOR: { // Green armor
             if (!GiveArmor(player, 1)) {
-                return -1;
+                return UINT32_MAX;
             }
             player.message = "You pick up the armor.";
         }   break;
 
         case rSPR_BLUEARMOR: {  // Blue armor
             if (!GiveArmor(player, 2)) {
-                return -1;
+                return UINT32_MAX;
             }
             player.message = "You got the MegaArmor!";
         }   break;
@@ -277,14 +277,14 @@ static uint32_t TouchSpecialThing2(mobj_t& toucher, const uint32_t sprite) noexc
         // Heals
         case rSPR_STIMPACK: {   // Stim pack
             if (!GiveBody(player, 10)) {
-                return -1;
+                return UINT32_MAX;
             }
             player.message = "You pick up a stimpack.";
         }   break;
 
         case rSPR_MEDIKIT: {
             if (!GiveBody(player, 25)) {     // Medkit
-                return -1;
+                return UINT32_MAX;
             }
             if (player.health < 50) {
                 player.message = "You pick up a medikit that you REALLY need!";
@@ -296,14 +296,14 @@ static uint32_t TouchSpecialThing2(mobj_t& toucher, const uint32_t sprite) noexc
         // Power ups
         case rSPR_INVULNERABILITY: {    // God mode!!
             if (!GivePower(player, pw_invulnerability)) {
-                return -1;
+                return UINT32_MAX;
             }
             player.message = "Invulnerability!";
         }   break;
 
         case rSPR_BERZERKER: {  // Berserker pack
             if (!GivePower(player, pw_strength)) {
-                return -1;
+                return UINT32_MAX;
             }
             player.message = "Berserk!";
             if (player.readyweapon != wp_fist) {    // Already fists?
@@ -313,21 +313,21 @@ static uint32_t TouchSpecialThing2(mobj_t& toucher, const uint32_t sprite) noexc
 
         case rSPR_INVISIBILITY: {   // Invisibility
             if (!GivePower(player, pw_invisibility)) {
-                return -1;
+                return UINT32_MAX;
             }
             player.message = "Invisibility!";
         }   break;
 
         case rSPR_RADIATIONSUIT: {  // Radiation suit
             if (!GivePower(player, pw_ironfeet)) {
-                return -1;
+                return UINT32_MAX;
             }
             player.message = "Radiation Shielding Suit";
         }   break;
 
         case rSPR_COMPUTERMAP: {    // Computer map
             if (!GivePower(player, pw_allmap)) {
-                return -1;
+                return UINT32_MAX;
             }
             player.message = "Computer Area Map";
         }   break;

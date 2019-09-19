@@ -84,7 +84,7 @@ static void initData() noexcept {
 
     // Create a recipocal mul table so that I can divide 0-8191 from 1.0.
     // This way I can fake a divide with a multiply.
-    gIDivTable[0] = -1;
+    gIDivTable[0] = UINT32_MAX;
 
     {
         uint32_t i = 1;
@@ -329,7 +329,7 @@ void drawPlayerView() noexcept {
 
 float LightParams::getLightMulForDist(const float dist) const noexcept {
     const float distFactorLinear = std::max(dist - lightSub, 0.0f);
-    const float distFactorQuad = std::sqrtf(distFactorLinear);
+    const float distFactorQuad = std::sqrt(distFactorLinear);
     const float lightDiminish = distFactorQuad * lightCoef;
 
     float lightValue = 255.0f - lightDiminish;

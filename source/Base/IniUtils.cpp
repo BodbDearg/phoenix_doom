@@ -53,16 +53,6 @@ static bool isEscapedCharAhead(const char* const pStrStart, const char* const pS
     return false;
 }
 
-static void skipSpaces(ParserState& state) noexcept {
-    while (state.pCurChar < state.pEndChar) {
-        if (isSpace(state.pCurChar[0])) {
-            ++state.pCurChar;
-        } else {
-            break;
-        }
-    }
-}
-
 static void skipSpacesOrNewlines(ParserState& state) noexcept {
     while (state.pCurChar < state.pEndChar) {
         if (isSpaceOrNewline(state.pCurChar[0])) {

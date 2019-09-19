@@ -26,7 +26,7 @@ static void populateSegVertexAttribs(const seg_t& seg, DrawSeg& drawSeg) noexcep
     {
         const float segdx = seg.v2.x - seg.v1.x;
         const float segdy = seg.v2.y - seg.v1.y;
-        const float segLength = std::sqrtf(segdx * segdx + segdy * segdy);
+        const float segLength = std::sqrt(segdx * segdx + segdy * segdy);
         const float texXOffset = seg.texXOffset + seg.sidedef->texXOffset;
 
         drawSeg.p1TexX = texXOffset;
@@ -428,7 +428,11 @@ namespace FragEmitFlags {
 // Only ever grows the clip bounds and never shrinks it!
 //----------------------------------------------------------------------------------------------------------------------
 template <FragEmitFlagsT FLAGS>
-static inline void addWallColumnPartToClipBounds(SegClip& clipBounds, const int32_t zt, const int32_t zb) noexcept {
+static inline void addWallColumnPartToClipBounds(
+    SegClip& clipBounds,
+    [[maybe_unused]] const int32_t zt,
+    [[maybe_unused]] const int32_t zb
+) noexcept {
     static_assert(
         (FLAGS == FragEmitFlags::LOWER_WALL) ||
         (FLAGS == FragEmitFlags::UPPER_WALL) ||
@@ -546,7 +550,7 @@ static uint32_t clipAndEmitWallColumn(
         const int32_t columnHeight = curZbInt - curZtInt + 1;
 
         WallFragment frag;
-        frag.x = x;
+        frag.x = (uint16_t) x;
         frag.y = (uint16_t) curZtInt;
         frag.height = (uint16_t) columnHeight;
         frag.texcoordX = (uint16_t) texX;
@@ -617,9 +621,9 @@ static uint32_t clipAndEmitFlatColumn(
 
     {
         FlatFragment frag;
-        frag.x = x;
-        frag.y = ztInt;
-        frag.height = columnHeight;
+        frag.x = (uint16_t) x;
+        frag.y = (uint16_t) ztInt;
+        frag.height = (uint16_t) columnHeight;
         frag.sectorLightLevel = sectorLightLevel;
         frag.bClampFirstPixel = bClampFirstColumnPixel;
         frag.depth = depth;
@@ -707,7 +711,7 @@ static void emitOccluderColumn(
 
         if constexpr (MODE == EmitOccluderMode::TOP) {
             bounds.top = (int16_t) screenYCoord;
-            bounds.bottom = g3dViewHeight;
+            bounds.bottom = (int16_t) g3dViewHeight;
         } else {
             bounds.top = -1;
             bounds.bottom = (int16_t) screenYCoord;
@@ -1267,7 +1271,7 @@ static uint32_t emitDrawSegColumns(const DrawSeg& drawSeg, seg_t& seg) noexcept 
                     worldY,
                     lowerWorldBz,
                     bClampFirstColPixel,
-                    sectorLightLevel,
+                    (uint8_t) sectorLightLevel,
                     pFloorTex->data
                 );
             }
@@ -1290,7 +1294,7 @@ static uint32_t emitDrawSegColumns(const DrawSeg& drawSeg, seg_t& seg) noexcept 
                     worldY,
                     upperWorldTz,
                     bClampFirstColPixel,
-                    sectorLightLevel,
+                    (uint8_t) sectorLightLevel,
                     pCeilingTex->data
                 );
             }
@@ -1299,8 +1303,8 @@ static uint32_t emitDrawSegColumns(const DrawSeg& drawSeg, seg_t& seg) noexcept 
         if constexpr (EMIT_SKY) {
             if ((!pCeilingTex) && (upperTz > 0)) {
                 SkyFragment skyFrag;
-                skyFrag.x = x;
-                skyFrag.height = (uint16_t) std::ceilf(upperTz);
+                skyFrag.x = (uint16_t) x;
+                skyFrag.height = (uint16_t) std::ceil(upperTz);
 
                 gSkyFragments.push_back(skyFrag);
             }

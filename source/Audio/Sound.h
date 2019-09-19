@@ -9,5 +9,5 @@ uint32_t S_StartSound(
     const bool bStopOtherInstances = false
 ) noexcept;
 
-void S_StartSong(const uint8_t musicId) noexcept;
+void S_StartSong(const uint32_t musicId) noexcept;
 void S_StopSong() noexcept;

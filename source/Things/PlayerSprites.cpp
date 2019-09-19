@@ -151,7 +151,7 @@ static void SetPlayerSprite(player_t& player, const psprnum_e position, const st
     for (;;) {
         psp.StatePtr = pState;      // Save the state pointer
         if (!pState) {              // No state?
-            psp.Time = -1;          // Forever (Shut down)
+            psp.Time = UINT32_MAX;  // Forever (Shut down)
             break;                  // Leave now
         }
         psp.Time = pState->Time;    // Set the time delay, Could be 0...
@@ -289,7 +289,7 @@ void A_WeaponReady(player_t& player, pspdef_t& psp) noexcept {
 //----------------------------------------------------------------------------------------------------------------------
 // The player can refire the weapon without lowering it entirely
 //----------------------------------------------------------------------------------------------------------------------
-void A_ReFire(player_t& player, pspdef_t& psp) noexcept {
+void A_ReFire(player_t& player, [[maybe_unused]] pspdef_t& psp) noexcept {
     // Check for fire (if a weaponchange is pending, let it go through instead)
     const bool bFiring = (
         GAME_ACTION(ATTACK) &&
@@ -350,14 +350,14 @@ void A_Raise(player_t& player, pspdef_t& psp) noexcept {
 //----------------------------------------------------------------------------------------------------------------------
 // Handle an animation frame for the gun muzzle flash
 //----------------------------------------------------------------------------------------------------------------------
-void A_GunFlash(player_t& player, pspdef_t& psp) noexcept {
+void A_GunFlash(player_t& player, [[maybe_unused]] pspdef_t& psp) noexcept {
     SetPlayerSprite(player, ps_flash, WEAPON_FLASH_STATES[player.readyweapon]);
 }
 
 //----------------------------------------------------------------------------------------------------------------------
 // Punch a monster
 //----------------------------------------------------------------------------------------------------------------------
-void A_Punch(player_t& player, pspdef_t& psp) noexcept {
+void A_Punch(player_t& player, [[maybe_unused]] pspdef_t& psp) noexcept {
     uint32_t damage = (Random::nextU32(7) + 1) * 3;     // 1D8 * 3
     if (player.powers[pw_strength]) {                   // Are you a berserker?
         damage *= 10;
@@ -379,7 +379,7 @@ void A_Punch(player_t& player, pspdef_t& psp) noexcept {
 //----------------------------------------------------------------------------------------------------------------------
 // Chainsaw a monster!
 //----------------------------------------------------------------------------------------------------------------------
-void A_Saw(player_t& player, pspdef_t& psp) noexcept {
+void A_Saw(player_t& player, [[maybe_unused]] pspdef_t& psp) noexcept {
     ASSERT(player.mo);
     const uint32_t damage = (Random::nextU32(7) + 1) * 3;   // 1D8 * 3
     mobj_t& mo = *player.mo;                                // Get the player's object
@@ -422,7 +422,7 @@ void A_Saw(player_t& player, pspdef_t& psp) noexcept {
 //----------------------------------------------------------------------------------------------------------------------
 // Fire a rocket from the rocket launcher
 //----------------------------------------------------------------------------------------------------------------------
-void A_FireMissile(player_t& player, pspdef_t& psp) noexcept {
+void A_FireMissile(player_t& player, [[maybe_unused]] pspdef_t& psp) noexcept {
     --player.ammo[am_misl];                                     // Remove a round
     SpawnPlayerMissile(*player.mo, gMObjInfo[MT_ROCKET]);       // Create a missile object
 }
@@ -430,7 +430,7 @@ void A_FireMissile(player_t& player, pspdef_t& psp) noexcept {
 //----------------------------------------------------------------------------------------------------------------------
 // Fire a BFG shot
 //----------------------------------------------------------------------------------------------------------------------
-void A_FireBFG(player_t& player, pspdef_t& psp) noexcept {
+void A_FireBFG(player_t& player, [[maybe_unused]] pspdef_t& psp) noexcept {
     player.ammo[am_cell] -= BFGCELLS;
     SpawnPlayerMissile(*player.mo, gMObjInfo[MT_BFG]);
 }
@@ -438,7 +438,7 @@ void A_FireBFG(player_t& player, pspdef_t& psp) noexcept {
 //----------------------------------------------------------------------------------------------------------------------
 // Fire a plasma rifle round
 //----------------------------------------------------------------------------------------------------------------------
-void A_FirePlasma(player_t& player, pspdef_t& psp) noexcept {
+void A_FirePlasma(player_t& player, [[maybe_unused]] pspdef_t& psp) noexcept {
     --player.ammo[am_cell];     // Remove a round
 
     // I have two flash states, choose one randomly and then spawn the missile
@@ -462,7 +462,7 @@ static void GunShot(mobj_t& mo, const bool bAccurate) noexcept {
 //----------------------------------------------------------------------------------------------------------------------
 // Fire a single round from the pistol
 //----------------------------------------------------------------------------------------------------------------------
-void A_FirePistol(player_t& player, pspdef_t& psp) noexcept {
+void A_FirePistol(player_t& player, [[maybe_unused]] pspdef_t& psp) noexcept {
     S_StartSound(&player.mo->x, sfx_pistol);                                        // Bang!!
     --player.ammo[am_clip];                                                         // Remove a round
     SetPlayerSprite(player, ps_flash, WEAPON_FLASH_STATES[player.readyweapon]);     // Flash weapon
@@ -472,7 +472,7 @@ void A_FirePistol(player_t& player, pspdef_t& psp) noexcept {
 //----------------------------------------------------------------------------------------------------------------------
 // Fire a standard shotgun blast
 //----------------------------------------------------------------------------------------------------------------------
-void A_FireShotgun(player_t& player, pspdef_t& psp) noexcept {
+void A_FireShotgun(player_t& player, [[maybe_unused]] pspdef_t& psp) noexcept {
     mobj_t& mo = *player.mo;
     S_StartSound(&mo.x, sfx_shotgn);    // Bang!
     --player.ammo[am_shell];            // Remove a round
@@ -494,7 +494,7 @@ void A_FireShotgun(player_t& player, pspdef_t& psp) noexcept {
 //----------------------------------------------------------------------------------------------------------------------
 // Make the shotgun cocking sound...
 //----------------------------------------------------------------------------------------------------------------------
-void A_CockSgun(player_t& player, pspdef_t& psp) noexcept {
+void A_CockSgun(player_t& player, [[maybe_unused]] pspdef_t& psp) noexcept {
     S_StartSound(&player.mo->x, sfx_sgcock);
 }
 
@@ -525,15 +525,15 @@ void A_FireCGun(player_t& player, pspdef_t& psp) noexcept {
 //----------------------------------------------------------------------------------------------------------------------
 // Adjust the lighting based on the weapon fired
 //----------------------------------------------------------------------------------------------------------------------
-void A_Light0(player_t& player, pspdef_t& psp) noexcept {
+void A_Light0(player_t& player, [[maybe_unused]] pspdef_t& psp) noexcept {
     player.extralight = 0;
 }
 
-void A_Light1(player_t& player, pspdef_t& psp) noexcept {
+void A_Light1(player_t& player, [[maybe_unused]] pspdef_t& psp) noexcept {
     player.extralight = 1;
 }
 
-void A_Light2(player_t& player, pspdef_t& psp) noexcept {
+void A_Light2(player_t& player, [[maybe_unused]] pspdef_t& psp) noexcept {
     player.extralight = 2;
 }
 
@@ -572,7 +572,7 @@ void A_BFGSpray(mobj_t& mo) noexcept {
 //----------------------------------------------------------------------------------------------------------------------
 // Play the BFG sound for detonation
 //----------------------------------------------------------------------------------------------------------------------
-void A_BFGsound(player_t& player, pspdef_t& psp) noexcept {
+void A_BFGsound(player_t& player, [[maybe_unused]] pspdef_t& psp) noexcept {
     S_StartSound(&player.mo->x, sfx_bfg);
 }
 
@@ -581,12 +581,11 @@ void A_BFGsound(player_t& player, pspdef_t& psp) noexcept {
 //----------------------------------------------------------------------------------------------------------------------
 void SetupPSprites(player_t& player) noexcept {
     // Remove all psprites
-    uint32_t i = NUMPSPRITES;
     pspdef_t *psp = player.psprites;
 
     for (uint32_t i = 0; i < NUMPSPRITES; ++i) {
         psp->StatePtr = 0;
-        psp->Time = -1;
+        psp->Time = UINT32_MAX;
         ++psp;
     }
 

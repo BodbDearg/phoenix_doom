@@ -22,7 +22,6 @@ static std::string determineIniFilePath() noexcept {
 
     if (!pCfgFilePath) {
         FATAL_ERROR("Unable to create or determine the path to the configuration for the game!");
-        return std::string();
     }
 
     std::string path = pCfgFilePath;

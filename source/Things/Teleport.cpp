@@ -55,9 +55,8 @@ bool EV_Teleport(line_t& line, mobj_t& thing) noexcept {
 
     const sector_t* const pBegSector = gpSectors;
     const sector_t* const pEndSector = pBegSector + gNumSectors;
-    const sector_t* pCurSector = pBegSector;
     
-    for (auto pCurSector = pBegSector; pCurSector < pEndSector; ++pCurSector) {
+    for (const sector_t* pCurSector = pBegSector; pCurSector < pEndSector; ++pCurSector) {
         if (pCurSector->tag != tag) {
             continue;
         }

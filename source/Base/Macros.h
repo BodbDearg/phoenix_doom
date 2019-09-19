@@ -56,7 +56,7 @@
 // Raise a formatted Fatal error message
 #define FATAL_ERROR_F(MessageFormat, ...)\
     do {\
-        FatalErrors::errorWithFormat("" ## MessageFormat, __VA_ARGS__);\
+        FatalErrors::errorWithFormat(MessageFormat, __VA_ARGS__);\
     } while (0)
 
 // Used to decorate exception throwing C++ functions

@@ -30,7 +30,7 @@ struct button_t {
 };
 
 // Before, After
-static const uint32_t gSwitchList[] = {
+const uint32_t gSwitchList[] = {
     rSW1BRN1 - rT_START,
     rSW2BRN1 - rT_START,
     rSW1GARG - rT_START,

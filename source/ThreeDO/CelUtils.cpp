@@ -456,7 +456,7 @@ uint16_t getCCBWidth(const CelControlBlock& ccb) noexcept {
     // It can be found in the burgerlib function 'GetShapeWidth()':
     uint32_t width = Endian::bigToHost(ccb.pre1) & 0x7FF;               // Get the HCount bits
     width += 1;                                                         // Needed to get the TRUE result
-    return width;
+    return (uint16_t) width;
 }
 
 uint16_t getCCBHeight(const CelControlBlock& ccb) noexcept {
@@ -465,7 +465,7 @@ uint16_t getCCBHeight(const CelControlBlock& ccb) noexcept {
     uint32_t height = Endian::bigToHost(ccb.pre0) >> 6;                 // Get the VCount bits
     height &= 0x3FF;                                                    // Mask off unused bits
     height += 1;                                                        // Needed to get the TRUE result
-    return height;
+    return (uint16_t) height;
 }
 
 bool loadRezFileCelImage(

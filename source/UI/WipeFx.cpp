@@ -7,6 +7,7 @@
 #include "GFX/Video.h"
 #include "UIUtils.h"
 #include <algorithm>
+#include <cstring>
 #include <thread>
 
 BEGIN_NAMESPACE(WipeFx)

@@ -382,7 +382,7 @@ static void clipAndDrawSpriteFragment(const SpriteFragment& frag) noexcept {
 
     // Firstly figure out the top and bottom clip bounds for the sprite fragment
     int16_t yClipT = -1;
-    int16_t yClipB = g3dViewHeight;
+    int16_t yClipB = (int16_t) g3dViewHeight;
 
     {
         const OccludingColumns& occludingCols = gOccludingCols[frag.x];
@@ -576,10 +576,10 @@ static void drawSprite(const DrawSprite& sprite) noexcept {
                 break;
 
             SpriteFragment frag;
-            frag.x = curScreenX;
-            frag.y = spriteTyInt;
-            frag.height = spriteHInt;
-            frag.texH = texHInt;
+            frag.x = (uint16_t) curScreenX;
+            frag.y = (uint16_t) spriteTyInt;
+            frag.height = (uint16_t) spriteHInt;
+            frag.texH = (uint16_t) texHInt;
             frag.isTransparent = (sprite.bTransparent) ? 1 : 0;
             frag.depth = sprite.depth;
             frag.lightMul = sprite.lightMul;
@@ -610,10 +610,10 @@ static void drawSprite(const DrawSprite& sprite) noexcept {
             const uint16_t texX = (FLIP_MODE == SpriteFlipMode::FLIPPED) ? 0 : texWInt - 1;
 
             SpriteFragment frag;
-            frag.x = curScreenX;
-            frag.y = spriteTyInt;
-            frag.height = spriteHInt;
-            frag.texH = texHInt;
+            frag.x = (uint16_t) curScreenX;
+            frag.y = (uint16_t) spriteTyInt;
+            frag.height = (uint16_t) spriteHInt;
+            frag.texH = (uint16_t) texHInt;
             frag.isTransparent = (sprite.bTransparent) ? 1 : 0;
             frag.depth = sprite.depth;
             frag.lightMul = sprite.lightMul;

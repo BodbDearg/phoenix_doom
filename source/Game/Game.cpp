@@ -11,6 +11,7 @@
 #include "Tick.h"
 #include "UI/FinaleScreen.h"
 #include "UI/IntermissionScreen.h"
+#include <cstring>
 
 //----------------------------------------------------------------------------------------------------------------------
 // Prepare to load a game level

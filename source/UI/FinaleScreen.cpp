@@ -12,6 +12,7 @@
 #include "GFX/Video.h"
 #include "Things/Info.h"
 #include "UIUtils.h"
+#include <cstring>
 
 enum final_e {
     fin_endtext,
@@ -59,7 +60,7 @@ static bool                 gCastOnMelee;       // Type of attack to play
 static uint32_t             gTextIndex;         // Index to the opening text
 static uint32_t             gTextDelay;         // Delay before next char
 
-static constexpr char* const gEndTextString =
+static constexpr const char* const gEndTextString =
     "     id software\n"
     "     salutes you!\n"
     "\n"

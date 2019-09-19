@@ -2,6 +2,7 @@
 
 #include <cstring>
 #include <type_traits>
+#include <utility>
 
 // Expected CD-ROM sector header sync pattern
 static constexpr uint8_t CDROM_SECTOR_SYNC_PATTERN[12] = {

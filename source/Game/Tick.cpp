@@ -290,7 +290,7 @@ void P_Start() noexcept {
         gPlayer.mo->flags |= (MF_NOCLIP|MF_SOLID);
     }
 
-    S_StartSong(Song_e1m1 - 1 + gGameMap);
+    S_StartSong(Song_e1m1 - 1u + gGameMap);
 }
 
 //----------------------------------------------------------------------------------------------------------------------

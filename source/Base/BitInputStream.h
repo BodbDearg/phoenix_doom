@@ -1,8 +1,9 @@
 #pragma once
 
-#include "Base/Macros.h"
+#include "Macros.h"
 #include <cstddef>
 #include <cstdint>
+#include <type_traits>
 
 //----------------------------------------------------------------------------------------------------------------------
 // Utility class that allows for N bits (up to 64) of an unsigned type to be read from a stream in memory.

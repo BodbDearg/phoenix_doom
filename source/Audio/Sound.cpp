@@ -111,9 +111,13 @@ static constexpr uint8_t SONG_LOOKUP[] = {
     1       // .. ?
 };
 
-void S_StartSong(const uint8_t musicId) noexcept {
-    const uint32_t trackNum = SONG_LOOKUP[musicId];
-    Audio::playMusic(trackNum);
+static constexpr uint32_t NUM_SONG_LOOKUPS = C_ARRAY_SIZE(SONG_LOOKUP);
+
+void S_StartSong(const uint32_t musicId) noexcept {
+    if (musicId < NUM_SONG_LOOKUPS) {
+        const uint32_t trackNum = SONG_LOOKUP[musicId];
+        Audio::playMusic(trackNum);
+    }
 }
 
 void S_StopSong() noexcept {
