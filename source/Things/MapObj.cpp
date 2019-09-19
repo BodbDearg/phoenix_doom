@@ -234,9 +234,9 @@ void SpawnMapThing(const mapthing_t& mthing) noexcept {
 // Spawn a puff of smoke on the wall
 //----------------------------------------------------------------------------------------------------------------------
 void P_SpawnPuff(const Fixed x, const Fixed y, const Fixed z) noexcept {
-    const Fixed zActual = z + ((255 - Random::nextU32(511)) << 10);     // Randomize the z
-    mobj_t& mObj = SpawnMObj(x, y, zActual, gMObjInfo[MT_PUFF]);        // Create a puff
-    mObj.momz = FRACUNIT;                                               // Allow it to move up per frame
+    const Fixed zActual = z + ((255 - (int32_t) Random::nextU32(511)) << 10);   // Randomize the z
+    mobj_t& mObj = SpawnMObj(x, y, zActual, gMObjInfo[MT_PUFF]);                // Create a puff
+    mObj.momz = FRACUNIT;                                                       // Allow it to move up per frame
     Sub1RandomTick(mObj);
 
     // Don't make punches spark on the wall
@@ -249,9 +249,9 @@ void P_SpawnPuff(const Fixed x, const Fixed y, const Fixed z) noexcept {
 // Blow up a body REAL GOOD!
 //----------------------------------------------------------------------------------------------------------------------
 void P_SpawnBlood(const Fixed x, const Fixed y, const Fixed z, const uint32_t damage) noexcept {
-    const Fixed zActual = z + ((255 - Random::nextU32(511)) << 10);     // Move a little for the Z
-    mobj_t& mObj = SpawnMObj(x, y, z, gMObjInfo[MT_BLOOD]);             // Create the blood (Hamburger)
-    mObj.momz = FRACUNIT * 2;                                           // Allow some ascending motion
+    const Fixed zActual = z + ((255 - (int32_t) Random::nextU32(511)) << 10);   // Move a little for the Z
+    mobj_t& mObj = SpawnMObj(x, y, zActual, gMObjInfo[MT_BLOOD]);               // Create the blood (Hamburger)
+    mObj.momz = FRACUNIT * 2;                                                   // Allow some ascending motion
     Sub1RandomTick(mObj);
 
     if (damage < 13 && damage >= 9) {
