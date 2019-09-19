@@ -1,6 +1,7 @@
 #include "Video.h"
 
 #include "Game/Config.h"
+#include "Game/DoomDefines.h"
 #include <algorithm>
 #include <cmath>
 #include <SDL.h>
@@ -191,7 +192,7 @@ void init() noexcept {
     #endif
 
     gWindow = SDL_CreateWindow(
-        "PhoenixDoom",
+        "PhoenixDoom V" GAME_VERSION_STR,
         SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED,
         (int32_t) gVideoOutputWidth,
