@@ -200,7 +200,11 @@ setup_source_groups("${SOURCE_FILES}" "${HEADER_FILES}" "${OTHER_FILES}")
 include_directories(${INCLUDE_PATHS})
 target_link_libraries(${GAME_NAME} ${LIBSDL_NAME})
 
-if (COMPILER_MSVC)
+if (PLATFORM_WINDOWS)
+    set_property(TARGET ${GAME_NAME} PROPERTY WIN32_EXECUTABLE true)
+endif()
+
+if (COMPILER_MSVC)    
     target_compile_options(${GAME_NAME} PRIVATE /W4)    # Enable all warnings
 elseif(COMPILER_GCC OR COMPILER_CLANG)
     target_compile_options(${GAME_NAME} PRIVATE -pedantic -Wall)

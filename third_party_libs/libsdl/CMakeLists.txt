@@ -271,7 +271,6 @@ if (PLATFORM_WINDOWS)
         "${SRC_DIR}/joystick/windows/SDL_xinputjoystick.c"
         "${SRC_DIR}/joystick/windows/SDL_xinputjoystick_c.h"
         "${SRC_DIR}/loadso/windows/SDL_sysloadso.c"
-        "${SRC_DIR}/main/windows/SDL_windows_main.c"
         "${SRC_DIR}/thread/generic/SDL_syscond.c"
         "${SRC_DIR}/thread/windows/SDL_sysmutex.c"
         "${SRC_DIR}/thread/windows/SDL_syssem.c"

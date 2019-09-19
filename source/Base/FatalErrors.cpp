@@ -9,7 +9,7 @@ BEGIN_NAMESPACE(FatalErrors)
 
 // Fallback string to use if null pointers are given for some reason.
 // Normally most code does not tolerate nulls, but error reporting should be more robust.
-static const char* const UNSPECIFIED_ERROR_STR = "An unspecified/unknown error has occurred!";
+static constexpr const char* const UNSPECIFIED_ERROR_STR = "An unspecified/unknown error has occurred!";
 
 [[noreturn]] static void fatalError(const char* const msg) noexcept {
     // Always print to the console (standard out) and in debug builds
