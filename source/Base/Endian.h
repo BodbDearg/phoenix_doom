@@ -20,18 +20,18 @@ BEGIN_NAMESPACE(Endian)
 // Needed because the 3DO data for doom is stored in big endian format. Both the dev machine (68K Mac) and the
 // 3DO hardware itself were big endian, hence it made sense to store the data this way.
 //----------------------------------------------------------------------------------------------------------------------
-static inline uint16_t bigToHost(const uint16_t num) {
+inline uint16_t bigToHost(const uint16_t num) {
     #if BIG_ENDIAN
         return num;
     #else
         return (
-            ((num & (uint16_t) 0x00FFU) << 8) |
-            ((num & (uint16_t) 0xFF00U) >> 8)
+            (uint16_t)((num & 0x00FFU) << 8) |
+            (uint16_t)((num & 0xFF00U) >> 8)
         );
     #endif
 }
 
-static inline int16_t bigToHost(const int16_t num) {
+inline int16_t bigToHost(const int16_t num) {
     #if BIG_ENDIAN
         return num;
     #else
@@ -39,7 +39,7 @@ static inline int16_t bigToHost(const int16_t num) {
     #endif
 }
 
-static inline uint32_t bigToHost(const uint32_t num) {
+inline uint32_t bigToHost(const uint32_t num) {
     #if BIG_ENDIAN
         return num;
     #else
@@ -52,7 +52,7 @@ static inline uint32_t bigToHost(const uint32_t num) {
     #endif
 }
 
-static inline int32_t bigToHost(const int32_t num) {
+inline int32_t bigToHost(const int32_t num) {
     #if BIG_ENDIAN
         return num;
     #else
@@ -61,7 +61,7 @@ static inline int32_t bigToHost(const int32_t num) {
 }
 
 template <class T>
-static void convertBigToHost(T& value) noexcept {
+inline void convertBigToHost(T& value) noexcept {
     #if !BIG_ENDIAN
         value = bigToHost(value);
     #endif

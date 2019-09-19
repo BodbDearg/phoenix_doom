@@ -151,10 +151,10 @@ static bool PS_CrossSubsector(const subsector_t& sub) noexcept {
 //----------------------------------------------------------------------------------------------------------------------
 // Returns true if strace crosses the given node successfuly
 //----------------------------------------------------------------------------------------------------------------------
-static bool PS_CrossBSPNode(const node_t* const pNode) noexcept {
+static bool PS_CrossBSPNode(node_t* const pNode) noexcept {
     if (isBspNodeASubSector(pNode)) {
         // N.B: pointer has to be fixed up due to prescence of a flag in the lowest bit!
-        const subsector_t* const pSubSector = (const subsector_t*) getActualBspNodePtr(pNode);
+        subsector_t* const pSubSector = (subsector_t*) getActualBspNodePtr(pNode);
         return PS_CrossSubsector(*pSubSector);
     }
 
@@ -162,7 +162,7 @@ static bool PS_CrossBSPNode(const node_t* const pNode) noexcept {
     const bool side = PointOnVectorSide(gSTrace.x, gSTrace.y, pNode->Line);
 
     // Cross the starting side
-    if (!PS_CrossBSPNode((const node_t*) pNode->Children[side]))
+    if (!PS_CrossBSPNode((node_t*) pNode->Children[side]))
         return false;
     
     // The partition plane is crossed here
@@ -170,7 +170,7 @@ static bool PS_CrossBSPNode(const node_t* const pNode) noexcept {
         return true;    // The line doesn't touch the other side
     
     // Cross the ending side
-    return PS_CrossBSPNode((const node_t*) pNode->Children[side ^ 1]);
+    return PS_CrossBSPNode((node_t*) pNode->Children[side ^ 1]);
 }
 
 //----------------------------------------------------------------------------------------------------------------------

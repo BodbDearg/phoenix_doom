@@ -190,6 +190,7 @@ bool EV_DoFloor(line_t& line, const floor_e floortype) noexcept {
 
             case raiseFloorCrush:
                 floor.crush = true;     // Enable crushing
+                [[fallthrough]];
             case raiseFloor: {
                 floor.direction = 1;    // Go up
                 floor.floordestheight = P_FindLowestCeilingSurrounding(sec);
@@ -206,6 +207,7 @@ bool EV_DoFloor(line_t& line, const floor_e floortype) noexcept {
             case raiseFloor24AndChange: // Raise 24 pixels and change texture
                 sec.FloorPic = line.frontsector->FloorPic;
                 sec.special = line.frontsector->special;
+                [[fallthrough]];
             case raiseFloor24:          // Just raise 24 pixels
                 floor.direction = 1;    // Go up
                 floor.floordestheight = floor.sector->floorheight + (24 << FRACBITS);
@@ -327,8 +329,8 @@ bool EV_BuildStairs(line_t& line) noexcept {
                     continue;
                 }
 
-                height += (8 << FRACBITS);      // Increase the height
-                if (tsec->specialdata != 0) {   // Busy already?
+                height += (8 << FRACBITS);              // Increase the height
+                if (tsec->specialdata != nullptr) {     // Busy already?
                     continue;
                 }
                 

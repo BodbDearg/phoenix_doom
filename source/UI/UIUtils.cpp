@@ -65,9 +65,9 @@ void printBigFont(const int32_t x, const int32_t y, const char* const pStr) noex
             gpCurrent = gpUCharx;
         }
 
-        const CelImage& shape = gpCurrent->getImage(c);     // Get the shape pointer
-        UIUtils::drawUISprite(curX, y2, shape);             // Draw the char
-        curX += shape.width + 1;                            // Get the width to tab
+        const CelImage& shape = gpCurrent->getImage((uint32_t) c);      // Get the shape pointer
+        UIUtils::drawUISprite(curX, y2, shape);                         // Draw the char
+        curX += shape.width + 1;                                        // Get the width to tab
 
     } while ((c = pCurChar[0]) != 0);   // Next index
 
@@ -125,10 +125,10 @@ uint32_t getBigStringWidth(const char* const pStr) noexcept {
             gpCurrent = gpUCharx;
         }
 
-        const CelImage& shape = gpCurrent->getImage(c);     // Get the shape pointer
-        width += shape.width + 1;                           // Get the width to tab
+        const CelImage& shape = gpCurrent->getImage((uint32_t) c);      // Get the shape pointer
+        width += shape.width + 1;                                       // Get the width to tab
 
-    } while ((c = (uint8_t) pCurChar[0]) != 0);   // Next index
+    } while ((c = pCurChar[0]) != 0);   // Next index
 
     if (gpUCharx) {                             // Did I load the ASCII font?
         CelImages::releaseImages(rCHARSET);     // Release the ASCII font

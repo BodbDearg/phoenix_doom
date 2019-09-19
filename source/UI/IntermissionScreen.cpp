@@ -136,7 +136,7 @@ gameaction_e IN_Ticker() noexcept {
         if (bBang) {
             ++gBangCount;
             if (gBangCount % 4 == 0) {
-                S_StartSound(0, sfx_pistol);
+                S_StartSound(nullptr, sfx_pistol);
             }
         }
     }

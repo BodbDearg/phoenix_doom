@@ -43,7 +43,7 @@ bool getContentsOfFile(
         return false;
     
     // Try to read the file contents
-    std::byte* const pTmpBuffer = new std::byte[fileSize + numExtraBytes];
+    std::byte* const pTmpBuffer = new std::byte[(size_t) fileSize + numExtraBytes];
 
     if (std::fread(pTmpBuffer, (uint32_t) fileSize, 1, pFile) != 1) {
         delete[] pTmpBuffer;

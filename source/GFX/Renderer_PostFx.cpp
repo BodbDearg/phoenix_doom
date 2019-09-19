@@ -36,9 +36,9 @@ static void doTintEffect(const uint32_t r5, const uint32_t g5, const uint32_t b5
     constexpr Fixed COL8_MAX_FRAC = intToFixed16(255);
     constexpr Fixed EFFECT_STRENGHT = intToFixed16(2);
 
-    const Fixed rMul = FRACUNIT + fixed16Mul(fixed16Div(intToFixed16(r5), COL5_MAX_FRAC), EFFECT_STRENGHT);
-    const Fixed gMul = FRACUNIT + fixed16Mul(fixed16Div(intToFixed16(g5), COL5_MAX_FRAC), EFFECT_STRENGHT);
-    const Fixed bMul = FRACUNIT + fixed16Mul(fixed16Div(intToFixed16(b5), COL5_MAX_FRAC), EFFECT_STRENGHT);
+    const Fixed rMul = FRACUNIT + fixed16Mul(fixed16Div(intToFixed16((int32_t) r5), COL5_MAX_FRAC), EFFECT_STRENGHT);
+    const Fixed gMul = FRACUNIT + fixed16Mul(fixed16Div(intToFixed16((int32_t) g5), COL5_MAX_FRAC), EFFECT_STRENGHT);
+    const Fixed bMul = FRACUNIT + fixed16Mul(fixed16Div(intToFixed16((int32_t) b5), COL5_MAX_FRAC), EFFECT_STRENGHT);
 
     // Modulate all of the RGB values in the framebuffer
     const uint32_t screenH = g3dViewHeight;

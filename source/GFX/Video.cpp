@@ -7,15 +7,15 @@
 
 BEGIN_NAMESPACE(Video)
 
-static SDL_Window*     gWindow;
-static SDL_Renderer*   gRenderer;
-static SDL_Texture*    gFramebufferTexture;
+static SDL_Window*      gWindow;
+static SDL_Renderer*    gRenderer;
+static SDL_Texture*     gFramebufferTexture;
+static SDL_Rect         gOutputRect;
 
 uint32_t    gScreenWidth;
 uint32_t    gScreenHeight;
 uint32_t    gVideoOutputWidth;
 uint32_t    gVideoOutputHeight;
-SDL_Rect    gOutputRect;
 bool        gbIsFullscreen;
 uint32_t*   gpFrameBuffer;
 uint32_t*   gpSavedFrameBuffer;
@@ -59,22 +59,22 @@ static void determineTargetVideoMode() noexcept {
     //      the rendered resolution we can do to the screen resolution, while using integer-only scaling.
     //
     if (Config::gOutputResolutionW > 0) {
-        gVideoOutputWidth = Config::gOutputResolutionW;
+        gVideoOutputWidth = (uint32_t) Config::gOutputResolutionW;
     } else {
         if (gbIsFullscreen) {
             gVideoOutputWidth = (uint32_t) screenMode.w; 
         } else {
-            gVideoOutputWidth = std::max(screenMode.w / gScreenWidth, 1u) * gScreenWidth;
+            gVideoOutputWidth = std::max((uint32_t) screenMode.w / gScreenWidth, 1u) * gScreenWidth;
         }
     }
 
     if (Config::gOutputResolutionH > 0) {
-        gVideoOutputHeight = Config::gOutputResolutionH;
+        gVideoOutputHeight = (uint32_t) Config::gOutputResolutionH;
     } else {
         if (gbIsFullscreen) {
             gVideoOutputHeight = (uint32_t) screenMode.h;
         } else {
-            gVideoOutputHeight = std::max(screenMode.h / gScreenHeight, 1u) * gScreenHeight;
+            gVideoOutputHeight = std::max((uint32_t) screenMode.h / gScreenHeight, 1u) * gScreenHeight;
         }
     }
 
@@ -115,18 +115,18 @@ static void determineTargetVideoMode() noexcept {
     if (!gbIsFullscreen) {
         // Trim the window sizes in windowed mode if auto size is enabled
         if (Config::gOutputResolutionW <= 0) {
-            gVideoOutputWidth = (int)((float) gScreenWidth * outputScaleX);
+            gVideoOutputWidth = (uint32_t)((float) gScreenWidth * outputScaleX);
         }
 
         if (Config::gOutputResolutionH <= 0) {
-            gVideoOutputHeight = (int)((float) gScreenHeight * outputScaleY);
+            gVideoOutputHeight = (uint32_t)((float) gScreenHeight * outputScaleY);
         }
     }
 
     gOutputRect.w = (int)((float) gScreenWidth * outputScaleX);
     gOutputRect.h = (int)((float) gScreenHeight * outputScaleY);
-    gOutputRect.x = (gVideoOutputWidth - gOutputRect.w) / 2;
-    gOutputRect.y = (gVideoOutputHeight - gOutputRect.h) / 2;
+    gOutputRect.x = ((int32_t) gVideoOutputWidth - gOutputRect.w) / 2;
+    gOutputRect.y = ((int32_t) gVideoOutputHeight - gOutputRect.h) / 2;
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -194,8 +194,8 @@ void init() noexcept {
         "PhoenixDoom",
         SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED,
-        gVideoOutputWidth,
-        gVideoOutputHeight,
+        (int32_t) gVideoOutputWidth,
+        (int32_t) gVideoOutputHeight,
         windowCreateFlags
     );
 
@@ -214,8 +214,8 @@ void init() noexcept {
         gRenderer,
         SDL_PIXELFORMAT_ARGB8888,
         SDL_TEXTUREACCESS_STREAMING,
-        gScreenWidth,
-        gScreenHeight
+        (int32_t) gScreenWidth,
+        (int32_t) gScreenHeight
     );
 
     if (!gFramebufferTexture) {
@@ -370,7 +370,7 @@ void present() noexcept {
     }
 
     unlockFramebufferTexture();
-    SDL_RenderCopy(gRenderer, gFramebufferTexture, NULL, &gOutputRect);
+    SDL_RenderCopy(gRenderer, gFramebufferTexture, nullptr, &gOutputRect);
     SDL_RenderPresent(gRenderer);
     lockFramebufferTexture();
 }

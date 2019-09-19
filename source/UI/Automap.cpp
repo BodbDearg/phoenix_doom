@@ -16,7 +16,6 @@ static constexpr float ZOOMIN       = 1.02f;
 static constexpr float ZOOMOUT      = 1 / 1.02f;
 
 // RGBA5551 colors
-static constexpr uint16_t COLOR_BLACK       = 0x0001u;
 static constexpr uint16_t COLOR_BROWN       = 0x4102u;
 static constexpr uint16_t COLOR_BLUE        = 0x001Eu;
 static constexpr uint16_t COLOR_RED         = 0x6800u;
@@ -90,10 +89,11 @@ void AM_Start() noexcept {
 // Draw a pixel on the screen but clip it to the visible area.
 // I assume a coordinate system where 0,0 is at the upper left corner of the screen.
 //----------------------------------------------------------------------------------------------------------------------
-static void ClipPixel(const uint32_t x, const uint32_t y, const uint16_t color) noexcept {
-    if (x < gMapPixelsW && y < gMapPixelsH) {   // On the screen?
+static void ClipPixel(const int32_t x, const int32_t y, const uint16_t color) noexcept {
+    // Note: casting to uint32_t avoids the need for a '>= 0' check!
+    if ((uint32_t) x < gMapPixelsW && (uint32_t) y < gMapPixelsH) {   // On the screen?
         const uint32_t color32 = Video::rgba5551ToScreenCol(color);
-        Video::gpFrameBuffer[y * Video::gScreenWidth + x] = color32;
+        Video::gpFrameBuffer[(uint32_t) y * Video::gScreenWidth + (uint32_t) x] = color32;
     }
 }
 
@@ -106,10 +106,10 @@ static void ClipPixel(const uint32_t x, const uint32_t y, const uint16_t color) 
 // for out of bounds with one compare (x>=0 && x<320) is now just (x<320). Neat eh?
 //----------------------------------------------------------------------------------------------------------------------
 static void DrawLine(
-    const uint32_t x1,
-    const uint32_t y1,
-    const uint32_t x2,
-    const uint32_t y2,
+    const int32_t x1,
+    const int32_t y1,
+    const int32_t x2,
+    const int32_t y2,
     const uint16_t color
 ) noexcept {
     // Coord adjustment:
@@ -124,8 +124,8 @@ static void DrawLine(
     ClipPixel(x, y, color);
 
     // Get the distance to travel
-    uint32_t deltaX = xEnd - x;
-    uint32_t deltaY = yEnd - y;
+    uint32_t deltaX = (uint32_t)(xEnd - x);
+    uint32_t deltaY = (uint32_t)(yEnd - y);
 
     if (deltaX == 0 && deltaY == 0) {   // No line here?
         return;                         // Exit now

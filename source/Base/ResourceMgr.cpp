@@ -93,7 +93,7 @@ void ResourceMgr::init(const char* const fileName) noexcept {
         FATAL_ERROR_F("ERROR: Failed to read game resource file '%s' header!", fileName);
     }
 
-    mResources.reserve(fileHeader.numResourceGroups * 4);
+    mResources.reserve((size_t) fileHeader.numResourceGroups * 4);
 
     {
         const std::byte* pCurBytes = pResourceHeadersData.get();

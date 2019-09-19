@@ -76,7 +76,7 @@ static void transformMaskedImageToImageWithAlpha(CelImage& image) noexcept {
 
     // Do as many 8 pixel batches as we can at once
     uint16_t* const pEndPixel8 = image.pPixels + (numPixels & 0xFFFFFFF8);
-    uint16_t* const pEndPixel = image.pPixels + image.width * image.height;
+    uint16_t* const pEndPixel = image.pPixels + (uintptr_t) image.width * image.height;
 
     while (pCurPixel < pEndPixel8) {
         const uint16_t pixel1 = pCurPixel[0];
@@ -256,7 +256,7 @@ static void decodePackedCelPixelData(
         const uint32_t rowSize = nextRowOffset;
 
         // Decode this row
-        uint16_t* const pRowPixels = pImageOut + y * imageW;
+        uint16_t* const pRowPixels = pImageOut + (uintptr_t) y * imageW;
         uint16_t x = 0;
 
         do {
@@ -353,7 +353,7 @@ static uint16_t* decodeCelPixelData(
     }
 
     // Alloc the pixels for the image
-    uint16_t* const pImageOut = new uint16_t[imageW * imageH];
+    uint16_t* const pImageOut = new uint16_t[(uintptr_t) imageW * imageH];
 
     // Try and do the decode
     try {

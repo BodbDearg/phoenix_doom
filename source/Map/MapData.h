@@ -149,20 +149,20 @@ struct node_t {
 // pointed to is a subsector or just another BSP node. These 3 functions help with checking for
 // the prescence of this flag and adding/removing it from a node child pointer.
 //----------------------------------------------------------------------------------------------------------------------
-static inline bool isBspNodeASubSector(const void* const pPtr) {
+inline bool isBspNodeASubSector(const void* const pPtr) {
     return ((((uintptr_t) pPtr) & 1) != 0);
 }
 
-static inline const void* markBspNodeAsSubSector(const void* const pPtr) {
+inline void* markBspNodeAsSubSector(void* const pPtr) {
     // Set the lowest bit to mark the node's child pointer as a subsector
-    return (const void*)(((uintptr_t) pPtr) | 1);
+    return (void*)(((uintptr_t) pPtr) | 1);
 }
 
-static inline const void* getActualBspNodePtr(const void* const pPtr) {
+inline void* getActualBspNodePtr(void* const pPtr) {
     // Remove the lowest bit to get the actual child pointer for a node.
     // May be set in order to indicate that the child is a subsector:
     const uintptr_t mask = ~((uintptr_t) 1);
-    return (const void*)(((uintptr_t) pPtr) & mask);
+    return (void*)(((uintptr_t) pPtr) & mask);
 }
 
 // Pointers to global map data for ease of access
@@ -178,7 +178,7 @@ extern const seg_t*         gpLineSegs;
 extern uint32_t             gNumLineSegs;
 extern const subsector_t*   gpSubSectors;
 extern uint32_t             gNumSubSectors;
-extern const node_t*        gpBSPTreeRoot;
+extern node_t*              gpBSPTreeRoot;
 extern const uint8_t*       gpRejectMatrix;         // For fast sight rejection
 extern line_t***            gpBlockMapLineLists;    // For each blockmap entry, a pointer to a list of line pointers (all lines in the block)
 extern mobj_t**             gpBlockMapThingLists;   // For each blockmap entry, a pointer to the first thing in a linked list of things (all things in the block)

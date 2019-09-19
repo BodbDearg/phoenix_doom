@@ -30,7 +30,6 @@ static constexpr int32_t MAPY     = 174;
 
 static constexpr uint32_t NUMMICROS     = 6;                    // Amount of micro-sized #'s (weapon armed)
 static constexpr uint32_t GODFACE       = 40;                   // God mode face
-static constexpr uint32_t DEADFACE      = 41;                   // Dead face
 static constexpr uint32_t FIRSTSPLAT    = 42;                   // First gibbed face
 static constexpr uint32_t GIBTIME       = (TICKSPERSEC/6);      // Time for gibbed animation
 
@@ -105,7 +104,7 @@ static void CycleFlash(sbflash_t& flash) noexcept {
                 flash.delay = FLASHDELAY;           // Reset the time
                 flash.doDraw ^= true;               // Toggle the draw flag
                 if (flash.doDraw) {                 // If on, play sound
-                    S_StartSound(0, sfx_itemup);
+                    S_StartSound(nullptr, sfx_itemup);
                 }
             }
         }

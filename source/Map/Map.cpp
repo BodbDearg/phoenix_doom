@@ -164,13 +164,19 @@ void P_UseLines(player_t& player) noexcept {
     ++xh;   // For < compare later
     ++yh;
 
+    ASSERT(xl >= 0);
+    ASSERT(xh >= 0);
+    ASSERT(yl >= 0);
+    ASSERT(yh >= 0);
+
     gpCloseLine = nullptr;      // No line found
     gCloseDist = FRACUNIT;      // 1.0 units distance
     ++gValidCount;              // Make unique sector mark
 
-    for (int32_t y = yl; y < yh; ++y) {
-        for (int32_t x = xl; x < xh; ++x) {
-            BlockLinesIterator(x, y, PIT_UseLines);     // Check the lines
+    // Check the lines
+    for (uint32_t y = (uint32_t) yl; y < (uint32_t) yh; ++y) {
+        for (uint32_t x = (uint32_t) xl; x < (uint32_t) xh; ++x) {
+            BlockLinesIterator(x, y, PIT_UseLines);
         }
     }
 
@@ -210,7 +216,7 @@ static bool PIT_RadiusAttack(mobj_t& thing) noexcept {
         // DC: Bugfix to the original 3DO Doom: check for line of sight before applying damage.
         // In the original 3DO Doom you could damage stuff through walls with rockets! (wasn't like that in PC Doom)
         if (CheckSight(thing, *gpBombSpot)) {
-            DamageMObj(thing, gpBombSpot, gpBombSource, gBombDamage - dist);
+            DamageMObj(thing, gpBombSpot, gpBombSource, gBombDamage - (uint32_t) dist);
         }
     }
 
@@ -222,7 +228,7 @@ static bool PIT_RadiusAttack(mobj_t& thing) noexcept {
 // Source is the creature that casued the explosion at spot.
 //----------------------------------------------------------------------------------------------------------------------
 void RadiusAttack(mobj_t& spot, mobj_t* source, const uint32_t damage) noexcept {
-    const Fixed dist = damage << FRACBITS;      // Convert to fixed
+    const Fixed dist = intToFixed16((int32_t) damage);
 
     int32_t yh = (spot.y + dist - gBlockMapOriginY) >> MAPBLOCKSHIFT;
     int32_t yl = (spot.y - dist - gBlockMapOriginY) >> MAPBLOCKSHIFT;
@@ -231,13 +237,18 @@ void RadiusAttack(mobj_t& spot, mobj_t* source, const uint32_t damage) noexcept 
     ++xh;
     ++yh;
 
+    ASSERT(xl >= 0);
+    ASSERT(xh >= 0);
+    ASSERT(yl >= 0);
+    ASSERT(yh >= 0);
+
     gpBombSpot = &spot;         // Copy to globals so PIT_Radius can see it
     gpBombSource = source;
     gBombDamage = damage;
 
     // Damage all things in collision range
-    for (int32_t y = yl; y < yh; ++y) {
-        for (int32_t x = xl; x < xh; ++x) {
+    for (uint32_t y = (uint32_t) yl; y < (uint32_t) yh; ++y) {
+        for (uint32_t x = (uint32_t) xl; x < (uint32_t) xh; ++x) {
             BlockThingsIterator(x, y, PIT_RadiusAttack);
         }
     }

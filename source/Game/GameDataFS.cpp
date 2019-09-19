@@ -32,6 +32,8 @@ class GameFileInputStream_Real : public InputStream {
 public:
     GameFileInputStream_Real() noexcept = default;
 
+    virtual ~GameFileInputStream_Real() noexcept override {}
+
     void open(const char* pFile) THROWS {
         mInput.open(pFile);
     }
@@ -76,6 +78,8 @@ public:
     {
     }
 
+    virtual ~GameFileInputStream_CDImage() noexcept override {}
+
     void open(const char* pCDImageFile, const uint32_t fileOffset, const uint32_t fileSize) THROWS {
         mInput.open(pCDImageFile);
         mInput.seek(fileOffset);
@@ -93,7 +97,7 @@ public:
         return mCurOffsetWithinFile;
     }
 
-    virtual void seek(const uint32_t offset) THROWS {
+    virtual void seek(const uint32_t offset) THROWS override {
         if (offset > mFileSize)
             throw StreamException();
         
@@ -101,7 +105,7 @@ public:
         mCurOffsetWithinFile = offset;
     }
 
-    virtual void skip(const uint32_t numBytes) THROWS {
+    virtual void skip(const uint32_t numBytes) THROWS override {
         const uint32_t maxBytesLeft = UINT32_MAX - mCurOffsetWithinFile;
 
         if (numBytes > maxBytesLeft)
@@ -110,7 +114,7 @@ public:
         seek(mCurOffsetWithinFile + numBytes);
     }
 
-    virtual void readBytes(std::byte* const pBytes, const uint32_t numBytes) THROWS {
+    virtual void readBytes(std::byte* const pBytes, const uint32_t numBytes) THROWS override {
         const uint32_t numFileBytesLeft = mFileSize - mCurOffsetWithinFile;
 
         if (numBytes > numFileBytesLeft)

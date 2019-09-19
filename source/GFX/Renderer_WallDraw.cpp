@@ -30,8 +30,8 @@ static void drawSkyColumn(const uint32_t viewX, const uint32_t maxColHeight) noe
     const ImageData& texImg = pTex->data;
 
     const uint32_t skyTexH = texImg.height;
-    const Fixed skyScale = fixed16Div(intToFixed16(g3dViewHeight), intToFixed16(Renderer::REFERENCE_3D_VIEW_HEIGHT));
-    const Fixed scaledColHeight = fixed16Mul(intToFixed16(skyTexH), skyScale);
+    const Fixed skyScale = fixed16Div(intToFixed16((int32_t) g3dViewHeight), intToFixed16(Renderer::REFERENCE_3D_VIEW_HEIGHT));
+    const Fixed scaledColHeight = fixed16Mul(intToFixed16((int32_t) skyTexH), skyScale);
     const uint32_t roundColHeight = ((scaledColHeight & FRACMASK) != 0) ? 1 : 0;
     const uint32_t colHeight = (uint32_t) fixed16ToInt(scaledColHeight) + roundColHeight;
     BLIT_ASSERT(colHeight < g3dViewHeight);
@@ -53,7 +53,7 @@ static void drawSkyColumn(const uint32_t viewX, const uint32_t maxColHeight) noe
         g3dViewWidth,
         g3dViewHeight,
         Video::gScreenWidth,
-        viewX,
+        (int32_t) viewX,
         0,
         std::min(colHeight, maxColHeight),
         0,

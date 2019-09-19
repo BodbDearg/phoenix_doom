@@ -104,7 +104,7 @@ Fixed P_FindLowestFloorSurrounding(sector_t& sec) noexcept {
 // Find highest floor height in surrounding sectors
 //----------------------------------------------------------------------------------------------------------------------
 Fixed P_FindHighestFloorSurrounding(sector_t& sec) noexcept {
-    Fixed floor = 0x80000000;   // Init to the lowest possible value
+    Fixed floor = (Fixed) 0x80000000;   // Init to the lowest possible value
     const uint32_t numLines = sec.linecount;
     line_t** const ppSectorLines = sec.lines;
 
@@ -172,7 +172,7 @@ Fixed P_FindLowestCeilingSurrounding(sector_t& sec) noexcept {
 // Find highest ceiling in the surrounding sectors
 //----------------------------------------------------------------------------------------------------------------------
 Fixed P_FindHighestCeilingSurrounding(sector_t& sec) noexcept {
-    Fixed height = 0x80000000;  // Lowest ceiling possible
+    Fixed height = (Fixed) 0x80000000;  // Lowest ceiling possible
     const uint32_t numLines = sec.linecount;
     line_t** const ppSectorLines = sec.lines;
 

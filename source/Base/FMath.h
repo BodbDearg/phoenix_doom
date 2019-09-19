@@ -25,7 +25,7 @@ template <class T> static constexpr T ANGLE_1   = ANGLE_180<T> / T(180.0);
 // Get the angle from one point to another in radians
 //----------------------------------------------------------------------------------------------------------------------
 template <class T>
-static T angleFromPointToPoint(const T p1x, const T p1y, const T p2x, const T p2y) noexcept {
+inline T angleFromPointToPoint(const T p1x, const T p1y, const T p2x, const T p2y) noexcept {
     const T dx = p2x - p1x;
     const T dy = p2y - p1y;
     return std::atan2(dy, dx);
@@ -35,7 +35,7 @@ static T angleFromPointToPoint(const T p1x, const T p1y, const T p2x, const T p2
 // Linearly interpolate between two floats
 //----------------------------------------------------------------------------------------------------------------------
 template <class T>
-static constexpr inline T lerp(const T a, const T b, const T t) noexcept {
+constexpr inline T lerp(const T a, const T b, const T t) noexcept {
     return a + (b - a) * t;
 }
 
@@ -43,7 +43,7 @@ static constexpr inline T lerp(const T a, const T b, const T t) noexcept {
 // Get the 3D distance between two points
 //----------------------------------------------------------------------------------------------------------------------
 template <class T>
-static inline T distance3d(const T x1, const T y1, const T z1, const T x2, const T y2, const T z2) noexcept {
+inline T distance3d(const T x1, const T y1, const T z1, const T x2, const T y2, const T z2) noexcept {
     const T dx = x2 - x1;
     const T dy = y2 - y1;
     const T dz = z2 - z1;

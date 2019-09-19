@@ -103,16 +103,12 @@ struct CVIDChunkHeader {
 // CVID Chunk types: key frames
 static constexpr uint16_t CVID_KF_V4_CODEBOOK_12_BIT    = 0x2000;
 static constexpr uint16_t CVID_KF_V1_CODEBOOK_12_BIT    = 0x2200;
-static constexpr uint16_t CVID_KF_V4_CODEBOOK_8_BIT     = 0x2400;
-static constexpr uint16_t CVID_KF_V1_CODEBOOK_8_BIT     = 0x2600;
 static constexpr uint16_t CVID_KF_VECTORS               = 0x3000;
 static constexpr uint16_t CVID_KF_VECTORS_V1_ONLY       = 0x3200;
 
 // CVID Chunk types: delta frames (partially updated frames)
 static constexpr uint16_t CVID_DF_V4_CODEBOOK_12_BIT    = 0x2100;
 static constexpr uint16_t CVID_DF_V1_CODEBOOK_12_BIT    = 0x2300;
-static constexpr uint16_t CVID_DF_V4_CODEBOOK_8_BIT     = 0x2500;
-static constexpr uint16_t CVID_DF_V1_CODEBOOK_8_BIT     = 0x2700;
 static constexpr uint16_t CVID_DF_VECTORS               = 0x3100;
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -161,9 +157,9 @@ static uint32_t yuvToXRGB8888(const YUVColor color) noexcept {
     const int32_t u = (int32_t) color.u;
     const int32_t v = (int32_t) color.v;
 
-    const uint32_t r = std::min(std::max(y + (v * 2),       0), 255);
-    const uint32_t g = std::min(std::max(y - (u / 2) - v,   0), 255);
-    const uint32_t b = std::min(std::max(y + (u * 2),       0), 255);
+    const uint32_t r = (uint32_t) std::min(std::max(y + (v * 2),       0), 255);
+    const uint32_t g = (uint32_t) std::min(std::max(y - (u / 2) - v,   0), 255);
+    const uint32_t b = (uint32_t) std::min(std::max(y + (u * 2),       0), 255);
 
     return (0xFF000000u | (r << 16) | (g << 8) | (b << 0));
 }

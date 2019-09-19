@@ -33,3 +33,13 @@ template <class T>
 inline void MemClear(T& obj) noexcept {
     std::memset((void*) &obj, 0, sizeof(obj));
 }
+
+template <class T1, class T2>
+inline T1 BitCast(T2& obj) noexcept {
+    static_assert(sizeof(T1) == sizeof(T2));
+    static_assert(alignof(T1) == alignof(T2));
+
+    T1 castObj;
+    std::memcpy(&castObj, &obj, sizeof(T1));
+    return castObj;
+}

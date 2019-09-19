@@ -16,6 +16,18 @@ static constexpr uint32_t MAX_NAME_LEN = 32;
 // Represents a single entry in the file system
 //----------------------------------------------------------------------------------------------------------------------
 struct FSEntry {
+    // Fields for when the entry represents a directory
+    struct DirFields {
+        uint32_t firstChildIdx;     // Index of the first child filesystem entry
+        uint32_t numChildren;       // The number of child filesystem entries of the directory
+    };
+
+    // Fields for when the entry represents a file
+    struct FileFields {
+        uint32_t offset;    // Offset of the file data
+        uint32_t size;      // Size of the file data
+    };
+
     // Values for filesystem entry type
     static constexpr uint8_t TYPE_FILE = 0;
     static constexpr uint8_t TYPE_DIR = 1;
@@ -25,17 +37,8 @@ struct FSEntry {
     uint8_t _unused[2];                 // Unused padding bytes
 
     union {
-        // Fields for when the entry represents a directory
-        struct {
-            uint32_t firstChildIdx;     // Index of the first child filesystem entry
-            uint32_t numChildren;       // The number of child filesystem entries of the directory
-        } dir;
-
-        // Fields for when the entry represents a file
-        struct {
-            uint32_t offset;            // Offset of the file data
-            uint32_t size;              // Size of the file data
-        } file;
+        DirFields   dir;
+        FileFields  file;
     };
 };
 

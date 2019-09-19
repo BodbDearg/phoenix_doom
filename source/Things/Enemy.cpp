@@ -405,7 +405,7 @@ void A_Chase(mobj_t& actor) noexcept {
     // Turn towards movement direction if not there yet
     if (actor.movedir < 8) {
         actor.angle &= (angle_t)(7UL << 29);
-        const int32_t delta = actor.angle - (actor.movedir << 29);
+        const int32_t delta = (int32_t)(actor.angle - (actor.movedir << 29));
 
         if (delta > 0) {
             actor.angle -= ANG45;

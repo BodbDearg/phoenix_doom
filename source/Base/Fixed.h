@@ -23,12 +23,12 @@ static constexpr Fixed      FRACMAX     = INT32_MAX;
 // On a 32-bit CPU this would have been much trickier (due to overflow) but on a modern 64-bit system we can simply
 // use native 64-bit types to do this very quickly.
 //----------------------------------------------------------------------------------------------------------------------
-static inline constexpr Fixed fixed16Mul(const Fixed num1, const Fixed num2) noexcept {
+inline constexpr Fixed fixed16Mul(const Fixed num1, const Fixed num2) noexcept {
     const int64_t result64 = (int64_t) num1 * (int64_t) num2;
     return (Fixed) (result64 >> 16);
 }
 
-static inline constexpr Fixed fixed16Div(const Fixed num1, const Fixed num2) noexcept {
+inline constexpr Fixed fixed16Div(const Fixed num1, const Fixed num2) noexcept {
     const int64_t result64 = (((int64_t) num1) << 16) / (int64_t) num2;
     return (Fixed) result64;
 }
@@ -36,11 +36,11 @@ static inline constexpr Fixed fixed16Div(const Fixed num1, const Fixed num2) noe
 //----------------------------------------------------------------------------------------------------------------------
 // Conversions to and from Doom format fixed point numbers (in 16.16 format) to 32-bit integers
 //----------------------------------------------------------------------------------------------------------------------
-static inline constexpr Fixed intToFixed16(const int32_t num) noexcept {
+inline constexpr Fixed intToFixed16(const int32_t num) noexcept {
     return num << 16;
 }
 
-static inline constexpr int32_t fixed16ToInt(const Fixed num) noexcept {
+inline constexpr int32_t fixed16ToInt(const Fixed num) noexcept {
     return num >> 16;
 }
 
@@ -66,6 +66,6 @@ inline constexpr Fixed floatToFixed6(const float value) noexcept {
 //----------------------------------------------------------------------------------------------------------------------
 // Yields a reciprocal of the given Doom format fixed point 16.16 number
 //----------------------------------------------------------------------------------------------------------------------
-static inline constexpr Fixed Fixed16Invert(const Fixed num) noexcept {
+inline constexpr Fixed Fixed16Invert(const Fixed num) noexcept {
     return fixed16Div(FRACUNIT, num);
 }

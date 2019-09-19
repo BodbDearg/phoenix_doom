@@ -114,21 +114,21 @@ static void GroupLines() noexcept {
         // Adjust bounding box to map blocks and clip to unsigned values
         Fixed block = (bbox[BOXTOP] - gBlockMapOriginY + MAXRADIUS) >> MAPBLOCKSHIFT;
         ++block;
-        block = (block > (int) gBlockMapHeight) ? gBlockMapHeight : block;
-        sector.blockbox[BOXTOP] = block;        // Save the topmost point
+        block = (block > (int) gBlockMapHeight) ? (int32_t) gBlockMapHeight : block;
+        sector.blockbox[BOXTOP] = (uint32_t) block;     // Save the topmost point
 
         block = (bbox[BOXBOTTOM] - gBlockMapOriginY - MAXRADIUS) >> MAPBLOCKSHIFT;
         block = (block < 0) ? 0 : block;
-        sector.blockbox[BOXBOTTOM] = block;     // Save the bottommost point
+        sector.blockbox[BOXBOTTOM] = (uint32_t) block;  // Save the bottommost point
 
         block = (bbox[BOXRIGHT] - gBlockMapOriginX + MAXRADIUS) >> MAPBLOCKSHIFT;
         ++block;
-        block = (block > (int) gBlockMapWidth) ? gBlockMapWidth : block;
-        sector.blockbox[BOXRIGHT] = block;      // Save the rightmost point
+        block = (block > (int) gBlockMapWidth) ? (int32_t) gBlockMapWidth : block;
+        sector.blockbox[BOXRIGHT] = (uint32_t) block;   // Save the rightmost point
 
         block = (bbox[BOXLEFT] - gBlockMapOriginX - MAXRADIUS) >> MAPBLOCKSHIFT;
         block = (block < 0) ? 0 : block;
-        sector.blockbox[BOXLEFT] = block;       // Save the leftmost point
+        sector.blockbox[BOXLEFT] = (uint32_t) block;    // Save the leftmost point
     }
 }
 

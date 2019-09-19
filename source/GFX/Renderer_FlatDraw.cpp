@@ -163,9 +163,9 @@ static inline void drawFlatColumn(const FlatFragment flatFrag) noexcept {
         const uint16_t srcPixelARGB1555 = pSrcPixels[curSrcYInt * 64 + curSrcXInt];
 
         // Extract RGB components and shift such that the maximum value is 255 instead of 31.
-        const uint16_t texR = (srcPixelARGB1555 & uint16_t(0b0111110000000000)) >> 7;
-        const uint16_t texG = (srcPixelARGB1555 & uint16_t(0b0000001111100000)) >> 2;
-        const uint16_t texB = (srcPixelARGB1555 & uint16_t(0b0000000000011111)) << 3;
+        const uint16_t texR = (uint16_t)((srcPixelARGB1555 & uint16_t(0b0111110000000000)) >> 7);
+        const uint16_t texG = (uint16_t)((srcPixelARGB1555 & uint16_t(0b0000001111100000)) >> 2);
+        const uint16_t texB = (uint16_t)((srcPixelARGB1555 & uint16_t(0b0000000000011111)) << 3);
 
         // Get the distance to the view point and light multiplier for that distance
         const float distToView = FMath::distance3d(intersectX, intersectY, intersectZ, viewX, viewY, viewZ);

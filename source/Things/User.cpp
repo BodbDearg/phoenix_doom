@@ -19,12 +19,12 @@
 static constexpr Fixed MAXBOB           = 16 << FRACBITS;   // 16 pixels of bobbing up and down
 static constexpr float MOUSE_TURN_SCALE = 1.0f / 15.0f;     // Controls how much mouse movement translates into turning (can be multiplied by the user through config also)
 
-static constexpr uint32_t FORWARD_MOVE[2] = {
+static constexpr Fixed FORWARD_MOVE[2] = {
     0x38000 >> 2,
     0x60000 >> 2
 };
 
-static constexpr uint32_t SIDE_MOVE[2] = {
+static constexpr Fixed SIDE_MOVE[2] = {
     0x38000 >> 2,
     0x58000 >> 2
 };
@@ -281,9 +281,9 @@ static void P_BuildMove(player_t& player) noexcept {
             (INPUT_AXIS(MOVE_FORWARD_BACK) == 0.0f) &&
             (INPUT_AXIS(STRAFE_LEFT_RIGHT) == 0.0f)
         ) {
-            player.angleturn = fixed16Mul(angleTurnFrac, FAST_ANGLE_TURN[turnIndex]);
+            player.angleturn = (angle_t) fixed16Mul(angleTurnFrac, FAST_ANGLE_TURN[turnIndex]);
         } else {
-            player.angleturn = fixed16Mul(angleTurnFrac, ANGLE_TURN[turnIndex]);
+            player.angleturn = (angle_t) fixed16Mul(angleTurnFrac, ANGLE_TURN[turnIndex]);
         }
 
         // Do move forward and backward

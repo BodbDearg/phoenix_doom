@@ -261,7 +261,7 @@ static void updateMusicCheat() noexcept {
             ++gMusicCheatNumDigitsEntered;
 
             if (gMusicCheatNumDigitsEntered >= 2) {
-                if (gMusicCheatNum >= 0 && gMusicCheatNum <= 24) {
+                if (gMusicCheatNum <= 24) {
                     doCheatConfirmedFx();
 
                     if (gMusicCheatNum == 0) {

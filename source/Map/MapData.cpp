@@ -51,7 +51,7 @@ struct MapSubSector {
     uint32_t    firstLine;      // Note: line segs are stored sequentially
 };
 
-#define NF_SUBSECTOR 0x8000
+static constexpr uint32_t NF_SUBSECTOR = 0x8000u;
 
 struct MapNode {
     Fixed x;                // Partitioning vector
@@ -394,7 +394,7 @@ static void loadNodes(const uint32_t lumpResourceNum) noexcept {
             // Unclear what happens here if node index is > 0x8000 - engine limitation on subsector count?
             const uint32_t childNodeOrSubSecIdx = Endian::bigToHost(pSrcNode->children[childNum]);
 
-            if (childNodeOrSubSecIdx & NF_SUBSECTOR) {
+            if ((childNodeOrSubSecIdx & NF_SUBSECTOR) != 0) {
                 // Child is a subsector (node is a leaf)
                 const uint32_t subSectorIdx = childNodeOrSubSecIdx & (~NF_SUBSECTOR);
 
@@ -550,7 +550,7 @@ const seg_t*        gpLineSegs;
 uint32_t            gNumLineSegs;
 const subsector_t*  gpSubSectors;
 uint32_t            gNumSubSectors;
-const node_t*       gpBSPTreeRoot;
+node_t*             gpBSPTreeRoot;
 const uint8_t*      gpRejectMatrix;
 line_t***           gpBlockMapLineLists;
 mobj_t**            gpBlockMapThingLists;

@@ -51,9 +51,9 @@ uint32_t S_StartSound(const Fixed* const pOriginXY, const uint32_t soundId, cons
                     return UINT32_MAX;
                 }
 
-                const int sep = 128 - (fixed16Mul(S_STEREO_SWING, gFineSine[angle]) >> FRACBITS);
-                rightVolume = (sep * vol) >> 8;
-                leftVolume = ((256 - sep) * vol) >> 8;
+                const int32_t sep = 128 - (fixed16Mul(S_STEREO_SWING, gFineSine[angle]) >> FRACBITS);
+                rightVolume = (uint32_t)(sep * vol) >> 8;
+                leftVolume = (uint32_t)((256 - sep) * vol) >> 8;
             }
         }
     }

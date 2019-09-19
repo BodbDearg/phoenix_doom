@@ -85,11 +85,14 @@ static void T_MoveCeiling(ceiling_t& ceiling) noexcept {
                 case raiseToHighest:
                     RemoveActiveCeiling(ceiling);   // Remove the thinker
                     break;
+
                 case fastCrushAndRaise:
                 case crushAndRaise:
                     ceiling.direction = -1;         // Go down now
+                    break;
+
                 case lowerToFloor:                  // DC: nothing to be done for these cases
-                case lowerAndCrush:
+                case lowerAndCrush:                
                     break;
             }
         }
@@ -112,12 +115,16 @@ static void T_MoveCeiling(ceiling_t& ceiling) noexcept {
             switch (ceiling.type) {
                 case crushAndRaise:
                     ceiling.speed = CEILSPEED;      // Reset the speed ALWAYS
+                    [[fallthrough]];
                 case fastCrushAndRaise:
                     ceiling.direction = 1;          // Go up now
                     break;
+
                 case lowerAndCrush:
                 case lowerToFloor:
                     RemoveActiveCeiling(ceiling);   // Remove it
+                    break;
+
                 case raiseToHighest:                // DC: nothing to be done for these cases
                     break;
             }
@@ -126,6 +133,8 @@ static void T_MoveCeiling(ceiling_t& ceiling) noexcept {
                 case crushAndRaise:
                 case lowerAndCrush:
                     ceiling.speed = (CEILSPEED / 8);    // Slow down for more fun!
+                    break;
+
                 case lowerToFloor:                      // DC: nothing to be done for these cases
                 case raiseToHighest:
                 case fastCrushAndRaise:
@@ -158,6 +167,8 @@ bool EV_DoCeiling(line_t& line, const ceiling_e type) noexcept {
         case fastCrushAndRaise:
         case crushAndRaise:
             ActivateInStasisCeiling(line.tag);
+            break;
+
         case lowerToFloor:
         case raiseToHighest:
         case lowerAndCrush:
@@ -191,15 +202,18 @@ bool EV_DoCeiling(line_t& line, const ceiling_e type) noexcept {
                 ceiling.direction = -1;             // Down
                 ceiling.speed = CEILSPEED * 2;      // Go down fast!
                 break;
+
             case crushAndRaise:
                 ceiling.crush = true;
                 ceiling.topheight = sec.ceilingheight;      // Floor and ceiling
+                [[fallthrough]];
             case lowerAndCrush:
             case lowerToFloor:
                 ceiling.bottomheight = sec.floorheight;     // To the floor!
                 ceiling.direction = -1;     // Down
                 ceiling.speed = CEILSPEED;
                 break;
+
             case raiseToHighest:
                 ceiling.topheight = P_FindHighestCeilingSurrounding(sec);
                 ceiling.direction = 1;      // Go up

@@ -55,7 +55,7 @@ bool AudioOutputDevice::init() noexcept {
     }
 
     // All good if we got to here - unpause the device and save the sample rate!
-    mSampleRate = obtainedAudioFmt.freq;
+    mSampleRate = (uint32_t) obtainedAudioFmt.freq;
     SDL_PauseAudioDevice(mAudioDeviceId, 0);
     return true;
 }
@@ -124,7 +124,7 @@ void AudioOutputDevice::audioCallback(
     ASSERT(bufferSize > 0);
 
     // Figure out how many samples
-    const uint32_t numChannelSamples = bufferSize / sizeof(float);
+    const uint32_t numChannelSamples = (uint32_t) bufferSize / sizeof(float);
     const uint32_t numSamples = numChannelSamples / 2;
 
     // Zero all sample data initially

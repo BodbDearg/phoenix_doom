@@ -140,7 +140,7 @@ static void DrawActorCentered(const state_t& actorState) noexcept {
             Video::gScreenWidth,
             xInt,
             tyInt,
-            hInt,
+            (uint32_t) hInt,
             0.0f,
             texYStep
         );
@@ -152,20 +152,20 @@ static void DrawActorCentered(const state_t& actorState) noexcept {
 // NOTE : The strings must be lower case ONLY!
 //----------------------------------------------------------------------------------------------------------------------
 static void F_PrintString(
-    const uint32_t textX,
-    const uint32_t textY,
+    const int32_t textX,
+    const int32_t textY,
     const char* const str,
     const char* const strEnd
 ) noexcept {
-    uint32_t curTextY = textY;
+    int32_t curTextY = textY;
     const char* curSubStr = str;
     const char* curSubStrEnd = str;
 
     auto outputSubStr = [](
         const char* const beg,
         const char* const end,
-        const uint32_t x,
-        const uint32_t y
+        const int32_t x,
+        const int32_t y
     ) noexcept {
         const uint32_t numChars = (uint32_t)(end - beg);
         char subStrChars[64];
@@ -228,8 +228,8 @@ gameaction_e F_Ticker() noexcept {
     // Check for press a key to kill actor
     if (gStatus == fin_endtext) {   // Am I printing text?
         if (MENU_ACTION(OK) && (gTotalGameTicks >= 3 * TICKSPERSEC)) {
-            gStatus = fin_charcast;                 // Continue to the second state
-            S_StartSound(0, gCastInfo->seesound);   // Ohhh..
+            gStatus = fin_charcast;                         // Continue to the second state
+            S_StartSound(nullptr, gCastInfo->seesound);     // Ohhh..
         }
         return ga_nothing;  // Don't exit
     }
@@ -238,7 +238,7 @@ gameaction_e F_Ticker() noexcept {
     if (!gCastDeath) {
         if (MENU_ACTION(OK)) {
             // Enter death state
-            S_StartSound(0, gCastInfo->deathsound);
+            S_StartSound(nullptr, gCastInfo->deathsound);
             gCastDeath = true;
             gpCastState = gCastInfo->deathstate;
             gCastTics = gpCastState->Time;
@@ -268,7 +268,7 @@ gameaction_e F_Ticker() noexcept {
         }
         gCastDeath = false;
         gCastInfo = CAST_ORDER[gCastNum];
-        S_StartSound(0, gCastInfo->seesound);
+        S_StartSound(nullptr, gCastInfo->seesound);
         gpCastState = gCastInfo->seestate;
         gCastFrames = 0;
     } else {
@@ -296,7 +296,7 @@ gameaction_e F_Ticker() noexcept {
                 default:            soundToPlay = 0;            break;
             }
 
-            S_StartSound(0, soundToPlay);
+            S_StartSound(nullptr, soundToPlay);
         }
     }
 

@@ -85,13 +85,10 @@ static void initData() noexcept {
     // Create a recipocal mul table so that I can divide 0-8191 from 1.0.
     // This way I can fake a divide with a multiply.
     gIDivTable[0] = UINT32_MAX;
+    constexpr uint32_t NUM_DIV_TABLE_ENTRIES = C_ARRAY_SIZE(gIDivTable);
 
-    {
-        uint32_t i = 1;
-
-        do {
-            gIDivTable[i] = fixed16Div(512 << FRACBITS, i << FRACBITS);     // 512.0 / i
-        } while (++i < (sizeof(gIDivTable) / sizeof(uint32_t)));
+    for (uint32_t i = 1; i < NUM_DIV_TABLE_ENTRIES; ++i) {
+        gIDivTable[i] = (uint32_t) fixed16Div(512 << FRACBITS, (int32_t) i << FRACBITS);  // 512.0 / i
     }
 
     // First time init of the math tables.

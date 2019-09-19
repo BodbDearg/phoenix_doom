@@ -1047,7 +1047,7 @@ static void handleConfigEntry(const IniUtils::Entry& entry) noexcept {
             gbFullscreen = entry.getBoolValue(gbFullscreen);
         }
         else if (entry.key == "RenderScale") {
-            gRenderScale = std::min(std::max(entry.getIntValue(gRenderScale), 1), 1000);
+            gRenderScale = std::min(std::max(entry.getUintValue(gRenderScale), 1u), 1000u);
         }
         else if (entry.key == "OutputResolutionW") {
             gOutputResolutionW = entry.getIntValue(gOutputResolutionW);

@@ -141,7 +141,7 @@ static bool checkBBox(const Fixed bspcoord[BOXCOUNT]) noexcept {
 // Traverse the BSP tree starting from a tree node (Or sector) and recursively subdivide if needed.
 // Use a cross product from the line cast from the viewxy to the bspxy and the bsp line itself.
 //----------------------------------------------------------------------------------------------------------------------
-static void addBspNodeToFrame(const node_t* const pNode) noexcept {
+static void addBspNodeToFrame(node_t* const pNode) noexcept {
     // Is this node actual pointing to a sub sector?
     if (isBspNodeASubSector(pNode)) {
         // Process the sub sector.
@@ -157,11 +157,11 @@ static void addBspNodeToFrame(const node_t* const pNode) noexcept {
     
     // Decide which side the view point is on
     uint32_t side = PointOnVectorSide(gViewXFrac, gViewYFrac, pNode->Line);     // Is this the front side?
-    addBspNodeToFrame((const node_t*) pNode->Children[side]);                   // Process the side closer to me
+    addBspNodeToFrame((node_t*) pNode->Children[side]);                         // Process the side closer to me
     side ^= 1;                                                                  // Swap the side
 
-    if (checkBBox(pNode->bbox[side])) {                                 // Is the viewing rect on both sides?
-        addBspNodeToFrame((const node_t*) pNode->Children[side]);       // Render the back side
+    if (checkBBox(pNode->bbox[side])) {                         // Is the viewing rect on both sides?
+        addBspNodeToFrame((node_t*) pNode->Children[side]);     // Render the back side
     }
 }
 

@@ -49,7 +49,7 @@ namespace Blit {
         // always the last texel according to the given texture dimension:
         const int32_t numPixelSteps = (int32_t) renderSize - 1;
         const Fixed step = fixed16Div(
-            intToFixed16(textureSize) - 1,  // N.B: never let it reach 'textureSize' (i.e out of bounds) - keep *just* below!
+            intToFixed16((int32_t) textureSize) - 1,    // N.B: never let it reach 'textureSize' (i.e out of bounds) - keep *just* below!
             intToFixed16(numPixelSteps)
         );
 
@@ -225,16 +225,16 @@ namespace Blit {
                 dstY = 0;
                 srcY = srcY + srcYStep * numPixelsOutOfBounds + srcYSubPixelAdjustment;
                 srcYSubPixelAdjustment = 0;
-                dstCount -= numPixelsOutOfBounds;
+                dstCount -= (uint32_t) numPixelsOutOfBounds;
             }
         }
 
         // Clip: a vertical column against the bottom of the draw area
         if constexpr (IS_VERT_COLUMN && DO_V_CLIP) {
-            const int32_t endY = dstY + dstCount;
+            const uint32_t endY = (uint32_t) dstY + dstCount;
 
-            if (endY > (int32_t) dstH) {
-                const int32_t numPixelsOutOfBounds = endY - dstH;
+            if (endY > dstH) {
+                const uint32_t numPixelsOutOfBounds = endY - dstH;
                 dstCount -= numPixelsOutOfBounds;
             }
         }
@@ -250,16 +250,16 @@ namespace Blit {
                 dstX = 0;
                 srcX = srcX + srcXStep * numPixelsOutOfBounds + srcXSubPixelAdjustment;
                 srcXSubPixelAdjustment = 0;
-                dstCount -= numPixelsOutOfBounds;
+                dstCount -= (uint32_t) numPixelsOutOfBounds;
             }
         }
 
         // Clip: a horizontal column against the right of the draw area
         if constexpr (IS_HORZ_COLUMN && DO_H_CLIP) {
-            const int32_t endX = dstX + dstCount;
+            const uint32_t endX = (uint32_t) dstX + dstCount;
 
-            if (endX > (int32_t) dstW) {
-                const int32_t numPixelsOutOfBounds = endX - dstW;
+            if (endX > dstW) {
+                const uint32_t numPixelsOutOfBounds = endX - dstW;
                 dstCount -= numPixelsOutOfBounds;
             }
         }
@@ -285,11 +285,11 @@ namespace Blit {
         uint32_t* pEndDstPixel;
 
         if constexpr (IS_HORZ_COLUMN) {
-            BLIT_ASSERT(dstX + dstCount <= dstW);
+            BLIT_ASSERT((uint32_t) dstX + dstCount <= dstW);
             pEndDstPixel = pDstPixel + dstCount;
         } else {
             static_assert(IS_VERT_COLUMN);
-            BLIT_ASSERT(dstY + dstCount <= dstH);
+            BLIT_ASSERT((uint32_t) dstY + dstCount <= dstH);
             pEndDstPixel = pDstPixel + (uintptr_t) dstCount * dstPixelsPitch;
         }
 

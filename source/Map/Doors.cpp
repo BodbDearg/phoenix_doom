@@ -39,9 +39,12 @@ static void T_VerticalDoor(vldoor_t& door) noexcept {
                         door.direction = -1;    // Time to go back down
                         S_StartSound(&door.sector->SoundX, sfx_dorcls);
                         break;
+
                     case close30ThenOpen:
                         door.direction = 1;
                         S_StartSound(&door.sector->SoundX, sfx_doropn);
+                        break;
+
                     // DC: these cases were unhandled
                     case close:
                     case open:
@@ -81,9 +84,12 @@ static void T_VerticalDoor(vldoor_t& door) noexcept {
                         door.sector->specialdata = nullptr;         // Remove it
                         RemoveThinker(door);                        // unlink and free
                         break;
+
                     case close30ThenOpen:
                         door.direction = 0;                         // Waiting
                         door.topcountdown = TICKSPERSEC * 30;
+                        break;
+
                     case open:                                      // DC: these cases were unhandled
                     case raiseIn5Mins:
                         break;
@@ -110,10 +116,13 @@ static void T_VerticalDoor(vldoor_t& door) noexcept {
                         door.direction = 0;                     // Wait at top
                         door.topcountdown = door.topwait;       // Reset timer
                         break;
+
                     case close30ThenOpen:
                     case open:
                         door.sector->specialdata = nullptr;
                         RemoveThinker(door);                    // Unlink and free
+                        break;
+
                     case close:                                 // DC: these cases were unhandled
                     case raiseIn5Mins:
                         break;

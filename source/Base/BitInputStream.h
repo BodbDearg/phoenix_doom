@@ -63,7 +63,7 @@ public:
 
             // Extract the required bits and add to the output
             const uint8_t shiftBitsToLSB = (mCurBitIdx + uint8_t(1) - numBitsToRead);
-            const uint8_t readMask = ~(uint8_t(0xFF) << numBitsToRead);
+            const uint8_t readMask = (uint8_t) ~(uint8_t(0xFFu) << numBitsToRead);
             const uint8_t readBits = (curByte >> shiftBitsToLSB) & readMask;
             out |= readBits;
 

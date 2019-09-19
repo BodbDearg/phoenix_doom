@@ -41,7 +41,7 @@ static uint32_t gPlayerMap;         // Map requested
 static uint32_t gPlayerSkill;       // Requested skill
 static uint32_t gSleepMark;         // Time from last access
 
-static uint32_t gCursorYs[NUMMENUITEMS] = {
+static int32_t gCursorYs[NUMMENUITEMS] = {
     AREAY - 2,
     DIFFICULTYY - 2,
     OPTIONSY - 2

@@ -9,19 +9,19 @@
 
 BEGIN_NAMESPACE(Input)
 
-bool                            gbIsQuitRequested;
-const Uint8*                    gpKeyboardState;
-int                             gNumKeyboardStateKeys;
-std::vector<uint16_t>           gKeyboardKeysPressed;
-std::vector<uint16_t>           gKeyboardKeysJustPressed;
-std::vector<uint16_t>           gKeyboardKeysJustReleased;
-std::vector<MouseButton>        gMouseButtonsPressed;
-std::vector<MouseButton>        gMouseButtonsJustPressed;
-std::vector<MouseButton>        gMouseButtonsJustReleased;
-float                           gControllerInputs[NUM_CONTROLLER_INPUTS];
-std::vector<ControllerInput>    gControllerInputsPressed;
-std::vector<ControllerInput>    gControllerInputsJustPressed;
-std::vector<ControllerInput>    gControllerInputsJustReleased;
+static bool                             gbIsQuitRequested;
+static const Uint8*                     gpKeyboardState;
+static int                              gNumKeyboardStateKeys;
+static std::vector<uint16_t>            gKeyboardKeysPressed;
+static std::vector<uint16_t>            gKeyboardKeysJustPressed;
+static std::vector<uint16_t>            gKeyboardKeysJustReleased;
+static std::vector<MouseButton>         gMouseButtonsPressed;
+static std::vector<MouseButton>         gMouseButtonsJustPressed;
+static std::vector<MouseButton>         gMouseButtonsJustReleased;
+static float                            gControllerInputs[NUM_CONTROLLER_INPUTS];
+static std::vector<ControllerInput>     gControllerInputsPressed;
+static std::vector<ControllerInput>     gControllerInputsJustPressed;
+static std::vector<ControllerInput>     gControllerInputsJustReleased;
 
 static SDL_GameController*  gpGameController;
 static SDL_Joystick*        gpJoystick;             // Note: this is managed by game controller, not freed by this code!

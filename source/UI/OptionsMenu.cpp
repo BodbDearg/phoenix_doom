@@ -15,13 +15,13 @@
 #include "GFX/Video.h"
 #include "UIUtils.h"
 
-static constexpr uint32_t CURSORX       = 45;       // X coord for skulls
-static constexpr uint32_t SLIDERX       = 106;      // X coord for slider bars
-static constexpr uint32_t SLIDESTEP     = 6;        // Adjustment for volume to screen coord
-static constexpr uint32_t SFXVOLY       = 60;       // Y coord for SFX volume control
-static constexpr uint32_t MUSICVOLY     = 120;      // Y coord for Music volume control
-static constexpr uint32_t SIZEY         = 60;       // Y coord for screen size control
-static constexpr uint32_t QUITY         = 120;      // Y coord for quit menu control
+static constexpr int32_t CURSORX       = 45;        // X coord for skulls
+static constexpr int32_t SLIDERX       = 106;       // X coord for slider bars
+static constexpr int32_t SLIDESTEP     = 6;         // Adjustment for volume to screen coord
+static constexpr int32_t SFXVOLY       = 60;        // Y coord for SFX volume control
+static constexpr int32_t MUSICVOLY     = 120;       // Y coord for Music volume control
+static constexpr int32_t SIZEY         = 60;        // Y coord for screen size control
+static constexpr int32_t QUITY         = 120;       // Y coord for quit menu control
 
 // Menu items to select from
 enum {
@@ -37,7 +37,7 @@ enum {
     HANDLE
 };
 
-static constexpr uint32_t CURSOR_Y_POS[NUM_MENU_OPTIONS] = {
+static constexpr int32_t CURSOR_Y_POS[NUM_MENU_OPTIONS] = {
     SFXVOLY - 2,
     MUSICVOLY - 2,    
     SIZEY - 2,
@@ -147,14 +147,14 @@ void O_Control(player_t* const pPlayer) noexcept {
                         const uint32_t soundVolume = Audio::getSoundVolume();
                         if (soundVolume < Audio::MAX_VOLUME) {
                             Audio::setSoundVolume(soundVolume + 1);
-                            S_StartSound(0, sfx_pistol);
+                            S_StartSound(nullptr, sfx_pistol);
                         }
                     }
                     else if (menuMoveX <= -1) {
                         const uint32_t soundVolume = Audio::getSoundVolume();
                         if (soundVolume > 0) {
                             Audio::setSoundVolume(soundVolume - 1);
-                            S_StartSound(0, sfx_pistol);
+                            S_StartSound(nullptr, sfx_pistol);
                         }
                     }
                 }   break;
@@ -217,12 +217,12 @@ void O_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
         UIUtils::drawUISprite(SLIDERX, MUSICVOLY + 20, sliderImgs.getImage(BAR));
 
         {
-            const uint32_t offset = Audio::getSoundVolume() * SLIDESTEP;
+            const int32_t offset = (int32_t) Audio::getSoundVolume() * SLIDESTEP;
             UIUtils::drawUISprite(SLIDERX + 5 + offset, SFXVOLY + 20, sliderImgs.getImage(HANDLE));
         }
 
         {
-            const uint32_t offset = Audio::getMusicVolume() * SLIDESTEP;
+            const int32_t offset = (int32_t) Audio::getMusicVolume() * SLIDESTEP;
             UIUtils::drawUISprite(SLIDERX + 5 + offset, MUSICVOLY + 20, sliderImgs.getImage(HANDLE));
         }
 
@@ -231,7 +231,7 @@ void O_Drawer(const bool bPresent, const bool bSaveFrameBuffer) noexcept {
         UIUtils::printBigFontCenter(160, SIZEY, "Screen Size");
         UIUtils::drawUISprite(SLIDERX, SIZEY + 20, sliderImgs.getImage(BAR));
 
-        const uint32_t offset = (5 - gScreenSize) * 18;
+        const int32_t offset = (5 - (int32_t) gScreenSize) * 18;
         UIUtils::drawUISprite(SLIDERX + 5 + offset, SIZEY + 20, sliderImgs.getImage(HANDLE));
 
         if (gbIsPlayingMap) {

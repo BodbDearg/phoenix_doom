@@ -154,8 +154,8 @@ void PM_CheckPosition() noexcept {
         yh = (int32_t) gBlockMapHeight - 1;
     }
 
-    for (int bx = xl; bx <= xh; bx++) {
-        for (int by = yl; by <= yh; by++) {
+    for (uint32_t bx = (uint32_t) xl; bx <= (uint32_t) xh; bx++) {
+        for (uint32_t by = (uint32_t) yl; by <= (uint32_t) yh; by++) {
             if (!BlockThingsIterator(bx, by, PIT_CheckThing)) {
                 gbTryMove2 = false;
                 return;
@@ -185,8 +185,8 @@ void PM_CheckPosition() noexcept {
         yh = (int32_t) gBlockMapHeight - 1;
     }
 
-    for (int bx = xl; bx <= xh; bx++) {
-        for (int by = yl; by <= yh; by++) {
+    for (uint32_t bx = (uint32_t) xl; bx <= (uint32_t) xh; bx++) {
+        for (uint32_t by = (uint32_t) yl; by <= (uint32_t) yh; by++) {
             if (!BlockLinesIterator(bx, by, PM_CrossCheck)) {
                 gbTryMove2 = false;
                 return;

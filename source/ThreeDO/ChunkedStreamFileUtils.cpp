@@ -86,7 +86,7 @@ struct ChunkHeader {
 //----------------------------------------------------------------------------------------------------------------------
 // Iterates over all the chunks in a stream file to determine the size of the specified sub stream
 //----------------------------------------------------------------------------------------------------------------------
-uint32_t determineSubStreamSize(
+static uint32_t determineSubStreamSize(
     const std::byte* const pStreamFileData,
     const uint32_t streamFileSize,
     const FourCID subStreamId

@@ -192,7 +192,7 @@ bool EV_DoPlat(line_t& line, plattype_e type, uint32_t amount) noexcept {
             }
 
             case raiseAndChange: {  // Raise a specific amount and stop
-                plat.high = sec.floorheight + (amount << FRACBITS);
+                plat.high = sec.floorheight + intToFixed16((int32_t) amount);
             RaisePart2:
                 plat.speed = PLATSPEED / 2;                     // Slow speed
                 sec.FloorPic = line.frontsector->FloorPic;

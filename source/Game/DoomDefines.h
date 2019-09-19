@@ -53,7 +53,7 @@ enum {
 // A utility to convert a tick count from PC Doom's original 35Hz timebase to the timebase used by this game version.
 // Tries to round so the answer is as close as possible.
 //----------------------------------------------------------------------------------------------------------------------
-static inline constexpr uint32_t convertPcTicks(const uint32_t ticks35Hz) noexcept {
+inline constexpr uint32_t convertPcTicks(const uint32_t ticks35Hz) noexcept {
     // Get the tick count in 31.1 fixed point format by multiplying by TICKSPERSEC/35 (in 31.1 format).
     // When returning the integer answer round up if the fractional part is '.5':
     const uint32_t tickCountFixed = ((ticks35Hz * uint32_t(TICKSPERSEC)) << 2) / (uint32_t(35) << 1);
@@ -64,7 +64,7 @@ static inline constexpr uint32_t convertPcTicks(const uint32_t ticks35Hz) noexce
 // Convert an uint32 speed defined in the PC 35Hz timebase to the 60Hz timebase used by used by this game version.
 // Tries to round so the answer is as close as possible.
 //----------------------------------------------------------------------------------------------------------------------
-static inline constexpr uint32_t convertPcUintSpeed(const uint32_t speed35Hz) noexcept {
+inline constexpr uint32_t convertPcUintSpeed(const uint32_t speed35Hz) noexcept {
     // Get the tick count in 31.1 fixed point format by multiplying by 35/TICKSPERSEC (in 31.1 format).
     // When returning the integer answer round up if the fractional part is '.5':
     const uint32_t speedFixed = ((speed35Hz * uint32_t(35)) << 2) / (uint32_t(TICKSPERSEC) << 1);

@@ -4,6 +4,7 @@
 #include "Base/ByteInputStream.h"
 #include "Base/Endian.h"
 #include "Base/Finally.h"
+#include "Base/Mem.h"
 #include "Game/GameDataFS.h"
 #include <vector>
 
@@ -120,11 +121,11 @@ static double readBigEndianExtendedFloat(ByteInputStream& stream) THROWS {
 
     // Get whether there is a negative sign and read the exponent
     bool sign = ((bytes[9] & 0x80) != 0);
-    const uint16_t unbiasedExponent = (
-        ((uint16_t(bytes[9]) & uint16_t(0x7F)) << 8) | uint16_t(bytes[8])) +
-        (integerPartSet ? 0 : -1);
+    const int16_t unbiasedExponent =
+        ((int16_t)((bytes[9] & (int16_t) 0x7Fu) << 8) | (int16_t) bytes[8]) +
+        (integerPartSet ? (int16_t) 0 : (int16_t) -1);
 
-    const int16_t exponent = int16_t(unbiasedExponent) - int16_t(0x3FFFU);
+    const int16_t exponent = unbiasedExponent - int16_t(0x3FFFU);
 
     // Read the fractional bits (63-bits)
     const uint64_t fraction = (
@@ -156,8 +157,7 @@ static double readBigEndianExtendedFloat(ByteInputStream& stream) THROWS {
         (fraction >> 12)
     );
 
-    const double doubleVal = reinterpret_cast<const double&>(doubleBits);
-    return doubleVal;
+    return BitCast<double>(doubleBits);
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -216,8 +216,8 @@ static bool readSdx2CompressedSoundData(ByteInputStream& stream, AudioData& audi
             const int8_t sampleR8 = pInput[1];
 
             // Compute this sample's actual value via the SDX2 encoding mechanism
-            int16_t sampleL16 = (int16_t(sampleL8) * int16_t(std::abs(sampleL8))) << int16_t(1);
-            int16_t sampleR16 = (int16_t(sampleR8) * int16_t(std::abs(sampleR8))) << int16_t(1);
+            int16_t sampleL16 = (int16_t)((sampleL8 * (int16_t) std::abs(sampleL8)) << 1);
+            int16_t sampleR16 = (int16_t)((sampleR8 * (int16_t) std::abs(sampleR8)) << 1);
             sampleL16 += prevSampleL * int16_t(sampleL8 & int8_t(0x01));
             sampleR16 += prevSampleR * int16_t(sampleR8 & int8_t(0x01));
 
@@ -241,7 +241,7 @@ static bool readSdx2CompressedSoundData(ByteInputStream& stream, AudioData& audi
             const int8_t sample8 = pInput[0];
 
             // Compute this sample's actual value via the SDX2 encoding mechanism
-            int16_t sample16 = (int16_t(sample8) * int16_t(std::abs(sample8))) << int16_t(1);
+            int16_t sample16 = (sample8 * (int16_t) std::abs(sample8)) << (int16_t) 1;
             sample16 += prevSample * int16_t(sample8 & int8_t(0x01));
 
             // Save output and move on.

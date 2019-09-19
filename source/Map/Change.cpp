@@ -88,8 +88,8 @@ static bool PIT_ChangeSector(mobj_t& thing) noexcept {
 
     gbNoFit = true;     // Can't fit
 
-    if (gbCrushChange && gbTick4) {     // Crush it?
-        DamageMObj(thing, 0, 0, 10);    // Take some damage
+    if (gbCrushChange && gbTick4) {                 // Crush it?
+        DamageMObj(thing, nullptr, nullptr, 10);    // Take some damage
 
         // Spray blood in a random direction and have it jump out
         mobj_t& mo = SpawnMObj(thing.x, thing.y, thing.z + thing.height / 2, gMObjInfo[MT_BLOOD]);
@@ -109,12 +109,12 @@ bool ChangeSector(sector_t& sector, bool bCrunch) noexcept {
     gbCrushChange = bCrunch;                // Can I crush bodies
 
     // Recheck heights for all things near the moving sector
-    int32_t x2 = sector.blockbox[BOXRIGHT];
-    int32_t y2 = sector.blockbox[BOXTOP];
-    int32_t x = sector.blockbox[BOXLEFT];
+    uint32_t x2 = sector.blockbox[BOXRIGHT];
+    uint32_t y2 = sector.blockbox[BOXTOP];
+    uint32_t x = sector.blockbox[BOXLEFT];
 
     do {
-        int32_t y = sector.blockbox[BOXBOTTOM];
+        uint32_t y = sector.blockbox[BOXBOTTOM];
         do {
             BlockThingsIterator(x, y, PIT_ChangeSector);    // Test everything
         } while (++y < y2);

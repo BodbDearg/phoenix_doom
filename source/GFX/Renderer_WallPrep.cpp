@@ -1179,7 +1179,7 @@ static uint32_t emitDrawSegColumns(const DrawSeg& drawSeg, seg_t& seg) noexcept 
     //------------------------------------------------------------------------------------------------------------------
     uint32_t numWallAndFlatCols = 0;
 
-    for (int32_t x = x1; x <= x2; ++x) {
+    for (uint32_t x = (uint32_t) x1; x <= (uint32_t) x2; ++x) {
         //--------------------------------------------------------------------------------------------------------------
         // Grab the clip bounds for this column.
         // If it is fully filled (top >= bottom) then just skip over it and go to the next step
@@ -1198,7 +1198,7 @@ static uint32_t emitDrawSegColumns(const DrawSeg& drawSeg, seg_t& seg) noexcept 
         //--------------------------------------------------------------------------------------------------------------
 
         // 1/w and w (depth)
-        const float wInv = (x < x2) ? p1InvW + invWStep * curXStepCount : p2InvW;
+        const float wInv = (x < (uint32_t) x2) ? p1InvW + invWStep * curXStepCount : p2InvW;
         const float w = 1.0f / wInv;
         const float depth = w;
 
@@ -1355,12 +1355,12 @@ static uint32_t emitDrawSegColumns(const DrawSeg& drawSeg, seg_t& seg) noexcept 
 
         if constexpr (EMIT_MID_WALL_OCCLUDER) {
             // A solid wall will gobble up the entire screen and occlude everything!
-            emitOccluderColumn<EmitOccluderMode::TOP>(x, g3dViewHeight, depth, *seg.linedef);
+            emitOccluderColumn<EmitOccluderMode::TOP>(x, (int32_t) g3dViewHeight, depth, *seg.linedef);
         } else {
             // Even if it's not asked for, if we find the column at this pixel is now
             // fully occluded then mark that as the case with an occluder column:
             if (clipBounds.top >= clipBounds.bottom) {
-                emitOccluderColumn<EmitOccluderMode::TOP>(x, g3dViewHeight, depth, *seg.linedef);
+                emitOccluderColumn<EmitOccluderMode::TOP>(x, (int32_t) g3dViewHeight, depth, *seg.linedef);
                 continue;
             }
         }

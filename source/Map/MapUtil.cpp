@@ -22,6 +22,12 @@ angle_t SlopeAngle(uint32_t num, uint32_t den) noexcept {
     return gTanToAngle[num];    // Get the angle
 }
 
+static inline angle_t SlopeAngle(int32_t num, int32_t den) noexcept {
+    ASSERT(num >= 0);
+    ASSERT(den >= 0);
+    return SlopeAngle((uint32_t) num, (uint32_t) den);
+}
+
 //----------------------------------------------------------------------------------------------------------------------
 // To get a global angle from cartesian coordinates, the coordinates are flipped until they are in the
 // first octant of the coordinate system, then the y (<=x) is scaled and divided by x to get a
@@ -127,9 +133,9 @@ bool PointOnVectorSide(Fixed x, Fixed y, const vector_t& line) noexcept {
     //------------------------------------------------------------------------------------------------------------------
     // Special case #3, Sign compares
     //------------------------------------------------------------------------------------------------------------------
-    if ((dy ^ dx ^ x ^ y) & 0x80000000UL) {     // Negative compound sign?
-        if (!((dy ^ x) & 0x80000000UL)) {       // Positive cross product?
-            bResult = false;                    // Front side is positive
+    if (((uint32_t)(dy ^ dx ^ x ^ y) & 0x80000000UL) != 0) {    // Negative compound sign?
+        if (((uint32_t)(dy ^ x) & 0x80000000UL) == 0) {         // Positive cross product?
+            bResult = false;                                    // Front side is positive
         }
         return bResult;
     }
@@ -156,13 +162,13 @@ bool PointOnVectorSide(Fixed x, Fixed y, const vector_t& line) noexcept {
 subsector_t& PointInSubsector(const Fixed x, const Fixed y) noexcept {
     // Note: there is ALWAYS a BSP tree - no checks needed on loop start!
     ASSERT(gpBSPTreeRoot);
-    const node_t* pNode = gpBSPTreeRoot;
+    node_t* pNode = gpBSPTreeRoot;
 
     while (true) {
         // Goto the child on the side of the split that the point is on.
         // Stop the loop when we encounter a subsector child:
         const uint32_t sidePointIsOn = PointOnVectorSide(x, y, pNode->Line);
-        pNode = (const node_t*) pNode->Children[sidePointIsOn];
+        pNode = (node_t*) pNode->Children[sidePointIsOn];
 
         if (isBspNodeASubSector(pNode))
             break;
@@ -227,7 +233,7 @@ uint32_t LineOpening(const line_t& linedef) noexcept {
         top -= bottom;      // Get the span (Zero for a closed door)
     }
 
-    return top;             // Return the span
+    return (uint32_t) top;  // Return the span
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -265,9 +271,8 @@ void UnsetThingPosition(mobj_t& thing) noexcept {
         if (prev) {     // Is there a previous link?
             prev->bnext = next;
         } else {
-            uint32_t blockx,blocky;
-            blockx = (thing.x - gBlockMapOriginX) >> MAPBLOCKSHIFT;     // Get the tile offsets
-            blocky = (thing.y - gBlockMapOriginY) >> MAPBLOCKSHIFT;
+            uint32_t blockx = (uint32_t)(thing.x - gBlockMapOriginX) >> MAPBLOCKSHIFT;  // Get the tile offsets
+            uint32_t blocky = (uint32_t)(thing.y - gBlockMapOriginY) >> MAPBLOCKSHIFT;
 
             if (blockx < gBlockMapWidth && blocky < gBlockMapHeight) {  // Failsafe...
                 blocky = blocky * gBlockMapWidth;
@@ -307,8 +312,8 @@ void SetThingPosition(mobj_t& thing) noexcept {
         thing.bprev = nullptr;      // No previous link
         thing.bnext = nullptr;
 
-        const uint32_t blockx = (thing.x - gBlockMapOriginX) >> MAPBLOCKSHIFT;      // Get the tile index
-        const uint32_t blocky = (thing.y - gBlockMapOriginY) >> MAPBLOCKSHIFT;
+        const uint32_t blockx = (uint32_t)(thing.x - gBlockMapOriginX) >> MAPBLOCKSHIFT;    // Get the tile index
+        const uint32_t blocky = (uint32_t)(thing.y - gBlockMapOriginY) >> MAPBLOCKSHIFT;
 
         if (blockx < gBlockMapWidth && blocky < gBlockMapHeight) {          // Failsafe
             const uint32_t blockIdx = blocky * gBlockMapWidth + blockx;

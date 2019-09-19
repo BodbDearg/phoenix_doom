@@ -190,15 +190,18 @@ uint32_t GivePower(player_t& player, const powertype_e power) noexcept {
             GiveBody(player, 100);          // Full health
             player.powers[power] = 1;       // I have the power
             break;
-
-        case pw_allmap:
-        case NUMPOWERS:
-        default: {
+        
+        case pw_allmap: {
             if (player.powers[power]) {         // Already have the power up?
                 return false;                   // Already got it, don't get it again
             }
             player.powers[power] = 1;           // Award the power up
         }   break;
+
+        case NUMPOWERS:
+        default:
+            ASSERT_LOG(false, "Unknown power!");
+            return false;
     }
 
     return true;    // Pick it up

@@ -297,6 +297,6 @@ enum {
 
 // Helper: gives the first of the 10 lumps for the specified map number
 // Assumes mapNum is in range!
-static inline uint32_t getMapStartLump(const uint32_t mapNum) {
+inline uint32_t getMapStartLump(const uint32_t mapNum) {
     return ((mapNum - 1) * ML_TOTAL) + rMAP01;
 }

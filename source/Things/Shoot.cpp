@@ -40,10 +40,10 @@ static int32_t      gSsy2;
 //----------------------------------------------------------------------------------------------------------------------
 // Returns true if strace crosses the given node successfuly
 //----------------------------------------------------------------------------------------------------------------------
-static bool PA_CrossBSPNode(const node_t* pNode) {
+static bool PA_CrossBSPNode(node_t* pNode) {
     if (isBspNodeASubSector(pNode)) {
         // N.B: pointer has to be fixed up due to prescence of a flag in the lowest bit!
-        const subsector_t* const pSubSector = reinterpret_cast<const subsector_t*>(getActualBspNodePtr(pNode));
+        const subsector_t* const pSubSector = (subsector_t*) getActualBspNodePtr(pNode);
         return PA_CrossSubsector(*pSubSector);
     }
 
@@ -51,7 +51,7 @@ static bool PA_CrossBSPNode(const node_t* pNode) {
     const bool bOnRightSide = PointOnVectorSide(gShootDiv.x, gShootDiv.y, pNode->Line);
     const uint32_t sideIdx = (bOnRightSide) ? 1 : 0;
 
-    if (!PA_CrossBSPNode((const node_t*) pNode->Children[sideIdx])) {
+    if (!PA_CrossBSPNode((node_t*) pNode->Children[sideIdx])) {
         return false;
     }
 
@@ -61,7 +61,7 @@ static bool PA_CrossBSPNode(const node_t* pNode) {
     }
 
     // Cross the ending side
-    return PA_CrossBSPNode((const node_t*) pNode->Children[sideIdx ^ 1]);
+    return PA_CrossBSPNode((node_t*) pNode->Children[sideIdx ^ 1]);
 }
 
 void P_Shoot2() noexcept {

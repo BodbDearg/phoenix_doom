@@ -81,7 +81,7 @@ static uint8_t getThingSpriteAngleForViewpoint(const mobj_t& thing, const Fixed 
 //----------------------------------------------------------------------------------------------------------------------
 // Gets the sprite frame for the given map thing and figures out if we need to draw full bright or transparent
 //----------------------------------------------------------------------------------------------------------------------
-void getSpriteDetailsForMapObj(
+static void getSpriteDetailsForMapObj(
     const mobj_t& thing,
     const Fixed viewXFrac,
     const Fixed viewYFrac,
@@ -173,7 +173,7 @@ static void transformSpriteCoordsToScreenSpace(
 //----------------------------------------------------------------------------------------------------------------------
 // Determine the light multiplier for the given thing
 //----------------------------------------------------------------------------------------------------------------------
-float determineLightMultiplierForThing(const mobj_t& thing, const bool bIsFullBright, const float depth) noexcept {
+static float determineLightMultiplierForThing(const mobj_t& thing, const bool bIsFullBright, const float depth) noexcept {
     uint32_t sectorLightLevel;
 
     if (bIsFullBright) {
@@ -396,11 +396,11 @@ static void clipAndDrawSpriteFragment(const SpriteFragment& frag) noexcept {
     // Do clipping against the top of the bounds
     float srcTexY = 0.0f;
     float srcTexYSubPixelAdjust = frag.texYSubPixelAdjust;
-    uint32_t dstY = frag.y;
+    int32_t dstY = frag.y;
     uint32_t dstCount = frag.height;
 
-    if ((int32_t) dstY <= yClipT) {
-        const uint32_t numPixelsOffscreen = (uint32_t)(yClipT - (int32_t) dstY + 1);
+    if (dstY <= yClipT) {
+        const uint32_t numPixelsOffscreen = (uint32_t)(yClipT - dstY + 1);
 
         if (numPixelsOffscreen >= dstCount)
             return;
@@ -413,7 +413,7 @@ static void clipAndDrawSpriteFragment(const SpriteFragment& frag) noexcept {
 
     // Do clipping against the bottom of the bounds
     {
-        const uint32_t endY = dstY + dstCount;
+        const uint32_t endY = (uint32_t) dstY + dstCount;
 
         if ((int32_t) endY > yClipB) {
             const uint32_t numPixelsOffscreen = (uint32_t)((int32_t) endY - yClipB);
@@ -536,7 +536,7 @@ static void drawSprite(const DrawSprite& sprite) noexcept {
     uint32_t curColNum = 0;
 
     if (curScreenX < 0) {
-        curColNum = -curScreenX;
+        curColNum = (uint32_t) -curScreenX;
         curScreenX = 0;
     }
 
@@ -577,7 +577,7 @@ static void drawSprite(const DrawSprite& sprite) noexcept {
 
             SpriteFragment frag;
             frag.x = (uint16_t) curScreenX;
-            frag.y = (uint16_t) spriteTyInt;
+            frag.y = (int16_t) spriteTyInt;
             frag.height = (uint16_t) spriteHInt;
             frag.texH = (uint16_t) texHInt;
             frag.isTransparent = (sprite.bTransparent) ? 1 : 0;
@@ -611,7 +611,7 @@ static void drawSprite(const DrawSprite& sprite) noexcept {
 
             SpriteFragment frag;
             frag.x = (uint16_t) curScreenX;
-            frag.y = (uint16_t) spriteTyInt;
+            frag.y = (int16_t) spriteTyInt;
             frag.height = (uint16_t) spriteHInt;
             frag.texH = (uint16_t) texHInt;
             frag.isTransparent = (sprite.bTransparent) ? 1 : 0;

@@ -315,8 +315,8 @@ static bool PB_CheckPosition(mobj_t& mo) noexcept {
 
     gpCheckThingMo = &mo;   // Store for PB_CheckThing
 
-    for (int32_t bx = xl; bx <= xh; bx++) {
-        for (int32_t by = yl; by <= yh; by++) {
+    for (uint32_t bx = (uint32_t) xl; bx <= (uint32_t) xh; bx++) {
+        for (uint32_t by = (uint32_t) yl; by <= (uint32_t) yh; by++) {
             if (!BlockThingsIterator(bx, by, PB_CheckThing))
                 return false;
             
