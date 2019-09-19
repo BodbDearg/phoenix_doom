@@ -221,10 +221,10 @@ Tab             = automap_toggle
 M               = automap_toggle
 F               = automap_free_cam_toggle
 X               = automap_free_cam_toggle
--               = automap_free_cam_zoom_out
-\=              = automap_free_cam_zoom_in
-Keypad -        = automap_free_cam_zoom_out
-Keypad +        = automap_free_cam_zoom_in
+-               = automap_zoom_out
+\=              = automap_zoom_in
+Keypad -        = automap_zoom_out
+Keypad +        = automap_zoom_in
 PageUp          = debug_move_camera_up
 PageDown        = debug_move_camera_down
 R               = toggle_always_run
@@ -301,7 +301,7 @@ Button_DpRight          = turn_right, menu_right
 Axis_LeftX              = strafe_left_right, menu_left_right
 Axis_LeftY              = move_forward_backward, menu_up_down
 Axis_RightX             = turn_left_right, menu_left_right
-Axis_RightY             = automap_free_cam_zoom_in_out, menu_up_down
+Axis_RightY             = automap_zoom_in_out, menu_up_down
 Axis_LeftTrigger        = run
 Axis_RightTrigger       = attack
 
@@ -797,8 +797,8 @@ static void parseSingleActionOrAxisString(
     handleGameAction("weapon_7",                    Controls::GameActions::WEAPON_7);
     handleGameAction("automap_toggle",              Controls::GameActions::AUTOMAP_TOGGLE);
     handleGameAction("automap_free_cam_toggle",     Controls::GameActions::AUTOMAP_FREE_CAM_TOGGLE);
-    handleGameAction("automap_free_cam_zoom_out",   Controls::GameActions::AUTOMAP_FREE_CAM_ZOOM_OUT);
-    handleGameAction("automap_free_cam_zoom_in",    Controls::GameActions::AUTOMAP_FREE_CAM_ZOOM_IN);
+    handleGameAction("automap_zoom_out",            Controls::GameActions::AUTOMAP_ZOOM_OUT);
+    handleGameAction("automap_zoom_in",             Controls::GameActions::AUTOMAP_ZOOM_IN);
     handleGameAction("debug_move_camera_up",        Controls::GameActions::DEBUG_MOVE_CAMERA_UP);
     handleGameAction("debug_move_camera_down",      Controls::GameActions::DEBUG_MOVE_CAMERA_DOWN);
     handleGameAction("toggle_always_run",           Controls::GameActions::TOGGLE_ALWAYS_RUN);
@@ -814,7 +814,7 @@ static void parseSingleActionOrAxisString(
     handleAxis("turn_left_right",               Controls::Axis::TURN_LEFT_RIGHT);
     handleAxis("move_forward_backward",         Controls::Axis::MOVE_FORWARD_BACK);
     handleAxis("strafe_left_right",             Controls::Axis::STRAFE_LEFT_RIGHT);
-    handleAxis("automap_free_cam_zoom_in_out",  Controls::Axis::AUTOMAP_FREE_CAM_ZOOM_IN_OUT);
+    handleAxis("automap_zoom_in_out",           Controls::Axis::AUTOMAP_ZOOM_IN_OUT);
     handleAxis("menu_up_down",                  Controls::Axis::MENU_UP_DOWN);
     handleAxis("menu_left_right",               Controls::Axis::MENU_LEFT_RIGHT);
     handleAxis("weapon_next_prev",              Controls::Axis::WEAPON_NEXT_PREV);

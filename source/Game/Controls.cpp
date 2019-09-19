@@ -15,7 +15,7 @@ static MenuActionBits   gMenuActionsJustEnded;
 static float gAxis_TurnLeftRight;
 static float gAxis_MoveForwardBack;
 static float gAxis_StrafeLeftRight;
-static float gAxis_AutomapFreeCamZoomInOut;
+static float gAxis_AutomapZoomInOut;
 static float gAxis_MenuUpDown;
 static float gAxis_MenuLeftRight;
 static float gAxis_WeaponNextPrev;
@@ -30,13 +30,13 @@ static void clearAllActionBits() noexcept {
 }
 
 static void clearAllAxes() noexcept {
-    gAxis_TurnLeftRight             = 0.0f;
-    gAxis_MoveForwardBack           = 0.0f;
-    gAxis_StrafeLeftRight           = 0.0f;
-    gAxis_AutomapFreeCamZoomInOut   = 0.0f;
-    gAxis_MenuUpDown                = 0.0f;
-    gAxis_MenuLeftRight             = 0.0f;
-    gAxis_WeaponNextPrev            = 0.0f;
+    gAxis_TurnLeftRight     = 0.0f;
+    gAxis_MoveForwardBack   = 0.0f;
+    gAxis_StrafeLeftRight   = 0.0f;
+    gAxis_AutomapZoomInOut  = 0.0f;
+    gAxis_MenuUpDown        = 0.0f;
+    gAxis_MenuLeftRight     = 0.0f;
+    gAxis_WeaponNextPrev    = 0.0f;
 }
 
 static void clearAllInputs() noexcept {
@@ -189,8 +189,8 @@ static void handleAnalogInput(const float inputValue, const Controls::AxisBits b
         gAxis_StrafeLeftRight += inputValue;
     }
 
-    if ((bindings & Controls::Axis::AUTOMAP_FREE_CAM_ZOOM_IN_OUT) != 0) {
-        gAxis_AutomapFreeCamZoomInOut += inputValue;
+    if ((bindings & Controls::Axis::AUTOMAP_ZOOM_IN_OUT) != 0) {
+        gAxis_AutomapZoomInOut += inputValue;
     }
 
     if ((bindings & Controls::Axis::MENU_UP_DOWN) != 0) {
@@ -273,8 +273,8 @@ float Axis::getValue(const AxisBits axis) noexcept {
     else if (axis == STRAFE_LEFT_RIGHT) {
         return gAxis_StrafeLeftRight;
     }
-    else if (axis == AUTOMAP_FREE_CAM_ZOOM_IN_OUT) {
-        return gAxis_AutomapFreeCamZoomInOut;
+    else if (axis == AUTOMAP_ZOOM_IN_OUT) {
+        return gAxis_AutomapZoomInOut;
     }
     else if (axis == MENU_UP_DOWN) {
         return gAxis_MenuUpDown;

@@ -58,8 +58,8 @@ namespace GameActions {
     static constexpr uint32_t WEAPON_7                      = 0x00040000u;
     static constexpr uint32_t AUTOMAP_TOGGLE                = 0x00080000u;
     static constexpr uint32_t AUTOMAP_FREE_CAM_TOGGLE       = 0x00100000u;
-    static constexpr uint32_t AUTOMAP_FREE_CAM_ZOOM_IN      = 0x00200000u;
-    static constexpr uint32_t AUTOMAP_FREE_CAM_ZOOM_OUT     = 0x00400000u;
+    static constexpr uint32_t AUTOMAP_ZOOM_IN               = 0x00200000u;
+    static constexpr uint32_t AUTOMAP_ZOOM_OUT              = 0x00400000u;
     static constexpr uint32_t OPTIONS                       = 0x00800000u;
     static constexpr uint32_t DEBUG_MOVE_CAMERA_UP          = 0x01000000u;
     static constexpr uint32_t DEBUG_MOVE_CAMERA_DOWN        = 0x02000000u;
@@ -83,14 +83,14 @@ namespace GameActions {
 typedef uint32_t AxisBits;
 
 namespace Axis {
-    static constexpr uint32_t NONE                          = 0x00000000u;
-    static constexpr uint32_t TURN_LEFT_RIGHT               = 0x00000001u;
-    static constexpr uint32_t MOVE_FORWARD_BACK             = 0x00000002u;
-    static constexpr uint32_t STRAFE_LEFT_RIGHT             = 0x00000004u;
-    static constexpr uint32_t AUTOMAP_FREE_CAM_ZOOM_IN_OUT  = 0x00000008u;
-    static constexpr uint32_t MENU_UP_DOWN                  = 0x00000010u;
-    static constexpr uint32_t MENU_LEFT_RIGHT               = 0x00000020u;
-    static constexpr uint32_t WEAPON_NEXT_PREV              = 0x00000040u;
+    static constexpr uint32_t NONE                  = 0x00000000u;
+    static constexpr uint32_t TURN_LEFT_RIGHT       = 0x00000001u;
+    static constexpr uint32_t MOVE_FORWARD_BACK     = 0x00000002u;
+    static constexpr uint32_t STRAFE_LEFT_RIGHT     = 0x00000004u;
+    static constexpr uint32_t AUTOMAP_ZOOM_IN_OUT   = 0x00000008u;
+    static constexpr uint32_t MENU_UP_DOWN          = 0x00000010u;
+    static constexpr uint32_t MENU_LEFT_RIGHT       = 0x00000020u;
+    static constexpr uint32_t WEAPON_NEXT_PREV      = 0x00000040u;
 
     // Get the value of one axis.
     // Note: can query only one axis at a time, otherwise will return 0!

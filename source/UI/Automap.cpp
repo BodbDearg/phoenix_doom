@@ -229,22 +229,25 @@ void AM_Control(player_t& player) noexcept {
         moveFracY = std::max(moveFracY, -1.0f);
         moveFracY = std::min(moveFracY, +1.0f);
 
-        float zoomFrac = -INPUT_AXIS(AUTOMAP_FREE_CAM_ZOOM_IN_OUT);
+        // Do movement
+        player.automapx += fixed16Mul(floatToFixed16(moveFracX), step);
+        player.automapy += fixed16Mul(floatToFixed16(moveFracY), step);
+    }
 
-        if (GAME_ACTION(AUTOMAP_FREE_CAM_ZOOM_OUT)) {
+    // Do zoom in/out
+    {
+        float zoomFrac = -INPUT_AXIS(AUTOMAP_ZOOM_IN_OUT);
+
+        if (GAME_ACTION(AUTOMAP_ZOOM_OUT)) {
             zoomFrac -= 1.0f;
         }
 
-        if (GAME_ACTION(AUTOMAP_FREE_CAM_ZOOM_IN)) {
+        if (GAME_ACTION(AUTOMAP_ZOOM_IN)) {
             zoomFrac += 1.0f;
         }
 
         zoomFrac = std::max(zoomFrac, -1.0f);
         zoomFrac = std::min(zoomFrac, +1.0f);
-
-        // Do movement
-        player.automapx += fixed16Mul(floatToFixed16(moveFracX), step);
-        player.automapy += fixed16Mul(floatToFixed16(moveFracY), step);
 
         // Do scaling
         if (zoomFrac < 0.0f) {
