@@ -83,7 +83,7 @@ void ExplodeMissile(mobj_t& mo) noexcept {
 //----------------------------------------------------------------------------------------------------------------------
 mobj_t& SpawnMObj(const Fixed x, const Fixed y, const Fixed z, const mobjinfo_t& info) noexcept {
     mobj_t& mObj = AllocObj<mobj_t>();          // Alloc and init object memory
-    memset(&mObj, 0, sizeof(mobj_t));
+    MemClear(mObj);
 
     mObj.InfoPtr = &info;                       // Save the type pointer
     mObj.x = x;                                 // Set the x (In Fixed pixels)
@@ -197,7 +197,7 @@ void SpawnMapThing(const mapthing_t& mthing) noexcept {
     const mobjinfo_t* pInfo = gMObjInfo;    // Get pointer to table
 
     do {
-        if (pInfo->doomednum == type) {       // Match?
+        if (pInfo->doomednum == type) {     // Match?
             // Spawn it
             Fixed z = ONFLOORZ;                     // Most of the time...
             if (pInfo->flags & MF_SPAWNCEILING) {   // Attach to ceiling or floor
@@ -206,7 +206,7 @@ void SpawnMapThing(const mapthing_t& mthing) noexcept {
             mobj_t& mObj = SpawnMObj(mthing.x, mthing.y, z, *pInfo);    // Create the object
 
             if (mObj.tics) {    // Randomize the initial tic count
-                if (mObj.tics != -1) {
+                if (mObj.tics != UINT32_MAX) {
                     mObj.tics = Random::nextU32(mObj.tics) + 1;
                 }
             }
@@ -295,7 +295,7 @@ void P_SpawnMissile(mobj_t& source, mobj_t& dest, const mobjinfo_t& info) noexce
     th.momx = (Fixed) speed * gFineCosine[an];
     th.momy = (Fixed) speed * gFineSine[an];
 
-    uint32_t dist = GetApproxDistance(dest.x - source.x, dest.y - source.y);
+    Fixed dist = GetApproxDistance(dest.x - source.x, dest.y - source.y);
     dist = dist / (Fixed)(speed << FRACBITS);   // Convert to frac
     if (dist <= 0) {                            // Prevent divide by zero
         dist = 1;

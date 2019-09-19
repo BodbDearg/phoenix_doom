@@ -193,7 +193,7 @@ static void P_PlayerMobjThink(mobj_t& mobj) noexcept {
     }
 
     // Cycle through states, calling action functions at transitions
-    if (mobj.tics != -1) {
+    if (mobj.tics != UINT32_MAX) {
         if (mobj.tics > 1) {    // Time to cycle?
             --mobj.tics;
             return;             // Not time to cycle yet

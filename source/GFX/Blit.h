@@ -177,7 +177,6 @@ namespace Blit {
 
         constexpr bool DO_X_STEP            = ((BC_FLAGS & BCF_STEP_X) != 0);
         constexpr bool DO_Y_STEP            = ((BC_FLAGS & BCF_STEP_Y) != 0);
-        constexpr bool DO_ANY_STEP          = (DO_X_STEP | DO_Y_STEP);
 
         constexpr bool DO_ALPHA_TEST        = ((BC_FLAGS & BCF_ALPHA_TEST) != 0);
         constexpr bool DO_COLOR_MULT_RGB    = ((BC_FLAGS & BCF_COLOR_MULT_RGB) != 0);
@@ -197,7 +196,6 @@ namespace Blit {
 
         constexpr bool DO_H_CLIP            = ((BC_FLAGS & BCF_H_CLIP) != 0);
         constexpr bool DO_V_CLIP            = ((BC_FLAGS & BCF_V_CLIP) != 0);
-        constexpr bool DO_ANY_CLIP          = (DO_H_CLIP | DO_V_CLIP);
 
         // Corner case: if we multiply to alpha zero then just discard everything
         if constexpr (DO_ALPHA_TEST && DO_COLOR_MULT_A) {

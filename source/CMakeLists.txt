@@ -202,4 +202,6 @@ target_link_libraries(${GAME_NAME} ${LIBSDL_NAME})
 
 if (COMPILER_MSVC)
     target_compile_options(${GAME_NAME} PRIVATE /W4)    # Enable all warnings
+elseif(COMPILER_GCC OR COMPILER_CLANG)
+    target_compile_options(${GAME_NAME} PRIVATE -pedantic -Wall)
 endif()

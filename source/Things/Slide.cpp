@@ -40,7 +40,7 @@ static mobj_t*      gpSlideThing;
 static line_t**     gppList;
 static line_t*      gpLd;
 
-static int SL_PointOnSide2(
+static uint32_t SL_PointOnSide2(
     int32_t x1,
     int32_t y1,
     const int32_t x2,
@@ -167,7 +167,7 @@ Fixed P_CompletableFrac(Fixed dx, Fixed dy) noexcept {
 
     for (int32_t bx = xl; bx <= xh; bx++) {
         for (int32_t by = yl; by <= yh; by++) {
-            BlockLinesIterator(bx, by, SL_CheckLine);
+            BlockLinesIterator((uint32_t) bx, (uint32_t) by, SL_CheckLine);
         }
     }
 
@@ -181,7 +181,7 @@ Fixed P_CompletableFrac(Fixed dx, Fixed dy) noexcept {
     return gBlockFrac;
 }
 
-int32_t SL_PointOnSide(const Fixed x, const Fixed y) noexcept {
+uint32_t SL_PointOnSide(const Fixed x, const Fixed y) noexcept {
     Fixed dx = x - gP1x;
     Fixed dy = y - gP1y;
 
@@ -258,13 +258,13 @@ void ClipToLine() noexcept {
     gP4y = gP3y + gSlideDy;
 
     // If the adjusted point is on the other side of the line, the endpoint must be checked
-    const int32_t side2 = SL_PointOnSide(gP3x, gP3y);
+    const uint32_t side2 = SL_PointOnSide(gP3x, gP3y);
 
     if (side2 == SIDE_BACK) {
         return;     // !!! ClipToPoint and slide along normal to line
     }
 
-    const int32_t side3 = SL_PointOnSide(gP4x, gP4y);
+    const uint32_t side3 = SL_PointOnSide(gP4x, gP4y);
 
     if (side3 == SIDE_ON) {
         return;     // The move goes flush with the wall
@@ -345,7 +345,7 @@ bool SL_CheckLine(line_t& ld) noexcept {
 
     gNVx = gFineSine[ld.fineangle];
     gNVy = -gFineCosine[ld.fineangle];
-    const int32_t side1 = SL_PointOnSide(gSlideX, gSlideY);
+    const uint32_t side1 = SL_PointOnSide(gSlideX, gSlideY);
 
     if (side1 == SIDE_ON) {
         return true;
@@ -421,8 +421,8 @@ void SL_CheckSpecialLines(
     gpSpecialLine = nullptr;
     ++gValidCount;
 
-    for (int32_t bx = bxl; bx <= bxh; bx++) {
-        for (int32_t by = byl; by <= byh; by++) {
+    for (uint32_t bx = (uint32_t) bxl; bx <= (uint32_t) bxh; bx++) {
+        for (uint32_t by = (uint32_t) byl; by <= (uint32_t) byh; by++) {
             for (gppList = gpBlockMapLineLists[(by * gBlockMapWidth) + bx]; gppList[0]; ++gppList) {
                 gpLd = gppList[0];
 
@@ -449,8 +449,8 @@ void SL_CheckSpecialLines(
                 const int32_t x4 = gpLd->v2.x;
                 const int32_t y4 = gpLd->v2.y;
 
-                int32_t side1 = SL_PointOnSide2(x1, y1, x3, y3, x4, y4);
-                int32_t side2 = SL_PointOnSide2(x2, y2, x3, y3, x4, y4);
+                uint32_t side1 = SL_PointOnSide2(x1, y1, x3, y3, x4, y4);
+                uint32_t side2 = SL_PointOnSide2(x2, y2, x3, y3, x4, y4);
 
                 if (side1 == side2) {
                     continue;   // Move doesn't cross line

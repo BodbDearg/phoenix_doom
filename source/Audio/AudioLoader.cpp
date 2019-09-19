@@ -198,10 +198,10 @@ static bool readSdx2CompressedSoundData(ByteInputStream& stream, AudioData& audi
     const uint16_t numChannels = audioData.numChannels;
     const uint32_t numChannelSamples = numSamples * numChannels;
 
-    uint16_t* pOutput = reinterpret_cast<uint16_t*>(audioData.pBuffer);
-    uint16_t* const pEndOutput = pOutput + numChannelSamples;
+    int16_t* pOutput = reinterpret_cast<int16_t*>(audioData.pBuffer);
+    int16_t* const pEndOutput = pOutput + numChannelSamples;
 
-    const uint8_t* pInput = reinterpret_cast<const uint8_t*>(stream.getCurData());
+    const int8_t* pInput = reinterpret_cast<const int8_t*>(stream.getCurData());
     stream.consume(numChannelSamples);
 
     // Hardcode the loop for both 1 and 2 channel cases to help speed up decoding.

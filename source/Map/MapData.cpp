@@ -252,7 +252,7 @@ static void loadLines(const uint32_t lumpResourceNum) noexcept {
         pDstLine->SidePtr[0] = &gSides[sideNum1];
         pDstLine->frontsector = pDstLine->SidePtr[0]->sector;
 
-        if (sideNum2 != -1) {
+        if (sideNum2 != UINT32_MAX) {
             // Line has a back side also
             pDstLine->SidePtr[1] = &gSides[sideNum2];
             pDstLine->backsector = pDstLine->SidePtr[1]->sector;

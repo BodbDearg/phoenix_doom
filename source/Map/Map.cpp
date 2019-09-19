@@ -318,12 +318,12 @@ void LineAttack(
             P_ShootSpecialLine(t1, *pShootline2);   // Open a door or switch?
         }
 
-        if (pShootline2->frontsector->CeilingPic==-1) {
+        if (pShootline2->frontsector->CeilingPic == UINT32_MAX) {
             if (shootz2 > pShootline2->frontsector->ceilingheight) {
                 return;     // Don't shoot the sky!
             }
 
-            if (pShootline2->backsector && pShootline2->backsector->CeilingPic == -1) {
+            if (pShootline2->backsector && pShootline2->backsector->CeilingPic == UINT32_MAX) {
                 return;     // it's a sky hack wall
             }
         }

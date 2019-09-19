@@ -11,7 +11,7 @@ extern line_t*  gpSpecialLine;
 
 void P_SlideMove(mobj_t& mo) noexcept;
 Fixed P_CompletableFrac(const Fixed dx, const Fixed dy) noexcept;
-int32_t SL_PointOnSide(const Fixed x, const Fixed y) noexcept;
+uint32_t SL_PointOnSide(const Fixed x, const Fixed y) noexcept;
 Fixed SL_CrossFrac() noexcept;
 bool CheckLineEnds() noexcept;
 void ClipToLine() noexcept;

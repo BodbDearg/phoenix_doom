@@ -18,4 +18,4 @@ namespace AudioLoader {
     // Same as 'loadFromFile' but loads the audio from a buffer instead
     //------------------------------------------------------------------------------------------------------------------
     bool loadFromBuffer(const std::byte* const pBuffer, const uint32_t bufferSize, AudioData& audioData) noexcept;
-};
+}

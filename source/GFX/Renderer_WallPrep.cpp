@@ -541,7 +541,7 @@ static uint32_t clipAndEmitWallColumn(
         }
 
         // Sanity checks
-        BLIT_ASSERT(x <= (int32_t) g3dViewWidth);
+        BLIT_ASSERT(x <= g3dViewWidth);
         BLIT_ASSERT(curZtInt <= curZbInt);
         BLIT_ASSERT(curZtInt >= 0 && curZtInt < (int32_t) g3dViewHeight);
         BLIT_ASSERT(curZbInt >= 0 && curZbInt < (int32_t) g3dViewHeight);
@@ -1081,11 +1081,6 @@ static uint32_t emitDrawSegColumns(const DrawSeg& drawSeg, seg_t& seg) noexcept 
     const float p1InvW = 1.0f / drawSeg.p1w;
     const float p2InvW = 1.0f / drawSeg.p2w;
     const float invWStep = (p2InvW - p1InvW) * xRangeDivider;
-
-    // Normalized depth
-    const float p1y = drawSeg.p1y * p1InvW;
-    const float p2y = drawSeg.p2y * p2InvW;
-    const float yStep = (p2y - p1y) * xRangeDivider;
 
     // Vertex attributes that are interpolated across the span (walls only)
     [[maybe_unused]] float p1TexX;

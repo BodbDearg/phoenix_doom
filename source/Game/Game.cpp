@@ -1,6 +1,7 @@
 #include "Game.h"
 
 #include "Base/Input.h"
+#include "Base/Mem.h"
 #include "Base/Random.h"
 #include "Data.h"
 #include "DoomMain.h"
@@ -48,7 +49,7 @@ void G_PlayerFinishLevel() noexcept {
 //----------------------------------------------------------------------------------------------------------------------
 void G_PlayerReborn() noexcept {
     player_t& player = gPlayer;
-    std::memset(&player, 0, sizeof(player));    // Zap the player
+    MemClear(player);   // Zap the player
 
     player.attackdown = 0;                                      // Don't do anything immediately
     player.playerstate = PST_LIVE;                              // I live again!

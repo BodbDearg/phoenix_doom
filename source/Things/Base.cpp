@@ -19,7 +19,7 @@ static subsector_t*     gpTestSubSec;
 static line_t*          gpCeilingLine;
 static mobj_t*          gpHitThing;
 static Fixed            gTestBBox[4];           // Bounding box for tests
-static int              gTestFlags;
+static uint32_t         gTestFlags;
 
 //----------------------------------------------------------------------------------------------------------------------
 // Float up or down at a set speed, used by flying monsters
@@ -394,7 +394,7 @@ static bool P_XYMovement(mobj_t& mo) noexcept {
             }
 
             if (mo.flags & MF_MISSILE) {    // Explode a missile
-                if (gpCeilingLine && gpCeilingLine->backsector && (gpCeilingLine->backsector->CeilingPic == -1)) {
+                if (gpCeilingLine && gpCeilingLine->backsector && (gpCeilingLine->backsector->CeilingPic == UINT32_MAX)) {
                     // Hack to prevent missiles exploding against the sky
                     P_RemoveMobj(mo);
                     return true;
@@ -457,7 +457,7 @@ static void P_MobjThinker(mobj_t& mobj) noexcept {
 
     bool bSightFlag = true;
 
-    if (mobj.tics == -1) {  // Never time out?
+    if (mobj.tics == UINT32_MAX) {  // Never time out?
         return;
     }
 

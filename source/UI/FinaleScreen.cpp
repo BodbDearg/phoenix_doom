@@ -260,7 +260,7 @@ gameaction_e F_Ticker() noexcept {
         return ga_nothing;  // Not time to change state yet
     }
 
-    if (gpCastState->Time == -1 || (!gpCastState->nextstate)) {
+    if (gpCastState->Time == UINT32_MAX || (!gpCastState->nextstate)) {
         // Switch from deathstate to next monster
         ++gCastNum;
         if (gCastNum >= CAST_COUNT) {
@@ -330,7 +330,7 @@ gameaction_e F_Ticker() noexcept {
     ASSERT(gpCastState);
     gCastTics = gpCastState->Time;          // Get the next time
 
-    if (gCastTics == -1) {
+    if (gCastTics == UINT32_MAX) {
         gCastTics = (TICKSPERSEC / 4);      // 1 second timer
     }
 

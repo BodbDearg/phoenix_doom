@@ -56,9 +56,9 @@ static void doTintEffect(const uint32_t r5, const uint32_t g5, const uint32_t b5
             const Fixed oldBFrac = intToFixed16(color & 0xFFu);
 
             // Modulate and clamp
-            const Fixed rFrac = std::min(fixed16Mul(oldRFrac, rMul), 255 * FRACUNIT);
-            const Fixed gFrac = std::min(fixed16Mul(oldGFrac, gMul), 255 * FRACUNIT);
-            const Fixed bFrac = std::min(fixed16Mul(oldBFrac, bMul), 255 * FRACUNIT);
+            const Fixed rFrac = std::min(fixed16Mul(oldRFrac, rMul), COL8_MAX_FRAC);
+            const Fixed gFrac = std::min(fixed16Mul(oldGFrac, gMul), COL8_MAX_FRAC);
+            const Fixed bFrac = std::min(fixed16Mul(oldBFrac, bMul), COL8_MAX_FRAC);
 
             // Make a framebuffer color
             const uint32_t finalColor = (

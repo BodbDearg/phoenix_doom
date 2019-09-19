@@ -188,14 +188,16 @@ uint32_t GivePower(player_t& player, const powertype_e power) noexcept {
 
         case pw_strength:                   // Berzerker pack
             GiveBody(player, 100);          // Full health
-            player.powers[power] = true;    // I have the power
+            player.powers[power] = 1;       // I have the power
             break;
 
+        case pw_allmap:
+        case NUMPOWERS:
         default: {
             if (player.powers[power]) {         // Already have the power up?
                 return false;                   // Already got it, don't get it again
             }
-            player.powers[power] = true;        // Award the power up
+            player.powers[power] = 1;           // Award the power up
         }   break;
     }
 
@@ -234,45 +236,40 @@ static uint32_t TouchSpecialThing2(mobj_t& toucher, const uint32_t sprite) noexc
         CardSound:
             break;
 
-        case rSPR_YELLOWKEYCARD: {
+        case rSPR_YELLOWKEYCARD:
             if (!player.cards[it_yellowcard]) {
                 player.message = "You pick up a yellow keycard.";
             }
             GiveCard(player, it_yellowcard);
             goto CardSound;
-        }   break;
 
-        case rSPR_REDKEYCARD: {
+        case rSPR_REDKEYCARD:
             if (!player.cards[it_redcard]) {
                 player.message = "You pick up a red keycard.";
             }
             GiveCard(player, it_redcard);
             goto CardSound;
-        }   break;
 
-        case rSPR_BLUESKULLKEY: {
+        case rSPR_BLUESKULLKEY:
             if (!player.cards[it_blueskull]) {
                 player.message = "You pick up a blue skull key.";
             }
             GiveCard(player, it_blueskull);
             goto CardSound;
-        }   break;
 
-        case rSPR_YELLOWSKULLKEY: {
+        case rSPR_YELLOWSKULLKEY:
             if (!player.cards[it_yellowskull]) {
                 player.message = "You pick up a yellow skull key.";
             }
             GiveCard(player, it_yellowskull);
             goto CardSound;
-        }   break;
 
-        case rSPR_REDSKULLKEY: {
+        case rSPR_REDSKULLKEY:
             if (!player.cards[it_redskull]) {
                 player.message = "You pick up a red skull key.";
             }
             GiveCard(player, it_redskull);
             goto CardSound;
-        }   break;
 
         // Heals
         case rSPR_STIMPACK: {   // Stim pack
@@ -389,12 +386,11 @@ void TouchSpecialThing(mobj_t& special, mobj_t& toucher) noexcept {
             player.mo->MObjHealth = i;
         }   break;
 
-        case rSPR_SOULSPHERE: {
+        case rSPR_SOULSPHERE:
             // Supercharge sphere
             player.message = "Supercharge!";
             i = 100; // Award 100 points
             goto Healthy;
-        }   break;
 
         case rSPR_ARMORBONUS: {             // Armor bonus
             i = player.armorpoints + 2;     // Can go over 100%
@@ -522,7 +518,7 @@ void TouchSpecialThing(mobj_t& special, mobj_t& toucher) noexcept {
 
         default: {  // None of the above?
             sound = TouchSpecialThing2(toucher, i);     // Try extra code
-            if (sound == -1) {                          // No good?
+            if (sound == UINT32_MAX) {                  // No good?
                 return;                                 // Exit
             }
         }   break;
@@ -644,7 +640,7 @@ void DamageMObj(
         )
     ) {
         impactAng = PointToAngle(pInflictor->x, pInflictor->y, target.x, target.y);
-        Fixed thrust = (damage * (25 * FRACUNIT)) / target.InfoPtr->mass;    // Thrust of death motion
+        Fixed thrust = ((int32_t) damage * 25 * FRACUNIT) / (int32_t) target.InfoPtr->mass;    // Thrust of death motion
 
         // Make fall forwards sometimes
         if ((damage < 40) &&

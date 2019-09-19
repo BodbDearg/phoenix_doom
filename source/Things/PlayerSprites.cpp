@@ -74,14 +74,14 @@ static constexpr state_t* WEAPON_ATTACK_STATES[NUMWEAPONS] = {
 
 // State to raise a weapon with
 static constexpr state_t* WEAPON_FLASH_STATES[NUMWEAPONS] = {
-    0,                          // Fists
+    nullptr,                    // Fists
     &gStates[S_PISTOLFLASH],    // Pistol
     &gStates[S_SGUNFLASH1],     // Shotgun
     &gStates[S_CHAINFLASH1],    // Chaingun
     &gStates[S_MISSILEFLASH1],  // Rocket launcher
     &gStates[S_PLASMAFLASH1],   // Plasma rifle
     &gStates[S_BFGFLASH1],      // BFG 9000
-    0                           // Chainsaw
+    nullptr                     // Chainsaw
 };
 
 // Player object to track (Make global to avoid passing it)
@@ -584,7 +584,7 @@ void SetupPSprites(player_t& player) noexcept {
     pspdef_t *psp = player.psprites;
 
     for (uint32_t i = 0; i < NUMPSPRITES; ++i) {
-        psp->StatePtr = 0;
+        psp->StatePtr = nullptr;
         psp->Time = UINT32_MAX;
         ++psp;
     }
@@ -602,8 +602,8 @@ void MovePSprites(player_t& player) noexcept {
     pspdef_t* psp = player.psprites;
 
     for (uint32_t i = 0; i < NUMPSPRITES; ++i) {
-        if (psp->Time != -1) {      // Never change state?
-            if (psp->Time > 1) {    // Has enough time elapsed?
+        if (psp->Time != UINT32_MAX) {      // Never change state?
+            if (psp->Time > 1) {            // Has enough time elapsed?
                 --psp->Time;
             } else {
                 SetPlayerSprite(player, (psprnum_e) i, psp->StatePtr->nextstate);   // Next state

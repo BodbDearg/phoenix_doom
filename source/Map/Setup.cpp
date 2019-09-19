@@ -275,7 +275,7 @@ static void PreloadWalls() noexcept {
     {
         uint32_t tableIdx = 0;
 
-        while (PRELOAD_TABLE[tableIdx] != -1) {
+        while (PRELOAD_TABLE[tableIdx] != UINT32_MAX) {
             Resources::loadData(PRELOAD_TABLE[tableIdx]);
             Resources::release(PRELOAD_TABLE[tableIdx]);
             ++tableIdx;

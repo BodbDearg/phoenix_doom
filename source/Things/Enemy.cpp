@@ -285,7 +285,7 @@ static void P_NewChaseDir(mobj_t& actor) noexcept {
     // Pick a direction by turning in a random order.
     // Don't choose the reverse course!
     if (Random::nextBool()) {   // Which way to go duh George?
-        int tdir = DI_EAST;
+        int32_t tdir = DI_EAST;
 
         do {
             if (tdir != (int) turnaroundDir) {      // Not backwards?
@@ -293,9 +293,9 @@ static void P_NewChaseDir(mobj_t& actor) noexcept {
                 if (P_TryWalk(actor))               // Can I go this way?
                     return;
             }
-        } while (++tdir < (DI_SOUTHEAST + 1));
+        } while (++tdir < (int32_t) DI_SOUTHEAST + 1);
     } else {
-        int tdir = DI_SOUTHEAST;
+        int32_t tdir = DI_SOUTHEAST;
 
         do {
             if (tdir != (int) turnaroundDir) {      // Not backwards?
@@ -303,7 +303,7 @@ static void P_NewChaseDir(mobj_t& actor) noexcept {
                 if (P_TryWalk(actor))               // Can I go this way?
                     return;
             }
-        } while (--tdir >= (int) DI_EAST);  // Next step
+        } while (--tdir >= (int32_t) DI_EAST);  // Next step
     }
 
     // Hmmm, the only choice left is to turn around (assuming we have a valid dir)

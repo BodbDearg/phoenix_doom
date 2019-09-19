@@ -61,7 +61,7 @@ static const char* const UNSPECIFIED_ERROR_STR = "An unspecified/unknown error h
             fatalError(UNSPECIFIED_ERROR_STR);
         }
 
-        if (numCharsWrittenOrRequired >= buffer.size()) {
+        if ((unsigned int) numCharsWrittenOrRequired >= buffer.size()) {
             buffer.resize((size_t) numCharsWrittenOrRequired + 1);
             numCharsWrittenOrRequired = vsnprintf(buffer.data(), buffer.size() + 1, pFormatStr, va_args);
 
