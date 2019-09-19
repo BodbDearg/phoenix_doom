@@ -21,7 +21,7 @@ BEGIN_NAMESPACE(Endian)
 // 3DO hardware itself were big endian, hence it made sense to store the data this way.
 //----------------------------------------------------------------------------------------------------------------------
 inline uint16_t bigToHost(const uint16_t num) {
-    #if BIG_ENDIAN
+    #if BIG_ENDIAN == 1
         return num;
     #else
         return (
@@ -32,7 +32,7 @@ inline uint16_t bigToHost(const uint16_t num) {
 }
 
 inline int16_t bigToHost(const int16_t num) {
-    #if BIG_ENDIAN
+    #if BIG_ENDIAN == 1
         return num;
     #else
         return (int16_t) bigToHost((uint16_t) num);
@@ -40,7 +40,7 @@ inline int16_t bigToHost(const int16_t num) {
 }
 
 inline uint32_t bigToHost(const uint32_t num) {
-    #if BIG_ENDIAN
+    #if BIG_ENDIAN == 1
         return num;
     #else
         return (
@@ -53,7 +53,7 @@ inline uint32_t bigToHost(const uint32_t num) {
 }
 
 inline int32_t bigToHost(const int32_t num) {
-    #if BIG_ENDIAN
+    #if BIG_ENDIAN == 1
         return num;
     #else
         return (int32_t) bigToHost((uint32_t) num);
@@ -62,7 +62,7 @@ inline int32_t bigToHost(const int32_t num) {
 
 template <class T>
 inline void convertBigToHost(T& value) noexcept {
-    #if !BIG_ENDIAN
+    #if BIG_ENDIAN != 1
         value = bigToHost(value);
     #endif
 }

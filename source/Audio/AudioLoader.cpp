@@ -103,7 +103,7 @@ static double readBigEndianExtendedFloat(ByteInputStream& stream) THROWS {
     // If not big endian, need read in reverse order to correct endianness
     uint8_t bytes[10];
 
-    #if BIG_ENDIAN
+    #if BIG_ENDIAN == 1
         for (uint32_t i = 0; i < 10; ++i) {
             bytes[i] = stream.read<uint8_t>();
         }

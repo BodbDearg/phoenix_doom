@@ -22,6 +22,8 @@ struct alignas(1) CDSectorHeader {
     }
 };
 
+static_assert(sizeof(CDSectorHeader) == 16);
+
 // CD-ROM constants
 static constexpr uint32_t CD_SECTOR_SIZE                    = 2352;
 static constexpr uint32_t CD_SECTOR_HEADER_SIZE             = sizeof(CDSectorHeader);

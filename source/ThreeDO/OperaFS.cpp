@@ -16,7 +16,7 @@ static constexpr uint32_t OPERA_BLOCK_SIZE = 2048;
 //----------------------------------------------------------------------------------------------------------------------
 // This is the header for the OperaFS disc
 //----------------------------------------------------------------------------------------------------------------------
-struct DiscHeader {
+struct alignas(4) DiscHeader {
     // Expected header constants
     static constexpr uint8_t RECORD_TYPE = 1;
     static constexpr uint8_t VERSION = 1;
@@ -49,10 +49,12 @@ struct DiscHeader {
     }
 };
 
+static_assert(sizeof(DiscHeader) == 104);
+
 //----------------------------------------------------------------------------------------------------------------------
 // Header for a directory block in a OperaFS disc
 //----------------------------------------------------------------------------------------------------------------------
-struct DirBlockHeader {
+struct alignas(4) DirBlockHeader {
     // Offset in blocks to the next block in the directory (0xFFFFFFFF or -1 if none).
     // Note: this is relative to the current directory block index!
     uint32_t nextBlock;
@@ -83,10 +85,12 @@ struct DirBlockHeader {
     }
 };
 
+static_assert(sizeof(DirBlockHeader) == 20);
+
 //----------------------------------------------------------------------------------------------------------------------
 // Directory entry in a OperaFS disc
 //----------------------------------------------------------------------------------------------------------------------
-struct DirEntry {
+struct alignas(4) DirEntry {
     // Flags for directory entries.
     // Note: all of the bits must be set in each case for the flag to be considered true.
     static constexpr uint32_t FLAGS_FILE                    = 0x00000002;
@@ -120,6 +124,8 @@ struct DirEntry {
         Endian::convertBigToHost(copyOffsets[0]);
     }
 };
+
+static_assert(sizeof(DirEntry) == 72);
 
 //----------------------------------------------------------------------------------------------------------------------
 // Represents a pending directory that must be read
