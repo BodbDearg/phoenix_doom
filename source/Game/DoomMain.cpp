@@ -43,7 +43,7 @@ static void endTickPerfProfile() noexcept {
         gPerfCounterTicksDone = 0;
 
         const uint64_t perfClocksPerSecond = SDL_GetPerformanceFrequency();
-        const double perfSeconds = (double) perfNumClocks / (double) perfClocksPerSecond;
+        const double perfSeconds = (double) perfAvgClocks / (double) perfClocksPerSecond;
         const double perfUSec = perfSeconds * 1000000.0;
         gPerfCounterAverageUSec = (uint64_t) perfUSec;
     }
