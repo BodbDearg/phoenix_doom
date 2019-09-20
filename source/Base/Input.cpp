@@ -293,6 +293,13 @@ static void handleSdlEvents() noexcept {
     }
 }
 
+static void zeroMouseMovementDeltas() noexcept {
+    gMouseMovementX = 0.0f;
+    gMouseMovementY = 0.0f;
+    gMouseWheelAxisMovements[0] = 0.0f;
+    gMouseWheelAxisMovements[1] = 0.0f;
+}
+
 void init() noexcept {
     if (SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER) != 0) {
         FATAL_ERROR("Failed to initialize the SDL joystick input subsystem!");
@@ -348,10 +355,11 @@ void shutdown() noexcept {
     SDL_QuitSubSystem(SDL_INIT_JOYSTICK);
 }
 
-void update() noexcept {    
-    consumeEvents();        // Released/pressed events are now cleared
-    handleSdlEvents();      // Process events that SDL is sending to us
-    centerMouse();          // Ensure the mouse remains centered
+void update() noexcept {
+    zeroMouseMovementDeltas();      // Cancel any mouse movement deltas unless we get more
+    consumeEvents();                // Released/pressed events are now cleared
+    handleSdlEvents();              // Process events that SDL is sending to us
+    centerMouse();                  // Ensure the mouse remains centered
 }
 
 void consumeEvents() noexcept {
