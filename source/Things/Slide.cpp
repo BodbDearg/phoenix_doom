@@ -153,7 +153,7 @@ Fixed P_CompletableFrac(Fixed dx, Fixed dy) noexcept {
     xl = std::max(xl, 0);
     yl = std::max(yl, 0);
 
-    if (xh <= 0 && yh <= 0) {
+    if (xh >= 0 && yh >= 0) {
         if (xh >= (int32_t) gBlockMapWidth) {
             xh = (int32_t) gBlockMapWidth - 1;
         }
