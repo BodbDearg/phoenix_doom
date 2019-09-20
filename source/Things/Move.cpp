@@ -6,6 +6,7 @@
 #include "Map/MapData.h"
 #include "Map/MapUtil.h"
 #include "MapObj.h"
+#include <algorithm>
 
 bool        gbTryMove2;         // Result from P_TryMove2
 bool        gbFloatOk;          // If true, move would be ok if within tmfloorz - tmceilingz
@@ -138,27 +139,24 @@ void PM_CheckPosition() noexcept {
     int32_t yl = (gTmpBBox[BOXBOTTOM] - gBlockMapOriginY - MAXRADIUS) >> MAPBLOCKSHIFT;
     int32_t yh = (gTmpBBox[BOXTOP] - gBlockMapOriginY + MAXRADIUS) >> MAPBLOCKSHIFT;
 
-    if (xl < 0) {
-        xl = 0;
-    }
+    xl = std::max(xl, 0);
+    yl = std::max(yl, 0);
 
-    if (yl < 0) {
-        yl = 0;
-    }
+    if (xh >= 0 && yh >= 0) {
+        if (xh >= (int32_t) gBlockMapWidth) {
+            xh = (int32_t) gBlockMapWidth - 1;
+        }
 
-    if (xh >= (int32_t) gBlockMapWidth) {
-        xh = (int32_t) gBlockMapWidth - 1;
-    }
+        if (yh >= (int32_t) gBlockMapHeight) {
+            yh = (int32_t) gBlockMapHeight - 1;
+        }
 
-    if (yh >= (int32_t) gBlockMapHeight) {
-        yh = (int32_t) gBlockMapHeight - 1;
-    }
-
-    for (uint32_t bx = (uint32_t) xl; bx <= (uint32_t) xh; bx++) {
-        for (uint32_t by = (uint32_t) yl; by <= (uint32_t) yh; by++) {
-            if (!BlockThingsIterator(bx, by, PIT_CheckThing)) {
-                gbTryMove2 = false;
-                return;
+        for (uint32_t bx = (uint32_t) xl; bx <= (uint32_t) xh; bx++) {
+            for (uint32_t by = (uint32_t) yl; by <= (uint32_t) yh; by++) {
+                if (!BlockThingsIterator(bx, by, PIT_CheckThing)) {
+                    gbTryMove2 = false;
+                    return;
+                }
             }
         }
     }
@@ -169,27 +167,24 @@ void PM_CheckPosition() noexcept {
     yl = (gTmpBBox[BOXBOTTOM] - gBlockMapOriginY) >> MAPBLOCKSHIFT;
     yh = (gTmpBBox[BOXTOP] - gBlockMapOriginY) >> MAPBLOCKSHIFT;
 
-    if (xl < 0) {
-        xl = 0;
-    }
+    xl = std::max(xl, 0);
+    yl = std::max(yl, 0);
 
-    if (yl < 0) {
-        yl = 0;
-    }
+    if (xh >= 0 && yh >= 0) {
+        if (xh >= (int32_t) gBlockMapWidth) {
+            xh = (int32_t) gBlockMapWidth - 1;
+        }
 
-    if (xh >= (int32_t) gBlockMapWidth) {
-        xh = (int32_t) gBlockMapWidth - 1;
-    }
+        if (yh >= (int32_t) gBlockMapHeight) {
+            yh = (int32_t) gBlockMapHeight - 1;
+        }
 
-    if (yh >= (int32_t) gBlockMapHeight) {
-        yh = (int32_t) gBlockMapHeight - 1;
-    }
-
-    for (uint32_t bx = (uint32_t) xl; bx <= (uint32_t) xh; bx++) {
-        for (uint32_t by = (uint32_t) yl; by <= (uint32_t) yh; by++) {
-            if (!BlockLinesIterator(bx, by, PM_CrossCheck)) {
-                gbTryMove2 = false;
-                return;
+        for (uint32_t bx = (uint32_t) xl; bx <= (uint32_t) xh; bx++) {
+            for (uint32_t by = (uint32_t) yl; by <= (uint32_t) yh; by++) {
+                if (!BlockLinesIterator(bx, by, PM_CrossCheck)) {
+                    gbTryMove2 = false;
+                    return;
+                }
             }
         }
     }

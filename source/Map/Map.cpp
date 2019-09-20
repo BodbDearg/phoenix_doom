@@ -15,6 +15,7 @@
 #include "Things/MapObj.h"
 #include "Things/Move.h"
 #include "Things/Shoot.h"
+#include <algorithm>
 
 mobj_t*     gpLineTarget;
 mobj_t*     gpTmpThing;
@@ -163,20 +164,20 @@ void P_UseLines(player_t& player) noexcept {
     int32_t xl = (gUseBBox[BOXLEFT] - gBlockMapOriginX) >> MAPBLOCKSHIFT;
     ++xh;   // For < compare later
     ++yh;
-
-    ASSERT(xl >= 0);
-    ASSERT(xh >= 0);
-    ASSERT(yl >= 0);
-    ASSERT(yh >= 0);
-
+    
+    xl = std::max(xl, 0);
+    yl = std::max(yl, 0);
+    
     gpCloseLine = nullptr;      // No line found
     gCloseDist = FRACUNIT;      // 1.0 units distance
     ++gValidCount;              // Make unique sector mark
 
     // Check the lines
-    for (uint32_t y = (uint32_t) yl; y < (uint32_t) yh; ++y) {
-        for (uint32_t x = (uint32_t) xl; x < (uint32_t) xh; ++x) {
-            BlockLinesIterator(x, y, PIT_UseLines);
+    if (xh >= 0 && yh >= 0) {
+        for (uint32_t y = (uint32_t) yl; y < (uint32_t) yh; ++y) {
+            for (uint32_t x = (uint32_t) xl; x < (uint32_t) xh; ++x) {
+                BlockLinesIterator(x, y, PIT_UseLines);
+            }
         }
     }
 
@@ -236,20 +237,20 @@ void RadiusAttack(mobj_t& spot, mobj_t* source, const uint32_t damage) noexcept 
     int32_t xl = (spot.x - dist - gBlockMapOriginX) >> MAPBLOCKSHIFT;
     ++xh;
     ++yh;
-
-    ASSERT(xl >= 0);
-    ASSERT(xh >= 0);
-    ASSERT(yl >= 0);
-    ASSERT(yh >= 0);
-
+    
     gpBombSpot = &spot;         // Copy to globals so PIT_Radius can see it
     gpBombSource = source;
     gBombDamage = damage;
 
     // Damage all things in collision range
-    for (uint32_t y = (uint32_t) yl; y < (uint32_t) yh; ++y) {
-        for (uint32_t x = (uint32_t) xl; x < (uint32_t) xh; ++x) {
-            BlockThingsIterator(x, y, PIT_RadiusAttack);
+    xl = std::max(xl, 0);
+    yl = std::max(yl, 0);
+    
+    if (yh >= 0 && xh >= 0) {
+        for (uint32_t y = (uint32_t) yl; y < (uint32_t) yh; ++y) {
+            for (uint32_t x = (uint32_t) xl; x < (uint32_t) xh; ++x) {
+                BlockThingsIterator(x, y, PIT_RadiusAttack);
+            }
         }
     }
 }

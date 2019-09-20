@@ -5,6 +5,7 @@
 #include "Map/MapData.h"
 #include "Map/MapUtil.h"
 #include "MapObj.h"
+#include <algorithm>
 
 static constexpr int32_t    CLIPRADIUS  = 23;
 static constexpr uint32_t   SIDE_ON     = 0;
@@ -149,25 +150,22 @@ Fixed P_CompletableFrac(Fixed dx, Fixed dy) noexcept {
     int32_t yl = (gEndBox[BOXBOTTOM] - gBlockMapOriginY) >> MAPBLOCKSHIFT;
     int32_t yh = (gEndBox[BOXTOP] - gBlockMapOriginY) >> MAPBLOCKSHIFT;
 
-    if (xl < 0) {
-        xl = 0;
-    }
+    xl = std::max(xl, 0);
+    yl = std::max(yl, 0);
 
-    if (yl < 0) {
-        yl = 0;
-    }
+    if (xh <= 0 && yh <= 0) {
+        if (xh >= (int32_t) gBlockMapWidth) {
+            xh = (int32_t) gBlockMapWidth - 1;
+        }
 
-    if (xh >= (int32_t) gBlockMapWidth) {
-        xh = (int32_t) gBlockMapWidth - 1;
-    }
+        if (yh >= (int32_t) gBlockMapHeight) {
+            yh = (int32_t) gBlockMapHeight - 1;
+        }
 
-    if (yh >= (int32_t) gBlockMapHeight) {
-        yh = (int32_t) gBlockMapHeight - 1;
-    }
-
-    for (int32_t bx = xl; bx <= xh; bx++) {
-        for (int32_t by = yl; by <= yh; by++) {
-            BlockLinesIterator((uint32_t) bx, (uint32_t) by, SL_CheckLine);
+        for (int32_t bx = xl; bx <= xh; bx++) {
+            for (int32_t by = yl; by <= yh; by++) {
+                BlockLinesIterator((uint32_t) bx, (uint32_t) by, SL_CheckLine);
+            }
         }
     }
 
