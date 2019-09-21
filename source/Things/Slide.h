@@ -1,24 +1,19 @@
 #pragma once
 
+#include "Base/Macros.h"
 #include "Base/Fixed.h"
 
 struct line_t;
 struct mobj_t;
 
-extern Fixed    gSlideX;    // The final position
-extern Fixed    gSlideY;
-extern line_t*  gpSpecialLine;
+BEGIN_NAMESPACE(Slide)
 
-void P_SlideMove(mobj_t& mo) noexcept;
-Fixed P_CompletableFrac(const Fixed dx, const Fixed dy) noexcept;
-uint32_t SL_PointOnSide(const Fixed x, const Fixed y) noexcept;
-Fixed SL_CrossFrac() noexcept;
-bool CheckLineEnds() noexcept;
-void ClipToLine() noexcept;
-bool SL_CheckLine(line_t& ld) noexcept;
-void SL_CheckSpecialLines(
-    const int32_t x1,
-    const int32_t y1,
-    const int32_t x2,
-    const int32_t y2
-) noexcept;
+extern Fixed    gSlideX;            // The final position
+extern Fixed    gSlideY;
+extern line_t*  gpSpecialLine;      // A line we may have activated
+
+void init() noexcept;
+void shutdown() noexcept;
+void doSliding(mobj_t& mo) noexcept;
+
+END_NAMESPACE(Slide)

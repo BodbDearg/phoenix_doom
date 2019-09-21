@@ -68,15 +68,15 @@ static void P_PlayerMove(mobj_t& mo) noexcept {
 
     // DC: added a noclip cheat
     if ((mo.flags & MF_NOCLIP) != 0) {
-        gSlideX = mo.x + momx * 4;
-        gSlideY = mo.y + momy * 4;
+        Slide::gSlideX = mo.x + momx * 4;
+        Slide::gSlideY = mo.y + momy * 4;
     } else {
-        P_SlideMove(mo);    // Slide the player ahead
+        Slide::doSliding(mo);   // Slide the player ahead
     }
 
-    if (gSlideX != mo.x || gSlideY != mo.y) {       // No motion at all?
-        if (P_TryMove(mo, gSlideX, gSlideY)) {      // Can I move?
-            goto dospecial;                         // Movement OK, just special and exit
+    if (Slide::gSlideX != mo.x || Slide::gSlideY != mo.y) {         // No motion at all?
+        if (P_TryMove(mo, Slide::gSlideX, Slide::gSlideY)) {        // Can I move?
+            goto dospecial;                                         // Movement OK, just special and exit
         }
     }
 
@@ -106,8 +106,8 @@ static void P_PlayerMove(mobj_t& mo) noexcept {
     }
 
 dospecial:
-    if (gpSpecialLine) {                            // Did a line get crossed?
-        P_CrossSpecialLine(*gpSpecialLine, mo);     // Call the special event
+    if (Slide::gpSpecialLine) {                             // Did a line get crossed?
+        P_CrossSpecialLine(*Slide::gpSpecialLine, mo);      // Call the special event
     }
 }
 
@@ -184,13 +184,8 @@ static void P_PlayerZMovement(mobj_t& mo) noexcept {
 //----------------------------------------------------------------------------------------------------------------------
 static void P_PlayerMobjThink(mobj_t& mobj) noexcept {
     // Momentum movement
-    if ((mobj.momx != 0) || (mobj.momy != 0)) {     // Any x,y motion?
-        P_PlayerXYMovement(mobj);                   // Move in a 2D sense
-    }
-
-    if ((mobj.z != mobj.floorz) || (mobj.momz != 0)) {  // Any z momentum?
-        P_PlayerZMovement(mobj);
-    }
+    P_PlayerXYMovement(mobj);
+    P_PlayerZMovement(mobj);
 
     // Cycle through states, calling action functions at transitions
     if (mobj.tics != UINT32_MAX) {
