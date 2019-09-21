@@ -19,6 +19,8 @@
 #include "Map/Specials.h"
 #include "Things/Base.h"
 #include "Things/MapObj.h"
+#include "Things/Shoot.h"
+#include "Things/Slide.h"
 #include "Things/User.h"
 #include "UI/Automap.h"
 #include "UI/OptionsMenu.h"
@@ -281,6 +283,8 @@ void P_Start() noexcept {
     AM_Start();                     // Start the automap system
     ST_Start();                     // Init the status bar this level
     G_DoLoadLevel();                // Load a level into memory
+    Slide::init();
+    Shoot::init();
     Random::init();                 // Reset the random number generator
     Cheats::init();                 // Cheat keypress checking
     PlayerCalcHeight(gPlayer);      // Required for the view to be at the right height for the screen wipe
@@ -299,6 +303,8 @@ void P_Start() noexcept {
 void P_Stop() noexcept {
     Cheats::shutdown();
     S_StopSong();
+    Slide::shutdown();
+    Shoot::shutdown();
     ST_Stop();                  // Release the status bar memory
     ReleaseMapMemory();         // Release all the map's memory
     PurgeLineSpecials();        // Release the memory for line specials

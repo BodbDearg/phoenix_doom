@@ -269,11 +269,11 @@ Fixed AimLineAttack(mobj_t& t1, const angle_t angle, const Fixed distance) noexc
     gAimBottomSlope = -100 * FRACUNIT / 160;
     ++gValidCount;
 
-    P_Shoot2();     // Call other code
-    gpLineTarget = gpShootMObj;
+    Shoot::P_Shoot2();                      // Call other code
+    gpLineTarget = Shoot::gpShootMObj;
 
-    if (gpLineTarget) {         // Was there a valid hit?
-        return gShootSlope;     // Return the slope of target
+    if (gpLineTarget) {                     // Was there a valid hit?
+        return Shoot::gShootSlope;          // Return the slope of target
     }
 
     return 0;   // No target
@@ -304,13 +304,13 @@ void LineAttack(
     }
 
     ++gValidCount;
-    P_Shoot2();                     // Perform the calculations
-    gpLineTarget = gpShootMObj;     // Get the result
+    Shoot::P_Shoot2();                      // Perform the calculations
+    gpLineTarget = Shoot::gpShootMObj;      // Get the result
 
-    const Fixed shootx2 = gShootX;
-    const Fixed shooty2 = gShootY;
-    const Fixed shootz2 = gShootZ;
-    line_t* const pShootline2 = gpShootLine;
+    const Fixed shootx2 = Shoot::gShootX;
+    const Fixed shooty2 = Shoot::gShootY;
+    const Fixed shootz2 = Shoot::gShootZ;
+    line_t* const pShootline2 = Shoot::gpShootLine;
 
     // Shooting things: did we hit a thing?
     if (gpLineTarget) {

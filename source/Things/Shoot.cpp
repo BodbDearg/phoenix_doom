@@ -7,6 +7,9 @@
 #include "Map/MapUtil.h"
 #include "MapObj.h"
 #include <algorithm>
+#include <vector>
+
+BEGIN_NAMESPACE(Shoot)
 
 //----------------------------------------------------------------------------------------------------------------------
 // Input values:
@@ -22,20 +25,35 @@ Fixed       gShootX;
 Fixed       gShootY;
 Fixed       gShootZ;        // Location for puff/blood
 
-// Temps
-static Fixed        gAimMidSlope;           // For detecting first wall hit
-static vector_t     gShootDiv;
-static Fixed        gShootX2;
-static Fixed        gShootY2;
-static Fixed        gFirstLineFrac;
-static bool         gbShootDivPositive;
-static Fixed        gOldFrac;
-static void*        gpOldValue;
-static bool         gOldIsLine;
-static int32_t      gSsx1;
-static int32_t      gSsy1;
-static int32_t      gSsx2;
-static int32_t      gSsy2;
+//----------------------------------------------------------------------------------------------------------------------
+// Represents a possible hit with something being shit.
+// Stores the hit fraction and the thing hit, and whether it is a thing or a line.
+// Also supports sorting, so we process the closest hit first!
+//----------------------------------------------------------------------------------------------------------------------
+struct Intercept {
+    Fixed   frac;
+    void*   pObj;
+    bool    bIsLine;
+
+    inline bool operator < (const Intercept& other) noexcept {
+        return (frac < other.frac);
+    }
+};
+
+static std::vector<Intercept>   gIntercepts;
+static Fixed                    gAimMidSlope;           // For detecting first wall hit
+static vector_t                 gShootDiv;
+static Fixed                    gShootX2;
+static Fixed                    gShootY2;
+static Fixed                    gFirstLineFrac;
+static bool                     gbShootDivPositive;
+static Fixed                    gOldFrac;
+static void*                    gpOldValue;
+static bool                     gOldIsLine;
+static int32_t                  gSsx1;
+static int32_t                  gSsy1;
+static int32_t                  gSsx2;
+static int32_t                  gSsy2;
 
 //----------------------------------------------------------------------------------------------------------------------
 // Returns true if strace crosses the given node successfuly
@@ -62,6 +80,36 @@ static bool PA_CrossBSPNode(node_t* pNode) {
 
     // Cross the ending side
     return PA_CrossBSPNode((node_t*) pNode->Children[sideIdx ^ 1]);
+}
+
+static bool PA_DoIntercept(void* pValue, bool isLine, Fixed frac) noexcept {
+    if (gOldFrac < frac) {
+        std::swap(gpOldValue, pValue);
+        std::swap(gOldIsLine, isLine);
+        std::swap(gOldFrac, frac);
+    }
+
+    if (frac == 0 || frac >= FRACUNIT)
+        return true;
+
+    ASSERT(pValue);
+    
+    if (isLine) {
+        line_t* const pLine = (line_t*) pValue;
+        return PA_ShootLine(*pLine, frac);
+    } else {
+        mobj_t* const pThing = (mobj_t*) pValue;
+        return PA_ShootThing(*pThing, frac);
+    }
+}
+
+void init() noexcept {
+    gIntercepts.reserve(64);
+}
+
+void shutdown() noexcept {
+    gIntercepts.clear();
+    gIntercepts.shrink_to_fit();
 }
 
 void P_Shoot2() noexcept {
@@ -114,27 +162,6 @@ void P_Shoot2() noexcept {
     gShootZ = gShootZ + fixed16Mul(gAimMidSlope, fixed16Mul(gFirstLineFrac, gAttackRange));
 }
 
-bool PA_DoIntercept(void* pValue, bool isLine, Fixed frac) noexcept {
-    if (gOldFrac < frac) {
-        std::swap(gpOldValue, pValue);
-        std::swap(gOldIsLine, isLine);
-        std::swap(gOldFrac, frac);
-    }
-
-    if (frac == 0 || frac >= FRACUNIT)
-        return true;
-
-    ASSERT(pValue);
-    
-    if (isLine) {
-        line_t* const pLine = (line_t*) pValue;
-        return PA_ShootLine(*pLine, frac);
-    }
-
-    mobj_t* const pThing = (mobj_t*) pValue;
-    return PA_ShootThing(*pThing, frac);
-}
-
 bool PA_ShootLine(line_t& li, const Fixed interceptfrac) noexcept {
     if ((li.flags & ML_TWOSIDED) == 0) {
         if (!gpShootLine) {
@@ -146,23 +173,40 @@ bool PA_ShootLine(line_t& li, const Fixed interceptfrac) noexcept {
         return false;
     }
 
-    // Crosses a two sided line
-    sector_t* const pFrontSec = li.frontsector;
-    sector_t* const pBackSec = li.backsector;
+    // Crosses a two sided line make sure the line has a gap that can be shot through first
+    sector_t& frontSec = *li.frontsector;
+    sector_t& backSec = *li.backsector;
+
+    {
+        Fixed maxFloor = std::max(frontSec.floorheight, backSec.floorheight);
+        Fixed minCeil = std::min(frontSec.ceilingheight, backSec.ceilingheight);
+
+        if (maxFloor >= minCeil) {
+            // No gap/opening: don't shoot anything past this
+            if (!gpShootLine) {
+                gpShootLine = &li;
+                gFirstLineFrac = interceptfrac;
+            }
+
+            gOldFrac = 0;
+            return false;
+        }
+    }
     
+    // Do the rest of the shooting logic
     Fixed opentop;
     Fixed openbottom;
 
-    if (pFrontSec->ceilingheight < pBackSec->ceilingheight) {
-        opentop = pFrontSec->ceilingheight;
+    if (frontSec.ceilingheight < backSec.ceilingheight) {
+        opentop = frontSec.ceilingheight;
     } else {
-        opentop = pBackSec->ceilingheight;
+        opentop = backSec.ceilingheight;
     }
 
-    if (pFrontSec->floorheight > pBackSec->floorheight) {
-        openbottom = pFrontSec->floorheight;
+    if (frontSec.floorheight > backSec.floorheight) {
+        openbottom = frontSec.floorheight;
     } else {
-        openbottom = pBackSec->floorheight;
+        openbottom = backSec.floorheight;
     }
 
     const Fixed dist = fixed16Mul(gAttackRange, interceptfrac);
@@ -295,6 +339,9 @@ Fixed PA_SightCrossLine(const line_t& line) noexcept {
 // Returns true if strace crosses the given subsector successfuly
 //----------------------------------------------------------------------------------------------------------------------
 bool PA_CrossSubsector(const subsector_t& sub) noexcept {
+    // Ensure this list is clear before we begin
+    gIntercepts.clear();
+    
     // Check lines
     {
         seg_t* pSeg = sub.firstline;
@@ -308,19 +355,26 @@ bool PA_CrossSubsector(const subsector_t& sub) noexcept {
             line.validCount = gValidCount;
             const Fixed frac = PA_SightCrossLine(line);
 
-            if (frac < 0 || frac > FRACUNIT)
+            if (frac <=  0 || frac > FRACUNIT)
                 continue;
 
-            if (!PA_DoIntercept(&line, true, frac))
-                return false;
+            Intercept intercept;
+            intercept.frac = frac;
+            intercept.bIsLine = true;
+            intercept.pObj = &line;
+
+            gIntercepts.push_back(intercept);
         }
     }
 
-    // Check things
+    // Check things in the sector
     for (mobj_t* pThing = sub.sector->thinglist; pThing != nullptr; pThing = pThing->snext) {
         if (pThing->subsector != &sub)
             continue;
 
+        if ((pThing->flags & MF_SHOOTABLE) == 0)
+            continue;
+        
         // Check a corner to corner crossection for hit
         vertex_t thingLineV1;
         vertex_t thingLineV2;
@@ -339,12 +393,26 @@ bool PA_CrossSubsector(const subsector_t& sub) noexcept {
 
         const Fixed frac = PA_SightCrossLine(thingLineV1, thingLineV2);
 
-        if (frac < 0 || frac > FRACUNIT)
+        if (frac <= 0 || frac > FRACUNIT)
             continue;
 
-        if (!PA_DoIntercept(pThing, false, frac))
+        Intercept intercept;
+        intercept.frac = frac;
+        intercept.bIsLine = false;
+        intercept.pObj = pThing;
+
+        gIntercepts.push_back(intercept);
+    }
+
+    // Start processing intercepts, with the closest first
+    std::sort(gIntercepts.begin(), gIntercepts.end());
+
+    for (const Intercept& intercept : gIntercepts) {
+        if (!PA_DoIntercept(intercept.pObj, intercept.bIsLine, intercept.frac))
             return false;
     }
 
-    return true;    // Passed the subsector ok
+    return true;            // Passed the subsector ok
 }
+
+END_NAMESPACE(Shoot)
