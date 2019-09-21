@@ -520,8 +520,8 @@ void doSliding(mobj_t& mo) noexcept {
 
         const Fixed newMomXFrac = gSlideX - gpSlideThing->x;
         const Fixed newMomYFrac = gSlideY - gpSlideThing->y;
-        const float newMomX = fixed16ToFloat(mo.momx);
-        const float newMomY = fixed16ToFloat(mo.momy);
+        const float newMomX = fixed16ToFloat(newMomXFrac);
+        const float newMomY = fixed16ToFloat(newMomYFrac);
 
         const float origMomAmt = std::sqrtf(origMomX * origMomX + origMomY * origMomY);
         const float newMomAmt = std::sqrtf(newMomX * newMomX + newMomY * newMomY);

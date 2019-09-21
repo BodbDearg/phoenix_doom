@@ -47,7 +47,7 @@ result_e T_MovePlane(
                 }
                 return pastdest;                            // Went too far! (Stop motion)
             } else {
-                sector.floorheight = lastpos-speed;         // Adjust the motion
+                sector.floorheight = lastpos - speed;       // Adjust the motion
                 if (ChangeSector(sector, bCrush)) {         // Place it
                     sector.floorheight = lastpos;           // Put it back
                     ChangeSector(sector, bCrush);           // Crush...
@@ -102,7 +102,7 @@ result_e T_MovePlane(
                 }
                 return pastdest;
             } else {
-                sector.ceilingheight = lastpos+speed;       // Move it
+                sector.ceilingheight = lastpos + speed;     // Move it
                 ChangeSector(sector, bCrush);               // Squish if needed
             }
         }
