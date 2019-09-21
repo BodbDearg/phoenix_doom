@@ -253,7 +253,8 @@ bool isSegCollidableDuringSlide(const seg_t& seg) noexcept {
     if (stepUp > MAX_STEP_UP) {
         // This is a large step up that could be blocking.
         // Only consider it blocking however if the player can't step up at current it's height:
-        const Fixed playerStepUp = bsec.floorheight - gpSlideThing->floorz;
+        const Fixed playerZ = std::max(gpSlideThing->z, gpSlideThing->floorz);
+        const Fixed playerStepUp = bsec.floorheight - playerZ;
 
         if (playerStepUp > MAX_STEP_UP)
             return true;
@@ -264,7 +265,7 @@ bool isSegCollidableDuringSlide(const seg_t& seg) noexcept {
     // The player may need to drop in order to pass through...
     constexpr Fixed MIN_SECTOR_GAP = intToFixed16(56);
 
-    const Fixed maxFloor = std::max(std::max(fsec.floorheight, bsec.floorheight), gpSlideThing->floorz);
+    const Fixed maxFloor = std::max(std::max(fsec.floorheight, bsec.floorheight), gpSlideThing->z);
     const Fixed minCeil = std::min(fsec.ceilingheight, bsec.ceilingheight);
     const Fixed gapBetweenSectors = minCeil - maxFloor;
 
