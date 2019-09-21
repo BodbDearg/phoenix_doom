@@ -5,6 +5,7 @@
 #include "Map/Map.h"
 #include "Map/MapData.h"
 #include "Map/MapUtil.h"
+#include "Map/Sight.h"
 #include "MapObj.h"
 #include <algorithm>
 #include <vector>
@@ -99,7 +100,13 @@ static bool PA_DoIntercept(void* pValue, bool isLine, Fixed frac) noexcept {
         return PA_ShootLine(*pLine, frac);
     } else {
         mobj_t* const pThing = (mobj_t*) pValue;
-        return PA_ShootThing(*pThing, frac);
+
+        // DC: must check for line of sight now because I sweep in all of the things in a sector when visiting it's subsector
+        if (CheckSight(*gpShooter, *pThing)) {
+            return PA_ShootThing(*pThing, frac);
+        } else {
+            return true;
+        }
     }
 }
 
@@ -367,41 +374,52 @@ bool PA_CrossSubsector(const subsector_t& sub) noexcept {
         }
     }
 
-    // Check things in the sector
-    for (mobj_t* pThing = sub.sector->thinglist; pThing != nullptr; pThing = pThing->snext) {
-        if (pThing->subsector != &sub)
-            continue;
+    // Check things in the sector if we haven't already checked this sector.
+    //
+    // Note: this code used to just check things only in the current subsector but I expanded it to the current
+    // sector to fix a few bugs with not being able to shoot things, most notably an area in MAP21 after the teleport
+    // yellow through the yellow door where you cannot shoot monsters at a certain spot to the right...
+    //
+    // A result of this inclusion of all sector things however is that we must check for line of sight before
+    // accepting a thing hit, which seems a fair enough tradeoff in the name of correctness (we aren't as CPU starved these days).
+    //
+    sector_t& sector = *sub.sector;
 
-        if ((pThing->flags & MF_SHOOTABLE) == 0)
-            continue;
-        
-        // Check a corner to corner crossection for hit
-        vertex_t thingLineV1;
-        vertex_t thingLineV2;
+    if (sector.validcount != gValidCount) {
+        sector.validcount = gValidCount;
 
-        if (gbShootDivPositive) {
-            thingLineV1.x = pThing->x - pThing->radius;
-            thingLineV1.y = pThing->y + pThing->radius;
-            thingLineV2.x = pThing->x + pThing->radius;
-            thingLineV2.y = pThing->y - pThing->radius;
-        } else {
-            thingLineV1.x = pThing->x - pThing->radius;
-            thingLineV1.y = pThing->y - pThing->radius;
-            thingLineV2.x = pThing->x + pThing->radius;
-            thingLineV2.y = pThing->y + pThing->radius;
+        for (mobj_t* pThing = sector.thinglist; pThing != nullptr; pThing = pThing->snext) {           
+            if ((pThing->flags & MF_SHOOTABLE) == 0)
+                continue;
+            
+            // Check a corner to corner crossection for hit
+            vertex_t thingLineV1;
+            vertex_t thingLineV2;
+
+            if (gbShootDivPositive) {
+                thingLineV1.x = pThing->x - pThing->radius;
+                thingLineV1.y = pThing->y + pThing->radius;
+                thingLineV2.x = pThing->x + pThing->radius;
+                thingLineV2.y = pThing->y - pThing->radius;
+            } else {
+                thingLineV1.x = pThing->x - pThing->radius;
+                thingLineV1.y = pThing->y - pThing->radius;
+                thingLineV2.x = pThing->x + pThing->radius;
+                thingLineV2.y = pThing->y + pThing->radius;
+            }
+
+            const Fixed frac = PA_SightCrossLine(thingLineV1, thingLineV2);
+
+            if (frac <= 0 || frac > FRACUNIT)
+                continue;
+
+            Intercept intercept;
+            intercept.frac = frac;
+            intercept.bIsLine = false;
+            intercept.pObj = pThing;
+
+            gIntercepts.push_back(intercept);
         }
-
-        const Fixed frac = PA_SightCrossLine(thingLineV1, thingLineV2);
-
-        if (frac <= 0 || frac > FRACUNIT)
-            continue;
-
-        Intercept intercept;
-        intercept.frac = frac;
-        intercept.bIsLine = false;
-        intercept.pObj = pThing;
-
-        gIntercepts.push_back(intercept);
     }
 
     // Start processing intercepts, with the closest first

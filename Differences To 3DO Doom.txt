@@ -21,6 +21,9 @@ There was a bug in the 3DO code for monsters that caused very different AI behav
 [] Added 'fake contrast' to walls to improve lighting and allow the player to identify wall corners easier.
 Similar in concept to the original PC Doom fake contrast but works with walls of all angles, like options available in some modern Doom source ports.
 
+[] Rewrote and improved the wall sliding logic to prevent annoying 'sticking' to walls.
+You now should be able to smoothly slide across walls of all angles (and even certain things, except monsters) without 'sticking'.
+
 [] Fixed some bugs with movement speeds & timing issues.
 3DO Doom changed the timebase from 35Hz on the PC original to 60Hz but introduced a few bugs along the way. Some issues I've found and fixed include:
     [] 'Thing' movement due to momentum/velocity being too fast.
@@ -89,3 +92,5 @@ The issue could be observed on Map 07 (Computer Station) in the section in betwe
 
 [] Can now zoom in & out on the automap without exiting follow mode.
 This brings the automap more in line with the PC version and makes it easier to zoom in/out.
+
+[] Fixed a bug from the 3DO version where there was a 'dead zone' that you couldn't shoot monsters near. This apparent dead zone could be found by going through the yellow door and taking the teleport to the raised room. Shooting through the windows in this room to the right would sometimes not result in monsters being hit. This is now fixed.

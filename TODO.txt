@@ -15,8 +15,5 @@ Perhaps the build tools that generated this texture failed somehow for that part
 - A switch on the 'Limbo' level is not working; it does nothing when you attempt to interact with it.
 Appears to be the same on the 3DO too, level design bug? It's functional on PC, though I'm not sure exactly what it does.
 
-- Can damage enemies sometimes through walls and doors with explosions from rockets etc.
-This bug was in the 3DO version also, might be able to fix this though!
-
 - In some cases sprites can clip through walls or be clipped by walls when they shouldn't be.
 The cases where this happens are similar to both PC and 3DO Doom; it's due to the limitations of the sprite clipping technique used.
