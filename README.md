@@ -2,7 +2,7 @@
 
 A backport & remaster of 3DO DOOM for Windows, MacOS and Linux.
 
-![alt text](PhoenixDoomBanner.png "Phoenix Doom")
+![alt text](docs/PhoenixDoomBanner.png "I went through hell to bring you this source port...")
 
 ## About this project
 
@@ -12,6 +12,6 @@ See the following documents for more info on the project:
 
 - [How to play & configuring](docs/How%20To%20Play.md)
 - [Differences to 3DO Doom](docs/Differences%20To%203DO%20Doom.md)
-- [Q&A / about the project]
-- [License / Copyright]
-- [Credits]
+- [Q&A / about the project](docs/Q%38A.md)
+- [Credits](docs/Credits.md)
+- [License / Copyright](docs/License%20%38%20Copyright.md)
