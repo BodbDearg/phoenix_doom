@@ -216,8 +216,8 @@ static bool readSdx2CompressedSoundData(ByteInputStream& stream, AudioData& audi
             const int8_t sampleR8 = pInput[1];
 
             // Compute this sample's actual value via the SDX2 encoding mechanism
-            int16_t sampleL16 = (int16_t)((sampleL8 * (int16_t) std::abs(sampleL8)) << 1);
-            int16_t sampleR16 = (int16_t)((sampleR8 * (int16_t) std::abs(sampleR8)) << 1);
+            int16_t sampleL16 = (int16_t)((sampleL8 * (int16_t) std::abs(sampleL8)) * 2);
+            int16_t sampleR16 = (int16_t)((sampleR8 * (int16_t) std::abs(sampleR8)) * 2);
             sampleL16 += prevSampleL * int16_t(sampleL8 & int8_t(0x01));
             sampleR16 += prevSampleR * int16_t(sampleR8 & int8_t(0x01));
 

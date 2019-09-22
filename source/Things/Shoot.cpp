@@ -36,7 +36,7 @@ struct Intercept {
     void*   pObj;
     bool    bIsLine;
 
-    inline bool operator < (const Intercept& other) noexcept {
+    inline bool operator < (const Intercept& other) const noexcept {
         return (frac < other.frac);
     }
 };
