@@ -365,6 +365,82 @@ if (PLATFORM_MAC)
     )
 endif()
 
+if (PLATFORM_LINUX)
+    list(APPEND SOURCE_FILES
+        "${INCLUDE_DIR}/SDL_config_linux.h"
+        "${SRC_DIR}/audio/alsa/SDL_alsa_audio.c"
+        "${SRC_DIR}/audio/alsa/SDL_alsa_audio.h"
+        "${SRC_DIR}/core/linux/SDL_dbus.c"
+        "${SRC_DIR}/core/linux/SDL_dbus.h"
+        "${SRC_DIR}/core/linux/SDL_evdev.c"
+        "${SRC_DIR}/core/linux/SDL_evdev.h"
+        "${SRC_DIR}/core/linux/SDL_evdev_kbd.c"
+        "${SRC_DIR}/core/linux/SDL_evdev_kbd.h"
+        "${SRC_DIR}/core/linux/SDL_evdev_kbd_default_accents.h"
+        "${SRC_DIR}/core/linux/SDL_evdev_kbd_default_keymap.h"
+        "${SRC_DIR}/core/linux/SDL_fcitx.c"
+        "${SRC_DIR}/core/linux/SDL_fcitx.h"
+        "${SRC_DIR}/core/linux/SDL_ibus.c"
+        "${SRC_DIR}/core/linux/SDL_ibus.h"
+        "${SRC_DIR}/core/linux/SDL_ime.c"
+        "${SRC_DIR}/core/linux/SDL_ime.h"
+        "${SRC_DIR}/core/linux/SDL_threadprio.c"
+        "${SRC_DIR}/core/linux/SDL_udev.c"
+        "${SRC_DIR}/core/linux/SDL_udev.h"
+        "${SRC_DIR}/core/unix/SDL_poll.c"
+        "${SRC_DIR}/core/unix/SDL_poll.h"
+        "${SRC_DIR}/filesystem/unix/SDL_sysfilesystem.c"
+        "${SRC_DIR}/haptic/linux/SDL_syshaptic.c"
+        "${SRC_DIR}/joystick/linux/SDL_sysjoystick.c"
+        "${SRC_DIR}/joystick/linux/SDL_sysjoystick_c.h"
+        "${SRC_DIR}/thread/pthread/SDL_syscond.c"
+        "${SRC_DIR}/thread/pthread/SDL_sysmutex.c"
+        "${SRC_DIR}/thread/pthread/SDL_sysmutex_c.h"
+        "${SRC_DIR}/thread/pthread/SDL_syssem.c"
+        "${SRC_DIR}/thread/pthread/SDL_systhread.c"
+        "${SRC_DIR}/thread/pthread/SDL_systhread_c.h"
+        "${SRC_DIR}/thread/pthread/SDL_systls.c"
+        "${SRC_DIR}/timer/unix/SDL_systimer.c"
+        "${SRC_DIR}/video/x11/edid-parse.c"
+        "${SRC_DIR}/video/x11/edid.h"
+        "${SRC_DIR}/video/x11/imKStoUCS.c"
+        "${SRC_DIR}/video/x11/imKStoUCS.h"
+        "${SRC_DIR}/video/x11/SDL_x11clipboard.c"
+        "${SRC_DIR}/video/x11/SDL_x11clipboard.h"
+        "${SRC_DIR}/video/x11/SDL_x11dyn.c"
+        "${SRC_DIR}/video/x11/SDL_x11dyn.h"
+        "${SRC_DIR}/video/x11/SDL_x11events.c"
+        "${SRC_DIR}/video/x11/SDL_x11events.h"
+        "${SRC_DIR}/video/x11/SDL_x11framebuffer.c"
+        "${SRC_DIR}/video/x11/SDL_x11framebuffer.h"
+        "${SRC_DIR}/video/x11/SDL_x11keyboard.c"
+        "${SRC_DIR}/video/x11/SDL_x11keyboard.h"
+        "${SRC_DIR}/video/x11/SDL_x11messagebox.c"
+        "${SRC_DIR}/video/x11/SDL_x11messagebox.h"
+        "${SRC_DIR}/video/x11/SDL_x11modes.c"
+        "${SRC_DIR}/video/x11/SDL_x11modes.h"
+        "${SRC_DIR}/video/x11/SDL_x11mouse.c"
+        "${SRC_DIR}/video/x11/SDL_x11mouse.h"
+        "${SRC_DIR}/video/x11/SDL_x11opengl.c"
+        "${SRC_DIR}/video/x11/SDL_x11opengl.h"
+        "${SRC_DIR}/video/x11/SDL_x11opengles.c"
+        "${SRC_DIR}/video/x11/SDL_x11opengles.h"
+        "${SRC_DIR}/video/x11/SDL_x11shape.c"
+        "${SRC_DIR}/video/x11/SDL_x11shape.h"
+        "${SRC_DIR}/video/x11/SDL_x11sym.h"
+        "${SRC_DIR}/video/x11/SDL_x11touch.c"
+        "${SRC_DIR}/video/x11/SDL_x11touch.h"
+        "${SRC_DIR}/video/x11/SDL_x11video.c"
+        "${SRC_DIR}/video/x11/SDL_x11video.h"
+        "${SRC_DIR}/video/x11/SDL_x11vulkan.c"
+        "${SRC_DIR}/video/x11/SDL_x11vulkan.h"
+        "${SRC_DIR}/video/x11/SDL_x11window.c"
+        "${SRC_DIR}/video/x11/SDL_x11window.h"
+        "${SRC_DIR}/video/x11/SDL_x11xinput2.c"
+        "${SRC_DIR}/video/x11/SDL_x11xinput2.h"
+    )
+endif()
+
 add_library(${LIBSDL_NAME} ${SOURCE_FILES} ${OTHER_FILES})
 setup_source_groups("${SOURCE_FILES}" "${OTHER_FILES}")
 
@@ -405,5 +481,22 @@ if (PLATFORM_MAC)
         ${FORCE_FEEDBACK_FRAMEWORK}
         ${IO_KIT_FRAMEWORK}
         ${METAL_FRAMEWORK}
+    )
+endif()
+
+if (PLATFORM_LINUX)
+    include_directories("${BASE_DIR}/wayland-protocols")
+    
+    target_link_libraries(${LIBSDL_NAME}
+        asound
+        dl
+        pthread
+        X11
+        Xcursor
+        Xext
+        Xi
+        Xinerama
+        Xrandr
+        Xxf86vm
     )
 endif()

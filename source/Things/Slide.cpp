@@ -524,14 +524,14 @@ void doSliding(mobj_t& mo) noexcept {
         const float newMomX = fixed16ToFloat(newMomXFrac);
         const float newMomY = fixed16ToFloat(newMomYFrac);
 
-        const float origMomAmt = std::sqrtf(origMomX * origMomX + origMomY * origMomY);
-        const float newMomAmt = std::sqrtf(newMomX * newMomX + newMomY * newMomY);
+        const float origMomAmt = std::sqrt(origMomX * origMomX + origMomY * origMomY);
+        const float newMomAmt = std::sqrt(newMomX * newMomX + newMomY * newMomY);
 
         if (newMomAmt > origMomAmt) {
             // New momentum too much! Renormalize first before reapplying:
             const float renormalize = origMomAmt / newMomAmt;
-            const float fixedNewMomX = fixed16ToFloat(mo.momx);
-            const float fixedNewMomY = fixed16ToFloat(mo.momy);
+            const float fixedNewMomX = fixed16ToFloat(mo.momx) * renormalize;
+            const float fixedNewMomY = fixed16ToFloat(mo.momy) * renormalize;
 
             mo.momx = floatToFixed16(fixedNewMomX);
             mo.momy = floatToFixed16(fixedNewMomY);

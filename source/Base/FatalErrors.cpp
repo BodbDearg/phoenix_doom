@@ -48,13 +48,14 @@ static constexpr const char* const UNSPECIFIED_ERROR_STR = "An unspecified/unkno
         fatalError(UNSPECIFIED_ERROR_STR);
     }
     else {
-        va_list va_args;
-        va_start(va_args, pFormatStr);
-
         const size_t guessBufferLength = (std::strlen(pFormatStr) + 1) * 2;
         std::vector<char> buffer;
         buffer.resize(guessBufferLength);
+
+        va_list va_args;
+        va_start(va_args, pFormatStr);
         int numCharsWrittenOrRequired = vsnprintf(buffer.data(), buffer.size(), pFormatStr, va_args);
+        va_end(va_args);
 
         if (numCharsWrittenOrRequired < 0) {
             // A return value of < 0 from 'vsnprintf' indicates an error!
@@ -63,7 +64,10 @@ static constexpr const char* const UNSPECIFIED_ERROR_STR = "An unspecified/unkno
 
         if ((unsigned int) numCharsWrittenOrRequired >= buffer.size()) {
             buffer.resize((size_t) numCharsWrittenOrRequired + 1);
-            numCharsWrittenOrRequired = vsnprintf(buffer.data(), buffer.size() + 1, pFormatStr, va_args);
+
+            va_start(va_args, pFormatStr);
+            numCharsWrittenOrRequired = vsnprintf(buffer.data(), buffer.size(), pFormatStr, va_args);
+            va_end(va_args);
 
             if (numCharsWrittenOrRequired < 0) {
                 // A return value of < 0 from 'vsnprintf' indicates an error!
