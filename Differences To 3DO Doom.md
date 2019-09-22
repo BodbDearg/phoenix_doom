@@ -8,25 +8,25 @@ Example: 640x400, 960x600 etc.
 - **Framebuffer is now 32-bit instead of 16-bit.**
 This allows for smoother light gradients and less color banding.
 
-- **Improved texture mapping and renderer temporal stability**
+- **Improved texture mapping and renderer temporal stability.**
 Textures, walls and sprites are now much more temporally coherent and 'wiggle' around less. Texture mapping on the walls in particular is much improved and gets rid of the 'fuzzing' from the 3DO version where the y pixel values continuously jump up and down on every wall column.
 
-- **Upgraded lighting and light diminishing effects**
+- **Upgraded lighting and light diminishing effects.**
 The contrast between light and dark areas has been increased greatly and the game looks less washed out compared to the original. The light diminishing effect is also now much higher quality and looks almost like a fog/darkness shroud; it no longer looks like a series of darkening/tint strips being overlaid horizontally across the screen in a fixed manner.
 
-- **Sprites no longer appear unnaturally bright**
+- **Sprites no longer appear unnaturally bright.**
 3DO Doom seemed to light all sprites much brighter than the environment surrounding them. This may have been due to the lookup values that it used to light the sprites - perhaps they were too high? The darkness of sprites in this version much more closely mimics the environment lighting and sprites hopefully blend in much better.
 
-- **Fixed a bug with monsters often being very slow to target the player at range**
+- **Fixed a bug with monsters often being very slow to target the player at range.**
 There was a bug in the 3DO code for monsters that caused very different AI behavior to the Jag and PC versions - now fixed. At longer distances monsters would sometimes be very reluctant to shoot at the player, sometimes taking up to a minute to do so. Monsters should be much more aggressive and challenging to play against now.
 
-- **Added 'fake contrast' to walls to improve lighting and allow the player to identify wall corners easier**
+- **Added 'fake contrast' to walls to improve lighting and allow the player to identify wall corners easier.**
 Similar in concept to the original PC Doom fake contrast but works with walls of all angles, like options available in some modern Doom source ports.
 
-- **Rewrote and improved the wall sliding logic to prevent annoying 'sticking' to walls**
+- **Rewrote and improved the wall sliding logic to prevent annoying 'sticking' to walls.**
 You now should be able to smoothly slide across walls of all angles (and even certain things, except monsters) without 'sticking'.
 
-- **Fixed some bugs with movement speeds & timing issues**
+- **Fixed some bugs with movement speeds & timing issues.**
 3DO Doom changed the timebase from 35Hz on the PC original to 60Hz but introduced a few bugs along the way. Some issues I've found and fixed include:
     - 'Thing' movement due to momentum/velocity being too fast.
     Observed this first with the imp, with its super fast fireballs! (much faster than PC Doom)
@@ -36,65 +36,65 @@ You now should be able to smoothly slide across walls of all angles (and even ce
     This made it almost impossible for instance to collect all the bonus items in a secret room on the 'Military Base' map. This room is located past the blue door and has a series of high up platforms that have to be jumped across in order to get the bonus items.
     - Pulsing lights cycling up and down too fast.
 
-- **Updated the 2nd page of the options screen**
+- **Updated the 2nd page of the options screen.**
 Removed the 3DO specific control configurations in the options screen (no longer applicable).
 Replaced control options instead with a 'quit' command that allows quitting back to the main menu or exiting the game entirely.
 
-- **Fixed a bug that was in 3DO Doom where you could damage enemies through walls with explosions from rockets etc**
+- **Fixed a bug that was in 3DO Doom where you could damage enemies through walls with explosions from rockets etc.**
 Radius damage now requires a clear line of sight to the source of the damage/explosion.
 
-- **Fixed sprite rendering issues where sometimes the edges (top, bottom, left, right) of sprites would be cut off**
+- **Fixed sprite rendering issues where sometimes the edges (top, bottom, left, right) of sprites would be cut off.**
 Very noticeable at times with the top of monster's heads or bottom of barrels being cut off; now fixed.
 
-- **Can exit out of the finale back to the main menu once the end text has shown**
+- **Can exit out of the finale back to the main menu once the end text has shown.**
 Use the menu 'back' key to do this (ESC/BACKSPACE in default key bindings).
 
-- **Added PC Doom style keyboard cheats (IDDQD, IDFKA, IDCLIP, IDCLEV etc.)**
+- **Added PC Doom style keyboard cheats (IDDQD, IDFKA, IDCLIP, IDCLEV etc.).**
 Added a lot more cheats also, see the config.ini generated by the game for all of them.
 Cheats can now also be done both in-game and on the automap.
 
-- **Fixed the following weapons being noticeably slower to fire vs the pc version and other ports like PSX**
+- **Fixed the following weapons being noticeably slower to fire vs the pc version and other ports like PSX.**
     - Pistol
     - Chaingun
     - Rocket launcher
 
-- **Fixed the following weapons being slightly slower to fire vs the pc version**
+- **Fixed the following weapons being slightly slower to fire vs the pc version.**
     - Fists
     - Chainsaw
     - Shotgun
     - Plasma Rifle
     - BFG
 
-- **Fixed a bug where punching things made no punch sound**
+- **Fixed a bug where punching things made no punch sound.**
 Not sure why this happened, there was no code to play the sound in the 3DO version but the sound existed. Now fixed.
 
-- **Fixed bugs where muzzle flashes were out of sync with weapon sprites**
+- **Fixed bugs where muzzle flashes were out of sync with weapon sprites.**
 The issue was most noticeable on the chaingun but also occurred on other weapons like the pistol and shotgun.
 
-- **Post processing FX is applied to the player's weapon in addition to the 3D environment**
+- **Post processing FX is applied to the player's weapon in addition to the 3D environment.**
 In the original 3DO version the player's weapon was exempt from the invulnerability effect and screen tints. I added this change to help improve the immersiveness of the effect; looked odd that the weapon was excluded!
 
-- **Transparent sprites no longer look like a single flat color**
+- **Transparent sprites no longer look like a single flat color.**
 I believe the 3DO version may have been trying to do transparency that didn't just look like a single flat color but ultimately couldn't due to the limited color precision of the framebuffer. This is now easy to fix given that the framebuffer has been moved to 32-bit.
 
-- **Screen tint FX method changed and minor tweaks applied**
+- **Screen tint FX method changed and minor tweaks applied.**
 I switched from the 3DO technique of doing a blend with a solid color to doing a color multiply instead. The intent with this change is to hopefully help preserve color detail and prevent the 3D display from looking washed out when heavy amounts of FX are applied.
 
-- **Removed the maximum screen size restriction**
+- **Removed the maximum screen size restriction.**
 No longer have to use a cheat to access this!
 
-- **Fixed some inconsistencies in the simulation between high vs low framerates**
+- **Fixed some inconsistencies in the simulation between high vs low framerates.**
 This could be observed on stuff like the view bob, where the bob amount would be large at low framerates but very little at high framerates.
 To fix this I removed logic that simulates a variable number of ticks per frame and instead do a fixed time step update of game logic at all times (like PC Doom).
 
-- **Fixed an occasional bug where if you sometimes killed a monster under a door, the gore puddle would become blocking**
+- **Fixed an occasional bug where if you sometimes killed a monster under a door, the gore puddle would become blocking.**
 The issue would occur if the monster was squashed by the door while playing it's death anim and sometimes this problem could would prevent you from passing through narrow doors! This bug was present on the 3DO version but does not happen on PC Doom. Fixed by removing the 'blocking' attribute of the enemy when it is being crushed.
 
-- **Fix a bug (from the 3DO version) where auto aiming would sometimes try to shoot through completely raised platforms that have no gap to shoot through**
+- **Fix a bug (from the 3DO version) where auto aiming would sometimes try to shoot through completely raised platforms that have no gap to shoot through.**
 The issue could be observed on Map 07 (Computer Station) in the section in between the two slime pits (just past two steps) where an octagonal platform is present. In this situation the game was trying to shoot at monsters inside the octagon pillar before it was lowered by the trap trigger. This is now fixed.
 
-- **Can now zoom in & out on the automap without exiting follow mode**
+- **Can now zoom in & out on the automap without exiting follow mode.**
 This brings the automap more in line with the PC version and makes it easier to zoom in/out.
 
-- **Fixed a bug from the 3DO version where there was a 'dead zone' on MAP21 (Mt. Erebus) that you couldn't shoot monsters through**
+- **Fixed a bug from the 3DO version where there was a 'dead zone' on MAP21 (Mt. Erebus) that you couldn't shoot monsters through.**
 This apparent dead zone could be found by going through the yellow door and taking the teleport to the raised room. Shooting through the windows in this room to the right would sometimes not result in monsters being hit. This is now fixed.
