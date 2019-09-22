@@ -1,5 +1,4 @@
 # Phoenix Doom
 ======
 
-!(https://github.com/BodbDearg/phoenix_doom/raw/master/PhoenixDoomBanner.png)
-
+![alt text](https://github.com/BodbDearg/phoenix_doom/raw/master/PhoenixDoomBanner.png "Phoenix Doom")
