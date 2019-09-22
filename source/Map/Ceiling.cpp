@@ -248,6 +248,7 @@ bool EV_CeilingCrushStop(line_t& line) noexcept {
 // Reset the master ceiling pointer; called from InitThinkers
 //----------------------------------------------------------------------------------------------------------------------
 void ResetCeilings() noexcept {
-    // FIXME: DC: Is this a memory leak?
-    gpMainCeilingPtr = nullptr;  // Discard the links
+    // Discard the links.
+    // Note: this is NOT a leak - the memory is cleaned up when cleaning up thinkers.
+    gpMainCeilingPtr = nullptr;
 }

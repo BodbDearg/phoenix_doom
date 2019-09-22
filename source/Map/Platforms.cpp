@@ -254,6 +254,7 @@ void EV_StopPlat(line_t& line) noexcept {
 // Reset the master plat pointer; called from InitThinkers
 //----------------------------------------------------------------------------------------------------------------------
 void ResetPlats() noexcept {
-    // FIXME: DC: Investigate if this is a leak
-    gpMainPlatPtr = nullptr;    // Forget about the linked list
+    // Forget about the linked list.
+    // Note: this is NOT a leak - the memory is cleaned up when cleaning up thinkers.
+    gpMainPlatPtr = nullptr;
 }

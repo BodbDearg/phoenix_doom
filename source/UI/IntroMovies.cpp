@@ -34,8 +34,12 @@ static void shutdownMovie() noexcept {
     }
 
     gMovieAudioSampleRate = 0;
-    delete gpVidDecoderState;
-    gpVidDecoderState = nullptr;
+    
+    if (gpVidDecoderState) {
+        MovieDecoder::shutdownVideoDecoder(*gpVidDecoderState);
+        delete gpVidDecoderState;
+        gpVidDecoderState = nullptr;
+    }
 }
 
 //----------------------------------------------------------------------------------------------------------------------
