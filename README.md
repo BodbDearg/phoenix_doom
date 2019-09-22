@@ -12,6 +12,6 @@ See the following documents for more info on the project:
 
 - [How to play & configuring](docs/How%20To%20Play.md)
 - [Differences to 3DO Doom](docs/Differences%20To%203DO%20Doom.md)
-- [Q&A / about the project](docs/Q%38A.md)
+- [Q&A / about the project](docs/Q%26A.md)
 - [Credits](docs/Credits.md)
-- [License / Copyright](docs/License%20%38%20Copyright.md)
+- [License / Copyright](docs/License%20%26%20Copyright.md)
