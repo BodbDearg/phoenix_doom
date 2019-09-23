@@ -1,7 +1,7 @@
 # License & Copyright
 
 ## Source Code License
-The source code of Phoenix Doom, it's build scripts and any documents that I have created are available under the MIT license; see the [LICENSE](LICENSE) file for more details. Please note that this source license applies **_only_** to these materials.
+The source code of Phoenix Doom, it's build scripts and any documents that I have created are available under the MIT license; see the [LICENSE](/LICENSE) file for more details. Please note that this source license applies **_only_** to these materials.
 
 Any third party libraries provided are licensed the terms of those libraries.
 
