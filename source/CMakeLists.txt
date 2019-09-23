@@ -210,6 +210,10 @@ if (PLATFORM_WINDOWS)
     set_property(TARGET ${GAME_NAME} PROPERTY WIN32_EXECUTABLE true)
 endif()
 
+if (PLATFORM_MAC)
+    SET_TARGET_PROPERTIES(${GAME_NAME} PROPERTIES MACOSX_BUNDLE TRUE)
+endif()
+
 if (PLATFORM_LINUX)
     target_compile_options(${GAME_NAME} PRIVATE -pthread)
 endif()
