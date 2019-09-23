@@ -1,79 +1,19 @@
-doom3do
-=======
+# Phoenix DOOM
 
-The complete archive for DOOM for the 3DO
-=========================================
+A backport & remaster of 3DO DOOM for Windows, MacOS and Linux.
 
-Yes, this is the infamous port of DOOM for the 3DO. Firstly, this
-was the product of ten intense weeks of work due to the fact that
-I was misled about the state of the port when I was offered
-the project. I was told that there was a version in existance
-with new levels, weapons and features and it only needed "polishing"
-and optimization to hit the market. After numerous requests
-for this version, I found out that there was no such thing and
-that Art Data Interactive was under the false impression that
-all anyone needed to do to port a game from one platform to
-another was just to compile the code and adding weapons
-was as simple as dropping in the art.
+![alt text](docs/PhoenixDoomBanner.png "I went through hell to bring you this source port...")
 
-Uh... No...
+## About This Project
 
-My friends at 3DO were begging for DOOM to be on their platform and with 
-christmas 1995 coming soon (I took this job in August of 1995, with a
-mid October golden master date), I literally lived in my office, only taking
-breaks to take a nap and got this port completed.
+Phoenix DOOM is a project derived from the [3DO DOOM source code release by Rebecca Ann Heineman](https://github.com/Olde-Skuul/doom3do). The aim of this project is to allow the original 3DO version of DOOM to be played on modern operating systems with enhancements, bug fixes and other quality of life improvements. The idea is to improve upon and remaster the original while still preserving its primary essence.
 
-Shortcuts made...
-=================
+See the following documents for more info on the project:
 
-I had no time to port the music driver, so I had a band that Art Data hired
-to redo the music so all I needed to do is call a streaming audio function
-to play the music. This turned out to be an excellent call because while
-the graphics were lackluster, the music got rave reviews.
-
-3DO's operating system was designed around running an app and purging, there
-was numerous bugs caused by memory leaks. So when I wanted to load the Logicware
-and id software logos on startup, the 3DO leaked the memory so to
-solve that, I created two apps, one to draw the 3do logo and the other to
-show the logicware logo. After they executed, they were purged from memory
-and the main game could run without loss of memory.
-
-There was a Electronic Arts logo movie in the data, because there was a time that
-EA was going to be distributing the game, however the deal fell through.
-
-The vertical walls were drawn with strips using the cell engine. However, the 
-cell engine can't handle 3D perspective so the floors and ceilings were drawn
-with software rendering. I simply ran out of time to translate the code
-to use the cell engine because the implementation I had caused texture tearing.
-
-I had to write my own string.h ANSI C library because the one 3DO supplied
-with their compiler had bugs! string.h??? How can you screw that up!?!?! They
-did! I spent a day writing all of the functions I needed in ARM 6 assembly.
-
-This game used Burgerlib 2. My first "C" version of Burgerlib because Burgerlib
-was originally written in 65816 for the SNES and the Apple IIgs. If you
-check out Burgerlib 5 (The current version, also on github), you'd notice
-that some code is still in use.
-
-I hope that everyone who looks at this code, learns something from it, and
-I'd be happy to answer questions about the hell I went through to make this
-game. I only wished I had more time to actually polish this back in 1995 so
-instead of being the worst port of DOOM, it would have been the best one.
-
-And one more thing...
-=====================
-
-The intellectual property of DOOM is the exclusive property of ZeniMax. 
-No transfer of the intellectual property of DOOM or any transfer of the
-ownership of the sounds, art or other game assets are given nor implied.
-If anyone wishes to release a version of DOOM 3DO commercially, contact
-ZeniMax for a license.
-
-The source code... Go for it.
-
-Rebecca Ann Heineman
-
-Olde Skuul
-
-Seattle, WA
-
+- [How To Play & Configuring](docs/How%20To%20Play.md)
+- [Differences To 3DO DOOM](docs/Differences%20To%203DO%20DOOM.md)
+- [Q&A / About The Project](docs/Q%26A.md)
+- [Known Issues](docs/Known%20Issues.md)
+- [Credits](docs/Credits.md)
+- [License / Copyright](docs/License%20%26%20Copyright.md)
+- [Building The Code / Development](docs/Building%20The%20Code.md)

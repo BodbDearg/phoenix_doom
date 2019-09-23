@@ -180,7 +180,6 @@ set(SOURCE_FILES
 )
 
 set(OTHER_FILES
-    "../TODO.txt"
 )
 
 # Platform specific sources
