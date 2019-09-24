@@ -7,7 +7,7 @@
 //----------------------------------------------------------------------------------------------------------------------
 
 // Game version string
-#define GAME_VERSION_STR "1.0.0"
+#define GAME_VERSION_STR "1.0.1"
 
 // These affect the folder that save data and config preferences go into:
 static constexpr const char* const SAVE_FILE_ORG = "com.codelobster";
