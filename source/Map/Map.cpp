@@ -216,7 +216,7 @@ static bool PIT_RadiusAttack(mobj_t& thing) noexcept {
     if (dist < (int32_t) gBombDamage) {
         // DC: Bugfix to the original 3DO Doom: check for line of sight before applying damage.
         // In the original 3DO Doom you could damage stuff through walls with rockets! (wasn't like that in PC Doom)
-        if (CheckSight(thing, *gpBombSpot)) {
+        if (CheckSight(thing, *gpBombSpot, false)) {
             DamageMObj(thing, gpBombSpot, gpBombSource, gBombDamage - (uint32_t) dist);
         }
     }

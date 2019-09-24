@@ -176,16 +176,20 @@ static bool PS_CrossBSPNode(node_t* const pNode) noexcept {
 //----------------------------------------------------------------------------------------------------------------------
 // Returns true if a straight line between t1 and t2 is unobstructed
 //----------------------------------------------------------------------------------------------------------------------
-bool CheckSight(mobj_t& t1, mobj_t& t2) noexcept {
-    // Check for trivial rejection
-    const uint32_t s1 = (uint32_t)(t1.subsector->sector - gpSectors);
-    const uint32_t s2 = (uint32_t)(t2.subsector->sector - gpSectors);
-    const uint32_t pnum = s1 * gNumSectors + s2;
-    const uint32_t bytenum = pnum >> 3;
-    const uint32_t bitnum = 1 << (pnum & 7);
+bool CheckSight(mobj_t& t1, mobj_t& t2, const bool bUseRejectMap) noexcept {
+    // Check for trivial rejection.
+    // DC: Made this check optional however, because it is not entirely reliable for the 3DO map data...
+    if (bUseRejectMap) {
+        const uint32_t s1 = (uint32_t)(t1.subsector->sector - gpSectors);
+        const uint32_t s2 = (uint32_t)(t2.subsector->sector - gpSectors);
+        const uint32_t pnum = s1 * gNumSectors + s2;
+        const uint32_t bytenum = pnum >> 3;
+        const uint32_t bitnum = 1 << (pnum & 7);
 
-    if ((gpRejectMatrix[bytenum] & bitnum) != 0) {
-        return false;   // Can't possibly be connected
+        if ((gpRejectMatrix[bytenum] & bitnum) != 0) {
+            // Can't possibly be connected according to the reject map
+            return false;   
+        }
     }
 
     // Look from eyes of t1 to any part of t2

@@ -23,6 +23,8 @@ static constexpr uint32_t LEVEL_BIT_MASKS[5] = {
     MTF_HARD
 };
 
+static uint32_t gNextMObjGUID = 1;
+
 //----------------------------------------------------------------------------------------------------------------------
 // Remove a monster object from memory
 //----------------------------------------------------------------------------------------------------------------------
@@ -101,6 +103,8 @@ mobj_t& SpawnMObj(const Fixed x, const Fixed y, const Fixed z, const mobjinfo_t&
 
     mObj.state = pSpawnState;           // Save the state pointer. Do not set the state with SetMObjState, because action routines can't be called yet!
     mObj.tics = pSpawnState->Time;      // Init the tics
+    mObj.guid = gNextMObjGUID;
+    ++gNextMObjGUID;
 
     // Set subsector and/or block links
     SetThingPosition(mObj);                             // Attach to floor

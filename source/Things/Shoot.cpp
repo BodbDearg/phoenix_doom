@@ -48,9 +48,6 @@ static Fixed                    gShootX2;
 static Fixed                    gShootY2;
 static Fixed                    gFirstLineFrac;
 static bool                     gbShootDivPositive;
-static Fixed                    gOldFrac;
-static void*                    gpOldValue;
-static bool                     gOldIsLine;
 static int32_t                  gSsx1;
 static int32_t                  gSsy1;
 static int32_t                  gSsx2;
@@ -84,12 +81,6 @@ static bool PA_CrossBSPNode(node_t* pNode) {
 }
 
 static bool PA_DoIntercept(void* pValue, bool isLine, Fixed frac) noexcept {
-    if (gOldFrac < frac) {
-        std::swap(gpOldValue, pValue);
-        std::swap(gOldIsLine, isLine);
-        std::swap(gOldFrac, frac);
-    }
-
     if (frac == 0 || frac >= FRACUNIT)
         return true;
 
@@ -102,7 +93,7 @@ static bool PA_DoIntercept(void* pValue, bool isLine, Fixed frac) noexcept {
         mobj_t* const pThing = (mobj_t*) pValue;
 
         // DC: must check for line of sight now because I sweep in all of the things in a sector when visiting it's subsector
-        if (CheckSight(*gpShooter, *pThing)) {
+        if (CheckSight(*gpShooter, *pThing, false)) {
             return PA_ShootThing(*pThing, frac);
         } else {
             return true;
@@ -143,16 +134,9 @@ void P_Shoot2() noexcept {
     gSsx2 = gShootX2 >> 16;
     gSsy2 = gShootY2 >> 16;
 
+    ++gValidCount;
     gAimMidSlope = (gAimTopSlope + gAimBottomSlope) >> 1;
-
-    // Cross everything
-    gOldFrac = 0;
     PA_CrossBSPNode(gpBSPTreeRoot);
-
-    // Check the last intercept if needed
-    if (!gpShootMObj) {
-        PA_DoIntercept(nullptr, false, FRACUNIT);
-    }
 
     // post process
     if (gpShootMObj)
@@ -176,8 +160,7 @@ bool PA_ShootLine(line_t& li, const Fixed interceptfrac) noexcept {
             gFirstLineFrac = interceptfrac;
         }
 
-        gOldFrac = 0;   // Don't shoot anything past this
-        return false;
+        return false;   // Don't shoot anything past this
     }
 
     // Crosses a two sided line make sure the line has a gap that can be shot through first
@@ -189,14 +172,12 @@ bool PA_ShootLine(line_t& li, const Fixed interceptfrac) noexcept {
         Fixed minCeil = std::min(frontSec.ceilingheight, backSec.ceilingheight);
 
         if (maxFloor >= minCeil) {
-            // No gap/opening: don't shoot anything past this
             if (!gpShootLine) {
                 gpShootLine = &li;
                 gFirstLineFrac = interceptfrac;
             }
 
-            gOldFrac = 0;
-            return false;
+            return false;   // No gap/opening: don't shoot anything past this
         }
     }
     

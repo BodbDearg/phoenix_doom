@@ -1,5 +1,6 @@
 #include "Base.h"
 
+#include "Base/Random.h"
 #include "Enemy.h"
 #include "Game/Data.h"
 #include "Game/Tick.h"
@@ -464,11 +465,19 @@ static void P_MobjThinker(mobj_t& mobj) noexcept {
         return;
     }
 
-    if (bSightFlag && ((mobj.flags & MF_COUNTKILL) != 0)) {     // Can it be killed?
-        bSightFlag = false;
-        mobj.flags &= ~MF_SEETARGET;                            // Assume I don't see a target
-        if (mobj.target) {                                      // Do I have a target?
-            if (CheckSight(mobj, *mobj.target)) {
+    // Can it be killed?
+    if (bSightFlag && ((mobj.flags & MF_COUNTKILL) != 0)) {
+        bSightFlag = false;             // Assume I don't see a target until proven otherwise
+        mobj.flags &= ~MF_SEETARGET;
+
+        if (mobj.target) {
+            // DC: every so often (1/4 frames) do a direct line of sight test instead of trusting the reject map.
+            // The reject map appears to be very unreliable in the 3DO map data! This workaround prevents monsters
+            // from looking dumb for too long when we reach a deadzone in reject map, where two sectors are marked
+            // (invalidly) not visible to each other for some reason...
+            const bool bUseRejectMap = ((mobj.guid & 0x3) != (gTotalGameTicks & 0x3));
+
+            if (CheckSight(mobj, *mobj.target, false)) {
                 mobj.flags |= MF_SEETARGET;
             }
         }

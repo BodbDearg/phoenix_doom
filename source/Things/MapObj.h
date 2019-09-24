@@ -54,6 +54,7 @@ struct mobj_t {
 
     const mobjinfo_t*   InfoPtr;        // Pointer to mobj info record
     uint32_t            tics;           // Time before next state
+    uint32_t            guid;           // Unique identifier
     const state_t*      state;          // Pointer to current state record (Can't be NULL!)
     uint32_t            flags;          // State flags for object
     uint32_t            MObjHealth;     // Object's health
