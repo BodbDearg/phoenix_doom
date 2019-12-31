@@ -218,7 +218,10 @@ if (PLATFORM_LINUX)
 endif()
 
 if (COMPILER_MSVC)    
-    target_compile_options(${GAME_NAME} PRIVATE /W4)                # Enable all warnings
-elseif(COMPILER_GCC OR COMPILER_CLANG)
+    # Enable all warnings
+    target_compile_options(${GAME_NAME} PRIVATE /W4)
+    # Statically link against the CRT
+    set_property(TARGET ${GAME_NAME} PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+elseif (COMPILER_GCC OR COMPILER_CLANG)
     target_compile_options(${GAME_NAME} PRIVATE -pedantic -Wall)    # Enable all warnings and non standard C++ warnings
 endif()

@@ -4,6 +4,7 @@
 #include "Base/Finally.h"
 #include "Base/IniUtils.h"
 #include "DoomDefines.h"
+#include <cctype>
 #include <cstring>
 #include <SDL.h>
 

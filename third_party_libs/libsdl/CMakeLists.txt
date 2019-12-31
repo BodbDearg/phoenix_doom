@@ -249,7 +249,6 @@ if (PLATFORM_WINDOWS)
         "${SRC_DIR}/audio/wasapi/SDL_wasapi.c"
         "${SRC_DIR}/audio/wasapi/SDL_wasapi.h"
         "${SRC_DIR}/audio/wasapi/SDL_wasapi_win32.c"
-        "${SRC_DIR}/audio/wasapi/SDL_wasapi_winrt.cpp"
         "${SRC_DIR}/core/windows/SDL_directx.h"
         "${SRC_DIR}/core/windows/SDL_windows.c"
         "${SRC_DIR}/core/windows/SDL_windows.h"
@@ -452,8 +451,8 @@ if (PLATFORM_WINDOWS)
 
     target_link_libraries(${LIBSDL_NAME}
         Imm32.lib
-        Mincore.lib
         User32.lib
+        Version.lib
         Winmm.lib
     )
 endif()
