@@ -24,10 +24,10 @@ static constexpr char getPlatformPathSeparator() noexcept {
     #endif
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Real file input stream implementation.
 // This implementation reads from a real file on disk.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 class GameFileInputStream_Real : public InputStream {
 public:
     GameFileInputStream_Real() noexcept = default;
@@ -62,10 +62,10 @@ private:
     FileInputStream mInput;
 };
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // CD image file input stream implementation.
 // This implementation reads from a file stored in CD-ROM image on disk.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 class GameFileInputStream_CDImage : public InputStream {
 public:
     struct StreamException {};
@@ -131,10 +131,10 @@ private:
     uint32_t                mCurOffsetWithinFile;
 };
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Makeup a full path to the given file (prefixed by the game data dir) and store in the temporary file path global.
 // Used to get the actual path to files to open.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static void makeupTempGameFilePath(const char* pRelativePath) noexcept {
     ASSERT(pRelativePath);
 
@@ -143,10 +143,10 @@ static void makeupTempGameFilePath(const char* pRelativePath) noexcept {
     gTempFilePath.append(pRelativePath);
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Builds a list of file system entries that are contained within the CD-ROM image of 3DO Doom being used by the game.
 // Will terminate with a fatal error if this process fails.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static void buildOperaFSEntriesList() noexcept {
     if (!OperaFS::getFSEntriesFromDiscImage(Config::gGameDataCDImagePath.c_str(), gOperaFSEntries)) {
         FATAL_ERROR_F(
@@ -157,12 +157,12 @@ static void buildOperaFSEntriesList() noexcept {
     }
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Tokenizer: returns the next component/part of a path string (i.e the bits in between the path separators).
 // Moves along the given pointer until it points to something that isn't a path separator, then figures out the length
 // of that path component up until thenext path separator or the end of the string.
 // Returns '0' if there are no more path components in the string.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static uint32_t getNextPathToken(const char*& pStr) noexcept {
     // Skip past all path separators first
     while (true) {
@@ -195,9 +195,9 @@ static uint32_t getNextPathToken(const char*& pStr) noexcept {
     return (uint32_t)(pStrEnd - pStr);
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Returns an opera FS entry for the given path
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static const OperaFS::FSEntry* findOperaFSEntry(const char* const pFilePath) noexcept {
     // Note: must have initialized the list of files on the CD-ROM!
     ASSERT(!gOperaFSEntries.empty());

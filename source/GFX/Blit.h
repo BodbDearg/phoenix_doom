@@ -37,10 +37,10 @@ namespace Blit {
     static constexpr uint32_t BCF_H_CLIP            = 0x00004000;       // If set then clip the column to the given bounds horizontally
     static constexpr uint32_t BCF_V_CLIP            = 0x00008000;       // If set then clip the column to the given bounds vertically
 
-    //----------------------------------------------------------------------------------------------------------------------
+    //------------------------------------------------------------------------------------------------------------------------------------------
     // Utility that determines how much to step (in texels) per pixel to render the entire of the given
     // texture dimension in the given render area dimension (both in pixels).
-    //----------------------------------------------------------------------------------------------------------------------
+    //------------------------------------------------------------------------------------------------------------------------------------------
     inline constexpr Fixed calcTexelStep(const uint32_t textureSize, const uint32_t renderSize) noexcept {
         if (textureSize <= 1 || renderSize <= 1)
             return 0;

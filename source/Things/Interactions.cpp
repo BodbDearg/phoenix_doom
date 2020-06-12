@@ -22,11 +22,11 @@ static constexpr uint32_t   BASETHRESHOLD   = (7 * TICKSPERSEC) / 4;    // Numbe
 // This table is for ammo for a normal clip:
 static constexpr uint32_t CLIP_AMMO[NUMAMMO] = { 10, 4, 20, 1 };
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Num is the number of clip loads, not the individual count (0 = 1/2 clip).
 // Returns false if the ammo can't be picked up at all.
 // Also I switch weapons if I am using a wimpy weapon and I get ammo for a much better weapon.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static bool GiveAmmo(player_t& player, const ammotype_e ammo, uint32_t numofclips) noexcept {
     if (ammo == am_noammo || ammo >= NUMAMMO) {     // Is this not ammo?
         return false;                               // Can't pick it up
@@ -102,10 +102,10 @@ static bool GiveAmmo(player_t& player, const ammotype_e ammo, uint32_t numofclip
     return true;            // I picked it up!
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Pick up a weapon.
 // The weapon name may have a MF_DROPPED flag or'd in so that it will affect the amount of ammo contained inside.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static uint32_t GiveWeapon(player_t& player, const weapontype_e weapon, uint32_t dropped) noexcept {
     bool bPickedUp = false;
 
@@ -125,9 +125,9 @@ static uint32_t GiveWeapon(player_t& player, const weapontype_e weapon, uint32_t
     return bPickedUp;   // Did you pick it up?
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Increase the player's health; returns false if the health isn't needed at all.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static uint32_t GiveBody(player_t& player, uint32_t num) noexcept {
     if (player.health >= MAXHEALTH) {   // Already maxxed out?
         return false;                   // Don't get anymore
@@ -143,10 +143,10 @@ static uint32_t GiveBody(player_t& player, uint32_t num) noexcept {
     return true;                    // Pick it up
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Award a new suit of armor.
 // Returns false if the armor is worse than the current armor.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static uint32_t GiveArmor(player_t& player, const uint32_t armortype) noexcept {
     const uint32_t hits = armortype * 100;      // 100 or 200%
     if (player.armorpoints >= hits) {           // Already has this armor?
@@ -158,9 +158,9 @@ static uint32_t GiveArmor(player_t& player, const uint32_t armortype) noexcept {
     return true;                        // Pick it up
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Award a keycard or skull key
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static void GiveCard(player_t& player, const card_e card) noexcept {
     if (!player.cards[card]) {              // I don't have it already?
         player.bonuscount = BONUSADD;       // Add the bonus value for color
@@ -168,9 +168,9 @@ static void GiveCard(player_t& player, const card_e card) noexcept {
     }
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Award a powerup
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 uint32_t GivePower(player_t& player, const powertype_e power) noexcept {
     switch (power) {
         case pw_invulnerability:                    // God mode?
@@ -207,10 +207,10 @@ uint32_t GivePower(player_t& player, const powertype_e power) noexcept {
     return true;    // Pick it up
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // The case statement got too big, moved the rest here.
 // Returns sound to play, or UINT32_MAX if no sound
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static uint32_t TouchSpecialThing2(mobj_t& toucher, const uint32_t sprite) noexcept {
     ASSERT(toucher.player);
     player_t& player = *toucher.player;
@@ -355,9 +355,9 @@ void givePlayerABackpack(player_t& player) noexcept {
     }
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Award the item to the player if needed
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 void TouchSpecialThing(mobj_t& special, mobj_t& toucher) noexcept {
     const Fixed delta = special.z - toucher.z;      // Differances between z's
     if (delta > toucher.height || (delta < (-8 * FRACUNIT))) {
@@ -536,9 +536,9 @@ void TouchSpecialThing(mobj_t& special, mobj_t& toucher) noexcept {
     S_StartSound(&toucher.x, sound);    // Play the sound
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // The mobj was just killed, adjust the totals and turn the object into death warmed over.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static void KillMobj(mobj_t& target, const uint32_t Overkill) noexcept {
     ASSERT(target.InfoPtr);
     const mobjinfo_t* pInfo = target.InfoPtr;
@@ -593,13 +593,13 @@ static void KillMobj(mobj_t& target, const uint32_t Overkill) noexcept {
     droppedObj.flags |= MF_DROPPED;                                             // Avoid respawning!
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Damages both enemies and players.
 // Inflictor is the thing that caused the damage creature or missile, can be NULL (slime, etc).
 // Source is the thing to target after taking damage (creature or NULL).
 // Source and inflictor are the same for melee attacks.
 // Source can be null for barrel explosions and other environmental stuff.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 void DamageMObj(
     mobj_t& target,
     mobj_t* const pInflictor,

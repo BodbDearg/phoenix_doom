@@ -7,20 +7,20 @@
 
 BEGIN_NAMESPACE(Renderer)
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Minimum depth at which we will begin clamping the position of the first pixel in a flat column.
 // Restricting this adjustment to larger depths becase:
 //  (1) It causes noticeable temporal aliasing when moving around in some cases, at close depths.
 //  (2) Far depths are where we get the noticeable issues with flat textures overstepping their
 //      bounds and wrapping erroneously. Things are far more accurate closer to the view, so there
 //      is no need for this adjustment at near depths...
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static constexpr float MIN_DEPTH_FOR_FLAT_PIXEL_CLAMP = 128.0f;
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Populate vertex attributes for the given seg that are interpolated across the seg during rendering.
 // These attributes are not affected by any transforms, but *ARE* clipped.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static void populateSegVertexAttribs(const seg_t& seg, DrawSeg& drawSeg) noexcept {
     // Set the texture 'X' coordinates for the seg
     {
@@ -40,9 +40,9 @@ static void populateSegVertexAttribs(const seg_t& seg, DrawSeg& drawSeg) noexcep
     drawSeg.p2WorldY = seg.v2.y;
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Transforms a single point into view space
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static void transformPointToViewSpace(float& x, float& y) noexcept {
     // Transform by the view position
     x -= gViewX;
@@ -58,9 +58,9 @@ static void transformPointToViewSpace(float& x, float& y) noexcept {
     y = yRot;
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Transforms the XY coordinates for the seg into view space
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static void transformSegXYToViewSpace(const seg_t& inSeg, DrawSeg& outSeg) noexcept {    
     outSeg.p1x = inSeg.v1.x;
     outSeg.p1y = inSeg.v1.y;
@@ -75,9 +75,9 @@ static bool isScreenSpaceSegBackFacing(const DrawSeg& seg) noexcept {
     return (seg.p1x >= seg.p2x);
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Transforms the XY and W coordinates for the seg into clip space
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static void transformSegXYWToClipSpace(DrawSeg& seg) noexcept {
     // Notes:
     //  (1) We treat 'y' as if it were 'z' for the purposes of these calculations, since the
@@ -94,7 +94,7 @@ static void transformSegXYWToClipSpace(DrawSeg& seg) noexcept {
     seg.p2w = y2Orig;   // Note: r3c2 is an implicit 1.0 - hence we just do this!
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Clipping functions:
 //
 // These largely follow the method described at:
@@ -109,7 +109,7 @@ static void transformSegXYWToClipSpace(DrawSeg& seg) noexcept {
 //          -wc <= xc && xc >= wc
 //          -wc <= yc && yc >= wc
 //          -wc <= zc && zc >= wc
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static bool clipSegAgainstFrontPlane(DrawSeg& seg) noexcept {
     // The left plane in normalized device coords (NDC) is at z = -1, hence in clipspace it is at -w.
     // The distance to the clip plane can be computed by the dot product against the following vector:
@@ -278,10 +278,10 @@ static bool clipSegAgainstRightPlane(DrawSeg& seg) noexcept {
     return true;
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Add the clip space Z (height) values to the seg.
 // We add these lazily after other clipping operations have succeeded.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static void addClipSpaceZValuesForSeg(DrawSeg& drawSeg, const seg_t& seg) noexcept {
     const float viewZ = gViewZ;
 
@@ -352,10 +352,10 @@ static void addClipSpaceZValuesForSeg(DrawSeg& drawSeg, const seg_t& seg) noexce
     }
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Do the perspective division for the seg.
 // This transforms the seg coordinates into normalized device coords.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static void doPerspectiveDivisionForSeg(DrawSeg& seg) noexcept {
     // Compute the inverse of w for p1 and p2
     const float w1Inv = 1.0f / seg.p1w;
@@ -381,9 +381,9 @@ static void doPerspectiveDivisionForSeg(DrawSeg& seg) noexcept {
     seg.p2bz_back *= w2Inv;
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Transform the seg xz coordinates from normalized device coords into screen pixel coords.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static void transformSegXZToScreenSpace(DrawSeg& seg) noexcept {
     // Note: have to subtract a bit here because at 100% of the range we don't want to be >= screen width or height!
     const float viewW = (float) g3dViewWidth - 0.5f;
@@ -405,9 +405,9 @@ static void transformSegXZToScreenSpace(DrawSeg& seg) noexcept {
     seg.p2bz_back = (seg.p2bz_back * 0.5f + 0.5f) * viewH;
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Flags for what types of wall and floor/ceiling fragments to emit
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 typedef uint16_t FragEmitFlagsT;
 
 namespace FragEmitFlags {
@@ -422,11 +422,11 @@ namespace FragEmitFlags {
     static constexpr FragEmitFlagsT LOWER_WALL_OCCLUDER     = 0x0100;       // Emit a lower wall occluder entry
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Adds the currently emitted wall column part (upper, lower, mid) to the given column clip bounds.
 // The wall column is specified by it's top and bottom screen space bounds.
 // Only ever grows the clip bounds and never shrinks it!
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 template <FragEmitFlagsT FLAGS>
 static inline void addWallColumnPartToClipBounds(
     SegClip& clipBounds,
@@ -462,10 +462,10 @@ static inline void addWallColumnPartToClipBounds(
     }
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Clips and emits a wall column.
 // Returns 1 if a column was actually emitted, 0 otherwise.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 template <FragEmitFlagsT FLAGS>
 static uint32_t clipAndEmitWallColumn(
     const uint32_t x,
@@ -570,10 +570,10 @@ static uint32_t clipAndEmitWallColumn(
     return numColumnsEmitted;
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Clips and emits a floor or ceiling column.
 // Returns 1 if a column was actually emitted, 0 otherwise.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 template <FragEmitFlagsT FLAGS>
 static uint32_t clipAndEmitFlatColumn(
     const uint32_t x,
@@ -661,18 +661,18 @@ static uint32_t clipAndEmitFlatColumn(
     return 1;   // Emitted a floor column!
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // What type of occluder we are emitting to occlude sprites.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 enum class EmitOccluderMode {
     TOP,        // Occlude at the given screen coordinate and above
     BOTTOM      // Occlude at the given screen coordinate and below
 };
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Emits an occluder column that occludes sprites.
 // Either the top or bottom can be occluded.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 template <EmitOccluderMode MODE>
 static void emitOccluderColumn(
     const uint32_t x,
@@ -775,11 +775,11 @@ static void emitOccluderColumn(
     }
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Emits wall and potentially floor/ceiling fragments for each column of the draw seg (for later rendering).
 // Also potentially emits occluders if specified.
 // Returns the number of wall and floor columns emitted, for the purposes of marking automap lines as visible.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 template <FragEmitFlagsT FLAGS>
 static uint32_t emitDrawSegColumns(const DrawSeg& drawSeg, seg_t& seg) noexcept {
     //------------------------------------------------------------------------------------------------------------------

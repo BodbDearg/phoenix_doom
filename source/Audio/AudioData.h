@@ -4,9 +4,9 @@
 #include <cstddef>
 #include <cstdint>
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Structure holding data and information about that data for a piece of audio
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 struct AudioData {
     std::byte*  pBuffer;        // Contains all the samples for the audio piece. Note: each sample should be byte aligned!
     uint32_t    bufferSize;     // Actual size in bytes of the audio data byte buffer

@@ -3,10 +3,10 @@
 #include "FMath.h"
 #include <cstdint>
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Engine angle type: Doom uses binary angle measurement, where the entire range of a 32-bit unsigned integer is used to
 // represent 0-360 degrees. This format also naturally wraps around.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 
 typedef uint32_t angle_t;       // 32-bit BAM angle (uses the full 32-bits to represent 360 degrees)
 
@@ -19,9 +19,9 @@ inline constexpr angle_t negateAngle(const angle_t a) noexcept {
     return (angle_t) -(int32_t) a;
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Convert a Doom binary angle to a float angle (in radians) and back again
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 inline constexpr float bamAngleToRadians(const angle_t angle) noexcept {
     const double normalized = (double) angle / (double(UINT32_MAX) + 1.0);
     const double twoPiRange = normalized * FMath::ANGLE_360<double>;

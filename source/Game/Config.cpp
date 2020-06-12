@@ -603,9 +603,9 @@ CheatKeySequence            gCheatKeys_GrantRadSuit;
 CheatKeySequence            gCheatKeys_GrantBeserk;
 CheatKeySequence            gCheatKeys_GrantInvulnerability;
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Tells if a string is prefixed by another string, case insensitive
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static bool strHasPrefixCaseInsensitive(const char* pStr, const char* pPrefix) noexcept {
     ASSERT(pStr);
     ASSERT(pPrefix);
@@ -625,9 +625,9 @@ static bool strHasPrefixCaseInsensitive(const char* pStr, const char* pPrefix) n
     return true;
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Tells if two strings are equal using case insensitive comparison (assumes ASCII)
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static bool strsMatchCaseInsensitive(const char* pStr1, const char* pStr2) noexcept {
     ASSERT(pStr1);
     ASSERT(pStr2);
@@ -649,10 +649,10 @@ static bool strsMatchCaseInsensitive(const char* pStr1, const char* pStr2) noexc
     return true;
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Assign a cheat key sequence a value from a string.
 // Only alpha and numeric characters are allowed and the maximum sequence length is 16.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static void setCheatKeySequence(CheatKeySequence& sequence, const char* const pKeysStr) noexcept {
     // Handle all of the chars in the string, up to 16 chars
     ASSERT(pKeysStr);    
@@ -686,9 +686,9 @@ static void setCheatKeySequence(CheatKeySequence& sequence, const char* const pK
     }
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Determines the path to the config .ini for the game
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static std::string determineIniFilePath() noexcept {
     char* const pCfgFilePath = SDL_GetPrefPath(SAVE_FILE_ORG, SAVE_FILE_PRODUCT);
     auto cleanupCfgFilePath = finally([&](){
@@ -704,9 +704,9 @@ static std::string determineIniFilePath() noexcept {
     return path;
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Regenerates the config ini file if it doesn't exist on disk
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static void regenerateDefaultConfigFileIfNotPresent(const std::string& iniFilePath) noexcept {
     bool bCfgFileExists;
 
@@ -761,9 +761,9 @@ static void regenerateDefaultConfigFileIfNotPresent(const std::string& iniFilePa
     );
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Parse a single game or menu action or axis string
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static void parseSingleActionOrAxisString(
     const std::string& actionStr,
     Controls::GameActionBits& gameActionsOut,
@@ -834,9 +834,9 @@ static void parseSingleActionOrAxisString(
     handleAxis("weapon_next_prev",              Controls::Axis::WEAPON_NEXT_PREV);
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Tells if a character is an actions string delimiter character
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static inline bool isActionsStrDelimiterChar(const char c) noexcept {
     return (
         (c == ' ') ||
@@ -849,9 +849,9 @@ static inline bool isActionsStrDelimiterChar(const char c) noexcept {
     );
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Parse a game and menu actions bindings string
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static void parseActionsAndAxesString(
     const std::string& actionsStr,
     Controls::GameActionBits& gameActionsOut,
@@ -898,9 +898,9 @@ static void parseActionsAndAxesString(
     }
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Parse the bindings/actions for a particular keyboard key
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static void parseKeyboardKeyActions(const uint16_t keyIdx, const std::string& actionsStr) noexcept {
     if (keyIdx >= Input::NUM_KEYBOARD_KEYS)
         return;
@@ -920,9 +920,9 @@ static void parseKeyboardKeyActions(const uint16_t keyIdx, const std::string& ac
     gKeyboardMenuActions[keyIdx] = menuActions;
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Parse the bindings/actions for a particular mouse button
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static void parseMouseButtonOrWheelActions(const std::string buttonOrAxisName, const std::string& actionsStr) noexcept {
     // Parse the actions string
     Controls::GameActionBits gameActions = Controls::GameActions::NONE;
@@ -970,10 +970,10 @@ static void parseMouseButtonOrWheelActions(const std::string buttonOrAxisName, c
     }
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Figures out what controller input a button or axis name in the .ini corresponds to.
 // Returns an invalid controller input if not recognized.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static constexpr const char* CONTROLLER_BTN_NAME_PREFIX = "Button_";
 static constexpr const char* CONTROLLER_AXIS_NAME_PREFIX = "Axis_";
 
@@ -993,9 +993,9 @@ static ControllerInput getControllerInputFromName(const std::string name) noexce
     }
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Parse the bindings/actions for a particular controller input
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static void parseControllerInputActions(const std::string controllerInputName, const std::string& actionsStr) noexcept {
     ControllerInput input = getControllerInputFromName(controllerInputName);
     const uint8_t inputIdx = (uint8_t) input;
@@ -1014,9 +1014,9 @@ static void parseControllerInputActions(const std::string controllerInputName, c
     gGamepadAxisBindings[inputIdx] = axisBindings;
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Parse a cheat key sequence
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static void parseCheatKeySequence(const std::string& name, const char* const pSequenceKeys) noexcept {
     if (!pSequenceKeys)
         return;
@@ -1040,10 +1040,10 @@ static void parseCheatKeySequence(const std::string& name, const char* const pSe
     parseSequence("GrantInvulnerability",       gCheatKeys_GrantInvulnerability);
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Handle a config file entry.
 // This is not a particularly elegant or fast implementation, but it gets the job done... 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static void handleConfigEntry(const IniUtils::Entry& entry) noexcept {
     if (entry.section == "GameData") {        
         if (entry.key == "CDImagePath") {
@@ -1141,9 +1141,9 @@ static void handleConfigEntry(const IniUtils::Entry& entry) noexcept {
     }
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Clears all settings (used prior to reading config)
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static void clear() noexcept {
     gGameDataCDImagePath = "Doom3DO.img";
     gbUseGameDataDirectory = false;

@@ -511,10 +511,10 @@ static void loadBlockMap(const uint32_t lumpResourceNum) noexcept {
     Resources::free(lumpResourceNum);
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Computes the 'light multiplier' for each line segment.
 // This multiplier is used to achieve so called 'fake contrast'.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static void calcSegLightMultipliers() noexcept {
     if (Config::gbDoFakeContrast) {
         // Applying fake contrast (normal case)

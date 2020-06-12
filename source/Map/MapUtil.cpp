@@ -5,10 +5,10 @@
 #include "MapData.h"
 #include "Things/MapObj.h"
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Given the numerator and the denominator of a fraction for a slope, return the equivalent angle.
 // Note: I assume that denominator is greater or equal to the numerator.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 angle_t SlopeAngle(uint32_t num, uint32_t den) noexcept {
     num >>= (FRACBITS - 3);                     // Leave in 3 extra bits for just a little more precision
     den >>= FRACBITS;                           // Must be an int
@@ -28,11 +28,11 @@ static inline angle_t SlopeAngle(int32_t num, int32_t den) noexcept {
     return SlopeAngle((uint32_t) num, (uint32_t) den);
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // To get a global angle from cartesian coordinates, the coordinates are flipped until they are in the
 // first octant of the coordinate system, then the y (<=x) is scaled and divided by x to get a
 // tangent (slope) value which is looked up in the tantoangle[] table.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 angle_t PointToAngle(Fixed x1, Fixed y1, Fixed x2, Fixed y2) noexcept {
     x2 -= x1;   // Convert the two points into a fractional slope
     y2 -= y1;
@@ -67,10 +67,10 @@ angle_t PointToAngle(Fixed x1, Fixed y1, Fixed x2, Fixed y2) noexcept {
     return 0;                                                   // In case of 0,0, return an angle of 0
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Gives an estimation of distance (not exact).
 // This is used when an exact distance between two points is not needed.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 Fixed GetApproxDistance(Fixed dx, Fixed dy) noexcept {
     if (dx < 0) {
         dx = -dx;       // Get the absolute value of the distance
@@ -90,11 +90,11 @@ Fixed GetApproxDistance(Fixed dx, Fixed dy) noexcept {
     return dx;          // Return result
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Return TRUE if the point is on the BACK side.
 // Otherwise return FALSE if on the front side.
 // This code is optimized for the simple case of vertical or horizontal lines.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 bool PointOnVectorSide(Fixed x, Fixed y, const vector_t& line) noexcept {
     // Assume I am on the back side initially
     bool bResult = true;
@@ -155,10 +155,10 @@ bool PointOnVectorSide(Fixed x, Fixed y, const vector_t& line) noexcept {
     return bResult;         // Return the side
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Return the pointer to a subsector record using an input x and y.
 // Uses the BSP tree to assist.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 subsector_t& PointInSubsector(const Fixed x, const Fixed y) noexcept {
     // Note: there is ALWAYS a BSP tree - no checks needed on loop start!
     ASSERT(gpBSPTreeRoot);
@@ -177,9 +177,9 @@ subsector_t& PointInSubsector(const Fixed x, const Fixed y) noexcept {
     return *((subsector_t*) getActualBspNodePtr(pNode));    // N.B: Pointer needs flag removed via this!
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Convert a line record into a line vector
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 void MakeVector(line_t& li, vector_t& dl) noexcept {
     Fixed temp = li.v1.x;       // Get the X of the vector
     dl.x = temp;                // Save the x
@@ -191,9 +191,9 @@ void MakeVector(line_t& li, vector_t& dl) noexcept {
     dl.dy = li.v2.y - temp;
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Returns the fractional intercept point along the first vector
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 Fixed InterceptVector(const vector_t& first, const vector_t& second) noexcept {
     const Fixed dx2 = second.dx >> FRACBITS;        // Get the integer of the second line
     const Fixed dy2 = second.dy >> FRACBITS;
@@ -211,9 +211,9 @@ Fixed InterceptVector(const vector_t& first, const vector_t& second) noexcept {
     return num;                                             // Return the distance of intercept
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Return the height of the open span or zero if a single sided line.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 uint32_t LineOpening(const line_t& linedef) noexcept {
     Fixed top = 0;
     const sector_t* const pBack = linedef.backsector;   // Get the back side
@@ -236,9 +236,9 @@ uint32_t LineOpening(const line_t& linedef) noexcept {
     return (uint32_t) top;  // Return the span
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Unlinks a thing from the block map and sectors
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 void UnsetThingPosition(mobj_t& thing) noexcept {
     // Things that have no shapes don't need to be in the sector map.
     // The sector links are used for drawing of the sprites.
@@ -283,10 +283,10 @@ void UnsetThingPosition(mobj_t& thing) noexcept {
     }
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Links a thing into both a block and a subsector based on it's x & y.
 // Sets thing->subsector properly.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 void SetThingPosition(mobj_t& thing) noexcept {
     // Get the current subsector occupied and save a link to it on the thing
     subsector_t& ss = PointInSubsector(thing.x, thing.y);
@@ -328,10 +328,10 @@ void SetThingPosition(mobj_t& thing) noexcept {
     }
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // The validcount flags are used to avoid checking lines that are marked in multiple mapblocks,
 // so increment validcount before the first call to BlockLinesIterator, then make one or more calls to it.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 bool BlockLinesIterator(const uint32_t x, const uint32_t y, const BlockLinesIterCallback func) noexcept {
     if (x < gBlockMapWidth && y < gBlockMapHeight) {            // On the map?
         const uint32_t blockIdx = y * gBlockMapWidth + x;
@@ -357,9 +357,9 @@ bool BlockLinesIterator(const uint32_t x, const uint32_t y, const BlockLinesIter
     return true;    // Everything was checked
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Scan all objects standing on this map block.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 bool BlockThingsIterator(const uint32_t x, const uint32_t y, const BlockThingsIterCallback func) noexcept {
     // Check if we are off the map or not
     if (x < gBlockMapWidth && y < gBlockMapHeight) {

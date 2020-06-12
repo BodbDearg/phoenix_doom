@@ -54,11 +54,11 @@ void present() noexcept;
 // Saves the framebuffer if required and presents if required.
 void endFrame(const bool bPresent, const bool bSaveFrameBuffer) noexcept;
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Makes a framebuffer color from the given 16.16 fixed point RGB values.
 // Saturates/clamps the values if they are out of range.
 // The returned value is fully opaque.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 inline uint32_t fixedRgbToScreenCol(const Fixed rFrac, const Fixed gFrac, const Fixed bFrac) noexcept {
     const uint32_t rInt = (uint32_t)(rFrac >> (FRACBITS - 3));
     const uint32_t gInt = (uint32_t)(gFrac >> (FRACBITS - 3));
@@ -69,10 +69,10 @@ inline uint32_t fixedRgbToScreenCol(const Fixed rFrac, const Fixed gFrac, const 
     return ((rClamp << 24) | (gClamp << 16) | (bClamp << 8) | 0xFF);
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Makes a framebuffer color from the given RGBA5551 color value.
 // Note: the alpha component is ignored.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 inline uint32_t rgba5551ToScreenCol(const uint16_t color) noexcept {
     const uint32_t r5 = (color & 0b0111110000000000) >> 10;
     const uint32_t g5 = (color & 0b0000001111100000) >> 5;

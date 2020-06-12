@@ -37,9 +37,9 @@ static uint32_t                 gFirstFlatTexResourceNum;
 static std::vector<Texture>     gWallTextures;
 static std::vector<Texture>     gFlatTextures;
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Decode a 3DO Doom wall texture to an RGBA5551 image for rendering.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static void decodeWallTextureImage(Texture& tex, const std::byte* const pBytes) noexcept {
     // I'm not sure how to handle odd sized images, might need to align to next nearest byte on a column end maybe...
     // I don't think this happens in reality however so I'll just assert this assumption for now:
@@ -81,9 +81,9 @@ static void decodeWallTextureImage(Texture& tex, const std::byte* const pBytes) 
     }
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Decode a 3DO Doom flat texture to an RGBA5551 image for rendering.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static void decodeFlatTextureImage(Texture& tex, const std::byte* const pBytes) noexcept {
     // Flats should always be 64x64 in 3DO Doom!
     ASSERT(tex.data.width == 64);

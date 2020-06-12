@@ -11,7 +11,7 @@
 #include "Things/MapObj.h"
 #include "Things/Move.h"
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // SECTOR HEIGHT CHANGING
 //
 // After modifying a sectors floor or ceiling height, call this routine to adjust the
@@ -21,17 +21,17 @@
 // If crunch is true, they will take damage as they are being crushed
 // If Crunch is false, you should set the sector height back the way it was and call
 // ChangeSector again to undo the changes
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 
 static bool gbCrushChange;      // If true, then crush bodies to blood
 static bool gbNoFit;            // Set to true if something is blocking
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Takes a valid thing and adjusts the thing->floorz, thing->ceilingz, and possibly thing->z.
 // This is called for all nearby monsters whenever a sector changes height.
 //
 // If the thing doesn't fit, the z will be set to the lowest value and false will be returned.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static bool ThingHeightClip(mobj_t& thing) noexcept {
     const bool bOnfloor = (thing.z == thing.floorz);    // Already on the floor?
 
@@ -59,9 +59,9 @@ static bool ThingHeightClip(mobj_t& thing) noexcept {
     }
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // This is called from BlockThingsIterator
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static bool PIT_ChangeSector(mobj_t& thing) noexcept {
     if (ThingHeightClip(thing)) {       // Too small?
         return true;                    // Keep checking
@@ -100,9 +100,9 @@ static bool PIT_ChangeSector(mobj_t& thing) noexcept {
     return true;    // Keep checking (crush other things)
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Scan all items that are on a specific block to see if it can be crushed.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 bool ChangeSector(sector_t& sector, bool bCrunch) noexcept {
     gPlayer.lastsoundsector = nullptr;      // Force next sound to reflood
     gbNoFit = false;                        // Assume that it's ok

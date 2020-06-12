@@ -5,11 +5,11 @@
 #include <cstdint>
 #include <type_traits>
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Utility class that allows for N bits (up to 64) of an unsigned type to be read from a stream in memory.
 // The most significant bits are read first.
 // The stream is merely a view/wrapper around the given memory chunk and does NOT own the memory.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 class BitInputStream {
 public:
     class StreamException {};   // Thrown when there is a problem reading etc.

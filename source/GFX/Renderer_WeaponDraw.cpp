@@ -15,9 +15,9 @@ BEGIN_NAMESPACE(Renderer)
 
 static constexpr int32_t SCREEN_GUN_Y = -38;  // Y offset to center the player's weapon properly
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Draw a single weapon or muzzle flash on the screen
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static void DrawAWeapon(const pspdef_t& psp, const bool bShadow) noexcept {
     // Get the images to draw for this weapon.
     // Note that the weapon image data includes offsets for where to render the sprite!
@@ -118,9 +118,9 @@ static void DrawAWeapon(const pspdef_t& psp, const bool bShadow) noexcept {
     CelImages::releaseImages(resourceNum);
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Draw the player's weapon in the foreground
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 void drawWeapons() noexcept {
     // Determine whether to draw the weapon partially invisible
     bool bShadow = false;

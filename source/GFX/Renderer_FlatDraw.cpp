@@ -7,17 +7,17 @@
 
 BEGIN_NAMESPACE(Renderer)
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // What type of flat is being drawn
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 enum class DrawFlatMode {
     FLOOR,
     CEILING
 };
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Does the intersection of a ray against a floor or ceiling plane
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 template <DrawFlatMode MODE>
 static inline void doRayFlatPlaneIntersection(
     const float flatPlaneZ,
@@ -61,14 +61,14 @@ static inline void doRayFlatPlaneIntersection(
     intersectZ = rayOriginZ + rayDirZ * intersectT;
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Draw one vertical column of a flat.
 //
 // Unlike the original version of 3DO Doom (and PC Doom) I do not bother with visplanes, or converting vertical floor
 // columns into horizontal floor columns. These days it seems to make sense to lean more on the fast arithmetic
 // performance of the CPU instead of trawling through memory (slow) trying to match up visplanes and convert vertical
 // columns into horizontal ones.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 template <DrawFlatMode MODE>
 static inline void drawFlatColumn(const FlatFragment flatFrag) noexcept {
     // Cache some useful values

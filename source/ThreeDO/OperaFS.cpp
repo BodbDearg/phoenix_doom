@@ -13,9 +13,9 @@ struct BadDataException {};     // Thrown when bad or unexpected data is encount
 // Expect this as the block size on all things
 static constexpr uint32_t OPERA_BLOCK_SIZE = 2048;
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // This is the header for the OperaFS disc
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 struct alignas(4) DiscHeader {
     // Expected header constants
     static constexpr uint8_t RECORD_TYPE = 1;
@@ -51,9 +51,9 @@ struct alignas(4) DiscHeader {
 
 static_assert(sizeof(DiscHeader) == 104);
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Header for a directory block in a OperaFS disc
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 struct alignas(4) DirBlockHeader {
     // Offset in blocks to the next block in the directory (0xFFFFFFFF or -1 if none).
     // Note: this is relative to the current directory block index!
@@ -87,9 +87,9 @@ struct alignas(4) DirBlockHeader {
 
 static_assert(sizeof(DirBlockHeader) == 20);
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Directory entry in a OperaFS disc
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 struct alignas(4) DirEntry {
     // Flags for directory entries.
     // Note: all of the bits must be set in each case for the flag to be considered true.
@@ -127,9 +127,9 @@ struct alignas(4) DirEntry {
 
 static_assert(sizeof(DirEntry) == 72);
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Represents a pending directory that must be read
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 struct DirToRead {
     uint32_t    parentDirIdx;       // Index of the parent directory in the file system entry list
     uint32_t    firstBlockIdx;      // Index of the first block of the directory on the disk (from the disk beginning)
@@ -139,9 +139,9 @@ static bool areAllFlagsSet(const uint32_t flags, const uint32_t bitsToBeSet) noe
     return ((flags & bitsToBeSet) == bitsToBeSet);
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Read and verify the OperaFS disc header
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static void readAndVerifyDiscHeader(CDImageFileInputStream& cd, DiscHeader& header) THROWS {
     cd.read(header);
     header.convertBigToHostEndian();
@@ -165,9 +165,9 @@ static void readAndVerifyDiscHeader(CDImageFileInputStream& cd, DiscHeader& head
         throw BadDataException();
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Read and verfiy a directory block header
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static void readAndVerifyDirBlockHeader(CDImageFileInputStream& cd, DirBlockHeader& header) THROWS {
     cd.read(header);
     header.convertBigToHostEndian();
@@ -181,9 +181,9 @@ static void readAndVerifyDirBlockHeader(CDImageFileInputStream& cd, DirBlockHead
         throw BadDataException();
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Read and verfiy a directory entry
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static void readAndVerifyDirEntry(CDImageFileInputStream& cd, DirEntry& entry) THROWS {
     cd.read(entry);
     entry.convertBigToHostEndian();
@@ -197,10 +197,10 @@ static void readAndVerifyDirEntry(CDImageFileInputStream& cd, DirEntry& entry) T
         throw BadDataException();
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Read a single block of directory entries.
 // Returns the offset of the next block of directory entries to be read after that.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static uint32_t readDirEntriesBlock(
     CDImageFileInputStream& cd,
     std::queue<DirToRead>& dirsToRead,
@@ -281,11 +281,11 @@ static uint32_t readDirEntriesBlock(
     return dirBlockHeader.nextBlock;
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Process all the directories to be read in the given queue as well as their children.
 // Saves the resulting file system entries to the given output list.
 // Does not return until everything is read.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static void readDirEntries(
     CDImageFileInputStream& cd,
     std::queue<DirToRead>& dirsToRead,

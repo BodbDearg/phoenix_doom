@@ -3,23 +3,23 @@
 #include "Base/Macros.h"
 #include <cstdint>
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Whether or not the host system is big endian or not:
 // If this is not explicitly defined by the build setup, then just assume little endian.
 // Eventually we can use C++20 features to detect this but for now this should work for most cases.
 // Users on more exotic platforms (like the PPC 'Amiga X1000') may want to adjust however...
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 #ifndef BIG_ENDIAN
     #define BIG_ENDIAN 0
 #endif
 
 BEGIN_NAMESPACE(Endian)
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Utility functions for byte swapping big endian to host endian, which should be little endian in most cases...
 // Needed because the 3DO data for doom is stored in big endian format. Both the dev machine (68K Mac) and the
 // 3DO hardware itself were big endian, hence it made sense to store the data this way.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 inline uint16_t bigToHost(const uint16_t num) {
     #if BIG_ENDIAN == 1
         return num;

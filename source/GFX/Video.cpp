@@ -130,10 +130,10 @@ static void determineTargetVideoMode() noexcept {
     gOutputRect.y = ((int32_t) gVideoOutputHeight - gOutputRect.h) / 2;
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Truncates an XRGB8888 color as if it were stored as an XRGB1555 color, and converts back to XRGB8888.
 // Used for 16-bit framebuffer simulation.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static inline uint32_t truncateFramebufferColorTo16Bit(const uint32_t colorIn) noexcept {
     uint32_t r = (colorIn & 0x00F80000);
     uint32_t g = (colorIn & 0x0000F800);
@@ -144,9 +144,9 @@ static inline uint32_t truncateFramebufferColorTo16Bit(const uint32_t colorIn) n
     return (r | g | b);
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Truncates framebuffer colors to RGB555 - similar to the framebuffer format used by the original 3DO game
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static void do16BitFramebufferSimulation() noexcept {
     // Truncate 8 pixels at a time first
     const uint32_t numPixels = gScreenWidth * gScreenHeight;

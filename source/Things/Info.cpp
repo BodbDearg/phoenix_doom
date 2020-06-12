@@ -6,7 +6,7 @@
 #include "MapObj.h"
 #include "PlayerSprites.h"
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // This data determines each state of the sprites in DOOM.
 //
 // The first value determines the shape GROUP that will be used to draw the sprite.
@@ -21,7 +21,7 @@
 //
 // The fourth value is the index to the next state when time runs out.
 //
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 
 // Macro for making a 'sprite' number from a sprite list and sub frame
 #define Spr(s, f) ((s << FF_SPRITESHIFT) | f)

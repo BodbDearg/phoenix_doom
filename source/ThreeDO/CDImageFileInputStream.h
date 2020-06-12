@@ -2,7 +2,7 @@
 
 #include "Base/FileInputStream.h"
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Allows reading of data from a raw image of a CD-ROM stored in a file on disk.
 //
 // Supports the following CD-ROM sector modes (ONLY!):
@@ -13,7 +13,7 @@
 // consideration for the underlying CD-ROM sector format. For example if you ask this class to seek to byte 50000 then
 // that will be byte 50000 of the actual disc user data, and you will not have to make any consideration for CD-ROM
 // sector overhead etc.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 class CDImageFileInputStream {
 public:
     struct StreamException {};  // Thrown in some situations

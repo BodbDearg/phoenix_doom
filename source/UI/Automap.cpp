@@ -43,18 +43,18 @@ static int32_t      gMapClipBy;             // Line clip bounds: bottom y (inclu
 static constexpr Fixed NOSELENGTH = 0x200000;   // Player's triangle
 static constexpr Fixed MOBJLENGTH = 0x100000;   // Object's triangle
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Multiply a map coord and a fixed point scale value and return the INTEGER result.
 // I assume that the scale cannot exceed 1.0 and the map coord has no fractional part.
 // This way I can use a 16 by 16 mul with 32 bit result (Single mul) to speed up the code.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static inline int32_t MulByMapScale(const Fixed mapCoord) noexcept {
     return ((mapCoord >> FRACBITS) * gMapScale) >> FRACBITS;
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Multiply two fixed point numbers but return an INTEGER result!
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static inline int IMFixMulGetInt(const Fixed a, const Fixed b) noexcept {
     return fixed16Mul(a, b) >> FRACBITS;
 }
@@ -63,10 +63,10 @@ static void updateMapScale() noexcept {
     gMapScale = fixed16Mul(gUnscaledOldScale, floatToFixed16(gScaleFactor));
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Init all the variables for the automap system Called during P_Start when the game is initally loaded.
 // If I need any permanent art, load it now.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 void AM_Start() noexcept {
     gUnscaledMapScale = (FRACUNIT / 16);    // Default map scale factor (0.00625)
     gUnscaledOldScale = gUnscaledMapScale;    
@@ -85,10 +85,10 @@ void AM_Start() noexcept {
     gPlayer.AutomapFlags &= ~AF_ACTIVE;         // Automap off
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Draw a pixel on the screen but clip it to the visible area.
 // I assume a coordinate system where 0,0 is at the upper left corner of the screen.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static void ClipPixel(const int32_t x, const int32_t y, const uint16_t color) noexcept {
     // Note: casting to uint32_t avoids the need for a '>= 0' check!
     if ((uint32_t) x < gMapPixelsW && (uint32_t) y < gMapPixelsH) {   // On the screen?
@@ -97,14 +97,14 @@ static void ClipPixel(const int32_t x, const int32_t y, const uint16_t color) no
     }
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Draw a line in the automap, I use a classic Bresanhem line algorithm and call a routine to clip
 // to the visible bounds. All x and y's assume a coordinate system where 0,0 is the CENTER of the
 // visible screen!
 //
 // Even though all the variables are cast as unsigned, they are truly signed. I do this to test
 // for out of bounds with one compare (x>=0 && x<320) is now just (x<320). Neat eh?
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static void DrawLine(
     const int32_t x1,
     const int32_t y1,
@@ -170,9 +170,9 @@ static void DrawLine(
     } while (x != xEnd);            // At the bottom?
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Called by P_PlayerThink before any other player processing
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 void AM_Control(player_t& player) noexcept {    
     if (GAME_ACTION_ENDED(AUTOMAP_TOGGLE)) {        // Toggle event?
         if (!player.isOptionsMenuActive()) {        // Can't toggle in option mode!
@@ -274,9 +274,9 @@ void AM_Control(player_t& player) noexcept {
     }
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Draws the current frame to workingscreen
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 void AM_Drawer() noexcept {
     // Clear the screen: normally clear it black but if we are doing cheat confirm fx clear it white!
     float clearColor[3];

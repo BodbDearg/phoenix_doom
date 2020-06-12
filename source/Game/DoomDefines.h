@@ -2,9 +2,9 @@
 
 #include "Base/Fixed.h"
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Global defines for Doom
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 
 // Game version string
 #define GAME_VERSION_STR "1.0.2"
@@ -39,9 +39,9 @@ static constexpr float  MF_SHADOW_COLOR_MULT    = 0.1f;     // Color multiply to
 // Misc
 static constexpr uint32_t   SKY_CEILING_PIC = UINT32_MAX;           // Texture number that indicates a sky texture
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Globa enums
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 
 // Index for a bounding box coordinate
 enum {
@@ -52,10 +52,10 @@ enum {
     BOXCOUNT
 };
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // A utility to convert a tick count from PC Doom's original 35Hz timebase to the timebase used by this game version.
 // Tries to round so the answer is as close as possible.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 inline constexpr uint32_t convertPcTicks(const uint32_t ticks35Hz) noexcept {
     // Get the tick count in 31.1 fixed point format by multiplying by TICKSPERSEC/35 (in 31.1 format).
     // When returning the integer answer round up if the fractional part is '.5':
@@ -63,10 +63,10 @@ inline constexpr uint32_t convertPcTicks(const uint32_t ticks35Hz) noexcept {
     return (tickCountFixed & 1) ? (tickCountFixed >> 1) + 1 : (tickCountFixed >> 1);
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Convert an uint32 speed defined in the PC 35Hz timebase to the 60Hz timebase used by used by this game version.
 // Tries to round so the answer is as close as possible.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 inline constexpr uint32_t convertPcUintSpeed(const uint32_t speed35Hz) noexcept {
     // Get the tick count in 31.1 fixed point format by multiplying by 35/TICKSPERSEC (in 31.1 format).
     // When returning the integer answer round up if the fractional part is '.5':

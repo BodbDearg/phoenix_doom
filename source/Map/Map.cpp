@@ -36,7 +36,7 @@ static mobj_t*      gpBombSource;       // Explosion source
 static mobj_t*      gpBombSpot;         // Explosion position
 static uint32_t     gBombDamage;        // Damage done by explosion
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Input:
 //  tmthing a mobj_t (can be valid or invalid)
 //  tmx,tmy a position to be checked (doesn't need relate to the mobj_t->x,y)
@@ -48,7 +48,7 @@ static uint32_t     gBombDamage;        // Damage done by explosion
 //  ceilingz    New ceiling z
 //  tmdropoffz  the lowest point contacted (monsters won't move to a dropoff)
 //  movething   thing collision
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 bool P_CheckPosition(mobj_t& thing, const Fixed x, const Fixed y) noexcept {
     gpTmpThing = &thing;        // Copy parms to globals
     gTmpX = x;
@@ -58,9 +58,9 @@ bool P_CheckPosition(mobj_t& thing, const Fixed x, const Fixed y) noexcept {
     return gbTryMove2;          // Return the result
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Try to move to a new position and trigger special events.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 bool P_TryMove(mobj_t& thing, const Fixed x, const Fixed y) noexcept {
     gpTmpThing = &thing;    // Source xy
     gTmpX = x;              // New x,y
@@ -92,10 +92,10 @@ bool P_TryMove(mobj_t& thing, const Fixed x, const Fixed y) noexcept {
     return gbTryMove2;
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Routine used by BlockLinesIterator to check for line collision.
 // I always return TRUE to check ALL lines.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static bool PIT_UseLines(line_t& li) noexcept {
     // Check bounding box first
     if ((gUseBBox[BOXRIGHT] <= li.bbox[BOXLEFT]) ||  // Within the bounding box?
@@ -126,10 +126,10 @@ static bool PIT_UseLines(line_t& li) noexcept {
     return true;            // Can't use for than one special line in a row
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Looks for special lines in front of the player to activate.
 // Used when the player presses "Use" to open a door or such.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 void P_UseLines(player_t& player) noexcept {
     const uint32_t angle = player.mo->angle >> ANGLETOFINESHIFT;
     const Fixed x1 = player.mo->x;                                          // Get the source x,y
@@ -191,11 +191,11 @@ void P_UseLines(player_t& player) noexcept {
     }
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Routine used by BlockThingsIterator to check for damage to anyone within range of an explosion.
 // Source is the creature that caused the explosion at spot.
 // Always returns TRUE to check ALL lines
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static bool PIT_RadiusAttack(mobj_t& thing) noexcept {
     ASSERT(gpBombSpot);
 
@@ -224,10 +224,10 @@ static bool PIT_RadiusAttack(mobj_t& thing) noexcept {
     return true;    // Continue
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Inflict damage to all items within blast range.
 // Source is the creature that casued the explosion at spot.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 void RadiusAttack(mobj_t& spot, mobj_t* source, const uint32_t damage) noexcept {
     const Fixed dist = intToFixed16((int32_t) damage);
 
@@ -255,12 +255,12 @@ void RadiusAttack(mobj_t& spot, mobj_t* source, const uint32_t damage) noexcept 
     }
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Choose a target based of direction of facing.
 // A line will be traced from the middle of shooter in the direction of attackangle until either a shootable
 // mobj is within the visible aimtopslope / aimbottomslope range, or a solid wall blocks further tracing.
 // If no thing is targeted along the entire range, the first line that blocks the midpoint of the trace will be hit.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 Fixed AimLineAttack(mobj_t& t1, const angle_t angle, const Fixed distance) noexcept {
     gpShooter = &t1;
     gAttackRange = distance;
@@ -279,11 +279,11 @@ Fixed AimLineAttack(mobj_t& t1, const angle_t angle, const Fixed distance) noexc
     return 0;   // No target
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Actually perform an attack based off of the direction facing.
 // Use by pistol, chain gun and shotguns.
 // If slope == FIXED_MAX, use screen bounds for attacking.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 void LineAttack(
     mobj_t& t1,
     const angle_t angle,

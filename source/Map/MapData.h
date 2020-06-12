@@ -144,11 +144,11 @@ struct node_t {
     void*       Children[2];            // If low bit is set then it's a subsector
 };
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // DC: BSP nodes use the lowest bit of their child pointers to indicate whether or not the child
 // pointed to is a subsector or just another BSP node. These 3 functions help with checking for
 // the prescence of this flag and adding/removing it from a node child pointer.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 inline bool isBspNodeASubSector(const void* const pPtr) {
     return ((((uintptr_t) pPtr) & 1) != 0);
 }

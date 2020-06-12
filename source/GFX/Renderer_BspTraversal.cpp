@@ -6,14 +6,14 @@
 #include "Map/MapUtil.h"
 #include "Things/MapObj.h"
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Module that handles traversing the BSP tree, so we can produce lists of things to draw.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 BEGIN_NAMESPACE(Renderer)
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Given a sector pointer, and if I hadn't already rendered the sprites, make valid sprites for the sprite list.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static void addSectorSpritesToFrame(sector_t& sector) noexcept {
     if (sector.validcount != gValidCount) {     // Has this been processed?
         sector.validcount = gValidCount;        // Mark it
@@ -27,9 +27,9 @@ static void addSectorSpritesToFrame(sector_t& sector) noexcept {
     }
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Given a subsector pointer, pass all walls to the rendering engine. Also pass all the sprites.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static void addSubsectorToFrame(subsector_t& sub) noexcept {
     sector_t& sector = *sub.sector;     // Get the front sector
     addSectorSpritesToFrame(sector);    // Prepare sprites for rendering
@@ -44,9 +44,9 @@ static void addSubsectorToFrame(subsector_t& sub) noexcept {
     }
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Transform a 2d xy point to view space
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static inline void transformXYPointToViewSpace(vertexf_t& point) noexcept {
     // Transform by view position and then view angle; similar to the code in other render functions:
     point.x -= gViewX;
@@ -61,10 +61,10 @@ static inline void transformXYPointToViewSpace(vertexf_t& point) noexcept {
     point.y = rotatedY;
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Transform a 2d xy point to clip space.
 // The 'y' component becomes the 'w' component in clip space.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static inline void transformXYPointToClipSpace(vertexf_t& point) noexcept {
     // Notes:
     //  (1) We treat 'y' as if it were 'z' for the purposes of these calculations, since the
@@ -74,9 +74,9 @@ static inline void transformXYPointToClipSpace(vertexf_t& point) noexcept {
     point.x *= gProjMatrix.r0c0;
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Some basic rejection checks to see if we should process a BSP node.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static bool checkBBox(const Fixed bspcoord[BOXCOUNT]) noexcept {
     // Get the float coords first
     const float boxLx = fixed16ToFloat(bspcoord[BOXLEFT]);
@@ -137,10 +137,10 @@ static bool checkBBox(const Fixed bspcoord[BOXCOUNT]) noexcept {
     return true;
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Traverse the BSP tree starting from a tree node (Or sector) and recursively subdivide if needed.
 // Use a cross product from the line cast from the viewxy to the bspxy and the bsp line itself.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static void addBspNodeToFrame(node_t* const pNode) noexcept {
     // Is this node actual pointing to a sub sector?
     if (isBspNodeASubSector(pNode)) {
@@ -165,10 +165,10 @@ static void addBspNodeToFrame(node_t* const pNode) noexcept {
     }
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Find all walls that can be rendered in the current view plane. I make it handle the whole
 // screen by placing fake posts on the farthest left and right sides in solidsegs 0 and 1.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 void doBspTraversal() noexcept {
     ++gValidCount;                          // For sprite recursion
     addBspNodeToFrame(gpBSPTreeRoot);       // Begin traversing the BSP tree for all walls in render range

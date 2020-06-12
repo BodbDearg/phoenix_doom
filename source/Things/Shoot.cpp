@@ -12,13 +12,13 @@
 
 BEGIN_NAMESPACE(Shoot)
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Input values:
 //
 //  A line will be shootdivd from the middle of shooter in the direction of attackangle until either a shootable
 //  mobj is within the visible aimtopslope / aimbottomslope range, or a solid wall blocks further tracing.
 //  If no thing is targeted along the entire range, the first line that blocks the midpoint of the shootdiv will be hit.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 line_t*     gpShootLine;
 mobj_t*     gpShootMObj;
 Fixed       gShootSlope;    // Between aimtop and aimbottom
@@ -26,11 +26,11 @@ Fixed       gShootX;
 Fixed       gShootY;
 Fixed       gShootZ;        // Location for puff/blood
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Represents a possible hit with something being shit.
 // Stores the hit fraction and the thing hit, and whether it is a thing or a line.
 // Also supports sorting, so we process the closest hit first!
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 struct Intercept {
     Fixed   frac;
     void*   pObj;
@@ -53,9 +53,9 @@ static int32_t                  gSsy1;
 static int32_t                  gSsx2;
 static int32_t                  gSsy2;
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Returns true if strace crosses the given node successfuly
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 static bool PA_CrossBSPNode(node_t* pNode) {
     if (isBspNodeASubSector(pNode)) {
         // N.B: pointer has to be fixed up due to prescence of a flag in the lowest bit!
@@ -272,12 +272,12 @@ bool PA_ShootThing(mobj_t& th, const Fixed interceptfrac) noexcept {
     return false;   // Don't go any farther
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // First checks the endpoints of the line to make sure that they cross the sight trace treated as an infinite line.
 // 
 // If so, it calculates the fractional distance along the sight trace that the intersection occurs at.
 // If 0 < intercept < 1.0, the line will block the sight.
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 Fixed PA_SightCrossLine(const vertex_t& lineV1, const vertex_t& lineV2) noexcept {
     // P1, P2 are line endpoints
     int32_t p1x = fixed16ToInt(lineV1.x);
@@ -323,9 +323,9 @@ Fixed PA_SightCrossLine(const line_t& line) noexcept {
     return PA_SightCrossLine(line.v1, line.v2);
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 // Returns true if strace crosses the given subsector successfuly
-//----------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 bool PA_CrossSubsector(const subsector_t& sub) noexcept {
     // Ensure this list is clear before we begin
     gIntercepts.clear();
