@@ -4,17 +4,11 @@
 #include "Base/Finally.h"
 #include "Base/IniUtils.h"
 #include "DoomDefines.h"
+
+#include <algorithm>
 #include <cctype>
 #include <cstring>
 #include <SDL.h>
-
-// MacOS: working around missing support for <filesystem> in everything except the latest bleeding edge OS and Xcode.
-// Use standard Unix file functions instead for now, but some day this can be removed.
-#ifdef __MACOSX__
-    #include <unistd.h>
-#else
-    #include <filesystem>
-#endif
 
 BEGIN_NAMESPACE(Config)
 
@@ -655,7 +649,7 @@ static bool strsMatchCaseInsensitive(const char* pStr1, const char* pStr2) noexc
 //------------------------------------------------------------------------------------------------------------------------------------------
 static void setCheatKeySequence(CheatKeySequence& sequence, const char* const pKeysStr) noexcept {
     // Handle all of the chars in the string, up to 16 chars
-    ASSERT(pKeysStr);    
+    ASSERT(pKeysStr);
     uint32_t keyIdx = 0;
     const char* pCurChar = pKeysStr;
 
@@ -708,21 +702,7 @@ static std::string determineIniFilePath() noexcept {
 // Regenerates the config ini file if it doesn't exist on disk
 //------------------------------------------------------------------------------------------------------------------------------------------
 static void regenerateDefaultConfigFileIfNotPresent(const std::string& iniFilePath) noexcept {
-    bool bCfgFileExists;
-
-    try {
-        // MacOS: working around missing support for <filesystem> in everything except the latest bleeding edge OS and Xcode.
-        // Use standard Unix file functions instead for now, but some day this can be removed.
-        #ifdef __MACOSX__
-            bCfgFileExists = (access(iniFilePath.c_str(), R_OK) == 0);
-        #else
-            bCfgFileExists = std::filesystem::exists(iniFilePath);
-        #endif
-    } catch (...) {
-        FATAL_ERROR("Unable to determine if the game configuration file exists!");
-    }
-
-    if (bCfgFileExists)
+    if (FileUtils::fileExists(iniFilePath.c_str()))
         return;
 
     std::string configFile;
@@ -1220,7 +1200,7 @@ void shutdown() noexcept {
     gTmpActionStr.clear();
     gTmpActionStr.shrink_to_fit();
     gGameDataCDImagePath.clear();
-    gGameDataCDImagePath.shrink_to_fit();    
+    gGameDataCDImagePath.shrink_to_fit();
     gGameDataDirectoryPath.clear();
     gGameDataDirectoryPath.shrink_to_fit();
 }
