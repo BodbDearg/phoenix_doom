@@ -1,6 +1,10 @@
+//------------------------------------------------------------------------------------------------------------------------------------------
+// Utilities for dealing with files
+//------------------------------------------------------------------------------------------------------------------------------------------
 #include "FileUtils.h"
 
 #include "Finally.h"
+
 #include <cstdint>
 #include <cstring>
 
@@ -18,7 +22,7 @@ BEGIN_NAMESPACE(FileUtils)
 // Read data for the given file path on disk and store it in the given pointer, returning 'true' on success.
 // Optionally an additional number of bytes at the end of the data can be allocated and set to the given value.
 // This can be useful to null terminate a text file that has been read, for example.
-// 
+//
 // Notes:
 //  (1) If the file is not read successfully, the given filepath will be set to null and output size set to '0'.
 //  (2) The output memory is allocated with C++ 'new[]' so should be deallocated with C++ 'delete[]'.
